@@ -1,0 +1,753 @@
+// Trọ Thông Minh – schema PostgreSQL (Prisma 6)
+// Quy ước: bảng snake_case số nhiều, khóa chính id số tự tăng, tiền là số nguyên đồng,
+// ngày nghiệp vụ kiểu date, mốc thời gian kiểu timestamptz.
+// Ràng buộc Prisma không khai báo được (partial unique, CHECK, trigger) nằm trong constraints.sql.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // chuỗi kết nối pooled (Neon/Supabase)
+  directUrl = env("DIRECT_URL") // kết nối trực tiếp cho migrate
+}
+
+// ───────────── Enum ─────────────
+
+enum Role {
+  BOSS
+  MANAGER
+  TENANT
+}
+
+enum WaterMode {
+  PER_M3
+  PER_PERSON
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUPERSEDED
+}
+
+enum RateKind {
+  ELECTRIC
+  WATER
+  SERVICE
+}
+
+enum ServiceUnit {
+  ROOM
+  PERSON
+  VEHICLE
+}
+
+enum ViewingSource {
+  WEB
+  MANUAL
+}
+
+enum ViewingStatus {
+  NEW
+  CONFIRMED
+  WON
+  LOST
+  CANCELLED
+}
+
+enum ContractStatus {
+  HOLD
+  ACTIVE
+  ENDED
+  CANCELLED
+}
+
+enum VehicleType {
+  MOTORBIKE
+  E_BIKE
+  BICYCLE
+  CAR
+  OTHER
+}
+
+enum MeterKind {
+  ELECTRIC
+  WATER
+}
+
+enum InvoiceType {
+  DEPOSIT
+  MONTHLY
+  FINAL
+}
+
+enum InvoiceStatus {
+  DRAFT
+  UNPAID
+  PAID
+  SETTLED
+  CANCELLED
+}
+
+enum LineKind {
+  DEPOSIT
+  RENT
+  ELECTRIC
+  WATER
+  SERVICE
+  PARKING
+  REMAINING_RENT
+  PREVIOUS_DEBT
+  DAMAGE
+  DEPOSIT_FORFEIT
+  DEPOSIT_OFFSET
+}
+
+enum PaymentMethod {
+  BANK_TRANSFER
+  CASH
+  CARD
+  OTHER
+}
+
+enum PaymentSource {
+  WEBHOOK
+  MANUAL
+  ASSIGNED
+}
+
+enum BankProvider {
+  SEPAY
+  CASSO
+}
+
+enum BankTxStatus {
+  MATCHED
+  UNMATCHED
+  ASSIGNED
+  REFUNDED
+}
+
+enum RequestType {
+  INCIDENT
+  MOVE_OUT
+  RENEW
+  OCCUPANT_CHANGE
+  VEHICLE_CHANGE
+  PAYMENT_ISSUE
+}
+
+enum RequestStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+  APPROVED
+  REJECTED
+  ESCALATED
+  CANCELLED
+}
+
+enum NotificationKind {
+  ANNOUNCEMENT
+  INVOICE_ISSUED
+  PAYMENT_RECEIVED
+  INVOICE_OVERDUE
+  CONTRACT_EXPIRING
+  REQUEST_UPDATED
+}
+
+// ───────────── 1. Tài khoản ─────────────
+
+model User {
+  id                 Int       @id @default(autoincrement())
+  role               Role
+  phone              String    @unique @db.VarChar(10)
+  fullName           String    @map("full_name") @db.VarChar(100)
+  email              String?   @unique @db.VarChar(255)
+  passwordHash       String    @map("password_hash")
+  mustChangePassword Boolean   @default(true) @map("must_change_password")
+  isActive           Boolean   @default(true) @map("is_active")
+  contactPhone       String?   @map("contact_phone") @db.VarChar(10)
+  zaloUrl            String?   @map("zalo_url")
+  facebookUrl        String?   @map("facebook_url")
+  lastLoginAt        DateTime? @map("last_login_at") @db.Timestamptz
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  sessions            Session[]
+  passwordResets      PasswordResetToken[]
+  managedBuildings    Building[]
+  contracts           Contract[]           @relation("ContractTenant")
+  contractsCreated    Contract[]           @relation("ContractCreator")
+  roomPricesProposed  RoomPrice[]          @relation("RoomPriceProposer")
+  roomPricesReviewed  RoomPrice[]          @relation("RoomPriceReviewer")
+  ratePlansProposed   RatePlan[]           @relation("RatePlanProposer")
+  ratePlansReviewed   RatePlan[]           @relation("RatePlanReviewer")
+  viewingsHandled     Viewing[]
+  meterReadings       MeterReading[]
+  paymentsRecorded    Payment[]
+  bankTxHandled       BankTransaction[]
+  settlements         Settlement[]
+  requestsCreated     Request[]            @relation("RequestCreator")
+  requestsHandled     Request[]            @relation("RequestHandler")
+  announcements       Announcement[]
+  notifications       Notification[]
+  invoicesCreated     Invoice[]
+  settingsUpdated     Setting[]
+  auditLogs           AuditLog[]
+
+  @@map("users")
+}
+
+model Session {
+  id         Int       @id @default(autoincrement())
+  userId     Int       @map("user_id")
+  tokenHash  String    @unique @map("token_hash")
+  remember   Boolean   @default(false) // true = giữ 30 ngày
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz
+  userAgent  String?   @map("user_agent")
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model PasswordResetToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz
+  usedAt    DateTime? @map("used_at") @db.Timestamptz
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+// ───────────── 2. Tòa và phòng ─────────────
+
+model Building {
+  id          Int       @id @default(autoincrement())
+  code        String    @unique @db.VarChar(6) // vd CG01, in trên hợp đồng
+  name        String    @db.VarChar(100)
+  address     String    @db.VarChar(255)
+  district    String    @db.VarChar(50)
+  ward        String    @db.VarChar(50)
+  managerId   Int?      @map("manager_id") // null = liên hệ Boss
+  waterMode   WaterMode @map("water_mode")
+  dueDays     Int       @default(5) @map("due_days")
+  amenities   Json      @default("[]")
+  description String?
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  manager       User?          @relation(fields: [managerId], references: [id], onDelete: SetNull)
+  rooms         Room[]
+  services      Service[]
+  ratePlans     RatePlan[]
+  contracts     Contract[]
+  announcements Announcement[]
+
+  @@index([district, ward])
+  @@index([managerId])
+  @@map("buildings")
+}
+
+model Room {
+  id               Int      @id @default(autoincrement())
+  buildingId       Int      @map("building_id")
+  code             String   @db.VarChar(10) // vd 203
+  floor            Int
+  areaM2           Decimal  @map("area_m2") @db.Decimal(5, 1)
+  price            Int? // giá đã duyệt hiện hành; null = chưa duyệt, không hiện công khai
+  maxOccupants     Int      @default(2) @map("max_occupants")
+  furniture        Json     @default("[]")
+  description      String?
+  underMaintenance Boolean  @default(false) @map("under_maintenance")
+  isActive         Boolean  @default(true) @map("is_active")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  building      Building       @relation(fields: [buildingId], references: [id], onDelete: Restrict)
+  images        RoomImage[]
+  prices        RoomPrice[]
+  viewings      Viewing[]
+  contracts     Contract[]
+  meterReadings MeterReading[]
+  announcements Announcement[]
+
+  @@unique([buildingId, code])
+  @@unique([id, buildingId]) // đích cho khóa ngoại kép (cùng tòa)
+  @@map("rooms")
+}
+
+model RoomImage {
+  id        Int    @id @default(autoincrement())
+  roomId    Int    @map("room_id")
+  url       String
+  publicId  String @map("public_id") // id ảnh trên Cloudinary
+  sortOrder Int    @default(0) @map("sort_order")
+
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId])
+  @@map("room_images")
+}
+
+// ───────────── 3. Giá và đơn giá ─────────────
+
+model RoomPrice {
+  id            Int            @id @default(autoincrement())
+  roomId        Int            @map("room_id")
+  price         Int
+  effectiveFrom DateTime       @map("effective_from") @db.Date
+  status        ApprovalStatus @default(PENDING)
+  reason        String?
+  proposedById  Int            @map("proposed_by_id")
+  reviewedById  Int?           @map("reviewed_by_id")
+  reviewedAt    DateTime?      @map("reviewed_at") @db.Timestamptz
+  reviewNote    String?        @map("review_note")
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz
+
+  room       Room  @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  proposedBy User  @relation("RoomPriceProposer", fields: [proposedById], references: [id], onDelete: Restrict)
+  reviewedBy User? @relation("RoomPriceReviewer", fields: [reviewedById], references: [id], onDelete: Restrict)
+
+  @@index([roomId, effectiveFrom])
+  @@map("room_prices")
+}
+
+model Service {
+  id         Int         @id @default(autoincrement())
+  buildingId Int         @map("building_id")
+  name       String      @db.VarChar(50) // vd Wifi, Rác, Gửi xe máy
+  unit       ServiceUnit
+  isActive   Boolean     @default(true) @map("is_active")
+
+  building         Building          @relation(fields: [buildingId], references: [id], onDelete: Restrict)
+  ratePlans        RatePlan[]
+  contractServices ContractService[]
+  vehicles         Vehicle[]
+
+  @@unique([buildingId, name])
+  @@unique([id, buildingId])
+  @@map("services")
+}
+
+/// Bảng giá có ngày hiệu lực: điện (nhiều bậc), nước, hoặc một dịch vụ (1 bậc).
+/// Giá áp cho một kỳ = bản APPROVED có effective_from lớn nhất ≤ ngày bắt đầu kỳ.
+model RatePlan {
+  id            Int            @id @default(autoincrement())
+  buildingId    Int            @map("building_id")
+  kind          RateKind
+  serviceId     Int?           @map("service_id") // bắt buộc khi kind = SERVICE
+  effectiveFrom DateTime       @map("effective_from") @db.Date
+  status        ApprovalStatus @default(PENDING)
+  reason        String?
+  proposedById  Int            @map("proposed_by_id")
+  reviewedById  Int?           @map("reviewed_by_id")
+  reviewedAt    DateTime?      @map("reviewed_at") @db.Timestamptz
+  reviewNote    String?        @map("review_note")
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz
+
+  building   Building   @relation(fields: [buildingId], references: [id], onDelete: Restrict)
+  service    Service?   @relation(fields: [serviceId, buildingId], references: [id, buildingId], onDelete: Restrict)
+  proposedBy User       @relation("RatePlanProposer", fields: [proposedById], references: [id], onDelete: Restrict)
+  reviewedBy User?      @relation("RatePlanReviewer", fields: [reviewedById], references: [id], onDelete: Restrict)
+  tiers      RateTier[]
+
+  @@index([buildingId, kind, effectiveFrom])
+  @@map("rate_plans")
+}
+
+model RateTier {
+  id         Int  @id @default(autoincrement())
+  ratePlanId Int  @map("rate_plan_id")
+  tierNo     Int  @map("tier_no") // 1, 2, 3...
+  upTo       Int? @map("up_to") // kWh cận trên của bậc; null = không giới hạn
+  unitPrice  Int  @map("unit_price")
+
+  ratePlan RatePlan @relation(fields: [ratePlanId], references: [id], onDelete: Cascade)
+
+  @@unique([ratePlanId, tierNo])
+  @@map("rate_tiers")
+}
+
+// ───────────── 4. Khách và hợp đồng ─────────────
+
+model Viewing {
+  id          Int           @id @default(autoincrement())
+  roomId      Int           @map("room_id")
+  guestName   String        @map("guest_name") @db.VarChar(100)
+  guestPhone  String        @map("guest_phone") @db.VarChar(10)
+  visitDate   DateTime      @map("visit_date") @db.Date
+  timeSlot    String        @map("time_slot") @db.VarChar(20)
+  note        String?
+  source      ViewingSource @default(WEB)
+  status      ViewingStatus @default(NEW)
+  handledById Int?          @map("handled_by_id")
+  outcomeNote String?       @map("outcome_note")
+  contractId  Int?          @unique @map("contract_id") // hợp đồng sinh ra khi chốt
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  room      Room      @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  handledBy User?     @relation(fields: [handledById], references: [id], onDelete: SetNull)
+  contract  Contract? @relation(fields: [contractId], references: [id], onDelete: SetNull)
+
+  @@index([roomId, visitDate])
+  @@index([status])
+  @@map("viewings")
+}
+
+model Contract {
+  id                  Int            @id @default(autoincrement())
+  code                String         @unique @db.VarChar(20) // vd HD000123
+  buildingId          Int            @map("building_id") // lưu kèm để lọc theo tòa và làm khóa ngoại kép
+  roomId              Int            @map("room_id")
+  tenantId            Int            @map("tenant_id")
+  previousContractId  Int?           @unique @map("previous_contract_id") // gia hạn từ hợp đồng nào
+  startDate           DateTime       @map("start_date") @db.Date // ngày vào ở
+  termMonths          Int            @map("term_months")
+  endDate             DateTime       @map("end_date") @db.Date
+  billingDay          Int            @map("billing_day") // 1–31, ngày thu hằng tháng
+  rent                Int
+  deposit             Int
+  status              ContractStatus @default(HOLD)
+  terms               String?
+  pdfUrl              String?        @map("pdf_url")
+  signedScanUrl       String?        @map("signed_scan_url")
+  signedAt            DateTime?      @map("signed_at") @db.Timestamptz
+  movedInAt           DateTime?      @map("moved_in_at") @db.Timestamptz
+  moveOutNoticeDate   DateTime?      @map("move_out_notice_date") @db.Date
+  plannedMoveOutDate  DateTime?      @map("planned_move_out_date") @db.Date
+  endedAt             DateTime?      @map("ended_at") @db.Timestamptz
+  cancelReason        String?        @map("cancel_reason")
+  createdById         Int            @map("created_by_id")
+  createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  building         Building          @relation(fields: [buildingId], references: [id], onDelete: Restrict)
+  room             Room              @relation(fields: [roomId, buildingId], references: [id, buildingId], onDelete: Restrict)
+  tenant           User              @relation("ContractTenant", fields: [tenantId], references: [id], onDelete: Restrict)
+  createdBy        User              @relation("ContractCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  previousContract Contract?         @relation("Renewal", fields: [previousContractId], references: [id], onDelete: Restrict)
+  nextContract     Contract?         @relation("Renewal")
+  viewing          Viewing?
+  services         ContractService[]
+  occupants        Occupant[]
+  vehicles         Vehicle[]
+  meterReadings    MeterReading[]
+  invoices         Invoice[]
+  settlement       Settlement?
+  requests         Request[]
+
+  @@unique([id, buildingId])
+  @@index([tenantId])
+  @@index([buildingId, status])
+  @@index([status, endDate])
+  @@map("contracts")
+}
+
+/// Dịch vụ khách chọn khi ký (theo phòng hoặc theo người). Gửi xe đi qua bảng vehicles.
+model ContractService {
+  contractId Int @map("contract_id")
+  serviceId  Int @map("service_id")
+  buildingId Int @map("building_id")
+
+  contract Contract @relation(fields: [contractId, buildingId], references: [id, buildingId], onDelete: Cascade)
+  service  Service  @relation(fields: [serviceId, buildingId], references: [id, buildingId], onDelete: Restrict)
+
+  @@id([contractId, serviceId])
+  @@map("contract_services")
+}
+
+model Occupant {
+  id           Int       @id @default(autoincrement())
+  contractId   Int       @map("contract_id")
+  fullName     String    @map("full_name") @db.VarChar(100)
+  phone        String?   @db.VarChar(10)
+  dateOfBirth  DateTime? @map("date_of_birth") @db.Date
+  idNumberEnc  String?   @map("id_number_enc") // số CCCD đã mã hóa ở BE (AES-GCM)
+  idNumberLast4 String?  @map("id_number_last4") @db.Char(4) // để hiển thị/tra cứu
+  idFrontUrl   String?   @map("id_front_url") // ảnh CCCD lưu Cloudinary chế độ riêng tư
+  idBackUrl    String?   @map("id_back_url")
+  isSigner     Boolean   @default(false) @map("is_signer")
+  moveInDate   DateTime  @map("move_in_date") @db.Date
+  moveOutDate  DateTime? @map("move_out_date") @db.Date
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@index([contractId])
+  @@map("occupants")
+}
+
+model Vehicle {
+  id           Int         @id @default(autoincrement())
+  contractId   Int         @map("contract_id")
+  buildingId   Int         @map("building_id")
+  serviceId    Int         @map("service_id") // dịch vụ gửi xe tương ứng (giá theo loại xe)
+  plate        String      @db.VarChar(15)
+  type         VehicleType
+  isActive     Boolean     @default(true) @map("is_active")
+  registeredAt DateTime    @map("registered_at") @db.Date
+  removedAt    DateTime?   @map("removed_at") @db.Date
+
+  contract Contract @relation(fields: [contractId, buildingId], references: [id, buildingId], onDelete: Restrict)
+  service  Service  @relation(fields: [serviceId, buildingId], references: [id, buildingId], onDelete: Restrict)
+
+  @@index([plate])
+  @@index([contractId])
+  @@map("vehicles")
+}
+
+// ───────────── 5. Điện nước và hóa đơn ─────────────
+
+model MeterReading {
+  id              Int       @id @default(autoincrement())
+  roomId          Int       @map("room_id")
+  contractId      Int?      @map("contract_id")
+  kind            MeterKind
+  value           Int // số kWh hoặc m³ trên đồng hồ
+  readOn          DateTime  @map("read_on") @db.Date
+  photoUrl        String?   @map("photo_url")
+  isMeterReplaced Boolean   @default(false) @map("is_meter_replaced")
+  oldMeterFinal   Int?      @map("old_meter_final") // số cuối của đồng hồ cũ khi thay
+  readById        Int       @map("read_by_id")
+  note            String?
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  room     Room      @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  contract Contract? @relation(fields: [contractId], references: [id], onDelete: SetNull)
+  readBy   User      @relation(fields: [readById], references: [id], onDelete: Restrict)
+
+  @@unique([roomId, kind, readOn]) // mỗi ngày một số; ngày trả và ngày vào ở dùng chung
+  @@map("meter_readings")
+}
+
+/// Mã hiển thị và nội dung chuyển khoản = "TT" + id (vd TT1523), không lưu thành cột.
+model Invoice {
+  id               Int           @id @default(autoincrement())
+  contractId       Int           @map("contract_id")
+  type             InvoiceType
+  periodNo         Int           @default(0) @map("period_no") // 0 = cọc/cuối, 1..N = kỳ tháng
+  periodStart      DateTime?     @map("period_start") @db.Date
+  periodEnd        DateTime?     @map("period_end") @db.Date
+  issueDate        DateTime?     @map("issue_date") @db.Date
+  dueDate          DateTime?     @map("due_date") @db.Date
+  total            Int           @default(0)
+  status           InvoiceStatus @default(DRAFT)
+  replacesId       Int?          @unique @map("replaces_id") // lập lại thay hóa đơn đã hủy
+  settlementId     Int?          @map("settlement_id") // khi status = SETTLED
+  cancelReason     String?       @map("cancel_reason")
+  createdById      Int?          @map("created_by_id") // null = cron tạo
+  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  contract        Contract          @relation(fields: [contractId], references: [id], onDelete: Restrict)
+  replaces        Invoice?          @relation("Reissue", fields: [replacesId], references: [id], onDelete: Restrict)
+  replacedBy      Invoice?          @relation("Reissue")
+  settlement      Settlement?       @relation("MergedInvoices", fields: [settlementId], references: [id], onDelete: Restrict)
+  finalOf         Settlement?       @relation("FinalInvoice")
+  createdBy       User?             @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  lines           InvoiceLine[]
+  payment         Payment?
+  bankTransactions BankTransaction[]
+
+  @@index([contractId])
+  @@index([status, dueDate])
+  @@map("invoices")
+}
+
+model InvoiceLine {
+  id        Int      @id @default(autoincrement())
+  invoiceId Int      @map("invoice_id")
+  kind      LineKind
+  label     String   @db.VarChar(120) // vd "Điện bậc 2 (51–100 kWh)"
+  quantity  Int
+  unitPrice Int      @map("unit_price")
+  amount    Int
+  meta      Json     @default("{}") // chỉ số cũ/mới, bậc, kỳ...
+  sortOrder Int      @default(0) @map("sort_order")
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@map("invoice_lines")
+}
+
+model BankTransaction {
+  id            Int          @id @default(autoincrement())
+  provider      BankProvider
+  providerTxId  String       @map("provider_tx_id")
+  amount        Int
+  content       String
+  accountNumber String       @map("account_number") @db.VarChar(30)
+  receivedAt    DateTime     @map("received_at") @db.Timestamptz
+  raw           Json
+  status        BankTxStatus
+  invoiceId     Int?         @map("invoice_id")
+  handledById   Int?         @map("handled_by_id")
+  handledAt     DateTime?    @map("handled_at") @db.Timestamptz
+  note          String?
+
+  invoice   Invoice? @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  handledBy User?    @relation(fields: [handledById], references: [id], onDelete: SetNull)
+  payment   Payment?
+
+  @@unique([provider, providerTxId]) // webhook gửi lại thì bỏ qua
+  @@index([status])
+  @@map("bank_transactions")
+}
+
+/// Không thanh toán một phần → mỗi hóa đơn đúng một dòng thanh toán.
+model Payment {
+  id                Int           @id @default(autoincrement())
+  invoiceId         Int           @unique @map("invoice_id")
+  amount            Int
+  method            PaymentMethod
+  source            PaymentSource
+  bankTransactionId Int?          @unique @map("bank_transaction_id")
+  recordedById      Int?          @map("recorded_by_id")
+  paidAt            DateTime      @map("paid_at") @db.Timestamptz
+  note              String?
+
+  invoice         Invoice          @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  bankTransaction BankTransaction? @relation(fields: [bankTransactionId], references: [id], onDelete: Restrict)
+  recordedBy      User?            @relation(fields: [recordedById], references: [id], onDelete: Restrict)
+
+  @@index([paidAt])
+  @@map("payments")
+}
+
+model Settlement {
+  id               Int       @id @default(autoincrement())
+  contractId       Int       @unique @map("contract_id")
+  moveOutDate      DateTime  @map("move_out_date") @db.Date
+  deposit          Int
+  lastPeriodAmount Int       @map("last_period_amount") // phòng + điện nước kỳ đang ở
+  remainingRent    Int       @default(0) @map("remaining_rent") // dọn trước hạn: phòng đến hết HĐ
+  previousDebt     Int       @default(0) @map("previous_debt") // hóa đơn cũ chưa trả, gộp vào đây
+  damages          Int       @default(0)
+  depositForfeit   Int       @default(0) @map("deposit_forfeit") // phần cọc giữ lại thêm (QL quyết)
+  net              Int // = deposit − các khoản trên; âm = khách còn thiếu
+  finalInvoiceId   Int?      @unique @map("final_invoice_id") // có khi net < 0
+  refundPaidAt     DateTime? @map("refund_paid_at") @db.Timestamptz
+  note             String?
+  settledById      Int       @map("settled_by_id")
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  contract       Contract  @relation(fields: [contractId], references: [id], onDelete: Restrict)
+  finalInvoice   Invoice?  @relation("FinalInvoice", fields: [finalInvoiceId], references: [id], onDelete: Restrict)
+  mergedInvoices Invoice[] @relation("MergedInvoices")
+  settledBy      User      @relation(fields: [settledById], references: [id], onDelete: Restrict)
+
+  @@map("settlements")
+}
+
+// ───────────── 6. Yêu cầu và thông báo ─────────────
+
+model Request {
+  id           Int           @id @default(autoincrement())
+  contractId   Int           @map("contract_id")
+  type         RequestType
+  status       RequestStatus @default(PENDING)
+  title        String        @db.VarChar(150)
+  description  String?
+  photos       Json          @default("[]")
+  payload      Json          @default("{}") // theo loại: ngày trả phòng, người/xe thêm bớt, hóa đơn bị lỗi
+  cost         Int? // chi phí sửa (chỉ sự cố, chủ trả)
+  decisionNote String?       @map("decision_note")
+  createdById  Int           @map("created_by_id")
+  handledById  Int?          @map("handled_by_id")
+  escalatedAt  DateTime?     @map("escalated_at") @db.Timestamptz
+  resolvedAt   DateTime?     @map("resolved_at") @db.Timestamptz
+  closedAt     DateTime?     @map("closed_at") @db.Timestamptz
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  contract  Contract @relation(fields: [contractId], references: [id], onDelete: Restrict)
+  createdBy User     @relation("RequestCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  handledBy User?    @relation("RequestHandler", fields: [handledById], references: [id], onDelete: SetNull)
+
+  @@index([contractId])
+  @@index([status, type])
+  @@map("requests")
+}
+
+model Announcement {
+  id         Int      @id @default(autoincrement())
+  buildingId Int?     @map("building_id") // null = mọi tòa (chỉ Boss)
+  roomId     Int?     @map("room_id") // gửi riêng một phòng
+  title      String   @db.VarChar(150)
+  body       String
+  authorId   Int      @map("author_id")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  building      Building?      @relation(fields: [buildingId], references: [id], onDelete: Restrict)
+  room          Room?          @relation(fields: [roomId, buildingId], references: [id, buildingId], onDelete: Restrict)
+  author        User           @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  notifications Notification[]
+
+  @@map("announcements")
+}
+
+model Notification {
+  id             Int              @id @default(autoincrement())
+  userId         Int              @map("user_id")
+  kind           NotificationKind
+  title          String           @db.VarChar(150)
+  body           String?
+  link           String? // vd /thue/hoa-don/1523
+  announcementId Int?             @map("announcement_id")
+  readAt         DateTime?        @map("read_at") @db.Timestamptz
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  announcement Announcement? @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@map("notifications")
+}
+
+// ───────────── 7. Hệ thống ─────────────
+
+model Setting {
+  key         String   @id @db.VarChar(50) // vd bank_account, webhook, contract_template
+  value       Json
+  updatedById Int?     @map("updated_by_id")
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  updatedBy User? @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@map("settings")
+}
+
+model AuditLog {
+  id        BigInt   @id @default(autoincrement())
+  actorId   Int?     @map("actor_id") // null = hệ thống (cron, webhook)
+  action    String   @db.VarChar(50) // vd invoice.reissue, price.approve
+  entity    String   @db.VarChar(50)
+  entityId  Int      @map("entity_id")
+  before    Json?
+  after     Json?
+  ip        String?  @db.VarChar(45)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([entity, entityId])
+  @@index([actorId, createdAt])
+  @@map("audit_logs")
+}
