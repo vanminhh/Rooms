@@ -68,3 +68,5 @@ Việc sau khi chép (bản nháp riêng trong `Artifacts/`): thêm `--rooms-err
 Đã chép vào file chính 29/10/2026 bằng apply-draft.mjs: 8 file. Bước chuyển thư mục vào `approved/` bị Windows chặn (EPERM: dev server Vite chạy từ 27/10 giữ thư mục); chủ dự án đồng ý tắt server, rồi thư mục được chuyển bằng `fs.renameSync`.
 
 Kiểm trên file chính 29/10/2026: `npm run test:components` 40/40, `npm run build` và `npm run lint` qua; `/components.html#form` hiện mục "10 / Biểu mẫu" đủ 5 thành phần, thử bấm "Hiện"/"Ẩn", gửi form (nút khóa + spinner, không gửi lần hai, hiện lỗi AUTH-01 với `role="alert"`), màu lỗi `#9b2c1f`, không lỗi console.
+
+Đã dọn 29/10/2026 (theo luật dọn `approved/` trong `Artifacts/README.md`): xóa bản sao `package.json`, `src/component-preview.css`, `src/components/FormFields.tsx`, `src/components/README.md`, `src/components/index.ts`, `src/components/rooms.css`, `src/pages/ComponentPreview.tsx`, `tests/form-fields.test.mjs` (lúc dọn, cả 8 file trùng khớp với file chính cùng tên trong `Source/frontend/`) và file shim `preview.html`. Giữ `REVIEW.md` và `PLAN.md` (thiết kế, quyết định D1–D2, giả định A1–A4). Mã commit: ca59d0c.
