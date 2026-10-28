@@ -45,3 +45,5 @@ Chưa chạy được seed: chưa có Prisma, migration và database (phần 1 s
 - **Người thuê có hợp đồng chính là người thuê có cờ đổi mật khẩu** (giống luồng thật CON-07: ký xong mới nhận mật khẩu tạm). Người thuê bị khóa không có hợp đồng.
 
 Đã chép vào file chính 28/10/2026 bằng apply-draft.mjs: 1 file.
+
+Đã dọn 28/10/2026 (theo luật dọn `approved/` trong `Artifacts/README.md`): xóa bản sao `docs/phase-1-foundation/feature_p1-1-backend-foundation.md` (lúc dọn, trùng khớp với file cùng đường dẫn ở gốc repo). Giữ `REVIEW.md`. Mã commit: 2e7a6b2.

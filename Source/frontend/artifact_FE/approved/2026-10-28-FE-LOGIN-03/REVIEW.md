@@ -33,3 +33,5 @@ Chỉ thêm 4 dòng `server.proxy`, phần còn lại của file giữ nguyên.
 - Backend chạy cổng 3000 khi dev (mặc định của NestJS, đúng như task ghi).
 
 Đã chép vào file chính 28/10/2026 bằng apply-draft.mjs: 1 file.
+
+Đã dọn 28/10/2026 (theo luật dọn `approved/` trong `Artifacts/README.md`): xóa bản sao `vite.config.ts` (lúc dọn, trùng khớp với `Source/frontend/vite.config.ts`). Giữ `REVIEW.md`. Mã commit: 2e7a6b2.
