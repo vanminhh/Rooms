@@ -5,7 +5,7 @@ Task / spec: Mockup thiết kế (chưa có task) · 30-frontend "Trang chủ", 
 
 ## Làm gì, vì sao
 
-Chủ dự án (26/10/2026) gửi ảnh thiết kế trang chủ ROOMS (lần 1: hero và "Vì sao chọn ROOMS?"; lần 2: cả trang dài `Artifacts/layout_rooms/2026-10-26-stitch-mockups/mockup_web_reference_full.png`, kèm bộ ảnh `image_mockup/`) và yêu cầu dựng tiếp vào mockup này, kết hợp với mô hình 3D của `../2026-10-26-building-3d/`. Vẫn dùng bộ kit An Lâm.
+Chủ dự án (26/10/2026) gửi ảnh thiết kế trang chủ ROOMS (lần 1: hero và "Vì sao chọn ROOMS?"; lần 2: cả trang dài `Artifacts/layout_rooms/2026-10-26-stitch-mockups/public-home_full.png`, kèm bộ ảnh `image_mockup/`) và yêu cầu dựng tiếp vào mockup này, kết hợp với mô hình 3D của `../2026-10-26-building-3d/`. Vẫn dùng bộ kit An Lâm.
 
 Trang hiện có, từ trên xuống (phần 1 và 2 giữ nguyên từ lần 1):
 

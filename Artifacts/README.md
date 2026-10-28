@@ -20,6 +20,7 @@ Mỗi việc là một thư mục `<YYYY-MM-DD>-<mã task hoặc tên ngắn>/` 
 
 Trạng thái: CHỜ DUYỆT        <!-- CHỜ DUYỆT · ĐÃ DUYỆT dd/mm/yyyy · TỪ CHỐI dd/mm/yyyy -->
 Task / spec: FE-LOGIN-06 · KIT-07, UI-08
+Gốc: a1b2c3d                 <!-- `git rev-parse --short HEAD` lúc tạo bản nháp; bắt buộc khi bản nháp sửa file đang có -->
 
 ## Làm gì, vì sao
 ## File sẽ thêm / sửa / xóa ở bản chính
@@ -31,11 +32,12 @@ Task / spec: FE-LOGIN-06 · KIT-07, UI-08
 
 ## Quy trình
 
-1. Agent tạo thư mục bản nháp + `REVIEW.md`, chạy kiểm tra ngay trong vùng nháp.
+1. Agent tạo thư mục bản nháp + `REVIEW.md`, chạy kiểm tra ngay trong vùng nháp. Nếu bản nháp sửa file đang có: file đó phải đã commit, và dòng `Gốc` ghi commit hiện tại (`git rev-parse --short HEAD`) trước khi chép file vào bản nháp.
 2. Agent báo chủ dự án đường dẫn bản nháp và **dừng, chờ duyệt**. Không có câu "đồng ý" rõ ràng trong chat thì không làm bước 3.
 3. Được duyệt: agent đổi trạng thái thành `ĐÃ DUYỆT <ngày>` rồi chạy `node .claude/scripts/apply-draft.mjs <thư mục nháp>`.
    - Claude Code hỏi chủ dự án xác nhận **một lần** cho cả bản nháp.
    - Lệnh chép mọi file sang đích, trừ `REVIEW.md`, `PLAN.md`, `ref/` và `preview.html`.
+   - Lệnh **không chép file nào** nếu một file đích đã đổi so với commit `Gốc` (vd bản nháp khác hoặc bạn trong nhóm vừa sửa nó). Khi đó: xem `git diff <Gốc> -- <file>`, gộp thay đổi vào bản nháp, commit file chính, ghi lại `Gốc` bằng commit mới, chạy lại.
    - Sau đó lệnh chuyển cả thư mục vào `approved/` của vùng nháp đó để giữ lịch sử.
    - File cần xóa ở bản chính thì làm tay, sau khi chủ dự án đồng ý.
 4. Chạy lại kiểm tra của app.
@@ -49,6 +51,6 @@ Ngoại lệ, không cần qua vùng nháp: cập nhật dấu trạng thái tas
 
 ## Cách chạy thử trong vùng nháp
 
-- **Frontend:** `npm run dev` trong `Source/frontend`, tạo `preview.html` trong thư mục bản nháp import component nháp (và `../../src/components` nếu cần), mở `http://localhost:5173/artifact_FE/<thư-mục-nháp>/preview.html`. `npm run lint` cũng kiểm tra file trong `artifact_FE/`.
+- **Frontend:** `npm run dev` trong `Source/frontend`, tạo `preview.html` trong thư mục bản nháp import component nháp (và `../../src/components` nếu cần), mở `http://localhost:5173/artifact_FE/<thư-mục-nháp>/preview.html`. `npm run lint` cũng kiểm tra file trong `artifact_FE/` (trừ `approved/`).
 - **Backend:** đặt test `*.spec.ts` trong thư mục bản nháp; chạy riêng bằng `npx vitest run artifact_BE/<thư-mục-nháp>`. Lưu ý `npm run test` cũng chạy các test này.
 - **Dùng chung:** tùy loại (vd `node docs/database/check-constraints.mjs` với schema nháp đặt trong `Artifacts/`).
