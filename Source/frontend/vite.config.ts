@@ -5,6 +5,10 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   plugins: [react(), babel({ presets: [reactCompilerPreset()] })],
+  // Same-origin API in dev so auth cookies work without CORS (FE-LOGIN-03).
+  server: {
+    proxy: { '/api': 'http://localhost:3000' },
+  },
   build: {
     rolldownOptions: {
       input: {

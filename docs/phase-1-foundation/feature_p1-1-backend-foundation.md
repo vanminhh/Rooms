@@ -15,9 +15,10 @@ Rules: mark `[~]` when you start a task, `[x]` only after its "Done when" is ver
 
 1. `CLAUDE.md` (root) and `Source/backend/CLAUDE.md`
 2. `docs/spec/00-overview.md` – roles, global rules G-01..G-10, decisions
-3. `docs/spec/01-architecture.md` – API-01..08, error codes
-4. `docs/spec/02-database.md` – conventions, the DB check; tables `users`, `sessions`, `password_reset_tokens`, `buildings`, `settings`
+3. `docs/spec/01-architecture.md` – API-01..08, error codes, the roadmap's Phase 1 seed
+4. `docs/spec/02-database.md` – conventions, the DB check; tables `users`, `sessions`, `password_reset_tokens`, `buildings`, `settings`, and for the seed `rooms`, `room_prices`, `services`, `rate_plans`, `rate_tiers`, `contracts`, `contract_services`, `occupants`, `vehicles`, `meter_readings`
 5. `docs/spec/10-auth.md` – roles and account states; the seed (BE-LOGIN-06) must serve the login tests of part 2
+6. For the seed only: `11-buildings-rooms.md` (SVC-01), `12-pricing.md` (PRC-04, RATE-02, seed values), `14-contracts.md` (CON-04, CON-07, CON-10), `16-billing.md` (periods, BIL-01, BIL-09)
 
 ## Scope
 
@@ -37,9 +38,15 @@ Out: everything from BE-LOGIN-09 on (part 2): passwords, tokens, auth endpoints,
   Done when: migration applied; `node prisma/check-constraints.mjs` (see `02-database.md`) still prints 50/50.
   Depends on: owner provides `DATABASE_URL` / `DIRECT_URL` (P1-SETUP-01: Supabase, already in `Source/backend/.env`; never paste it into chat).
 - [ ] **BE-LOGIN-05** `PrismaService` (global module) with graceful shutdown.
-- [ ] **BE-LOGIN-06** Seed (`prisma/seed.ts`, `npx prisma db seed`): 1 BOSS, 2 MANAGERs, 3 buildings (`CG01`, `DD01` → manager 1; `HM01` → no manager), 1 TENANT with `must_change_password = true`, 1 inactive TENANT. Dev passwords are fixed strings documented at the top of `seed.ts` (dev only).
-  Also seed `settings.default_contact` = Boss's `{ phone, zaloUrl, facebookUrl }` and `settings.bank_account` placeholders.
-  Done when: seed runs twice without errors (idempotent upsert by phone / building code / setting key).
+- [ ] **BE-LOGIN-06** Seed (`prisma/seed.ts`, `npx prisma db seed`), everything the roadmap lists for Phase 1 (`01-architecture.md#roadmap`). Every row goes in through the same rules the app enforces, so it passes `constraints.sql`.
+  - Users: 1 BOSS, 2 MANAGERs, 1 TENANT with `must_change_password = true`, 1 inactive TENANT. Dev passwords are fixed strings documented at the top of `seed.ts` (dev only).
+  - Buildings: `CG01`, `DD01` → manager 1; `HM01` → no manager. `water_mode = PER_M3`, `due_days = 5`.
+  - Settings: `settings.default_contact` = Boss's `{ phone, zaloUrl, facebookUrl }` and `settings.bank_account` placeholders.
+  - Rooms: 2–3 per building. A priced room has an APPROVED `room_prices` row (`effective_from` 01/09/2026, proposed and reviewed by the Boss, PRC-04) and `rooms.price` set. Each building keeps at least one priced room free (for the public pages of Phase 2); `CG01` also has one room without a price (hidden from guests, CON-02).
+  - Services per building (SVC-01): "Wifi" ROOM, "Rác" PERSON, "Gửi xe máy" VEHICLE, "Gửi xe điện" VEHICLE.
+  - Rate plans per building, APPROVED by the Boss, `effective_from` 01/09/2026, with the seed values of `12-pricing.md`: ELECTRIC tiers 0–50: 3.000 · 51–100: 3.500 · 101+: 4.000; WATER 15.000 đ/m³; Wifi 100.000; Rác 30.000; Gửi xe máy 100.000 (RATE-02: one tier for water and services). "Gửi xe điện" gets no rate plan until the owner gives its price (Questions for the owner).
+  - Active contract: the TENANT with the flag holds one ACTIVE contract shaped like BIL-01 and BIL-09, so Phase 4 can reuse it: a `CG01` room priced 2.500.000, `start_date` 15/09/2026, `term_months` 6, `end_date` 14/03/2027, `billing_day` 15, `rent` 2.500.000, `deposit` 0 (CON-10: no deposit invoice needed). `signed_at` and `moved_in_at` set; the tenant is the signer occupant (CON-04, CCCD fields empty) plus a second occupant; contract services Wifi and Rác; 1 motorbike on "Gửi xe máy"; first readings on 15/09/2026: electric 1.284, water any value.
+  Done when: seed runs twice without errors (idempotent upsert by phone / building code / setting key / room code in its building / service name in its building / contract code).
 
 ## 1 · API skeleton
 
@@ -49,7 +56,7 @@ Out: everything from BE-LOGIN-09 on (part 2): passwords, tokens, auth endpoints,
 
 ## Questions for the owner
 
-- None yet. Add here (and mark the task `[!]`) if the spec does not answer something.
+- BE-LOGIN-06: what is the seed price of "Gửi xe điện" (đ/xe/kỳ)? `12-pricing.md` gives seed prices for Wifi, Rác and Gửi xe máy only. Until answered, the service is seeded without a rate plan.
 
 ## Issues log
 
