@@ -16,13 +16,13 @@ Adapted from the An Lâm resort template (reference project outside the repo: `D
 - **KIT-06** `StatusBadge` tones map to room status ([11-buildings-rooms.md](11-buildings-rooms.md#room-status)): `available` "Trống", `reserved` "Đã cọc", `occupied` "Đang thuê", `maintenance` "Bảo trì". Other statuses (invoice, request, contract) reuse `StatusBadge` with the labels in their module spec.
 - **KIT-07** A new shared component goes directly in `src/components/`, uses the tokens in `rooms.css`, is exported from `index.ts`, gets a sample in the preview page and, if it has logic, a test in `tests/`. A component used by one feature only stays in `src/features/<module>/`.
 - **KIT-08** `ImageJourney` needs a depth map per image (grayscale, near = brighter). Without one, use a still image.
-- **KIT-09** Colors and text weight (owner, 26/10/2026). Page `--rooms-sand` `#f8f2e6`, cards `--rooms-paper` `#fcf8ee`, lines `--rooms-line` `#ddd5c0`, cream blocks `#efe8d4`. Text uses `--rooms-text` `#0f2b26`, `--rooms-muted` `#2f3530`, `--rooms-accent-text` `#43301b` and `--rooms-gold-text` `#775830`; `--rooms-ink` and `--rooms-gold` are for backgrounds, borders and accents only. Small (≤ 13 px) and secondary text use weight 500. Text on light backgrounds keeps WCAG contrast ≥ 4.5.
+- **KIT-09** Colors and text weight (owner, 26/10/2026). Page `--rooms-sand` `#f8f2e6`, cards `--rooms-paper` `#fcf8ee`, lines `--rooms-line` `#ddd5c0`, cream blocks `#efe8d4`. Text uses `--rooms-text` `#0f2b26`, `--rooms-muted` `#2f3530`, `--rooms-accent-text` `#43301b` and `--rooms-gold-text` `#775830`; `--rooms-ink` and `--rooms-gold` are for backgrounds, borders and accents only. Errors use `--rooms-error` `#9b2c1f` (owner, 28/10/2026, FE-LOGIN-06) for error text, the border of an invalid field and the `FormError` block only; contrast 6.8 on sand, 7.1 on paper, 6.2 on cream. Small (≤ 13 px) and secondary text use weight 500. Text on light backgrounds keeps WCAG contrast ≥ 4.5.
 - **KIT-10** Logo: `RoomsHeader` and `Preloader` take `logoSrc="/images/rooms-logo.webp"` and show only its arched window + key. The crop in `rooms.css` is tied to that file. On the dark preloader the mark is shown with lightness inverted and hue kept.
 
 ## Preview and tests
 
 - Preview gallery: `/components.html` (entry `src/component-preview.tsx`, page `src/pages/ComponentPreview.tsx`, styles `src/component-preview.css`). Built together with `index.html` (`vite.config.ts`).
-- `npm run test:components`: 14 Node tests (journey frames, money format, WebGL lifecycle, reduced motion, interaction). Must stay green.
+- `npm run test:components`: 40 Node tests (journey frames, money format, WebGL lifecycle, reduced motion, interaction, form fields). Must stay green.
 
 ## Known limits
 

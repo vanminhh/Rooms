@@ -43,4 +43,4 @@ Schema files: [../database/schema.prisma](../database/schema.prisma) · [../data
 
 ## Status
 
-Only the UI kit exists (`Source/frontend/src/components/`, 14 tests); no feature is implemented yet. Task lists per feature: `Source/backend/src/modules/<module>/feature_<name>.md` and `Source/frontend/src/features/<module>/feature_<name>.md` (first one: `auth/feature_login.md`). `Source/backend` is a fresh NestJS app; `Source/frontend` has the UI kit, its preview page and a placeholder `main.tsx`. Roadmap: [01-architecture.md#roadmap](01-architecture.md#roadmap).
+Only the UI kit exists (`Source/frontend/src/components/`, 40 tests); no feature is implemented yet. Task lists per feature: `Source/backend/src/modules/<module>/feature_<name>.md` and `Source/frontend/src/features/<module>/feature_<name>.md` (first one: `auth/feature_login.md`). `Source/backend` is a fresh NestJS app; `Source/frontend` has the UI kit, its preview page and a placeholder `main.tsx`. Roadmap: [01-architecture.md#roadmap](01-architecture.md#roadmap).
