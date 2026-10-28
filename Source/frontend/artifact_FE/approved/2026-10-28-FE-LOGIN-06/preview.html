@@ -1,0 +1,65 @@
+<!doctype html>
+<!-- Draft-only preview of the form kit (not copied to the main files). Open through `npm run dev`:
+     http://localhost:5173/artifact_FE/2026-10-28-FE-LOGIN-06/preview.html -->
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600&family=Taviraj:ital,wght@0,200;0,300;0,400;1,200;1,300&display=swap" rel="stylesheet" />
+    <title>Rooms · Xem thử nháp · Biểu mẫu</title>
+    <style>
+      body { margin: 0; }
+      .draft-page { min-height: 100vh; padding: 40px 24px; display: grid; gap: 40px; align-content: start; }
+      .preview-form { display: grid; gap: 22px; max-width: 440px; }
+      .preview-form .rooms-button { justify-self: start; }
+      .preview-form-states { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); align-items: start; gap: 22px; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module">
+      import { createElement as h, useEffect, useRef, useState } from 'react'
+      import { createRoot } from 'react-dom/client'
+      import './src/components/rooms.css'
+      import { TextField, PasswordField, Checkbox, FormError, Spinner } from './src/components/FormFields.tsx'
+      import { RoomsButton } from '/src/components/Button.tsx'
+
+      function FormDemo() {
+        const [signingIn, setSigningIn] = useState(false)
+        const [failed, setFailed] = useState(false)
+        const timer = useRef(undefined)
+        useEffect(() => () => clearTimeout(timer.current), [])
+        const onSubmit = event => {
+          event.preventDefault()
+          if (signingIn) return
+          setSigningIn(true)
+          setFailed(false)
+          timer.current = setTimeout(() => { setSigningIn(false); setFailed(true) }, 1200)
+        }
+        return h('form', { className: 'preview-form', noValidate: true, onSubmit },
+          h(FormError, null, failed && 'Số điện thoại hoặc mật khẩu không đúng'),
+          h(TextField, { label: 'Số điện thoại', type: 'tel', inputMode: 'numeric', autoComplete: 'tel' }),
+          h(PasswordField, { label: 'Mật khẩu', autoComplete: 'current-password' }),
+          h(Checkbox, { label: 'Ghi nhớ đăng nhập' }),
+          h(RoomsButton, { type: 'submit', disabled: signingIn }, signingIn && h(Spinner, { label: 'Đang đăng nhập' }), 'Đăng nhập'),
+        )
+      }
+
+      createRoot(document.getElementById('root')).render(
+        h('div', { className: 'rooms-theme draft-page' },
+          h('h1', null, 'Biểu mẫu (bản nháp)'),
+          h(FormDemo),
+          h('form', { className: 'preview-form-states', noValidate: true, onSubmit: event => event.preventDefault() }, // a form only so Chrome does not log "password field is not in a form"
+            h(TextField, { label: 'Số điện thoại', defaultValue: '0912', error: 'Số điện thoại gồm 10 chữ số, bắt đầu bằng 0' }),
+            h(TextField, { label: 'Ô bị khóa', defaultValue: 'Không nhập được', disabled: true }),
+            h(PasswordField, { label: 'Mật khẩu bị khóa', autoComplete: 'current-password', disabled: true }),
+            h(TextField, { label: 'Chữ lỗi rất dài', error: 'x'.repeat(200) }),
+            h(Spinner, { label: 'Đang tải' }),
+          ),
+        ),
+      )
+    </script>
+  </body>
+</html>

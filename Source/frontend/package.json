@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:components": "node --test tests/components.test.mjs tests/image-journey.test.mjs tests/depth-scene.test.mjs tests/motion-preference.test.mjs tests/interaction.test.mjs"
+    "test:components": "node --test tests/components.test.mjs tests/image-journey.test.mjs tests/depth-scene.test.mjs tests/motion-preference.test.mjs tests/interaction.test.mjs tests/form-fields.test.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^6.0.1",

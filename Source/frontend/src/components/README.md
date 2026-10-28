@@ -1,6 +1,6 @@
 # Rooms — bộ component từ An Lâm
 
-15 component React/TypeScript dùng cho Trọ Thông Minh. Giữ sắc cát ấm, xanh trầm, chữ Taviraj/Manrope và các chuyển động của An Lâm; thay nội dung villa bằng phòng thuê theo tháng.
+20 component React/TypeScript dùng cho Trọ Thông Minh. Giữ sắc cát ấm, xanh trầm, chữ Taviraj/Manrope và các chuyển động của An Lâm; thay nội dung villa bằng phòng thuê theo tháng.
 
 Đây là **giao diện chính thức của frontend** (chủ dự án chốt ngày 25/10/2026). Luật dùng bộ component: `docs/spec/31-ui-kit.md`.
 
@@ -36,10 +36,12 @@ Mở đường dẫn `/components.html` trên địa chỉ Vite in ra. Trang `/`
 | `src/components/QuoteCarousel.tsx` | Chuyển lời chia sẻ có điều khiển rõ ràng |
 | `src/components/CostBreakdown.tsx` | Hiển thị các khoản và tổng tiền có sẵn |
 | `src/components/effects.tsx` | Reveal, cuộn mượt và preloader do trang cha điều khiển |
+| `src/components/FormFields.tsx` | Ô nhập, ô mật khẩu, checkbox, khối báo lỗi và spinner cho biểu mẫu |
 | `src/components/useReducedMotion.ts` | Theo dõi tùy chọn giảm chuyển động và dọn listener |
 | `src/shared/formatters.ts` | Định dạng tiền VND dùng chung |
 | `public/images/rooms-*.webp` | Ảnh gallery (bản WebP nhẹ) và 2 bản đồ chiều sâu `*-depth.webp` của ảnh Hà Nội; ảnh PNG gốc `mini-*.png` vẫn giữ |
-| `tests/*.test.mjs` | 14 test Node: chuyển cảnh, định dạng tiền, WebGL, giảm chuyển động, tương tác (`npm run test:components`) |
+| `tests/*.test.mjs` | 40 test Node: chuyển cảnh, định dạng tiền, WebGL, giảm chuyển động, tương tác, biểu mẫu (`npm run test:components`) |
+| `tests/form-fields.test.mjs` | 26 test của `FormFields.tsx` và CSS biểu mẫu: nối nhãn/lỗi, bật tắt mật khẩu, tương phản, kích thước vùng bấm |
 | `vite.config.ts` | Build đồng thời `index.html` và `components.html` |
 
 ## Dùng trong một trang
@@ -83,6 +85,11 @@ Import từ `index.ts` tự tải `rooms.css`. CSS được giới hạn trong v
 | `Reveal` | `children`, `delay?`, `className?` | Hiện nội dung khi cuộn |
 | `SmoothScroll` | `children` | Cuộn mượt Lenis, chỉ bọc một lần ở gốc trang |
 | `Preloader` | `visible`, `progress: 0..100`, `logoSrc?` | Màn hình chờ Rooms, tiến độ do bên gọi cung cấp; có `logoSrc` thì biểu tượng logo thay hình mặt trời |
+| `TextField` | Props input HTML (gồm `ref`, `name`, `onChange`, `onBlur`), `label`, `error?` | Bổ sung cho Rooms (biểu mẫu): `<label>` nối bằng `for`, chữ lỗi nối bằng `aria-describedby`, không kiểm tra dữ liệu |
+| `PasswordField` | Như `TextField` trừ `type`; nút "Hiện"/"Ẩn" | Bổ sung cho Rooms: tắt kiểm tra chính tả và tự viết hoa; truyền `autoComplete` |
+| `Checkbox` | Props input HTML trừ `type`, `label`, `error?` | Bổ sung cho Rooms: nhãn bọc quanh ô, vùng bấm cao tối thiểu 44px |
+| `FormError` | `children?` | Bổ sung cho Rooms: khối báo lỗi chung của biểu mẫu (`role="alert"`), không có nội dung thì không hiển thị |
+| `Spinner` | `label` (bắt buộc) | Bổ sung cho Rooms: vòng xoay, `label` chỉ đọc cho trình đọc màn hình; dùng được trong `RoomsButton` |
 
 `logoSrc` chỉ dùng với `/images/rooms-logo.webp`: CSS cắt phần cửa vòm + chìa khóa theo đúng bố cục file này (1275 × 1233). Đổi file logo thì phải sửa lại phần cắt trong `rooms.css`.
 

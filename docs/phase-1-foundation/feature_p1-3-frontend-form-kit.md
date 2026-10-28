@@ -25,13 +25,18 @@ Rules: mark `[~]` when you start a task, `[x]` only after its "Done when" is ver
 
 ## 1 · Shared pieces
 
-- [ ] **FE-LOGIN-06** Add the form pieces the kit does not have yet to `src/components/`: `TextField`, `PasswordField` (toggle "Hiện"/"Ẩn"), `Checkbox`, `FormError`, `Spinner`. Buttons are `RoomsButton`. Style with `rooms.css` tokens inside `.rooms-theme`, export from `index.ts`, add samples to `src/pages/ComponentPreview.tsx` (KIT-07). Each input has a `<label>`, visible focus, error text linked with `aria-describedby` (UI-08).
+- [x] **FE-LOGIN-06** Add the form pieces the kit does not have yet to `src/components/`: `TextField`, `PasswordField` (toggle "Hiện"/"Ẩn"), `Checkbox`, `FormError`, `Spinner`. Buttons are `RoomsButton`. Style with `rooms.css` tokens inside `.rooms-theme`, export from `index.ts`, add samples to `src/pages/ComponentPreview.tsx` (KIT-07). Each input has a `<label>`, visible focus, error text linked with `aria-describedby` (UI-08).
   Done when: the new pieces show in `/components.html`; `npm run test:components`, `npm run build`, `npm run lint` pass.
 
 ## Questions for the owner
 
-- None yet. Add here (and mark the task `[!]`) if the spec does not answer something.
+- FE-LOGIN-06 Q1: error color. A) new token `--rooms-error: #9b2c1f` (contrast ≈ 6.8 on sand) · B) no new color, `--rooms-accent-text` + bold + left border · C) another color code.
+  Answered 28/10/2026: A, `--rooms-error: #9b2c1f`.
+- FE-LOGIN-06 Q2: input style. A) full 1px `--rooms-ink` border, `--rooms-paper` background, 50px high like `RoomsButton` · B) underline only, like `RoomSearch` · C) wait for the approved auth-layouts reference (part 4).
+  Answered 28/10/2026: A, full border.
 
 ## Issues log
 
 <!-- When a task is [!], add: date · task ID · what failed · what is needed -->
+- 28/10/2026 · FE-LOGIN-06 · planner stopped at PLAN.md with two open UI questions (error color, input style); no checkpoint run yet · owner's answer to Q1 and Q2 (answered: A/A)
+- 28/10/2026 · FE-LOGIN-06 · CP-2 tester FAIL only because REVIEW.md was still the template (PLAN.md gave it to the coder, but coder.md forbids it) · main session filled REVIEW.md; CP-2 re-test, then reviewer
