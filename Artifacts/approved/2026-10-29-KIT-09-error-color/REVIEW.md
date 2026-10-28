@@ -39,3 +39,5 @@ FE-LOGIN-06 đã thêm token `--rooms-error: #9b2c1f` vào `rooms.css` và 26 te
 - Không có.
 
 Đã chép vào file chính 29/10/2026 bằng apply-draft.mjs: 2 file.
+
+Đã dọn 29/10/2026 (theo luật dọn `approved/` trong `Artifacts/README.md`): xóa bản sao `docs/spec/31-ui-kit.md` và `docs/spec/README.md` (lúc dọn, cả 2 trùng khớp với file cùng đường dẫn ở gốc repo). Giữ `REVIEW.md`. Mã commit: dcbdfb7.
