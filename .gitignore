@@ -7,5 +7,5 @@
 node_modules/
 dist/
 
-# Sinh ra khi chạy kiểm tra database (xem docs/database.md)
-docs/database/schema.sql
+# Sinh ra khi chạy kiểm tra database (xem docs/spec/02-database.md)
+Source/backend/prisma/schema.sql

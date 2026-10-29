@@ -1,6 +1,6 @@
 # 02 · Database
 
-Source files (verified): [schema.prisma](../database/schema.prisma) (26 models, 20 enums, every column commented) · [constraints.sql](../database/constraints.sql) (10 partial unique indexes, 38 CHECKs, 3 triggers) · [check-constraints.mjs](../database/check-constraints.mjs) (50 scenarios). Read `schema.prisma` for exact columns; this file explains the rules.
+Source files (verified): [schema.prisma](../../Source/backend/prisma/schema.prisma) (26 models, 20 enums, every column commented) · [constraints.sql](../../Source/backend/prisma/constraints.sql) (10 partial unique indexes, 38 CHECKs, 3 triggers) · [check-constraints.mjs](../../Source/backend/prisma/check-constraints.mjs) (50 scenarios). Read `schema.prisma` for exact columns; this file explains the rules.
 
 ## Conventions
 
@@ -62,11 +62,11 @@ All 50 scenarios in `check-constraints.mjs` pass: second Boss; bad/duplicate pho
 ## Run the DB check
 
 ```bash
-cd docs/database                      # or Source/backend/prisma after phase 1
-npm i --no-save prisma@6 @electric-sql/pglite@0.2
+cd Source/backend
+npm i --no-save @electric-sql/pglite@0.2   # prisma is already a dev dependency
 export DATABASE_URL=postgresql://u:p@localhost/db DIRECT_URL=postgresql://u:p@localhost/db   # dummy, not used
-npx prisma migrate diff --from-empty --to-schema-datamodel schema.prisma --script -o schema.sql
-node check-constraints.mjs . .        # expect: 50/50 tình huống đúng như mong đợi
+npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script -o prisma/schema.sql
+node prisma/check-constraints.mjs . prisma   # expect: 50/50 tình huống đúng như mong đợi
 ```
 
 Any schema change MUST keep this at 50/50 and SHOULD add a scenario for the new rule.

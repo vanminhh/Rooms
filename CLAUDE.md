@@ -20,7 +20,7 @@ Guard: `.claude/settings.json` runs `.claude/hooks/staging-guard.mjs` before eve
 ## Source of truth
 
 - `docs/spec/` is the specification. Start at `docs/spec/README.md`, always read `00-overview.md`, then only the module files your task needs.
-- `docs/database/schema.prisma` + `constraints.sql` are the verified schema (moves to `Source/backend/prisma/` in phase 1).
+- `Source/backend/prisma/schema.prisma` + `constraints.sql` are the verified schema.
 - If code and spec disagree, follow the spec and say so. If the spec is silent or marked `[OPEN]`, ask the owner; do not invent business rules. Things marked `[ASSUMPTION]` may be implemented but must be listed in your summary.
 - The claude.ai artifact pages linked in older notes are presentations only; ignore them when they differ from `docs/spec/`.
 
@@ -30,8 +30,8 @@ Guard: `.claude/settings.json` runs `.claude/hooks/staging-guard.mjs` before eve
 Artifacts/         shared staging area for drafts awaiting approval; approved/ = history; reviews/ = UI kit reviews
 assets/            raw source assets (logos, fonts, mockup PDFs, design images) – not served
 docs/spec/         specification (English, Vietnamese domain terms and UI text)
-docs/database/     schema.prisma, constraints.sql, check-constraints.mjs
 Source/backend/    NestJS 12 + Prisma 6 API – see Source/backend/CLAUDE.md
+  prisma/                                    schema.prisma, constraints.sql, check-constraints.mjs, migrations, seed
   src/modules/<module>/feature_<name>.md     backend task list of a feature
   artifact_BE/                               backend staging area (drafts, approved/)
 Source/frontend/   React 19 + Vite SPA – see Source/frontend/CLAUDE.md
@@ -96,8 +96,8 @@ npm run build          # tsc -b && vite build
 npm run lint
 npm run test:components   # UI kit tests, must stay green
 
-# database rule check (docs/database) – see docs/spec/02-database.md
-node check-constraints.mjs . .   # must print 50/50
+# database rule check (Source/backend) – see docs/spec/02-database.md
+node prisma/check-constraints.mjs . prisma   # must print 50/50
 ```
 
 ## Definition of done

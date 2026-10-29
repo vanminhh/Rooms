@@ -30,7 +30,7 @@ This folder is the **single source of truth** for what the system must do. Code,
 | [30-frontend.md](30-frontend.md) | 3 apps, 31 pages with routes, UI rules, Vietnamese labels |
 | [31-ui-kit.md](31-ui-kit.md) | Official UI kit in `Source/frontend/src/components/` (An Lâm style), usage rules, preview, tests |
 
-Schema files: [../database/schema.prisma](../database/schema.prisma) · [../database/constraints.sql](../database/constraints.sql) · [../database/check-constraints.mjs](../database/check-constraints.mjs).
+Schema files: [Source/backend/prisma/schema.prisma](../../Source/backend/prisma/schema.prisma) · [constraints.sql](../../Source/backend/prisma/constraints.sql) · [check-constraints.mjs](../../Source/backend/prisma/check-constraints.mjs).
 
 ## Conventions in this spec
 

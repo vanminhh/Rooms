@@ -14,7 +14,7 @@ Rules: these checks run on the main files after the part they check is applied. 
 
 - [ ] **P1-QA-01** Write the manual checklist in the section below, from FE-LOGIN-17 and the AUTH cases of BE-LOGIN-24 (part 2): plain Vietnamese steps a non-developer can follow – which seeded account, what to type, what must show on screen.
   Done when: every case of FE-LOGIN-17 and every AUTH case of BE-LOGIN-24 has a step. Can start right away.
-- [ ] **P1-QA-02** After part 1 is applied: run the database rule check as in `docs/spec/02-database.md` ("Run the DB check"), from `Source/backend/prisma/`.
+- [x] **P1-QA-02** After part 1 is applied: run the database rule check as in `docs/spec/02-database.md` ("Run the DB check"), from `Source/backend/prisma/`.
   Done when: it prints 50/50; result recorded below.
 - [ ] **P1-QA-03** After part 2 is applied: with the API running on the seeded dev database, log in with each seeded role through `POST /api/v1/auth/login` (any REST client), then try the inactive tenant (AUTH-02) and 6 wrong passwords in a row (AUTH-04).
   Done when: the answers match the cases listed in BE-LOGIN-24; results recorded below.
@@ -40,3 +40,4 @@ Rules: these checks run on the main files after the part they check is applied. 
 ## Issues log
 
 <!-- date · task ID · what was checked · pass/fail · what is needed -->
+- 29/10/2026 · P1-QA-02 · after part 1 applied, in `Source/backend`: `npm i --no-save @electric-sql/pglite@0.2`, `prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script -o prisma/schema.sql`, `node prisma/check-constraints.mjs . prisma` → "50/50 tình huống đúng như mong đợi" · pass · none

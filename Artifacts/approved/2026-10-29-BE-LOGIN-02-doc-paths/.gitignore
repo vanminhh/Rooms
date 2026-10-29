@@ -1,0 +1,11 @@
+# Bí mật (khóa database, Cloudinary, webhook ngân hàng): không bao giờ commit
+.env
+.env.*
+!.env.example
+
+# Phụ thuộc và bản build (mỗi app cũng có .gitignore riêng)
+node_modules/
+dist/
+
+# Sinh ra khi chạy kiểm tra database (xem docs/spec/02-database.md)
+Source/backend/prisma/schema.sql

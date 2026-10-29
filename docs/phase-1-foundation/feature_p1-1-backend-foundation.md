@@ -27,18 +27,18 @@ Out: everything from BE-LOGIN-09 on (part 2): passwords, tokens, auth endpoints,
 
 ## 0 · Foundation (needed before login can work)
 
-- [ ] **BE-LOGIN-01** Remove `ObserveModule` (placeholder keys `YOUR_APP_KEY`) from `src/app.module.ts` and the `@nestjs/observe` dependency.
+- [x] **BE-LOGIN-01** Remove `ObserveModule` (placeholder keys `YOUR_APP_KEY`) from `src/app.module.ts` and the `@nestjs/observe` dependency.
   Done when: `npm run build` and `npm run test` pass.
-- [ ] **BE-LOGIN-02** Install `prisma@6`, `@prisma/client@6`. Move (do not copy) `docs/database/schema.prisma`, `constraints.sql`, `check-constraints.mjs` to `Source/backend/prisma/`; update the paths in `docs/spec/02-database.md` and root `CLAUDE.md`.
+- [x] **BE-LOGIN-02** Install `prisma@6`, `@prisma/client@6`. Move (do not copy) `docs/database/schema.prisma`, `constraints.sql`, `check-constraints.mjs` to `Source/backend/prisma/`; update the paths in `docs/spec/02-database.md` and root `CLAUDE.md`.
   Done when: `npx prisma validate` passes and `docs/database/` no longer holds the files.
   Note: the packages are installed in P1-SETUP-02. The two doc files sit outside `Source/backend/`, so their path edits go in a separate small draft in `Artifacts/`; the old files in `docs/database/` are deleted by hand after the owner's OK.
-- [ ] **BE-LOGIN-03** Add `.env.example` with `DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`, `CCCD_KEY`, `BANK_WEBHOOK_SECRET`, `CLOUDINARY_URL`, `MAIL_FROM`, `APP_URL` (placeholder values only). Validate required env vars at startup (fail fast with a clear message).
+- [x] **BE-LOGIN-03** Add `.env.example` with `DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`, `CCCD_KEY`, `BANK_WEBHOOK_SECRET`, `CLOUDINARY_URL`, `MAIL_FROM`, `APP_URL` (placeholder values only). Validate required env vars at startup (fail fast with a clear message).
   Done when: starting without `DATABASE_URL` prints which variable is missing.
-- [ ] **BE-LOGIN-04** First migration: `npx prisma migrate dev --create-only --name init`, append `prisma/constraints.sql` to the generated `migration.sql`, then apply to the dev database (Neon or Supabase — ask the owner for the connection string; never commit it).
+- [x] **BE-LOGIN-04** First migration: `npx prisma migrate dev --create-only --name init`, append `prisma/constraints.sql` to the generated `migration.sql`, then apply to the dev database (Neon or Supabase — ask the owner for the connection string; never commit it).
   Done when: migration applied; `node prisma/check-constraints.mjs` (see `02-database.md`) still prints 50/50.
   Depends on: owner provides `DATABASE_URL` / `DIRECT_URL` (P1-SETUP-01: Supabase, already in `Source/backend/.env`; never paste it into chat).
-- [ ] **BE-LOGIN-05** `PrismaService` (global module) with graceful shutdown.
-- [ ] **BE-LOGIN-06** Seed (`prisma/seed.ts`, `npx prisma db seed`), everything the roadmap lists for Phase 1 (`01-architecture.md#roadmap`). Every row goes in through the same rules the app enforces, so it passes `constraints.sql`.
+- [x] **BE-LOGIN-05** `PrismaService` (global module) with graceful shutdown.
+- [x] **BE-LOGIN-06** Seed (`prisma/seed.ts`, `npx prisma db seed`), everything the roadmap lists for Phase 1 (`01-architecture.md#roadmap`). Every row goes in through the same rules the app enforces, so it passes `constraints.sql`.
   - Users: 1 BOSS, 2 MANAGERs, 1 TENANT with `must_change_password = true`, 1 inactive TENANT. Dev passwords are fixed strings documented at the top of `seed.ts` (dev only).
   - Buildings: `CG01`, `DD01` → manager 1; `HM01` → no manager. `water_mode = PER_M3`, `due_days = 5`.
   - Settings: `settings.default_contact` = Boss's `{ phone, zaloUrl, facebookUrl }` and `settings.bank_account` placeholders.
@@ -50,14 +50,28 @@ Out: everything from BE-LOGIN-09 on (part 2): passwords, tokens, auth endpoints,
 
 ## 1 · API skeleton
 
-- [ ] **BE-LOGIN-07** `main.ts`: global prefix `/api/v1`, cookie parser, global validation pipe (whitelist + forbid unknown fields), CORS off (FE uses the Vite dev proxy).
-- [ ] **BE-LOGIN-08** Response interceptor wrapping results as `{ data }` (API-02) and a global exception filter producing `{ error: { code, message, fields? } }` (API-03, API-04). One `ErrorCode` enum with the codes from `01-architecture.md#error-codes` plus `INVALID_CREDENTIALS`, `ACCOUNT_LOCKED` from `10-auth.md`; messages in Vietnamese. Validation errors → `VALIDATION_FAILED` with `fields`.
+- [x] **BE-LOGIN-07** `main.ts`: global prefix `/api/v1`, cookie parser, global validation pipe (whitelist + forbid unknown fields), CORS off (FE uses the Vite dev proxy).
+- [x] **BE-LOGIN-08** Response interceptor wrapping results as `{ data }` (API-02) and a global exception filter producing `{ error: { code, message, fields? } }` (API-03, API-04). One `ErrorCode` enum with the codes from `01-architecture.md#error-codes` plus `INVALID_CREDENTIALS`, `ACCOUNT_LOCKED` from `10-auth.md`; messages in Vietnamese. Validation errors → `VALIDATION_FAILED` with `fields`.
   Done when: unit test shows a thrown `ConflictException(ErrorCode.PHONE_TAKEN)` and a validation failure both render the spec format.
 
 ## Questions for the owner
 
 - BE-LOGIN-06: what is the seed price of "Gửi xe điện" (đ/xe/kỳ)? `12-pricing.md` gives seed prices for Wifi, Rác and Gửi xe máy only. Until answered, the service is seeded without a rate plan.
+- Pipeline Q1 (BE-LOGIN-07/08 e2e, typecheck): may the pipeline run `prisma generate` with dummy env (writes only `node_modules/.prisma`, no DB)? Proposed: yes.
+- Pipeline Q2 (BE-LOGIN-02/04): may the coder write `migration.sql` with `prisma migrate diff -o <draft folder>`, an exception to "no file writes through shell" in `coder.md`? Proposed: yes; otherwise ~600 lines of SQL copied by hand.
+- Pipeline Q3 (BE-LOGIN-03): which env vars are required at startup? Proposed: `DATABASE_URL` and `DIRECT_URL` only; later parts add their own. Alternatives: all 8, or those two plus `JWT_SECRET`.
+- Pipeline Q4 (BE-LOGIN-08): error code for HTTP 500? `01-architecture.md#error-codes` has none. Proposed: `INTERNAL_ERROR`.
+- Pipeline Q5 (BE-LOGIN-06): what does a re-run of the seed overwrite? Proposed: reset only the 5 dev accounts (part 2 e2e changes the flagged tenant's password). Alternatives: overwrite nothing, or reset every seeded row.
+- Answered 29/10/2026 (owner): Q1 yes, Q2 yes, Q3 `DATABASE_URL` + `DIRECT_URL` only, Q4 `INTERNAL_ERROR` (to be added to `01-architecture.md#error-codes` by a draft), Q5 reset only the 5 dev accounts.
+- Pipeline Q6 (BE-LOGIN-08): a path outside `/api/v1` gets Express's HTML "Cannot GET", not the API-03 error body (Nest 12 binds its not-found handler under the global prefix only). A) add a ~3-line middleware so every unknown path returns 404 `NOT_FOUND` in the API-03 format (proposed) · B) accept any 404 body outside `/api/v1`.
+  Answered 29/10/2026 (owner): A.
+- Pipeline Q7 (BE-LOGIN-06): `import.meta.main` (reviewer fix 5) fails `tsc` because `@types/node` is pinned at 24.0.0 (declared from 24.2.0). A) bump `@types/node` to 24.19.2 (package outside the part-0 list, proposed) · B) keep 24.0.0 and add a 3-line local type declaration in `seed.ts` · C) leave the type error.
+- Pipeline Q8 (BE-LOGIN-08): body-parser client errors (413 too large, 415 bad charset) now return 400 `VALIDATION_FAILED` (API-04 lists no 413/415). A) keep 400 (proposed) · B) add 413/415 codes to the spec.
+  Answered 29/10/2026 (owner): Q7 A, bump `@types/node` to 24.19.2 (exact); Q8 A, keep 400 `VALIDATION_FAILED`.
 
 ## Issues log
 
 <!-- When a task is [!], add: date · task ID · what failed · what is needed -->
+- 29/10/2026 · BE-LOGIN-03, 04, 06, 08 · planner stopped at PLAN.md with 5 open questions (Q1–Q5 above); no checkpoint run yet · owner's answers (answered 29/10/2026: all as proposed)
+- 29/10/2026 · BE-LOGIN-08 · CP-3 tester FAIL 103/104: paths outside `/api/v1` return Express HTML 404, not API-03 (`src/app.setup.spec.ts:238`, `test/app.e2e-spec.ts:33`); CP-1, CP-2 PASS · owner's choice for Q6
+- 29/10/2026 · BE-LOGIN-06 · "sửa thêm" 5: `import.meta.main` fails `tsc` with `@types/node` 24.0.0; fix 3 written (413/415 → 400) · owner's choice for Q7, Q8

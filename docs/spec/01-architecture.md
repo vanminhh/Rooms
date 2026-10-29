@@ -6,7 +6,7 @@
 |---|---|---|
 | FE | React 19, Vite, TypeScript, React Router, TanStack Query, react-hook-form + zod, Recharts | `Source/frontend/` |
 | BE | NestJS 12, TypeScript, Prisma 6, Vitest, oxlint | `Source/backend/` |
-| DB | PostgreSQL (Neon or Supabase), pooled `DATABASE_URL` + direct `DIRECT_URL` | schema in `Source/backend/prisma/` (design copy in `docs/database/` until phase 1) |
+| DB | PostgreSQL (Neon or Supabase), pooled `DATABASE_URL` + direct `DIRECT_URL` | schema in `Source/backend/prisma/` |
 | Files | Cloudinary (room photos, meter photos, contract PDF/scan; CCCD photos as private/authenticated assets) | – |
 | Bank | SePay or Casso webhook ([OPEN] Q-03) | `bank` module |
 | Email | transactional email provider (any SMTP/API) | `mailer` module |
@@ -27,11 +27,10 @@ Rooms/                       one git repo
 ├─ Artifacts/                shared staging area for drafts awaiting approval (+ approved/, reviews/)
 ├─ assets/                   raw source assets: logos, fonts, mockup PDFs, design images (not served)
 ├─ docs/
-│  ├─ spec/                  this specification
-│  └─ database/              verified schema.prisma, constraints.sql, check-constraints.mjs
+│  └─ spec/                  this specification
 └─ Source/
    ├─ frontend/              CLAUDE.md, artifact_FE/ (staging), src/{app,layouts,pages,features,components,shared,assets}
-   └─ backend/               CLAUDE.md, artifact_BE/ (staging), prisma/, src/{common,modules,jobs}
+   └─ backend/               CLAUDE.md, artifact_BE/ (staging), prisma/ (schema, constraints, DB check, migrations, seed), src/{common,modules,jobs}
 ```
 
 Each feature has a task file `feature_<name>.md` in `Source/backend/src/modules/<module>/` and `Source/frontend/src/features/<module>/` (workflow in root `CLAUDE.md`).
@@ -75,6 +74,7 @@ BE maps DB constraint/trigger errors to these codes. Module specs add their own.
 | `RATE_PLAN_MISSING` | 409 | no approved rate for a needed kind/service at period start |
 | `PENDING_REQUEST_EXISTS` | 409 | `requests_one_pending_moveout_renew` |
 | `WEBHOOK_SIGNATURE_INVALID` | 401 | webhook signature check failed |
+| `INTERNAL_ERROR` | 500 | Unexpected server error; generic Vietnamese message, no internal details (owner, 29/10/2026) |
 
 ## Auth tokens
 

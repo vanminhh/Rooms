@@ -5,9 +5,10 @@ Spec: `docs/spec/01-architecture.md` (API conventions, error codes, cron), `02-d
 ## Layout
 
 ```
-prisma/            schema.prisma, migrations/, seed.ts   (phase 1: move from docs/database/)
+prisma/            schema.prisma, constraints.sql, check-constraints.mjs, migrations/, seed.ts
 src/
-  main.ts          global prefix /api/v1, validation pipe, error filter, cookie parser
+  main.ts          loads .env, validates env vars, starts the app
+  app.setup.ts     global prefix /api/v1 (unknown paths → 404 NOT_FOUND), cookie parser, validation pipe, error filter, { data } interceptor
   common/          guards (auth, roles, building scope), error filter, crypto (argon2, AES-GCM), date utils (Asia/Ho_Chi_Minh, period math)
   modules/<name>/  <name>.module.ts, .controller.ts, .service.ts, dto/, <name>.spec.ts, feature_<feature>.md (task list)
   jobs/            cron jobs (idempotent)
@@ -28,7 +29,6 @@ Before working on a module, open its `feature_<feature>.md` (e.g. `src/modules/a
 - Period/date math lives in one tested helper (`BIL-01`, `BIL-02`); never compute periods inline.
 - Money: `number` integers only; no `Decimal`/float math except `rooms.area_m2`.
 - Write `audit_logs` for actions listed in `AUD-01`.
-- `src/app.module.ts` currently imports `ObserveModule` with placeholder keys (`YOUR_APP_KEY`). Remove it in phase 1 unless the owner provides real keys.
 
 ## Tests
 
