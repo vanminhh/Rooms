@@ -52,3 +52,5 @@ Với mỗi file: `git diff --no-index <đích> Artifacts/2026-10-29-BE-LOGIN-02
 - "Done when" của BE-LOGIN-04 và dòng "Part done when" trong `feature_p1-1-backend-foundation.md` ghi `node prisma/check-constraints.mjs . .`; lệnh đúng là `… . prisma` (tham số thứ hai là thư mục chứa `schema.sql`). File feature chỉ được sửa dấu trạng thái, nên chưa sửa; anh/chị muốn sửa luôn trong một bản nháp không?
 
 Đã chép vào file chính 29/10/2026 bằng apply-draft.mjs: 7 file.
+
+Đã dọn 29/10/2026 (theo luật dọn `approved/` trong `Artifacts/README.md`): xóa bản sao `.gitignore`, `CLAUDE.md`, `Artifacts/README.md`, `Source/backend/CLAUDE.md`, `docs/spec/01-architecture.md`, `docs/spec/02-database.md`, `docs/spec/README.md` (lúc dọn, cả 7 trùng khớp với file cùng đường dẫn ở gốc repo). Giữ `REVIEW.md`. Mã commit: 99a97a5.

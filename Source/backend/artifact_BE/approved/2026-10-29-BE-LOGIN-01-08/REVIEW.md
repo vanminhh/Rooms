@@ -107,3 +107,7 @@ Giới hạn đã biết: so khớp `/api/v1` phân biệt hoa thường (`/API/
 Chưa quyết (đề xuất ghi thành việc cho phần sau, không chặn bản nháp này): ánh xạ lỗi Prisma/Postgres sang mã lỗi spec; thu hồi `sessions` khi chạy lại seed (khi Phần 2 có phiên); chặn seed khi `NODE_ENV=production`; `engines` Node ≥ 24.2.
 
 Đã chép vào file chính 29/10/2026 bằng apply-draft.mjs: 23 file.
+
+Sau khi chép 29/10/2026 (phiên chính): `npm install` (lock khớp, `@nestjs/observe` bỏ, `@types/node` 24.19.2); xóa tay `src/app.controller.ts`, `src/app.service.ts`, `src/app.controller.spec.ts` và `docs/database/` (3 file, trùng từng byte với `prisma/`); `prisma generate`, `prisma validate` hợp lệ; `tsc --noEmit` sạch; `npm run test` 197/197, `npm run test:e2e` 8/8, lint 0 lỗi, build qua; `DATABASE_URL` trống → "Thiếu biến môi trường: DATABASE_URL (xem .env.example)"; chủ dự án tắt Data API (gọi `/rest/v1/users` bằng anon key → 503, không có dữ liệu); `prisma migrate deploy` áp `20261029000000_init`; kiểm DB 50/50; `prisma db seed` hai lần đều in "Seed xong: 5 tài khoản, 3 tòa, 7 phòng, 1 hợp đồng", đếm lại qua `DATABASE_URL` không có dòng trùng.
+
+Đã dọn 29/10/2026 (theo luật dọn `approved/` trong `Artifacts/README.md`): xóa bản sao 23 file (lúc dọn, cả 23 trùng khớp với file chính cùng tên trong `Source/backend/`). Giữ `REVIEW.md` và `PLAN.md`. Mã commit: 99a97a5.
