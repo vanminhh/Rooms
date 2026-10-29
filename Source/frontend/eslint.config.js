@@ -6,7 +6,8 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // Applied drafts keep their old copies in artifact_FE/approved/; the code is already in src/.
+  globalIgnores(['dist', 'artifact_FE/approved']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

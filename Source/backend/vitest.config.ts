@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 
 export default defineConfig({
   // Resolves the path aliases declared in tsconfig.json, including the ones
@@ -8,5 +8,7 @@ export default defineConfig({
     globals: true,
     root: './',
     include: ['**/*.spec.ts'],
+    // Applied drafts keep their old copies here; the code they tested is already in src/.
+    exclude: [...configDefaults.exclude, 'artifact_BE/approved/**'],
   },
 });

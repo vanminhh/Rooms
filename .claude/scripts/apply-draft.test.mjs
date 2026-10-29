@@ -11,7 +11,8 @@ const script = fileURLToPath(new URL('./apply-draft.mjs', import.meta.url))
 
 function setup() {
   const repo = mkdtempSync(join(tmpdir(), 'apply-draft-'))
-  execFileSync('git', ['init', '-q'], { cwd: repo })
+  const git = (...args) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: repo, encoding: 'utf8' }).trim()
+  git('init', '-q')
   const write = (path, text) => {
     mkdirSync(join(repo, path, '..'), { recursive: true })
     writeFileSync(join(repo, path), text)
@@ -19,7 +20,12 @@ function setup() {
   const read = (path) => readFileSync(join(repo, path), 'utf8')
   const has = (path) => existsSync(join(repo, path))
   const run = (draft) => spawnSync(process.execPath, [script, draft], { cwd: repo, encoding: 'utf8' })
-  return { repo, write, read, has, run }
+  const commit = () => {
+    git('add', '-A')
+    git('commit', '-qm', 'x')
+    return git('rev-parse', 'HEAD')
+  }
+  return { repo, write, read, has, run, commit }
 }
 
 test('refuses a draft that is not approved and copies nothing', () => {
@@ -36,9 +42,10 @@ test('refuses a draft that is not approved and copies nothing', () => {
 })
 
 test('copies an approved draft to its targets, skips draft-only files, moves it to approved/', () => {
-  const { repo, write, read, has, run } = setup()
+  const { repo, write, read, has, run, commit } = setup()
   try {
     write('CLAUDE.md', 'old')
+    const base = commit()
     const draft = 'Source/backend/artifact_BE/2026-10-27-BE-LOGIN-01'
     write(`${draft}/REVIEW.md`, '# x\n\nTrạng thái: ĐÃ DUYỆT 27/10/2026\n')
     write(`${draft}/PLAN.md`, 'plan')
@@ -57,10 +64,47 @@ test('copies an approved draft to its targets, skips draft-only files, moves it 
     assert.equal(has(draft), false)
     assert.match(read('Source/backend/artifact_BE/approved/2026-10-27-BE-LOGIN-01/REVIEW.md'), /Đã chép vào file chính .* 2 file\./)
 
-    write('Artifacts/2026-10-27-root/REVIEW.md', 'Trạng thái: ĐÃ DUYỆT 27/10/2026\n')
+    write('Artifacts/2026-10-27-root/REVIEW.md', `Trạng thái: ĐÃ DUYỆT 27/10/2026\nGốc: ${base.slice(0, 7)}\n`)
     write('Artifacts/2026-10-27-root/CLAUDE.md', 'new')
-    assert.equal(run('Artifacts/2026-10-27-root').status, 0)
+    const root = run('Artifacts/2026-10-27-root')
+    assert.equal(root.status, 0, root.stdout + root.stderr)
     assert.equal(read('CLAUDE.md'), 'new')
+  } finally {
+    rmSync(repo, { recursive: true, force: true })
+  }
+})
+
+test('refuses to overwrite a main file that changed since the draft\'s base commit, copies nothing', () => {
+  const { repo, write, read, has, run, commit } = setup()
+  try {
+    write('Source/backend/src/a.ts', 'v1')
+    const base = commit()
+    const draft = 'Source/backend/artifact_BE/2026-10-28-x'
+    write(`${draft}/src/a.ts`, 'draft')
+    write(`${draft}/src/new.ts`, 'new')
+
+    write(`${draft}/REVIEW.md`, 'Trạng thái: ĐÃ DUYỆT 28/10/2026\n')
+    assert.match(run(draft).stderr, /chưa ghi "Gốc/, 'replacing a file needs a base commit')
+    write(`${draft}/REVIEW.md`, 'Trạng thái: ĐÃ DUYỆT 28/10/2026\nGốc: 0123456789abcdef\n')
+    assert.match(run(draft).stderr, /không có commit Gốc/, 'unknown base commit')
+
+    write(`${draft}/REVIEW.md`, `Trạng thái: ĐÃ DUYỆT 28/10/2026\nGốc: ${base}\n`)
+    write('Source/backend/src/a.ts', 'v2 from a teammate')
+    write('Source/backend/src/new.ts', 'added by another draft')
+    const refused = run(draft)
+    assert.notEqual(refused.status, 0)
+    assert.match(refused.stderr, /Source\/backend\/src\/a\.ts/)
+    assert.match(refused.stderr, /Source\/backend\/src\/new\.ts/, 'a file that appeared at a target since the base also counts')
+    assert.equal(read('Source/backend/src/a.ts'), 'v2 from a teammate')
+    assert.equal(read('Source/backend/src/new.ts'), 'added by another draft')
+    assert.equal(has(`${draft}/src/a.ts`), true)
+
+    // The fix the message asks for: merge into the draft, commit main, record the new base.
+    const merged = commit()
+    write(`${draft}/REVIEW.md`, `Trạng thái: ĐÃ DUYỆT 28/10/2026\nGốc: ${merged}\n`)
+    const applied = run(draft)
+    assert.equal(applied.status, 0, applied.stdout + applied.stderr)
+    assert.equal(read('Source/backend/src/a.ts'), 'draft')
   } finally {
     rmSync(repo, { recursive: true, force: true })
   }
