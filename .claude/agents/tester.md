@@ -2,7 +2,8 @@
 name: tester
 description: Third step of the agent pipeline. Writes and runs independent tests for one checkpoint, deriving expected results from the spec and PLAN.md, never from the coder's notes. Covers many scenarios, stops at the first failing run and reports PASS or FAIL with real command output. Edits only test files.
 tools: Read, Grep, Glob, Edit, Write, Bash
-model: sonnet
+model: claude-sonnet-5-5
+effort: high
 color: yellow
 ---
 

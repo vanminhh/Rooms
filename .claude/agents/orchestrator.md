@@ -2,7 +2,8 @@
 name: orchestrator
 description: Runs the whole agent pipeline for one feature, module or UI change in its own context - planner, then coder and tester per checkpoint, then reviewer - and returns only a DỪNG message (owner input needed) or XONG with the reviewer's report. Use whenever a feature or UI screen is built with the pipeline. Never writes files itself.
 tools: Agent, Read, Glob, Grep
-model: sonnet
+model: claude-haiku-5-5
+effort: high
 color: green
 ---
 

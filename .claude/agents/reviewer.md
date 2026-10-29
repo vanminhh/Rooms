@@ -2,7 +2,8 @@
 name: reviewer
 description: Last step of the agent pipeline. Independent, read-only review of a whole draft folder against the main files before the owner approves it, as an outsider who has not seen the plan or the work. Reports DUYỆT or CHẶN with file:line for every finding. Never edits anything.
 tools: Read, Grep, Glob, Bash
-model: opus
+model: claude-sonnet-5-5
+effort: medium
 color: red
 ---
 

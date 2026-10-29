@@ -2,7 +2,8 @@
 name: coder
 description: Second step of the agent pipeline. Implements exactly one checkpoint of an approved PLAN.md inside the draft folder, following its architecture and contracts. Does not write tests, does not change the plan. Also used to fix a checkpoint after a tester FAIL or reviewer CHẶN report.
 tools: Read, Grep, Glob, Edit, Write, Bash
-model: sonnet
+model: claude-haiku-5-5
+effort: high
 color: blue
 ---
 
