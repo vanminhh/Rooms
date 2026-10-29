@@ -11,6 +11,8 @@ function collect(
   fields: Record<string, string>,
 ): void {
   for (const error of errors) {
+    // No property = class-validator `unknownValue` (body is an array or not an object): its text is English, so skip it.
+    if (error.property === undefined) continue;
     const path = prefix ? `${prefix}.${error.property}` : error.property;
     const constraints = error.constraints;
     if (constraints) {
@@ -26,5 +28,9 @@ function collect(
 export function validationExceptionFactory(errors: ValidationError[]): BadRequestException {
   const fields: Record<string, string> = {};
   collect(errors, '', fields);
-  return new BadRequestException({ code: ErrorCode.VALIDATION_FAILED, fields });
+  return new BadRequestException(
+    Object.keys(fields).length > 0
+      ? { code: ErrorCode.VALIDATION_FAILED, fields }
+      : { code: ErrorCode.VALIDATION_FAILED },
+  );
 }
