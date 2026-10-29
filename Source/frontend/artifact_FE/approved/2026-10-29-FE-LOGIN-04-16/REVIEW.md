@@ -58,3 +58,5 @@ Giả định: A1–A18 trong `PLAN.md` §3 (gồm bảng chữ giao diện A16)
 Đã chép vào file chính 29/10/2026 bằng apply-draft.mjs: 37 file. Bước chuyển thư mục vào `approved/` bị Windows chặn (EPERM: dev server Vite cổng 5173 giữ thư mục); chủ dự án cho phép tắt server, rồi thư mục được chuyển bằng `fs.renameSync`.
 
 Kiểm trên file chính 29/10/2026: `npm run lint`, `npm run build` qua; `npm run test:components` 233/234 (test cũ của FE-LOGIN-06 đòi `form-fields.test.mjs` đứng cuối script), sửa bằng bản nháp `2026-10-29-FE-LOGIN-06-test-fix` → 234/234. Đăng nhập thật với API đang chạy: quản lý 1 → `/ql` (CG01, DD01); Boss → `/ql` (3 tòa); người thuê có cờ → `/doi-mat-khau`, tải lại vẫn giữ phiên; người thuê bị khóa → "Tài khoản đã bị khóa. Liên hệ quản lý.".
+
+Đã dọn 30/10/2026 (theo luật dọn `approved/` trong `Artifacts/README.md`): xóa bản sao 37 file (lúc dọn, cả 37 trùng khớp với file chính cùng tên trong `Source/frontend/`) và file shim `preview.html`. Giữ `REVIEW.md` và `PLAN.md`. Mã commit: 3d8d97e.

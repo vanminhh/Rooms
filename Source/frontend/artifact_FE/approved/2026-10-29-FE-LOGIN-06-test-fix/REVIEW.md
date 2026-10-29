@@ -27,3 +27,5 @@ Sau khi chép FE-LOGIN-04..16, `package.json` nối thêm 4 file test sau `tests
 - Không có.
 
 Đã chép vào file chính 29/10/2026 bằng apply-draft.mjs: 1 file (chuyển thư mục bị Vite giữ, chuyển tay sau khi tắt server). `npm run test:components` 234/234.
+
+Đã dọn 30/10/2026 (theo luật dọn `approved/` trong `Artifacts/README.md`): xóa bản sao `tests/form-fields.test.mjs` (lúc dọn, trùng khớp với `Source/frontend/tests/form-fields.test.mjs`). Giữ `REVIEW.md`. Mã commit: 3d8d97e.

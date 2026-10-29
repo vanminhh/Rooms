@@ -78,3 +78,7 @@ Giả định spec: A-07 (phiên không ghi nhớ tối đa 12 giờ). Quyết �
 Việc sau (bản nháp spec riêng): AUTH-T3 "mọi phiên" → "các phiên khác" khi đổi mật khẩu; bỏ dòng `OUT_OF_SCOPE` cho người thuê (SCOPE-03 = 404).
 
 Đã chép vào file chính 29/10/2026 bằng apply-draft.mjs: 54 file.
+
+Sau khi chép 29/10/2026 (phiên chính): thêm `JWT_SECRET` ngẫu nhiên (64 ký tự, không in ra) và `APP_URL` vào `.env`; `tsc` sạch; `npm run test` 592/592; lint 0 lỗi; build qua; `npm run test:e2e` trên DB dev 17/17; đăng nhập qua API: Boss, 2 quản lý, người thuê có cờ (`mustChangePassword=true`) đều OK, người thuê bị khóa → `ACCOUNT_LOCKED`, sai mật khẩu → `INVALID_CREDENTIALS`. Chủ dự án chấp nhận P16 khi duyệt.
+
+Đã dọn 30/10/2026 (theo luật dọn `approved/` trong `Artifacts/README.md`): xóa bản sao 54 file (lúc dọn, cả 54 trùng khớp với file chính cùng tên trong `Source/backend/`). Giữ `REVIEW.md` và `PLAN.md`. Mã commit: a5b2138.
