@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ReactNode } from 'react'
-import { RoomsButton, RoomsHeader, RoomsFooter, SectionHeading, StatusBadge, RoomSearch, RoomAccordion, ImageJourney, FeatureList, FloorPlan, QuoteCarousel, CostBreakdown, Reveal, SmoothScroll, Preloader } from '../components'
+import type { FormEvent, ReactNode } from 'react'
+import { RoomsButton, RoomsHeader, RoomsFooter, SectionHeading, StatusBadge, RoomSearch, RoomAccordion, ImageJourney, FeatureList, FloorPlan, QuoteCarousel, CostBreakdown, Reveal, SmoothScroll, Preloader, TextField, PasswordField, Checkbox, FormError, Spinner } from '../components'
 import type { JourneySlide, RoomCardData, RoomFeature, PlanArea } from '../components'
 import { formatMoney } from '../shared/formatters'
 
@@ -10,7 +10,7 @@ const logo = '/images/rooms-logo.webp'
 const sections = [
   ['foundation', 'Nền tảng'], ['search', 'Tìm phòng'], ['rooms', 'Thẻ phòng'],
   ['journey', 'Ảnh chiều sâu'], ['features', 'Tiện ích'], ['plan', 'Mặt bằng'],
-  ['quotes', 'Chia sẻ'], ['cost', 'Bảng chi phí'], ['motion', 'Chuyển động'], ['footer', 'Footer'],
+  ['quotes', 'Chia sẻ'], ['cost', 'Bảng chi phí'], ['motion', 'Chuyển động'], ['form', 'Biểu mẫu'], ['footer', 'Footer'],
 ]
 const slides: JourneySlide[] = [
   { image: exterior, depth: '/images/rooms-hanoi-exterior-depth.webp', eyebrow: '01 / Từ ngõ nhỏ', title: 'Bước chậm lại.\nThấy mình ở nhà.', description: 'Một khoảng xanh giữa nhịp phố. Một lối về dành riêng cho bạn.' },
@@ -50,8 +50,12 @@ export default function ComponentPreview() {
   const [feedback, setFeedback] = useState('Thử chọn khu vực, thẻ phòng hoặc các nút bên dưới.')
   const [loading, setLoading] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [signingIn, setSigningIn] = useState(false)
+  const [signInError, setSignInError] = useState(false)
   const timer = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
+  const signInTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   useEffect(() => () => clearInterval(timer.current), [])
+  useEffect(() => () => clearTimeout(signInTimer.current), [])
   const showPreloader = () => {
     clearInterval(timer.current)
     let value = 0
@@ -63,12 +67,23 @@ export default function ComponentPreview() {
       if (value === 100) { clearInterval(timer.current); setLoading(false) }
     }, 150)
   }
+  const submitDemoForm = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (signingIn) return
+    setSigningIn(true)
+    setSignInError(false)
+    signInTimer.current = setTimeout(() => {
+      setSigningIn(false)
+      setSignInError(true)
+      setFeedback('Đây là bản xem thử: biểu mẫu chưa gọi API đăng nhập.')
+    }, 1200)
+  }
   return <div className="rooms-theme rooms-preview" id="top">
     <a className="preview-skip" href="#library">Đến bộ component</a>
     <SmoothScroll>
       <RoomsHeader homeHref="#top" logoSrc={logo} links={[{ label: 'Thư viện', href: '#library' }, { label: 'Không gian', href: '#journey' }, { label: 'Cách dùng', href: '#usage' }]} action={<RoomsButton variant="outline" onClick={showPreloader}>Thử mở Rooms <span aria-hidden="true">↗</span></RoomsButton>} />
       <div className="preview-intro">
-        <div><span className="rooms-eyebrow">Rooms / Component collection / 02</span><h1>Những mảnh ghép<br />của <em>một nơi ở.</em></h1><p>Tinh thần An Lâm, trong hình hài Rooms. Một bộ component để bạn ghép nên giao diện Trọ Thông Minh.</p><div className="preview-intro-meta"><span>15 component</span><i /><span>React + TypeScript</span><i /><span>Chuột · Cảm ứng · Bàn phím</span></div></div>
+        <div><span className="rooms-eyebrow">Rooms / Component collection / 02</span><h1>Những mảnh ghép<br />của <em>một nơi ở.</em></h1><p>Tinh thần An Lâm, trong hình hài Rooms. Một bộ component để bạn ghép nên giao diện Trọ Thông Minh.</p><div className="preview-intro-meta"><span>20 component</span><i /><span>React + TypeScript</span><i /><span>Chuột · Cảm ứng · Bàn phím</span></div></div>
         <figure><img src={exterior} alt="Tòa nhà với ban công xanh trong bộ ảnh Rooms" /><figcaption><span>Chất liệu có sẵn, câu chuyện mới.</span><span>Hà Nội / 01</span></figcaption></figure>
       </div>
       <div className="preview-shell" id="library">
@@ -109,7 +124,21 @@ export default function ComponentPreview() {
           <Sample id="motion" number="09" name="Chuyển động & mở đầu" hint="Reveal · SmoothScroll · Preloader · Tôn trọng tùy chọn giảm chuyển động." code={'<SmoothScroll>\n  <Reveal><SectionHeading>Chào Rooms.</SectionHeading></Reveal>\n</SmoothScroll>\n<Preloader visible={isLoading} progress={progress} />'}>
             <Reveal><div className="preview-motion-card"><span className="rooms-eyebrow">Nhẹ vừa đủ để cảm nhận</span><h3>Mượt mà,<br /><em>không vội vàng.</em></h3><p>Hiệu ứng hiện khi cuộn đang được dùng trong trang này. Nút bên dưới mở bản xem thử màn hình chờ.</p><RoomsButton onClick={showPreloader}>Xem preloader <span aria-hidden="true">↗</span></RoomsButton></div></Reveal>
           </Sample>
-          <Sample id="footer" number="10" name="Chân trang Rooms" hint="RoomsFooter · Nội dung liên hệ và các liên kết truyền từ bên ngoài." code={'<RoomsFooter\n  description="Không gian để thuộc về."\n  contact={<a href="/lien-he">Liên hệ Rooms ↗</a>}\n  links={[{ label: "Tìm phòng", href: "/phong" }]}\n/>'}>
+          <Sample id="form" number="10" name="Biểu mẫu" hint="TextField · PasswordField · Checkbox · FormError · Spinner · Nhãn, chữ lỗi và viền focus cho bàn phím." code={'<form onSubmit={handleSubmit(onSubmit)}>\n  <FormError>{apiError?.message}</FormError>\n  <TextField label="Số điện thoại" type="tel" autoComplete="tel" {...register("phone")} error={errors.phone?.message} />\n  <PasswordField label="Mật khẩu" autoComplete="current-password" {...register("password")} error={errors.password?.message} />\n  <Checkbox label="Ghi nhớ đăng nhập" {...register("remember")} />\n  <RoomsButton type="submit" disabled={isSubmitting}>{isSubmitting && <Spinner label="Đang đăng nhập" />}Đăng nhập</RoomsButton>\n</form>'}>
+            <form className="preview-form" noValidate onSubmit={submitDemoForm}>
+              <FormError>{signInError && 'Số điện thoại hoặc mật khẩu không đúng'}</FormError>
+              <TextField label="Số điện thoại" type="tel" inputMode="numeric" autoComplete="tel" />
+              <PasswordField label="Mật khẩu" autoComplete="current-password" />
+              <Checkbox label="Ghi nhớ đăng nhập" />
+              <RoomsButton type="submit" disabled={signingIn}>{signingIn && <Spinner label="Đang đăng nhập" />}Đăng nhập</RoomsButton>
+            </form>
+            <div className="preview-form-states">
+              <TextField label="Số điện thoại" defaultValue="0912" error="Số điện thoại gồm 10 chữ số, bắt đầu bằng 0" />
+              <TextField label="Ô bị khóa" defaultValue="Không nhập được" disabled />
+              <Spinner label="Đang tải" />
+            </div>
+          </Sample>
+          <Sample id="footer" number="11" name="Chân trang Rooms" hint="RoomsFooter · Nội dung liên hệ và các liên kết truyền từ bên ngoài." code={'<RoomsFooter\n  description="Không gian để thuộc về."\n  contact={<a href="/lien-he">Liên hệ Rooms ↗</a>}\n  links={[{ label: "Tìm phòng", href: "/phong" }]}\n/>'}>
             <RoomsFooter description="Từ một căn phòng vừa vặn, đến một nhịp sống của riêng bạn." contact={<a href="#search">Khám phá không gian ↗</a>} links={[{ label: 'Tìm phòng', href: '#search' }, { label: 'Tiện ích', href: '#features' }, { label: 'Về đầu trang ↑', href: '#top' }]} />
           </Sample>
           <section id="usage" className="preview-usage"><span className="rooms-eyebrow">Sẵn sàng để ghép trang</span><h2>Import. Truyền dữ liệu.<br /><em>Đặt vào giao diện của bạn.</em></h2><p>Component nằm ở <code>src/components</code>. Bao vùng sử dụng bằng <code>rooms-theme</code> để áp dụng màu, font và kiểu hiển thị. Xem README trong thư mục để biết props và phần chuyển từ An Lâm.</p><pre><code>{'import { RoomsButton } from "./components"\n\n<div className="rooms-theme">\n  <RoomsButton onClick={handleSelect}>Xem phòng ↗</RoomsButton>\n</div>'}</code></pre></section>

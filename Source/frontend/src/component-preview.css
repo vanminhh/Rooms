@@ -50,6 +50,9 @@ body { margin: 0; }
 .preview-motion-card h3 { font-size: clamp(38px, 5vw, 65px); margin: 25px 0; }
 .preview-motion-card h3 em { color: var(--rooms-gold-text); }
 .preview-motion-card p { font-size: 12px; max-width: 430px; margin-bottom: 25px; color: var(--rooms-muted); }
+.preview-form { display: grid; gap: 22px; max-width: 440px; }
+.preview-form .rooms-button { justify-self: start; }
+.preview-form-states { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); align-items: start; gap: 22px; margin-top: 40px; }
 .preview-usage { border-top: 1px solid var(--rooms-line); padding-top: 38px; scroll-margin-top: 30px; }
 .preview-usage h2 { font-size: clamp(32px, 3vw, 45px); margin: 22px 0; }
 .preview-usage h2 em { color: var(--rooms-gold-text); }

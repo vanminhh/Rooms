@@ -53,4 +53,4 @@ Ngoại lệ, không cần qua vùng nháp: cập nhật dấu trạng thái tas
 
 - **Frontend:** `npm run dev` trong `Source/frontend`, tạo `preview.html` trong thư mục bản nháp import component nháp (và `../../src/components` nếu cần), mở `http://localhost:5173/artifact_FE/<thư-mục-nháp>/preview.html`. `npm run lint` cũng kiểm tra file trong `artifact_FE/` (trừ `approved/`).
 - **Backend:** đặt test `*.spec.ts` trong thư mục bản nháp; chạy riêng bằng `npx vitest run artifact_BE/<thư-mục-nháp>`. Lưu ý `npm run test` cũng chạy các test này.
-- **Dùng chung:** tùy loại (vd `node docs/database/check-constraints.mjs` với schema nháp đặt trong `Artifacts/`).
+- **Dùng chung:** tùy loại (vd `node Source/backend/prisma/check-constraints.mjs` với schema nháp đặt trong `Artifacts/`).

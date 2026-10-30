@@ -40,38 +40,43 @@ Out: page content of Tổng quan / Việc hôm nay (placeholders only), every ot
 - [x] **FE-LOGIN-01** Remove the resort template: `src/App.tsx`, `src/App.css`, `src/index.css`, `src/assets/*`, `public/fonts/`; `index.html` becomes the Trọ Thông Minh shell (`lang="vi"`); `src/main.tsx` renders a placeholder. Keep `public/images/` (the UI kit uses `rooms-*.webp`) and the kit preview.
   Done when: `npm run build` passes; `grep -ri "zilal" src index.html` returns nothing.
   Done 25/10/2026 during the repo cleanup requested by the owner. Package rename to `"frontend"` was not approved in that cleanup; leave `"name": "frontent"` until the owner asks.
-- [ ] **FE-LOGIN-04** Create the folders from "Where things go" (only the ones this feature uses).
+- [x] **FE-LOGIN-04** Create the folders from "Where things go" (only the ones this feature uses).
 
 ## 1 · Shared pieces
 
-- [ ] **FE-LOGIN-05** `src/shared/api.ts`: `fetch` wrapper with `credentials: 'include'`, `Authorization: Bearer <accessToken>` from memory (never localStorage), unwraps `{ data }`, throws `ApiError { code, message, fields, status }` from `{ error }` (API-03). On 401 calls `POST /auth/refresh` once, retries, then signs out.
-- [ ] **FE-LOGIN-07** Form helper: map `ApiError.fields` onto react-hook-form fields and `ApiError.message` to a form-level `FormError` (UI-05).
+- [x] **FE-LOGIN-05** `src/shared/api.ts`: `fetch` wrapper with `credentials: 'include'`, `Authorization: Bearer <accessToken>` from memory (never localStorage), unwraps `{ data }`, throws `ApiError { code, message, fields, status }` from `{ error }` (API-03). On 401 calls `POST /auth/refresh` once, retries, then signs out.
+- [x] **FE-LOGIN-07** Form helper: map `ApiError.fields` onto react-hook-form fields and `ApiError.message` to a form-level `FormError` (UI-05).
 
 ## 2 · Auth state and routing
 
-- [ ] **FE-LOGIN-08** `AuthProvider` (`src/app/`): holds `user` + access token in memory; on app load calls `POST /auth/refresh` then `GET /auth/me`; exposes `login`, `logout`, `refreshMe`.
-- [ ] **FE-LOGIN-09** Router with 3 layouts (`PublicLayout`, `TenantLayout`, `StaffLayout`) and guards: not logged in → `/dang-nhap?next=...`; wrong role → own home; `mustChangePassword` → `/doi-mat-khau` (AUTH-05, AUTH-06). `/dang-nhap` while logged in → own home.
+- [x] **FE-LOGIN-08** `AuthProvider` (`src/app/`): holds `user` + access token in memory; on app load calls `POST /auth/refresh` then `GET /auth/me`; exposes `login`, `logout`, `refreshMe`.
+- [x] **FE-LOGIN-09** Router with 3 layouts (`PublicLayout`, `TenantLayout`, `StaffLayout`) and guards: not logged in → `/dang-nhap?next=...`; wrong role → own home; `mustChangePassword` → `/doi-mat-khau` (AUTH-05, AUTH-06). `/dang-nhap` while logged in → own home.
   Done when: manual check with the 3 seeded accounts (see backend `seed.ts`).
-- [ ] **FE-LOGIN-10** Layouts use the kit: wrap in `.rooms-theme`, `RoomsHeader` / `RoomsFooter`, Taviraj + Manrope font link in `index.html` (KIT-01, KIT-02). `PublicLayout` top menu: "Đăng nhập", or "Trang của tôi" when logged in (links to `/thue` or `/ql`); footer placeholder. `TenantLayout` and `StaffLayout`: nav placeholders + "Đăng xuất" button (calls logout, goes to `/`). `StaffLayout` shows the user's buildings from `/auth/me`.
-- [ ] **FE-LOGIN-11** Placeholder home pages `/thue` ("Tổng quan") and `/ql` ("Việc hôm nay") that only greet the user by name.
+- [x] **FE-LOGIN-10** Layouts use the kit: wrap in `.rooms-theme`, `RoomsHeader` / `RoomsFooter`, Taviraj + Manrope font link in `index.html` (KIT-01, KIT-02). `PublicLayout` top menu: "Đăng nhập", or "Trang của tôi" when logged in (links to `/thue` or `/ql`); footer placeholder. `TenantLayout` and `StaffLayout`: nav placeholders + "Đăng xuất" button (calls logout, goes to `/`). `StaffLayout` shows the user's buildings from `/auth/me`.
+- [x] **FE-LOGIN-11** Placeholder home pages `/thue` ("Tổng quan") and `/ql` ("Việc hôm nay") that only greet the user by name.
 
 ## 3 · Pages
 
-- [ ] **FE-LOGIN-12** `/dang-nhap` (`src/pages/public/LoginPage.tsx`): "Số điện thoại" (10 digits, starts with 0), "Mật khẩu", "Ghi nhớ đăng nhập", button "Đăng nhập", link "Quên mật khẩu?". Below: "Chưa có tài khoản? Tài khoản được cấp khi ký hợp đồng", Boss contact from `GET /public/contact` (phone shown as selectable text, Zalo and Facebook as links) and a link "Xem phòng trống" → `/phong` (AUTH-10). Errors: `INVALID_CREDENTIALS`, `ACCOUNT_LOCKED`, `TOO_MANY_REQUESTS` show the API message. Redirect to `next` or role home after success.
-- [ ] **FE-LOGIN-13** `/doi-mat-khau`: "Mật khẩu hiện tại", "Mật khẩu mới" (≥ 8), "Nhập lại mật khẩu mới" (must match, checked client-side). After success refresh `me` and go to role home. Shown automatically when `mustChangePassword` (AUTH-05).
-- [ ] **FE-LOGIN-14** `/quen-mat-khau`: phone field; after submit always show the same message "Nếu số điện thoại có email, chúng tôi đã gửi link đặt lại mật khẩu. Nếu không, hãy liên hệ quản lý." plus the Boss contact (AUTH-07). The same page opened from the email link `/quen-mat-khau?token=...` shows "Mật khẩu mới" + "Nhập lại mật khẩu mới" → `POST /auth/reset-password` → go to `/dang-nhap` with a success note.
-- [ ] **FE-LOGIN-15** `/thue/tai-khoan`: change password + email (AUTH-09). `/ql/tai-khoan`: change password + email + "Số điện thoại liên hệ", "Zalo", "Facebook", with a small preview "Khách sẽ thấy:" (AUTH-09).
+- [x] **FE-LOGIN-12** `/dang-nhap` (`src/pages/public/LoginPage.tsx`): "Số điện thoại" (10 digits, starts with 0), "Mật khẩu", "Ghi nhớ đăng nhập", button "Đăng nhập", link "Quên mật khẩu?". Below: "Chưa có tài khoản? Tài khoản được cấp khi ký hợp đồng", Boss contact from `GET /public/contact` (phone shown as selectable text, Zalo and Facebook as links) and a link "Xem phòng trống" → `/phong` (AUTH-10). Errors: `INVALID_CREDENTIALS`, `ACCOUNT_LOCKED`, `TOO_MANY_REQUESTS` show the API message. Redirect to `next` or role home after success.
+- [x] **FE-LOGIN-13** `/doi-mat-khau`: "Mật khẩu hiện tại", "Mật khẩu mới" (≥ 8), "Nhập lại mật khẩu mới" (must match, checked client-side). After success refresh `me` and go to role home. Shown automatically when `mustChangePassword` (AUTH-05).
+- [x] **FE-LOGIN-14** `/quen-mat-khau`: phone field; after submit always show the same message "Nếu số điện thoại có email, chúng tôi đã gửi link đặt lại mật khẩu. Nếu không, hãy liên hệ quản lý." plus the Boss contact (AUTH-07). The same page opened from the email link `/quen-mat-khau?token=...` shows "Mật khẩu mới" + "Nhập lại mật khẩu mới" → `POST /auth/reset-password` → go to `/dang-nhap` with a success note.
+- [x] **FE-LOGIN-15** `/thue/tai-khoan`: change password + email (AUTH-09). `/ql/tai-khoan`: change password + email + "Số điện thoại liên hệ", "Zalo", "Facebook", with a small preview "Khách sẽ thấy:" (AUTH-09).
 
 ## 4 · Verification
 
-- [ ] **FE-LOGIN-16** `npm run lint` and `npm run build` pass.
+- [x] **FE-LOGIN-16** `npm run lint` and `npm run build` pass.
 
 The manual end-to-end check (FE-LOGIN-17) is in part 5.
 
 ## Questions for the owner
 
-- None yet. Add here (and mark the task `[!]`) if the spec does not answer something.
+- Pipeline Q1–Q7 in `Source/frontend/artifact_FE/2026-10-29-FE-LOGIN-04-16/PLAN.md` §3 (each with a proposed option): Q1 UI text the spec lacks · Q2 tenant/staff menu items · Q3 footer · Q4 routes without a page (`/`, `/phong`, unknown) · Q5 how StaffLayout shows buildings · Q6 API failure at app start · Q7 "Đăng xuất" on a forced `/doi-mat-khau`.
+  Answered 29/10/2026 (owner): all as proposed (option A for Q1–Q7).
+- Pipeline Q8 (FE-LOGIN-12, AUTH-06): a logged-in user opening `/dang-nhap?next=<own-role path>` goes to `next` (same as after login) or always to role home? Answered 29/10/2026 (owner): to `next` when valid and in their role, otherwise role home.
 
 ## Issues log
 
 <!-- When a task is [!], add: date · task ID · what failed · what is needed. -->
+- 29/10/2026 · FE-LOGIN-08..15 · planner stopped at PLAN.md with open questions Q1–Q7; no checkpoint run yet · owner's answers (answered 29/10/2026: all A)
+- 29/10/2026 · FE-LOGIN-09, 10 · CP-3 coder stopped on plan details (guest-only `/dang-nhap` checks planned in CP-3 but the route comes in CP-4; logout logic repeated in 3 places; tester could not write a scratch tsconfig) · technical, no business rule: main session sent them back to the planner (move the checks to CP-4, planner decides a shared logout helper)
+- 29/10/2026 · FE-LOGIN-09, 16 · applied; `npm run lint`, `npm run build` pass; manual check against the running API: manager 1 → `/ql` with CG01, DD01; Boss → `/ql` with 3 buildings; tenant with the flag → `/doi-mat-khau` (reload keeps the session); locked tenant → "Tài khoản đã bị khóa. Liên hệ quản lý." · pass. `npm run test:components` 233/234: the old FE-LOGIN-06 test required `form-fields.test.mjs` to be last in the script; one-line fix drafted in `artifact_FE/2026-10-29-FE-LOGIN-06-test-fix/`

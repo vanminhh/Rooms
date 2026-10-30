@@ -2,7 +2,8 @@
 name: planner
 description: First step of the agent pipeline (planner → coder → tester → reviewer). Plans a feature, module or UI screen before any code exists - architecture sketch, open questions, ordered checkpoints - and writes only PLAN.md in the draft folder it is given. Never writes code.
 tools: Read, Grep, Glob, Write, Edit
-model: opus
+model: claude-opus-5-5
+effort: high
 color: purple
 ---
 
