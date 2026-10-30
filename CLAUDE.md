@@ -72,7 +72,7 @@ One git repo at the root. The frontend UI is built only from the kit in `Source/
 
 ## Status
 
-Nothing implemented yet. Current phase: **1 · Foundation** (`docs/spec/01-architecture.md#roadmap`).
+Phase 1 · Foundation is done (30/10/2026): the 3 roles log in and land in their layout, scope guard, first migration and seed, UI kit with form pieces; task lists and QA in `docs/phase-1-foundation/`. Current phase: **2 · Rooms** (`docs/spec/01-architecture.md#roadmap`).
 
 ## Rules that apply everywhere
 

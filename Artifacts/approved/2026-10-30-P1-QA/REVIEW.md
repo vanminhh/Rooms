@@ -1,6 +1,6 @@
 # Phần 5 · QA: danh sách kiểm tay, kết quả kiểm và chốt Phase 1
 
-Trạng thái: CHỜ DUYỆT
+Trạng thái: ĐÃ DUYỆT 30/10/2026 (chủ dự án: "chốt phase 1 duyệt vào dự án")
 Task / spec: P1-QA-01, P1-QA-03, FE-LOGIN-17, P1-QA-04 · `docs/spec/01-architecture.md#roadmap` (Phase 1 "Done when")
 Gốc: 8f08d04
 
@@ -34,7 +34,12 @@ Với mỗi file: `git diff --no-index <đích> Artifacts/2026-10-30-P1-QA/<đí
 - **P1-QA-04:** kiểm database `50/50 tình huống đúng như mong đợi` (phải cài lại `@electric-sql/pglite` tạm vì `npm install` đã gỡ nó); test scope guard `src/common/scope/scope.spec.ts` 14/14; `npm run test` 592/592.
 - Sau khi thử: chạy lại seed, người thuê `0900000004` về mật khẩu và cờ ban đầu; đã tắt backend và Vite; cổng 3000 và 5173 trống.
 
+- **Test tay của chủ dự án (30/10/2026):** mục 1 đến 11 của checklist đều đạt (hướng dẫn từng bước, chủ dự án báo "đạt"); đã ghi vào "Issues log". Ở mục 4, chủ dự án lúc đầu báo vẫn đăng nhập được sau 6 lần sai; tôi kiểm lại trên backend của chủ dự án (số bị chặn 429) và trên backend mới (lần 6 và mật khẩu đúng đều bị chặn), nên chặn hoạt động đúng. Mục 12, 13 chủ dự án chưa làm tay; tôi đã đo 360 px và thứ tự Tab ở FE-LOGIN-17.
+- Seed chạy lại sau các bước đổi mật khẩu; `0900000002` và `0900000004` về trạng thái ban đầu.
+
 ## Giả định hoặc câu hỏi cho chủ dự án
 
-- Chưa chạy tay: `/quen-mat-khau`, trang tài khoản của người thuê và nút "Hiện" (các test tự động đã phủ; checklist mục 10, 11 có bước để làm).
+- Chưa chạy tay: nút "Hiện", dùng bàn phím ở 360 px và thứ tự Tab ngoài `/dang-nhap` (các test tự động đã phủ; checklist mục 12, 13 có bước để làm).
 - "Phase 2 · Rooms" lấy từ roadmap; nếu muốn ghi "Status" theo cách khác, sửa câu trong bản nháp.
+
+Đã chép vào file chính 30/10/2026 bằng apply-draft.mjs: 3 file.
