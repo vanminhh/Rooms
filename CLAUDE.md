@@ -54,9 +54,9 @@ Each feature has a task file `feature_<name>.md` in its backend module folder an
 
 The agents live in `.claude/agents/`. `.claude/hooks/agent-guard.mjs` (run from `.claude/settings.json`, keyed by the calling agent's name) keeps each one in its lane, also when nested. The main session does not run them one by one: it creates the draft folder with `REVIEW.md`, sets the tasks `[~]`, runs `node .claude/scripts/main-files.mjs save`, and hands the request and folder path to **orchestrator** (Haiku 5.5, effort high), which runs the chain in its own context and passes only paths, so every agent starts clean:
 
-1. **planner** (Opus 5.5, effort high) writes `PLAN.md`: architecture, open questions, checkpoints.
-2. Per checkpoint, **coder** (Haiku 5.5, effort high) builds it in the draft folder (no tests), then **tester** (Sonnet 5.5, effort high) writes and runs tests from the spec and `PLAN.md`. On `FAIL` the coder fixes and the tester re-runs, at most 2 rounds.
-3. **reviewer** (Sonnet 5.5, effort medium) reviews the whole draft folder, given only its path.
+1. **planner** (Opus 5, effort medium) writes `PLAN.md`: architecture, open questions, checkpoints.
+2. Per checkpoint, **coder** (Haiku 5.5, effort high) builds it in the draft folder (no tests), then **tester** (Sonnet 5, effort high) writes and runs tests from the spec and `PLAN.md`. On `FAIL` the coder fixes and the tester re-runs, at most 2 rounds.
+3. **reviewer** (Sonnet 5, effort medium) reviews the whole draft folder, given only its path.
 
 Models are pinned by full ID and effort is set in each agent's frontmatter; change both there and here together.
 
