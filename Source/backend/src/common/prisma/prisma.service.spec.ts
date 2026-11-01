@@ -4,6 +4,7 @@ import { PrismaModule } from './prisma.module.js';
 import { AppModule } from '../../app.module.js';
 import { AuthModule } from '../../modules/auth/auth.module.js';
 import { SettingsModule } from '../../modules/settings/settings.module.js';
+import { FilesModule } from '../../modules/files/files.module.js';
 
 // The real PrismaService is built from the generated client (it does not connect
 // until the first query). Only the DB edge ($disconnect) is replaced with a spy.
@@ -52,8 +53,8 @@ describe('BE-LOGIN-05: PrismaService', () => {
     ]);
   });
 
-  it('BE-LOGIN-19: AppModule imports PrismaModule, AuthModule and SettingsModule (no controllers, no providers)', () => {
-    expect(Reflect.getMetadata('imports', AppModule)).toEqual([PrismaModule, AuthModule, SettingsModule]);
+  it('BE-LOGIN-19, BE-P2-07: AppModule imports PrismaModule, AuthModule, SettingsModule and FilesModule (no controllers, no providers)', () => {
+    expect(Reflect.getMetadata('imports', AppModule)).toEqual([PrismaModule, AuthModule, SettingsModule, FilesModule]);
     expect(Reflect.getMetadata('controllers', AppModule)).toBeUndefined();
     expect(Reflect.getMetadata('providers', AppModule)).toBeUndefined();
   });

@@ -772,6 +772,8 @@ const EXPECTED: [string, number, string][] = [
   ['PAYMENT_AMOUNT_MISMATCH', 409, 'Số tiền thanh toán không khớp tổng hóa đơn'],
   ['METER_VALUE_DECREASED', 400, 'Chỉ số mới nhỏ hơn chỉ số trước'],
   ['PRICE_NOT_APPROVED', 409, 'Phòng chưa có giá được duyệt'],
+  ['PRICE_PROPOSAL_EXPIRED', 409, 'Đề xuất đã quá ngày hiệu lực, vui lòng đề xuất lại'],
+  ['UPLOAD_NOT_CONFIGURED', 503, 'Chưa cấu hình tải ảnh'],
   ['RATE_PLAN_MISSING', 409, 'Chưa có đơn giá được duyệt cho kỳ này'],
   ['PENDING_REQUEST_EXISTS', 409, 'Đã có yêu cầu đang chờ xử lý'],
   ['WEBHOOK_SIGNATURE_INVALID', 401, 'Chữ ký webhook không hợp lệ'],
@@ -781,9 +783,9 @@ const EXPECTED: [string, number, string][] = [
 ];
 
 describe('01-architecture#error-codes: ErrorCode and ERRORS table', () => {
-  it('01-architecture: ErrorCode has exactly 23 members (20 spec codes + INVALID_CREDENTIALS + ACCOUNT_LOCKED + INTERNAL_ERROR), value = name', () => {
+  it('01-architecture: ErrorCode has exactly 25 members (22 spec codes + INVALID_CREDENTIALS + ACCOUNT_LOCKED + INTERNAL_ERROR), value = name', () => {
     const members = Object.entries(ErrorCode);
-    expect(members).toHaveLength(23);
+    expect(members).toHaveLength(25);
     expect(members.every(([k, v]) => k === v)).toBe(true);
     expect(Object.keys(ErrorCode).sort()).toEqual(EXPECTED.map((e) => e[0]).sort());
   });

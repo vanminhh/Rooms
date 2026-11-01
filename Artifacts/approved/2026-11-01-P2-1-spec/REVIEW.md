@@ -88,3 +88,5 @@ Lệnh trên hiện các file spec không có trong bản nháp (02, 14–18, 20
 - Không có câu hỏi mở.
 
 Đã chép vào file chính 01/11/2026 bằng apply-draft.mjs: 22 file (thư mục chuyển tay vào approved/ do lỗi EPERM khi đổi tên).
+
+Đã dọn 01/11/2026: xóa bản sao docs/spec/{00,01,10,11,12,13,19,30}, docs/phase-1-foundation/feature_p1-1-backend-foundation.md, docs/phase-2-rooms/* – nội dung lúc duyệt ở file chính cùng đường dẫn. Mã commit: b020c48.

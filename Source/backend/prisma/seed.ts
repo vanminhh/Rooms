@@ -55,7 +55,7 @@ interface BuildingSpec {
   rooms: RoomSpec[];
 }
 
-const BUILDINGS: BuildingSpec[] = [
+export const BUILDINGS: BuildingSpec[] = [
   {
     code: 'CG01', name: 'Tòa Cầu Giấy', address: '1 Xuân Thủy', district: 'Cầu Giấy', ward: 'Dịch Vọng Hậu', manager: 'manager1',
     rooms: [
@@ -80,7 +80,7 @@ const BUILDINGS: BuildingSpec[] = [
   },
 ];
 
-// SVC-01. "Gửi xe điện" has no rate plan until the owner gives its price.
+// SVC-01. Every service here has a SERVICE rate plan in RATES below (SVC-05).
 const SERVICES: { name: string; unit: 'ROOM' | 'PERSON' | 'VEHICLE' }[] = [
   { name: 'Wifi', unit: 'ROOM' },
   { name: 'Rác', unit: 'PERSON' },
@@ -101,6 +101,7 @@ const RATES: RateSpec[] = [
   { kind: 'SERVICE', service: 'Wifi', tiers: [[null, 100000]] },
   { kind: 'SERVICE', service: 'Rác', tiers: [[null, 30000]] },
   { kind: 'SERVICE', service: 'Gửi xe máy', tiers: [[null, 100000]] },
+  { kind: 'SERVICE', service: 'Gửi xe điện', tiers: [[null, 150_000]] },
 ];
 
 // Business dates are @db.Date: `new Date('YYYY-MM-DD')` is UTC midnight, so the stored day is exact.

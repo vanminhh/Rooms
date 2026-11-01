@@ -18,11 +18,13 @@ export enum ErrorCode {
   PAYMENT_AMOUNT_MISMATCH = 'PAYMENT_AMOUNT_MISMATCH',
   METER_VALUE_DECREASED = 'METER_VALUE_DECREASED',
   PRICE_NOT_APPROVED = 'PRICE_NOT_APPROVED',
+  PRICE_PROPOSAL_EXPIRED = 'PRICE_PROPOSAL_EXPIRED',
   RATE_PLAN_MISSING = 'RATE_PLAN_MISSING',
   PENDING_REQUEST_EXISTS = 'PENDING_REQUEST_EXISTS',
   WEBHOOK_SIGNATURE_INVALID = 'WEBHOOK_SIGNATURE_INVALID',
   INVALID_CREDENTIALS = 'INVALID_CREDENTIALS',
   ACCOUNT_LOCKED = 'ACCOUNT_LOCKED',
+  UPLOAD_NOT_CONFIGURED = 'UPLOAD_NOT_CONFIGURED',
   INTERNAL_ERROR = 'INTERNAL_ERROR',
 }
 
@@ -69,6 +71,10 @@ export const ERRORS: Record<ErrorCode, { status: number; message: string }> = {
     message: 'Chỉ số mới nhỏ hơn chỉ số trước',
   },
   [ErrorCode.PRICE_NOT_APPROVED]: { status: 409, message: 'Phòng chưa có giá được duyệt' },
+  [ErrorCode.PRICE_PROPOSAL_EXPIRED]: {
+    status: 409,
+    message: 'Đề xuất đã quá ngày hiệu lực, vui lòng đề xuất lại',
+  },
   [ErrorCode.RATE_PLAN_MISSING]: {
     status: 409,
     message: 'Chưa có đơn giá được duyệt cho kỳ này',
@@ -86,6 +92,7 @@ export const ERRORS: Record<ErrorCode, { status: number; message: string }> = {
     message: 'Số điện thoại hoặc mật khẩu không đúng',
   },
   [ErrorCode.ACCOUNT_LOCKED]: { status: 403, message: 'Tài khoản đã bị khóa. Liên hệ quản lý.' },
+  [ErrorCode.UPLOAD_NOT_CONFIGURED]: { status: 503, message: 'Chưa cấu hình tải ảnh' },
   [ErrorCode.INTERNAL_ERROR]: {
     status: 500,
     message: 'Có lỗi xảy ra, vui lòng thử lại sau',
