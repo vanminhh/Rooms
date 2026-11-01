@@ -58,7 +58,7 @@ BE maps DB constraint/trigger errors to these codes. Module specs add their own.
 | `UNAUTHENTICATED` | 401 | No/expired access token |
 | `PASSWORD_CHANGE_REQUIRED` | 403 | `must_change_password` and route is not change-password/logout/me |
 | `FORBIDDEN` | 403 | Role not allowed |
-| `OUT_OF_SCOPE` | 403 | Manager touches another building's data; tenant touches another's contract |
+| `OUT_OF_SCOPE` | 403 | Manager touches another building's data (a tenant touching another tenant's data gets `NOT_FOUND`, SCOPE-03; owner 29/10/2026) |
 | `NOT_FOUND` | 404 | |
 | `CONFLICT_STATE` | 409 | Action not allowed in current status (generic) |
 | `TOO_MANY_REQUESTS` | 429 | Rate limit |
@@ -71,6 +71,8 @@ BE maps DB constraint/trigger errors to these codes. Module specs add their own.
 | `PAYMENT_AMOUNT_MISMATCH` | 409 | trigger on payment |
 | `METER_VALUE_DECREASED` | 400 | reading < previous without meter replacement |
 | `PRICE_NOT_APPROVED` | 409 | room has `price = null` |
+| `PRICE_PROPOSAL_EXPIRED` | 409 | approving a room price or rate plan whose `effective_from` is before today; message "Đề xuất đã quá ngày hiệu lực, vui lòng đề xuất lại" (PRC-07, owner 01/11/2026) |
+| `UPLOAD_NOT_CONFIGURED` | 503 | `CLOUDINARY_URL` is not set; message "Chưa cấu hình tải ảnh" (FILE-01). The app still starts without it |
 | `RATE_PLAN_MISSING` | 409 | no approved rate for a needed kind/service at period start |
 | `PENDING_REQUEST_EXISTS` | 409 | `requests_one_pending_moveout_renew` |
 | `WEBHOOK_SIGNATURE_INVALID` | 401 | webhook signature check failed |
@@ -80,14 +82,19 @@ BE maps DB constraint/trigger errors to these codes. Module specs add their own.
 
 - **AUTH-T1** Access token: JWT, 15 minutes, in `Authorization: Bearer`. Claims: `sub` (user id), `role`.
 - **AUTH-T2** Refresh token: random 32 bytes, stored only as SHA-256 hash in `sessions.token_hash`, sent as httpOnly + Secure + SameSite=Lax cookie on path `/api/v1/auth`. Lifetime 30 days if "Ghi nhớ đăng nhập", else session cookie (browser close) with 12 h server expiry [ASSUMPTION A-07]. Rotated on every refresh.
-- **AUTH-T3** Deactivating a user or changing a password revokes all their sessions.
+- **AUTH-T3** Deactivating a user or resetting a password (email link or staff reset) revokes all their sessions. Changing one's own password revokes all their **other** sessions; the current one stays logged in (owner 29/10/2026).
+
+## Files
+
+- **FILE-01** `POST /files/sign` (staff) returns a signed Cloudinary upload for one purpose. Phase 2 has one purpose, `ROOM_IMAGE` with `roomId`: the room MUST be in the caller's scope (SCOPE-02); the signature fixes `folder = rooms/<buildingId>/<roomId>`, `allowed_formats = jpg,png,webp` and an incoming transformation that limits the long side to 1920 px. Without `CLOUDINARY_URL` → `UPLOAD_NOT_CONFIGURED`.
+- **FILE-02** The client sends back only `publicId` (+ `version`, `format`); the BE checks the folder and builds the delivery URL itself. URLs from the client are never stored.
 
 ## Cron (Asia/Ho_Chi_Minh)
 
 | Time | Job | Spec |
 |---|---|---|
 | 00:05 daily | Create `DRAFT` monthly invoices for contracts due today; switch renewed contracts | [16-billing.md](16-billing.md#cron) |
-| 01:00 daily | Apply approved room prices whose effective date is today; auto-close incidents `RESOLVED` > 3 days | [12-pricing.md](12-pricing.md), [18-requests.md](18-requests.md) |
+| 01:00 daily **and at app start** | Sync `rooms.price` with the current approved room price (PRC-06; the start-up run fixes days missed while the server was off); auto-close incidents `RESOLVED` > 3 days | [12-pricing.md](12-pricing.md), [18-requests.md](18-requests.md) |
 | 08:00 daily | Invoice reminders; contract expiry notices (30 and 7 days); stale drafts > 2 days; expired unresolved contracts | [19-notifications.md](19-notifications.md) |
 
 Every job MUST be idempotent (safe to run twice the same day) and log a summary line.

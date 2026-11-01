@@ -21,7 +21,7 @@ Route guard: not logged in → `/dang-nhap?next=...`; wrong role → own home (A
 | `/` | Trang chủ: featured public rooms, districts with counts | BLD, ROOM-05 |
 | `/phong` | Tìm phòng: filters district, ward, building, price range; filters in URL query | ROOM-05 |
 | `/toa/:id` | Chi tiết tòa: info, rates (electric tiers, water, services), contact, public rooms | BLD-04, RATE |
-| `/phong/:id` | Chi tiết phòng: photos, price, furniture, min term 3 months, deposit, monthly estimate (A-05), contact, viewing form | VIEW-01 |
+| `/phong/:id` | Chi tiết phòng: photos ("Chưa có ảnh" when none), price, furniture, min term 3 months, deposit (1 month), monthly estimate (ROOM-08), contact, viewing form with the 3 slots | VIEW-01, VIEW-08 |
 | `/dang-nhap` | Đăng nhập: phone, password, "Ghi nhớ đăng nhập", "Quên mật khẩu?", note "Chưa có tài khoản? Tài khoản được cấp khi ký hợp đồng" + Boss contact + link "Xem phòng trống" | AUTH-01, AUTH-10 |
 | `/quen-mat-khau` | Quên mật khẩu; with `?token=` from the email link it shows the new-password form | AUTH-07 |
 | `/doi-mat-khau` | Đổi mật khẩu (forced on first login) | AUTH-05 |
@@ -41,10 +41,10 @@ Route guard: not logged in → `/dang-nhap?next=...`; wrong role → own home (A
 
 | Route | Page | Spec |
 |---|---|---|
-| `/ql` | Việc hôm nay: task groups with counts (NOTI-06), occupancy ring, collected vs outstanding bar | NOTI-06, RPT |
-| `/ql/toa-nha`, `/ql/toa-nha/:id` | Tòa nhà: manager edits amenities/description; Boss creates, assigns manager, services | BLD, SVC |
-| `/ql/phong` | Phòng: floor grid colored by derived status; create/edit, photos; "Đề xuất giá" | ROOM, PRC-01 |
-| `/ql/lich-hen` | Lịch hẹn: by date; add manual; call/Zalo buttons; "Chốt" → contract form | VIEW |
+| `/ql` | Việc hôm nay: task groups with counts (NOTI-06), occupancy ring, collected vs outstanding bar. Phase 2: only the cards "Lịch hẹn mới" and (Boss) "Giá chờ duyệt" | NOTI-06, RPT |
+| `/ql/toa-nha`, `/ql/toa-nha/:id` | Tòa nhà: manager edits amenities/description; Boss creates, assigns manager, services, locks (confirm dialog: manager will be unassigned, N open viewings) | BLD, SVC |
+| `/ql/phong` | Phòng: floor grid colored by derived status, "Hiện phòng đã khóa"; create/edit, photos; "Đề xuất giá", "Quá hạn" + "Đề xuất lại" | ROOM, PRC-01, PRC-07 |
+| `/ql/lich-hen` | Lịch hẹn: by date; add manual; call/Zalo buttons; status changes per VIEW-04; "Chốt" → contract form (from Phase 3) | VIEW |
 | `/ql/hop-dong`, `/ql/hop-dong/:id` | Hợp đồng (also the tenant list): wizard create → PDF → upload scan → show temp password once → move-in readings; occupants with CCCD photos; vehicles; services; reset password; renew; cancel; settlement with dry-run preview | CON, BIL-13..19 |
 | `/ql/chi-so` | Chốt chỉ số: mobile-first list of due drafts, number inputs, camera upload, abnormal warning | MTR |
 | `/ql/hoa-don`, `/ql/hoa-don/:id` | Hóa đơn: filters; record manual payment (method picker, confirm dialog with amount); reissue; remind; escalate payment issue | BIL-11, BIL-12 |
@@ -60,8 +60,8 @@ Route guard: not logged in → `/dang-nhap?next=...`; wrong role → own home (A
 | Route | Page | Spec |
 |---|---|---|
 | `/ql/giao-dich` | Giao dịch ngân hàng: unmatched first; escalated payment issues; assign to invoice / mark refunded | BANK-05 |
-| `/ql/duyet-gia` | Duyệt giá: pending room prices and rate plans, old → new, % change, approve/reject with note | PRC-03, RATE-01 |
-| `/ql/nhan-su` | Nhân sự: create/deactivate managers, assign buildings (max 2) | AUTH-08, BLD-03 |
+| `/ql/duyet-gia` | Duyệt giá: pending room prices and rate plans, old → new, % change, approve/reject with note; expired ones apart, reject only | PRC-03, PRC-07, PRC-12, RATE-01 |
+| `/ql/nhan-su` | Nhân sự: create (temporary password shown once), deactivate/reactivate managers, their buildings; buildings are assigned on `/ql/toa-nha/:id` (owner 01/11/2026) | AUTH-08, BLD-03 |
 | `/ql/cai-dat` | Cài đặt: bank account, webhook toggle, contract template, email templates, default contact | settings |
 | `/ql/nhat-ky` | Nhật ký thao tác | AUD-04 |
 
