@@ -11,11 +11,11 @@ The owner approves every change before it reaches the main files: assets, UI, co
    - `Source/frontend/artifact_FE/` – frontend drafts; paths mirror `Source/frontend/`
    - `Source/backend/artifact_BE/` – backend drafts; paths mirror `Source/backend/`
 2. Test the draft there, tell the owner its path, and **stop until the owner explicitly approves in chat**.
-3. After approval: set `REVIEW.md` to "ĐÃ DUYỆT <date>", then run `node .Codex/scripts/apply-draft.mjs <draft folder>`. It copies every draft file to its target (except `REVIEW.md`, `PLAN.md`, `ref/`, `preview.html`) and moves the folder into that area's `approved/`; the owner confirms once. Then re-run the app's checks. Delete main files marked "Xóa" by hand, with the owner's OK.
+3. After approval: set `REVIEW.md` to "ĐÃ DUYỆT <date>", then run `node .claude/scripts/apply-draft.mjs <draft folder>`. It copies every draft file to its target (except `REVIEW.md`, `PLAN.md`, `ref/`, `preview.html`) and moves the folder into that area's `approved/`; the owner confirms once. Then re-run the app's checks. Delete main files marked "Xóa" by hand, with the owner's OK.
 4. Only exception: status marks, "Issues log" and "Questions for the owner" in `feature_*.md` may be edited directly.
 5. Never write main files with shell commands (`cp`, `mv`, `sed -i`, redirects); use the file tools or `apply-draft.mjs`, so the guard below sees them.
 
-Guard: `.Codex/settings.json` runs `.Codex/hooks/staging-guard.mjs` before every file edit and shell command; any edit outside the staging areas (and outside `feature_*.md`) and every `apply-draft.mjs` run makes Codex ask the owner first. Subagents may not run `apply-draft.mjs`.
+Guard: `.codex/hooks.json` runs `.codex/hooks/staging-guard.mjs` before every file edit and shell command; any edit outside the staging areas (and outside `feature_*.md`) and every `apply-draft.mjs` run makes Codex ask the owner first. Subagents may not run `apply-draft.mjs`.
 
 ## Source of truth
 
@@ -52,13 +52,13 @@ Each feature has a task file `feature_<name>.md` in its backend module folder an
 
 ## Agent pipeline (features, modules, UI screens)
 
-The agents live in `.Codex/agents/`. `.Codex/hooks/agent-guard.mjs` (run from `.Codex/settings.json`, keyed by the calling agent's name) keeps each one in its lane, also when nested. The main session does not run them one by one: it creates the draft folder with `REVIEW.md`, sets the tasks `[~]`, runs `node .Codex/scripts/main-files.mjs save`, and hands the request and folder path to **orchestrator** (Sonnet), which runs the chain in its own context and passes only paths, so every agent starts clean:
+The agents live in `.codex/agents/`. `.codex/hooks/agent-guard.mjs` (run from `.codex/hooks.json`, keyed by the calling agent's name) keeps each one in its lane, also when nested. The main session does not run them one by one: it creates the draft folder with `REVIEW.md`, sets the tasks `[~]`, runs `node .claude/scripts/main-files.mjs save`, and hands the request and folder path to **orchestrator** (Sonnet), which runs the chain in its own context and passes only paths, so every agent starts clean:
 
 1. **planner** (Opus) writes `PLAN.md`: architecture, open questions, checkpoints.
 2. Per checkpoint, **coder** (Sonnet) builds it in the draft folder (no tests), then **tester** (Sonnet) writes and runs tests from the spec and `PLAN.md`. On `FAIL` the coder fixes and the tester re-runs, at most 2 rounds.
 3. **reviewer** (Opus) reviews the whole draft folder, given only its path.
 
-After every orchestrator reply, run `node .Codex/scripts/main-files.mjs check` first. It lists main files changed during the run, including shell writes the hooks cannot see. Report every listed file to the owner, and neither keep nor revert it without the owner's word. Run `save` again before each resume.
+After every orchestrator reply, run `node .claude/scripts/main-files.mjs check` first. It lists main files changed during the run, including shell writes the hooks cannot see. Report every listed file to the owner, and neither keep nor revert it without the owner's word. Run `save` again before each resume.
 
 The orchestrator returns only one of two messages:
 - `DỪNG …` (open questions, coder blocked, or tests still failing after 2 rounds): set the task `[!]` as in "How to work on a module", ask the owner, then resume the orchestrator (`SendMessage`) with the answers.

@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node 'C:\\Users\\Nguyen Danh Toan\\Rooms\\.codex\\hooks\\staging-guard.mjs'",
+            "command": "node .codex/hooks/staging-guard.mjs",
             "timeout": 10,
             "statusMessage": "Kiểm tra vùng nháp chờ duyệt"
           }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node 'C:\\Users\\Nguyen Danh Toan\\Rooms\\.codex\\hooks\\agent-guard.mjs'",
+            "command": "node .codex/hooks/agent-guard.mjs",
             "timeout": 10
           }
         ]
