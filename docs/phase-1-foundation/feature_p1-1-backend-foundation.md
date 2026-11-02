@@ -9,7 +9,7 @@ Rules: mark `[~]` when you start a task, `[x]` only after its "Done when" is ver
 | Unblocks | Part 2; P1-QA-02 in part 5 |
 | Draft folder | `Source/backend/artifact_BE/<YYYY-MM-DD>-BE-LOGIN-01-08/`, plus a small draft in `Artifacts/` for the doc path edits of BE-LOGIN-02 |
 | How | Pipeline |
-| Part done when | On the main files: `npx prisma validate` passes; the first migration is applied to the dev database; `node prisma/check-constraints.mjs . .` prints 50/50; the seed runs twice without errors; `npm run lint` and `npm run test` pass |
+| Part done when | On the main files: `npx prisma validate` passes; the first migration is applied to the dev database; `node prisma/check-constraints.mjs . prisma` prints 50/50; the seed runs twice without errors; `npm run lint` and `npm run test` pass |
 
 ## Before you start (read, in this order)
 

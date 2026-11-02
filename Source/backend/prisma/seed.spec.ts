@@ -475,6 +475,8 @@ class FakeDb {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Expected values come from PLAN.md section 2.4 / the spec, never from seed.ts.
+// Only change from the Phase 1 main-file spec allowed by CP-6 (BE-P2-08, SVC-05):
+// ratePlan 15 -> 18, rateTier 21 -> 24 (3 buildings x 1 extra "Gửi xe điện" plan/tier).
 // ─────────────────────────────────────────────────────────────────────────────
 
 const EXPECTED_COUNTS = {
@@ -484,8 +486,8 @@ const EXPECTED_COUNTS = {
   room: 7,
   roomPrice: 6,
   service: 12,
-  ratePlan: 15,
-  rateTier: 21,
+  ratePlan: 18,
+  rateTier: 24,
   contract: 1,
   contractService: 2,
   occupant: 2,
@@ -840,10 +842,10 @@ describe('BE-LOGIN-06: seed (in-memory Prisma)', { timeout: 120_000 }, () => {
       }
     });
 
-    it('RATE-02: per building ELECTRIC 3 tiers, WATER 1 tier, Wifi/Rác/Gửi xe máy 1 tier each; all APPROVED from 2026-09-01 by the Boss; no plan for Gửi xe điện', () => {
+    it('RATE-02 / SVC-05: per building ELECTRIC 3 tiers, WATER 1 tier, Wifi/Rác/Gửi xe máy/Gửi xe điện 1 tier each; all APPROVED from 2026-09-01 by the Boss, including Gửi xe điện', () => {
       for (const b of db.t.building) {
         const plans = db.t.ratePlan.filter((p) => p.buildingId === b.id);
-        expect(plans).toHaveLength(5);
+        expect(plans).toHaveLength(6);
         const byKey = Object.fromEntries(
           plans.map((p) => {
             const svc = p.serviceId
@@ -859,6 +861,7 @@ describe('BE-LOGIN-06: seed (in-memory Prisma)', { timeout: 120_000 }, () => {
             'SERVICE:Wifi',
             'SERVICE:Rác',
             'SERVICE:Gửi xe máy',
+            'SERVICE:Gửi xe điện',
           ]),
         );
         expect(tiersOf(byKey.ELECTRIC.id)).toEqual([
@@ -870,6 +873,7 @@ describe('BE-LOGIN-06: seed (in-memory Prisma)', { timeout: 120_000 }, () => {
         expect(tiersOf(byKey['SERVICE:Wifi'].id)).toEqual([[1, null, 100000]]);
         expect(tiersOf(byKey['SERVICE:Rác'].id)).toEqual([[1, null, 30000]]);
         expect(tiersOf(byKey['SERVICE:Gửi xe máy'].id)).toEqual([[1, null, 100000]]);
+        expect(tiersOf(byKey['SERVICE:Gửi xe điện'].id)).toEqual([[1, null, 150000]]);
         for (const p of plans) {
           expect(p.status).toBe('APPROVED');
           expect(p.effectiveFrom.toISOString()).toBe(midnightUtc('2026-09-01'));
@@ -881,10 +885,10 @@ describe('BE-LOGIN-06: seed (in-memory Prisma)', { timeout: 120_000 }, () => {
             expect(db.t.service.find((s) => s.id === p.serviceId)!.buildingId).toBe(b.id);
         }
         expect(plans.some((p) => p.serviceId === svcOf(b.code, 'Gửi xe điện').id)).toBe(
-          false,
+          true,
         );
       }
-      expect(db.t.rateTier).toHaveLength(21);
+      expect(db.t.rateTier).toHaveLength(24);
     });
 
     it('RATE-02: tiers are strictly increasing and the last tier has up_to null', () => {
@@ -1069,7 +1073,7 @@ describe('BE-LOGIN-06: seed (in-memory Prisma)', { timeout: 120_000 }, () => {
         ...db.t.rateTier.map((t) => t.unitPrice),
         ...db.t.contract.flatMap((c) => [c.rent]),
       ];
-      expect(money.length).toBe(6 + 6 + 21 + 1);
+      expect(money.length).toBe(6 + 6 + 24 + 1);
       for (const m of money) {
         expect(Number.isInteger(m)).toBe(true);
         expect(m).toBeGreaterThan(0);

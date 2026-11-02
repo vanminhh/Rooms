@@ -18,6 +18,7 @@ export function configureApp(app: INestApplication): void {
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
+      transform: true,
       exceptionFactory: validationExceptionFactory,
     }),
   );

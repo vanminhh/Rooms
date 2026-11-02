@@ -96,9 +96,9 @@ Boss → Manager (≤ 2 buildings) → Building (address, district, ward in Hà 
 
 - **A-01** [ASSUMPTION] On early move-out, services (wifi, rác, parking) are charged in full for the current period; remaining periods charge rent only.
 - **A-02** [ASSUMPTION] Deposit invoice due date = contract `start_date` (or issue date if later). Move-in is blocked until it is paid.
-- **A-03** [ASSUMPTION] Rate limits on the public viewing form: 5 per hour per IP, 3 per day per phone.
+- **A-03** [ASSUMPTION] Rate limits on the public viewing form: 5 per hour per IP, 3 per day per phone. How they are counted is confirmed by the owner (01/11/2026): per phone from the `viewings` table, per IP in memory ([13-viewings.md](13-viewings.md) VIEW-02, VIEW-11).
 - **A-04** [ASSUMPTION] Abnormal consumption warning when a period's kWh or m³ is more than 2× the average of the previous 3 periods.
-- **A-05** [ASSUMPTION] Public "ước tính chi phí/tháng" = room price + services with unit ROOM + per-person services and water for 1 person (electricity excluded, shown as "chưa gồm điện").
+- **A-05** Confirmed by the owner (01/11/2026), no longer an assumption: public "ước tính chi phí/tháng" = room price + services with unit ROOM + services with unit PERSON × 1 + water for 1 person when `water_mode = PER_PERSON`. Electricity and per-m³ water are not added; their unit prices are shown with "chưa gồm điện, nước – tính theo đồng hồ của phòng". Details: [11-buildings-rooms.md](11-buildings-rooms.md) ROOM-08.
 - **A-06** [ASSUMPTION] Days a tenant stays after `end_date` without renewal are not charged automatically; staff may add them to the settlement as damages with a note.
 - **A-07** [ASSUMPTION] Login without "Ghi nhớ đăng nhập" keeps the session until the browser closes, max 12 hours.
 

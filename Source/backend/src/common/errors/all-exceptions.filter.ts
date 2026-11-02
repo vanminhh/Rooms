@@ -6,6 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import type { Response } from 'express';
+import { mapDbError } from './db-errors.js';
 import { ERRORS, ErrorCode } from './error-code.js';
 
 export interface ErrorBody {
@@ -56,6 +57,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
       }
     } else if (isExposedClientError(exception)) {
       code = STATUS_TO_CODE[exception.status] ?? ErrorCode.VALIDATION_FAILED;
+    } else {
+      // Known DB constraints get their spec code; any other error stays INTERNAL_ERROR.
+      const mapped = mapDbError(exception);
+      if (mapped) {
+        code = mapped.code;
+        fields = mapped.fields;
+      }
     }
 
     if (code === ErrorCode.INTERNAL_ERROR) {

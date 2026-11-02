@@ -22,6 +22,7 @@ Modules: `notifications`, `mailer`. Tables: `announcements`, `notifications`.
 - **NOTI-04** Emails are sent only to users with `email`. In-app always.
 - **NOTI-05** 08:00 cron: invoices due tomorrow; overdue invoices on day 1, 4, 7, … after `due_date` (every 3 days); contracts with `end_date` in 30 or 7 days (tenant and manager).
 - **NOTI-06** Staff tasks ("Việc hôm nay") are queries, not notifications: drafts waiting for readings (drafts older than 2 days highlighted), unpaid deposits, NEW viewings, PENDING requests, escalated payment issues (Boss), contracts expiring in 30 days, expired unresolved contracts (red), pending price approvals (Boss).
+  Phase 2 implements only two groups (owner 01/11/2026): "Lịch hẹn mới" (VIEW-07) for everyone and "Giá chờ duyệt" (PRC-11) for Boss. The other groups are added to the same `GET /dashboard` in later phases. The endpoint lives in the `notifications` module (`dashboard.controller.ts`).
 - **NOTI-07** Email templates live in `settings.email_templates`; failures are logged and retried once, never block the main action.
 
 Deferred: Zalo messages (D-20).
