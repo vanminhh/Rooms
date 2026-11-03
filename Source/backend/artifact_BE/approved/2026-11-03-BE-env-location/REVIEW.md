@@ -38,4 +38,6 @@ Chủ dự án duyệt áp dụng đúng bản nháp này trong chat ngày 03/11
 
 Sau áp dụng: lint backend 99 file 0 lỗi/cảnh báo; build PASS; unit main với `npm run test -- --exclude 'artifact_BE/**'` đạt 39 file/880 test PASS; `npm run test:e2e` đạt 3 file/23 test PASS, log `20261103T1555-CZIT` CLEANED. Lượt e2e trước đó `20261103T1542-N0N9` cũng PASS/CLEANED. `npm run test` không exclude hiện còn thu cả draft P2-4 đang làm, sẽ kiểm lại sau khi P2-4 hoàn tất.
 
+Đã dọn 03/11/2026: xóa bản sao `package.json`, `src/main.ts`, `src/common/env.ts`, `src/common/env.spec.ts` và file shim/test/cache trong `ref/` khỏi approved. File chính cùng đường dẫn trong `Source/backend/`, commit `6d55b84`; chỉ giữ REVIEW.md.
+
 Đã chép vào file chính 03/11/2026 bằng apply-draft.mjs: 4 file.
