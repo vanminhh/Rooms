@@ -30,6 +30,8 @@ Kiểm mã draft trực tiếp bằng test preview trong `ref/`; sau khi chủ d
 - Đã so diff hai file draft với file chính: chỉ có guard bỏ qua key có giá trị `undefined` và e2e kiểm mật khẩu trước khi xóa biến, sau đó xác nhận biến đã xóa. `ref/` chỉ dùng kiểm draft, không áp dụng.
 - E2E DB thật chỉ có thể xác nhận bản sửa sau khi chủ dự án duyệt và áp dụng draft; không gọi PASS ở giai đoạn này.
 - Chủ dự án duyệt áp dụng đúng bản nháp này trong chat ngày 03/11/2026.
+- Sau áp dụng: lint backend 99 file, 0 cảnh báo/lỗi; build PASS; e2e DB dev 23/23 PASS, log `20261103T1542-N0N9` đạt `CLEANED`. Unit main có 856 assertion PASS nhưng suite env.spec.ts chưa chạy do `.env.example` đã bị xóa theo quyết định riêng của chủ dự án; draft xử lý môi trường `2026-11-03-BE-env-location` đang chuẩn bị.
+- Đã dọn 03/11/2026: xóa bản sao code/test và `ref/` trong approved; file chính ở `Source/backend/src/modules/buildings/building-write.guard.ts` và `Source/backend/test/buildings.e2e-spec.ts`, commit `728148e`. Chỉ giữ REVIEW.md; cleanup ghi trong `a66c9ab` và `ad4f6da`.
 
 ## Giả định hoặc câu hỏi cho chủ dự án
 
