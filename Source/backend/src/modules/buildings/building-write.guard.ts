@@ -8,7 +8,9 @@ const MANAGER_BUILDING_FIELDS = new Set(['amenities', 'description']);
 export function assertBuildingPatchFields(user: Pick<AuthUser, 'role'>, body: unknown): void {
   if (user.role !== 'MANAGER' || body === null || typeof body !== 'object' || Array.isArray(body)) return;
 
-  const hasForbiddenField = Object.keys(body).some((field) => !MANAGER_BUILDING_FIELDS.has(field));
+  const hasForbiddenField = Object.entries(body).some(
+    ([field, value]) => value !== undefined && !MANAGER_BUILDING_FIELDS.has(field),
+  );
   if (hasForbiddenField) throw new ForbiddenException(ErrorCode.FORBIDDEN);
 }
 

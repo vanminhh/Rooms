@@ -120,6 +120,7 @@ describe('D2-14, BE-P2-09: Buildings and manager API against real Prisma', () =>
     created.managerId = createdManager.body.data.manager.id as number;
     e2e.record('users', created.managerId);
     managerTemporaryPassword = createdManager.body.data.temporaryPassword as string;
+    expect(JSON.stringify(e2e.log)).not.toContain(managerTemporaryPassword);
     expect(createdManager.body.data.manager).toMatchObject({
       id: created.managerId,
       phone: managerPhone,
@@ -280,7 +281,7 @@ describe('D2-14, BE-P2-09: Buildings and manager API against real Prisma', () =>
     expect(e2e.log.buildingCodes).toEqual(buildingCodes);
     const serialized = JSON.stringify(e2e.log);
     expect(serialized).not.toContain(managerPhone);
-    expect(serialized).not.toContain(managerTemporaryPassword);
+    expect(managerTemporaryPassword).toBe('');
     expect(serialized).not.toContain(boss.token);
     expect(serialized).not.toContain(boss.cookie);
     expect(serialized).not.toContain('password');
