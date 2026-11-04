@@ -196,6 +196,18 @@ export class RoomsService {
     return paginated(rows.map((row) => this.toGridItem(row, today)), page, limit, total);
   }
 
+  async get(user: AuthUser, id: number): Promise<RoomView> {
+    this.assertStaff(user);
+    const room = await this.prisma.room.findUnique({ where: { id }, include: ROOM_INCLUDE });
+    if (!room) throw new NotFoundException(ErrorCode.NOT_FOUND);
+    this.assertRoomScope(user, room);
+    const view = this.toView(room);
+    view.pendingViewingCount = await this.prisma.viewing.count({
+      where: { roomId: id, status: { in: [...PENDING_VIEWING_STATUSES] } },
+    });
+    return view;
+  }
+
   async create(user: AuthUser, dto: CreateRoomDto): Promise<RoomView> {
     this.assertStaff(user);
     try {

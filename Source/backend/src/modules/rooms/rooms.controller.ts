@@ -24,6 +24,12 @@ export class RoomsController {
   }
 
   @Roles('BOSS', 'MANAGER')
+  @Get(':id')
+  get(@CurrentUser() user: AuthUser, @Param() params: RoomIdParamsDto): Promise<RoomView> {
+    return this.rooms.get(user, params.id);
+  }
+
+  @Roles('BOSS', 'MANAGER')
   @Post()
   create(@CurrentUser() user: AuthUser, @Body() dto: CreateRoomDto): Promise<RoomView> {
     return this.rooms.create(user, dto);

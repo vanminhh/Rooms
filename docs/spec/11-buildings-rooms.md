@@ -61,6 +61,7 @@ Derived, never stored. Priority top to bottom:
 | GET | `/public/featured-rooms` | public – PUB-01 |
 | GET/POST/PATCH | `/buildings` | staff (POST, assignment fields, lock: **Boss**; managers: `amenities`, `description` only) |
 | GET/POST/PATCH | `/rooms`, `/rooms/:id/images` | staff in scope |
+| GET | `/rooms/:id` | staff in scope – chi tiết phòng: như `/rooms` + `furniture`, `description`, `images` (ROOM-07) và `pendingViewingCount` (ROOM-09, VIEW-13) |
 | GET/POST/PATCH | `/services` | GET staff; POST/PATCH **Boss** |
 | POST | `/files/sign` | staff in scope (FILE-01) |
 
