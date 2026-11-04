@@ -44,7 +44,7 @@ Out: billing use of rates (Phase 4), FE (parts 8a/8b).
 - [x] **BE-P2-27** Lists for staff and the "Duyệt giá" page (PRC-10..12): `expired` flag, old → new, % rounded to 1 decimal, electric tiers table, "Giá mới" when no old value.
   Chủ dự án trả lời Q-P5-2 A; tiếp tục planner/checkpoint trong draft.
   Done when: unit tests for each PRC-12 case.
-- [~] **BE-P2-28** `npm run lint`, `test`, `build`, `test:e2e` pass; e2e: manager proposes → public price unchanged → Boss approves → price changes (job run with the test's `roomIds`).
+- [x] **BE-P2-28** `npm run lint`, `test`, `build`, `test:e2e` pass; e2e: manager proposes → public price unchanged → Boss approves → price changes (job run with the test's `roomIds`).
   Done when: all pass; list every `[ASSUMPTION]`.
 
 ## Questions for the owner
@@ -77,3 +77,4 @@ Out: billing use of rates (Phase 4), FE (parts 8a/8b).
 - 04/11/2026 · BE-P2-22..25/27 · Chủ dự án đã trả lời Q-P5-1 A, Q-P5-2 A, Q-P5-3 B, Q-P5-4 A; nối lại planner để cập nhật PLAN, schema/migration idempotency trong draft và các checkpoint. Chưa duyệt áp dụng draft.
 - 04/11/2026 · BE-P2-22..27 · Chủ dự án duyệt và áp dụng P2-5 + bản sửa 2 test. Trên main: DB 54/54, lint 0 lỗi, build PASS, unit 62 file/1272 test PASS, migration `20261104000000_pricing_idempotency` đã chạy lên DB dev, e2e hiện có 3 file/23 test PASS. BE-P2-22..27 đạt Done when (unit test).
 - 04/11/2026 · BE-P2-28 · Còn [~]: e2e "manager đề xuất → giá công khai không đổi → Boss duyệt → job `roomIds` → giá đổi" chưa được viết (draft không kèm file e2e). Cần một draft nhỏ thêm `test/pricing.e2e-spec.ts`.
+- 04/11/2026 · BE-P2-28 · E2E giá đã duyệt và áp dụng (`test/pricing.e2e-spec.ts`). Trên main: `npm run test:e2e` 4 file/33 test PASS trên DB dev. Part 5 đạt Done when; giá công khai kiểm bằng `rooms.price` (API công khai thuộc P2-6).
