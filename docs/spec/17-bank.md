@@ -24,6 +24,7 @@ Only incoming (credit) transactions to the account in `settings.bank_account` ar
 - **BANK-05** Boss assigns an UNMATCHED transaction to an invoice: invoice must be UNPAID and `total = amount` → status `ASSIGNED`, payment `source = ASSIGNED`, `recorded_by_id` = Boss. Otherwise Boss marks it `REFUNDED` with a note after refunding outside the system.
 - **BANK-06** Payment issue flow ([18-requests.md](18-requests.md)): tenant reports → manager checks → escalates; Boss sees escalated issues next to unmatched transactions and resolves them by BANK-05.
 - **BANK-07** Raw payloads are stored in `raw` for audit; secrets are never stored in DB (`BANK_WEBHOOK_SECRET` in env).
+- **BANK-08** [OPEN] Q-04 Missed webhooks: a transfer that arrives while the BE is down must not be lost. When the provider is chosen (Q-03), confirm (a) whether it retries a webhook that got no 2xx answer, how often and for how long, and (b) whether it has an API that lists past transactions. If (b), a reconciliation job pulls the last few days and feeds them through BANK-02..04; BANK-02's unique key makes repeats safe. Until answered, unpaid invoices are handled by reminders and the payment issue flow (BANK-06).
 
 ## API
 

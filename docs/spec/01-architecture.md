@@ -93,11 +93,22 @@ BE maps DB constraint/trigger errors to these codes. Module specs add their own.
 
 | Time | Job | Spec |
 |---|---|---|
-| 00:05 daily | Create `DRAFT` monthly invoices for contracts due today; switch renewed contracts | [16-billing.md](16-billing.md#cron) |
+| 00:05 daily **and at app start** | Create `DRAFT` monthly invoices for billing dates in the last 7 days that have none; switch signed renewals whose start date has come (catch-up of missed runs, D-21) | [16-billing.md](16-billing.md#cron) |
 | 01:00 daily **and at app start** | Sync `rooms.price` with the current approved room price (PRC-06; the start-up run fixes days missed while the server was off); auto-close incidents `RESOLVED` > 3 days | [12-pricing.md](12-pricing.md), [18-requests.md](18-requests.md) |
 | 08:00 daily | Invoice reminders; contract expiry notices (30 and 7 days); stale drafts > 2 days; expired unresolved contracts | [19-notifications.md](19-notifications.md) |
 
 Every job MUST be idempotent (safe to run twice the same day) and log a summary line.
+
+## Deployment
+
+Scale: one chain of mini apartment buildings, hundreds of rooms. One server is enough; these rules keep it from going down or misbehaving behind a proxy (owner 04/11/2026).
+
+- **DEP-01** FE and API are served from **one origin**: e.g. `https://<domain>/` serves the SPA and `https://<domain>/api/*` is forwarded to the BE, the same way the Vite proxy works in dev. Reason: the BE has no CORS and the refresh cookie is `SameSite=Lax` on path `/api/v1/auth` (AUTH-T2); on a second domain requests are blocked and users are logged out after 15 minutes.
+- **DEP-02** The BE runs as **exactly one always-on instance** with at least 1 GB RAM; no free tier that sleeps (a sleeping server misses cron and webhooks). Reasons: the login and viewing IP limits are kept in memory (AUTH-04, VIEW-11) and cron runs inside the app; one argon2 check uses about 64 MB and up to 4 run at once (AUTH-03). Before a second instance: move those limits to a shared store and run cron on one instance only.
+- **DEP-03** BE and DB run in the same region, Singapore (nearest to Hà Nội). The app uses the pooled `DATABASE_URL`; `DIRECT_URL` is for migrations only.
+- **DEP-04** Behind a proxy or CDN, Express `trust proxy` is set to the **exact number of proxies** in front of the BE (env `TRUST_PROXY_HOPS`, default 0), so `req.ip` is the visitor's IP for the per-IP limits (AUTH-04, VIEW-02) and audit logs. Never `true`: anyone could then fake `X-Forwarded-For`. Without it every visitor shares the proxy's IP, and the whole site gets only 5 viewing bookings per hour.
+- **DEP-05** `NODE_ENV` is required (`development`, `test` or `production`; added to `REQUIRED_ENV` and `.env.example`). Production runs with `production`, which makes the refresh cookie `Secure` (AUTH-T2); the app refuses to start without it instead of silently running with a non-secure cookie.
+- **DEP-06** A CDN (e.g. Cloudflare) in front of the origin caches public GET responses for 60 s (PUB-05) and blocks obvious bots. Its cache rule covers only `GET /api/v1/public/*`; CDNs do not cache JSON by default.
 
 ## Roadmap
 
@@ -106,5 +117,5 @@ Every job MUST be idempotent (safe to run twice the same day) and log a summary 
 | 1 · Foundation | Move `docs/database/*` to `Source/backend/prisma/`; first migration = generated SQL + `constraints.sql`; seed (1 Boss, 2 managers, 3 buildings, rooms, services, rate plans, 1 tenant with active contract); `auth` module; scope guard; error filter; FE skeleton with 3 layouts and login | 3 roles log in and land in the right layout; `check-constraints.mjs` still 50/50; unit tests for scope guard |
 | 2 · Rooms | buildings, rooms, services, pricing + approval, public pages, viewings | Guest finds a room and books a viewing; price changes only after Boss approval |
 | 3 · Contracts | contracts (create, PDF, sign, move-in, cancel), tenant account, occupants, vehicles | From viewing to tenant logged in |
-| 4 · Money | meters, billing, bank webhook, manual payment, reissue, settlement, reminders | Example invoice 3.119.000 đ passes as a unit test; webhook matched and unmatched cases pass |
+| 4 · Money | meters, billing, bank webhook, manual payment, reissue, settlement, reminders | Example invoice 3.119.000 đ passes as a unit test; webhook matched and unmatched cases pass; a missed 00:05 run is caught up (BIL-05, BIL-06) |
 | 5 · Operations | requests, notifications inbox, renewal, reports, audit, settings | Boss compares buildings in reports |

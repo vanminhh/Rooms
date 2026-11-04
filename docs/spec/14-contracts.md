@@ -57,7 +57,7 @@ stateDiagram-v2
 ## Renewal
 
 - **CON-17** From an ACTIVE contract (usually after an approved `RENEW` request): create a new contract with `previous_contract_id`, same room, same tenant, `rent` = old rent, `billing_day` = old billing day, `start_date` = old `end_date` + 1, `termMonths` ≥ 3, `deposit` = old deposit (no new deposit invoice), services copied (editable).
-- **CON-18** The renewal is signed like CON-06 (no new account, no deposit invoice). No move-in step: on its `start_date` the 00:05 cron sets the old contract ENDED and the new one ACTIVE (`moved_in_at` = start), using the period-end reading of the old contract as the new start reading.
+- **CON-18** The renewal is signed like CON-06 (no new account, no deposit invoice). No move-in step: the first billing cron run on or after its `start_date` (00:05 or app start, BIL-06) sets the old contract ENDED and the new one ACTIVE (`moved_in_at` = start), using the period-end reading of the old contract as the new start reading.
 - **CON-19** Occupants and active vehicles are copied to the new contract at switch time.
 
 ## Expiry

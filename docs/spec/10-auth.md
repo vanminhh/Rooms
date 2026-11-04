@@ -7,7 +7,7 @@ Module: `auth` + `src/common/guards`. Tables: `users`, `sessions`, `password_res
 - **AUTH-01** Login with `phone` + `password`. No role selector. Wrong phone or password returns the same error (`INVALID_CREDENTIALS`, 401, "Số điện thoại hoặc mật khẩu không đúng").
 - **AUTH-02** Inactive users cannot log in (`ACCOUNT_LOCKED`, 403, "Tài khoản đã bị khóa. Liên hệ quản lý.").
 - **AUTH-03** Passwords hashed with argon2id. Minimum 8 characters.
-- **AUTH-04** Login rate limit: 5 failures per phone per 15 minutes → 429.
+- **AUTH-04** Login rate limit: 5 failures per phone per 15 minutes → 429. Also [ASSUMPTION A-08] 20 failures per IP per 15 minutes → 429, checked before the password check and counted in memory like the phone limit (DEP-02, DEP-04); a successful login does not reset the IP count. Reason: every attempt costs one argon2 check, even for an unknown phone (AUTH-01), so a flood spread over many phones would bypass the phone limit and exhaust the server. The IP limit is higher than the phone limit because the tenants of one building often share one Wi-Fi IP.
 - **AUTH-05** If `must_change_password`, every API except `POST /auth/change-password`, `POST /auth/logout`, `GET /auth/me` returns `PASSWORD_CHANGE_REQUIRED`. FE redirects to `/doi-mat-khau`.
 - **AUTH-06** After login FE routes by role: `TENANT` → `/thue`, `MANAGER`/`BOSS` → `/ql`. Opening `/dang-nhap` while logged in redirects the same way.
 - **AUTH-07** Forgot password: if the user has an email, send a single-use link valid 30 minutes; otherwise the response is identical (no account enumeration) and the page shows the building manager's contact. Staff can reset a tenant's password (temporary password, `must_change_password = true`, sessions revoked).

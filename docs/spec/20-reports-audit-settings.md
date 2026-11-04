@@ -15,7 +15,7 @@ API: `GET /reports/revenue?buildingId&from&to` (monthly series) · `GET /reports
 
 ## Audit log
 
-- **AUD-01** Write `audit_logs` (actor, action, entity, entity_id, before, after, ip) for: price propose/approve/reject; contract create/sign/move-in/cancel/renew/settle; payment record/assign/refund; invoice issue/reissue/cancel; building manager change; manager create/deactivate; password reset by staff; CCCD photo view; settings change.
+- **AUD-01** Write `audit_logs` (actor, action, entity, entity_id, before, after, ip) for: price propose/approve/reject; contract create/sign/move-in/cancel/renew/settle; payment record/assign/refund; invoice issue/reissue/cancel, create of a missed period (BIL-21); building manager change; manager create/deactivate; password reset by staff; CCCD photo view; settings change.
 - **AUD-02** Action names: `<entity>.<verb>`, e.g. `invoice.reissue`, `price.approve`, `occupant.view_id`.
 - **AUD-03** Webhook and cron actions use `actor_id = null`.
 - **AUD-04** Boss reads it at "Nhật ký thao tác": `GET /audit-logs?entity&entityId&actorId&from&to` **Boss**.

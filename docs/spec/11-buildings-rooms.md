@@ -30,6 +30,7 @@ Modules: `buildings`, `rooms`. Tables: `buildings`, `rooms`, `room_images`, `ser
 - **PUB-02** `/public/rooms/:id` and `/public/buildings/:id` for a room or building that is not public return 404 `NOT_FOUND` (no hint that it exists).
 - **PUB-03** Rates shown publicly = today's rates (RATE-06). Rates approved for a later date are shown as an extra line "Từ dd/mm/yyyy: …".
 - **PUB-04** Public responses never include internal fields (user ids, phone of login, review notes, proposal data).
+- **PUB-05** Successful `GET /public/*` responses carry `Cache-Control: public, max-age=0, s-maxage=60`: the CDN (DEP-06) may serve them for 60 s, browsers always ask again. Error responses and every non-GET (e.g. `POST /public/viewings`) carry `Cache-Control: no-store`. So a new price, a locked room or a newly listed room may show publicly up to 60 s late, including PUB-02's 404 (owner 04/11/2026). Staff and tenant routes are never cached.
 
 ### Room status
 

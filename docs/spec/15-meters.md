@@ -15,7 +15,7 @@ Module: `meters`. Table: `meter_readings`.
 
 ## "Chốt chỉ số" list
 
-- **MTR-09** `GET /meter-readings/due` returns, in scope, every `DRAFT` monthly invoice (created by cron on its billing date) with room, tenant, previous readings and the billing date. Sorted: overdue drafts first.
+- **MTR-09** `GET /meter-readings/due` returns, in scope, every `DRAFT` monthly invoice (created by cron on its billing date, or by the catch-up run up to 7 days later, BIL-05) with room, tenant, previous readings and the billing date. Sorted: overdue drafts first.
 - **MTR-10** The closing reading for period k MUST have `read_on` ≥ D(k) − 2 days and SHOULD be on D(k). It becomes the opening reading of period k+1.
 - **MTR-11** `POST /meter-readings` accepts a batch `[{ roomId, kind, value, readOn, photoUrl, isMeterReplaced?, oldMeterFinal?, note? }]`. Each item is validated independently; the response lists per-item success or error. When a DRAFT gets all readings it needs (electric; water only if PER_M3), BE computes it and issues it ([16-billing.md](16-billing.md#issue)) unless MTR-08 applies.
 - **MTR-12** Editing a reading is allowed only while no issued invoice uses it. After issue: cancel and reissue the invoice ([16-billing.md](16-billing.md#reissue)).

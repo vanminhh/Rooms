@@ -41,7 +41,7 @@ Route guard: not logged in → `/dang-nhap?next=...`; wrong role → own home (A
 
 | Route | Page | Spec |
 |---|---|---|
-| `/ql` | Việc hôm nay: task groups with counts (NOTI-06), occupancy ring, collected vs outstanding bar. Phase 2: only the cards "Lịch hẹn mới" and (Boss) "Giá chờ duyệt" | NOTI-06, RPT |
+| `/ql` | Việc hôm nay: task groups with counts (NOTI-06), occupancy ring, collected vs outstanding bar; red card "Kỳ chưa có hóa đơn" lists each missed period (room, tenant, period dates) with the button "Tạo hóa đơn kỳ này" (confirm dialog, then opens "Chốt chỉ số"). Phase 2: only the cards "Lịch hẹn mới" and (Boss) "Giá chờ duyệt" | NOTI-06, BIL-21, RPT |
 | `/ql/toa-nha`, `/ql/toa-nha/:id` | Tòa nhà: manager edits amenities/description; Boss creates, assigns manager, services, locks (confirm dialog: manager will be unassigned, N open viewings) | BLD, SVC |
 | `/ql/phong` | Phòng: floor grid colored by derived status, "Hiện phòng đã khóa"; create/edit, photos; "Đề xuất giá", "Quá hạn" + "Đề xuất lại" | ROOM, PRC-01, PRC-07 |
 | `/ql/lich-hen` | Lịch hẹn: by date; add manual; call/Zalo buttons; status changes per VIEW-04; "Chốt" → contract form (from Phase 3) | VIEW |

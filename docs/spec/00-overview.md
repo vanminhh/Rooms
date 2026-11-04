@@ -91,6 +91,8 @@ Boss → Manager (≤ 2 buildings) → Building (address, district, ward in Hà 
 | D-18 | Each building has at most 1 manager; each manager at most 2 buildings |
 | D-19 | Database: PostgreSQL on Neon or Supabase, Prisma 6, integer auto-increment ids |
 | D-20 | Deferred: AI chatbot, Zalo reminders, e-signature |
+| D-21 | The monthly invoice cron also runs at app start and catches up missed days: it creates DRAFTs for billing dates in the last 7 days that have none, so a server restart at 00:05 never loses an invoice. Periods missed for more than 7 days show red in "Việc hôm nay", and staff create them with the button "Tạo hóa đơn kỳ này" (owner 04/11/2026, [16-billing.md](16-billing.md) BIL-05, BIL-21) |
+| D-22 | Deployment: FE and API on one origin, one always-on BE instance, BE and DB in the same region, `trust proxy` set to the exact proxy count, `NODE_ENV` required, public GETs cached 60 s at the CDN (owner 04/11/2026, [01-architecture.md](01-architecture.md#deployment) DEP-01..06, PUB-05) |
 
 ## Assumptions (not yet confirmed — implement, keep easy to change)
 
@@ -101,9 +103,15 @@ Boss → Manager (≤ 2 buildings) → Building (address, district, ward in Hà 
 - **A-05** Confirmed by the owner (01/11/2026), no longer an assumption: public "ước tính chi phí/tháng" = room price + services with unit ROOM + services with unit PERSON × 1 + water for 1 person when `water_mode = PER_PERSON`. Electricity and per-m³ water are not added; their unit prices are shown with "chưa gồm điện, nước – tính theo đồng hồ của phòng". Details: [11-buildings-rooms.md](11-buildings-rooms.md) ROOM-08.
 - **A-06** [ASSUMPTION] Days a tenant stays after `end_date` without renewal are not charged automatically; staff may add them to the settlement as damages with a note.
 - **A-07** [ASSUMPTION] Login without "Ghi nhớ đăng nhập" keeps the session until the browser closes, max 12 hours.
+- **A-08** [ASSUMPTION] Login is also limited to 20 failures per IP per 15 minutes, on top of the 5-per-phone limit ([10-auth.md](10-auth.md) AUTH-04).
+- **A-09** [ASSUMPTION] The renewal switch has no 7-day limit: a missed switch, or a renewal signed after its start date, is switched by the next cron run ([16-billing.md](16-billing.md) BIL-06).
+- **A-10** [ASSUMPTION] Settlement is refused while the contract still has a billing period without an invoice; staff create it first with "Tạo hóa đơn kỳ này" ([16-billing.md](16-billing.md) BIL-21).
 
 ## Open questions (do not implement until answered)
 
 - **Q-01** [OPEN] While an early-leaving tenant is still paying rent until the end date, may the room be rented to someone else? If yes, is the old tenant's overlapping rent reduced?
 - **Q-02** [OPEN] Real electric tier table (kWh bounds and prices) per building. Use seed values from [12-pricing.md](12-pricing.md) until then.
-- **Q-03** [OPEN] Webhook provider (SePay or Casso) and bank. Implement behind one adapter interface.
+- **Q-03** [OPEN] Webhook provider (SePay or Casso) and bank. Implement behind one adapter interface. When choosing, check Q-04.
+- **Q-04** [OPEN] Missed webhooks: does the chosen provider retry, and does it have an API to list past transactions for a reconciliation job? ([17-bank.md](17-bank.md) BANK-08)
+- **Q-05** Answered by the owner (04/11/2026): keep the 7-day limit and add the button "Tạo hóa đơn kỳ này" for older missed periods (D-21, BIL-21).
+- **Q-06** [OPEN] Reminders at 08:00 match one exact day (NOTI-05). If that run is missed, should they be sent late on the next run, or skipped?
