@@ -296,6 +296,7 @@ model RoomImage {
   roomId    Int    @map("room_id")
   url       String
   publicId  String @map("public_id") // id ảnh trên Cloudinary
+  assetId   String @unique @map("asset_id") // immutable Cloudinary asset ID
   sortOrder Int    @default(0) @map("sort_order")
 
   room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
@@ -751,3 +752,4 @@ model AuditLog {
   @@index([actorId, createdAt])
   @@map("audit_logs")
 }
+

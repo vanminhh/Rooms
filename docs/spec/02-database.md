@@ -54,7 +54,7 @@ All 50 scenarios in `check-constraints.mjs` pass: second Boss; bad/duplicate pho
 - **DB-B3** New reading ≥ previous reading of the same room and kind, unless `is_meter_replaced`.
 - **DB-B4** `invoices.total` = sum of its lines. Tiers ascend by `up_to`, last tier `up_to = null`.
 - **DB-B5** `contract_services` only reference services with unit ROOM or PERSON; `vehicles.service_id` only unit VEHICLE.
-- **DB-B6** Active occupants ≤ `rooms.max_occupants`.
+- **DB-B6** Active occupants ≤ `rooms.max_occupants`. When changing a room's limit, count occupants of ACTIVE contracts with `move_in_date <= today` and `move_out_date IS NULL OR move_out_date >= today`, using the business date in `Asia/Ho_Chi_Minh`. An occupant whose move-out date is today still counts through that day. The BE checks and updates the room in one transaction; a lower limit returns 409 `CONFLICT_STATE` (owner 04/11/2026; CON-13).
 - **DB-B7** Renewal `start_date` = previous `end_date` + 1 day and `billing_day` = previous `billing_day`.
 - **DB-B8** Building scope and tenant ownership on every read and write.
 - **DB-B9** CCCD photo URLs are signed per request and expire in ≤ 5 minutes; each view writes `audit_logs` (`occupant.view_id`).

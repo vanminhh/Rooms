@@ -76,4 +76,4 @@ Route guard: not logged in → `/dang-nhap?next=...`; wrong role → own home (A
 - **UI-07** Tenant app, "Chốt chỉ số" and manual payment are designed for 360 px width first.
 - **UI-08** Accessible: labels on every input, focus visible, buttons are `<button>`, images have `alt`.
 - **UI-09** Server state via TanStack Query; invalidate the affected lists after every mutation. Forms via react-hook-form + zod mirroring BE validation.
-- **UI-10** Uploads: request a signature from `POST /files/sign`, upload directly to Cloudinary, send only the resulting URL/public id to the API.
+- **UI-10** Uploads: request a signature from `POST /files/sign` and upload directly to Cloudinary. For room images, send only the Cloudinary response fields `assetId`, `publicId`, `version`, and `format` to the API (FILE-02); never send a delivery URL. Other upload purposes follow their module spec.

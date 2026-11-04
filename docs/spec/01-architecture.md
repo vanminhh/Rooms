@@ -87,7 +87,7 @@ BE maps DB constraint/trigger errors to these codes. Module specs add their own.
 ## Files
 
 - **FILE-01** `POST /files/sign` (staff) returns a signed Cloudinary upload for one purpose. Phase 2 has one purpose, `ROOM_IMAGE` with `roomId`: the room MUST be in the caller's scope (SCOPE-02); the signature fixes `folder = rooms/<buildingId>/<roomId>`, `allowed_formats = jpg,png,webp` and an incoming transformation that limits the long side to 1920 px. Without `CLOUDINARY_URL` → `UPLOAD_NOT_CONFIGURED`.
-- **FILE-02** The client sends back only `publicId` (+ `version`, `format`); the BE checks the folder and builds the delivery URL itself. URLs from the client are never stored.
+- **FILE-02** For room images, the client sends `assetId`, `publicId`, `version`, and `format` from the Cloudinary upload response, never a delivery URL. Before attaching an image, the BE retrieves Cloudinary metadata by immutable `assetId` and verifies that `asset_id`, `public_id`, `version`, `format`, `resource_type = image`, and `type = upload` match the request and the room folder. It stores `asset_id` uniquely with the image and builds the delivery URL itself. Missing or mismatched assets return 400 `VALIDATION_FAILED`; unavailable Cloudinary configuration returns 503 `UPLOAD_NOT_CONFIGURED`. The BE deletes the row, then requests Cloudinary destroy by the stored `asset_id` (not by `public_id`); a Cloudinary deletion failure is logged and does not block the request. Owner decision Q-P24-9, 03/11/2026.
 
 ## Cron (Asia/Ho_Chi_Minh)
 

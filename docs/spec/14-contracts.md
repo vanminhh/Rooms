@@ -49,7 +49,7 @@ stateDiagram-v2
 
 ## Occupants and vehicles
 
-- **CON-13** Staff manage occupants (`full_name`, `phone`, `date_of_birth`, CCCD, photos, `move_in_date`, `move_out_date`). Active occupants ≤ `max_occupants`. Exactly one signer.
+- **CON-13** Staff manage occupants (`full_name`, `phone`, `date_of_birth`, CCCD, photos, `move_in_date`, `move_out_date`). Active occupants ≤ `max_occupants`. For a room limit change, active occupants are those on ACTIVE contracts with `move_in_date <= today` and `move_out_date IS NULL OR move_out_date >= today` in `Asia/Ho_Chi_Minh`; departure today counts through the day (DB-B6, owner 04/11/2026). Exactly one signer.
 - **CON-14** Staff manage vehicles: `plate` (normalized uppercase, no spaces), `type`, `service_id` (a VEHICLE service of the building). Removing sets `is_active = false`, `removed_at`.
 - **CON-15** Tenants never write occupants or vehicles directly; they send `OCCUPANT_CHANGE` / `VEHICLE_CHANGE` requests ([18-requests.md](18-requests.md)).
 - **CON-16** CCCD photos are uploaded as Cloudinary authenticated assets. Viewing them goes through `GET /contracts/:id/occupants/:oid/id-photos` which returns signed URLs valid ≤ 5 minutes and writes an audit log. Allowed: staff in scope. Tenants see only their own number's last 4 digits.
