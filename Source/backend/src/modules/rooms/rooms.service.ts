@@ -21,6 +21,7 @@ import type {
   UpdateRoomDto,
 } from './dto/rooms.dto.js';
 import { destroyRoomImageByAssetId, verifyRoomImage } from '../files/files.service.js';
+import { syncRoomPrices } from '../pricing/room-price-sync.js';
 import { deriveRoomStatus } from './room-status.js';
 import type { RoomGridItem, RoomImageView, RoomStatus, RoomView } from './rooms.types.js';
 
@@ -279,6 +280,8 @@ export class RoomsService {
             data,
           });
           if (result.count === 0) throw new ConflictException(ErrorCode.CONFLICT_STATE);
+          // Q-P5-5 A: unlocking applies the current approved price in this transaction (skipped while the building is locked).
+          if (dto.isActive === true && !current.isActive) await syncRoomPrices(tx, [id]);
           const updated = await tx.room.findUnique({ where: { id }, include: ROOM_INCLUDE });
           if (!updated) throw new NotFoundException(ErrorCode.NOT_FOUND);
           row = updated;

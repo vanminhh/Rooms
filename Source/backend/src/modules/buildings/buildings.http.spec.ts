@@ -36,10 +36,14 @@ describe('BE-P2-11 · buildings HTTP', () => {
     },
     contract: { count: vi.fn(async ({ where }: any) => contracts.filter((c) => c.buildingId === where.buildingId && where.status.in.includes(c.status)).length) },
     viewing: { findMany: vi.fn(async ({ where }: any) => viewingRows.filter((viewing) => where.status.in.includes(viewing.status) && where.room.buildingId.in.includes(viewing.room.buildingId))) },
+    // Unlock calls syncRoomPrices (PRC-06): no rooms here, so nothing to sync.
+    room: { findMany: vi.fn(async () => []), update: vi.fn() },
+    roomPrice: { findMany: vi.fn(async () => []) },
     auditLog,
     $transaction: vi.fn(async (callback: any) => callback({
       $queryRaw: vi.fn(async () => []), user: fakePrisma.user, building: fakePrisma.building,
       auditLog, contract: fakePrisma.contract, viewing: fakePrisma.viewing,
+      room: fakePrisma.room, roomPrice: fakePrisma.roomPrice,
     })),
     $disconnect: vi.fn(async () => undefined),
   };

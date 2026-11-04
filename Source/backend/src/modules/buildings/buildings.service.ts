@@ -12,6 +12,7 @@ import { ErrorCode } from '../../common/errors/error-code.js';
 import { pageParams, paginated } from '../../common/pagination.js';
 import type { AuthUser } from '../../common/guards/auth.decorators.js';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
+import { syncRoomPrices } from '../pricing/room-price-sync.js';
 import { assertBuildingPatchFields } from './building-write.guard.js';
 import { assertAssignableManager } from './manager-assignment.js';
 import type { BuildingView } from './buildings.types.js';
@@ -189,6 +190,11 @@ export class BuildingsService {
           data,
         });
         if (result.count === 0) throw new ConflictException(ErrorCode.CONFLICT_STATE);
+        // Q-P5-5 A: unlocking the building applies current approved prices to every active room of it, in this transaction.
+        if (finalIsActive) {
+          const rooms = await tx.room.findMany({ where: { buildingId: id, isActive: true }, select: { id: true } });
+          await syncRoomPrices(tx, rooms.map((room) => room.id));
+        }
         updated = (await tx.building.findUnique({
           where: { id },
           include: BUILDING_INCLUDE,

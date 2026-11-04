@@ -18,7 +18,7 @@ Không thay đổi file chính.
 | ref/QA.md | Không áp dụng | Kết quả kiểm tra, khác biệt spec, checklist còn thiếu |
 
 ## Cách xem và kiểm tra
-Từ Source/frontend chạy npm run dev -- --host 127.0.0.1 --port 5174 --strictPort rồi mở http://127.0.0.1:5174/artifact_FE/2026-11-02-phase2-mockup/preview.html. Ngày 03/11/2026, cổng 5173 đã có tiến trình khác; máy chủ Vite bản xem trước đang chạy ở cổng 5174 và đường dẫn preview trả HTTP 200.
+Từ Source/frontend chạy npm run dev -- --host 127.0.0.1 --port 5174 --strictPort rồi mở http://127.0.0.1:5174/artifact_FE/2026-11-02-phase2-mockup/preview.html. Ngày 03/11/2026, cổng 5173 đã có tiến trình khác; Vite trên cổng 5174 trả preview HTTP 200 rồi đã được dừng sau khi chủ dự án duyệt.
 
 Bộ chọn đầu trang chuyển giữa sáu màn. Có trạng thái Có dữ liệu / Đang tải / Trống / Lỗi. Server đã dừng trước bàn giao; cần chạy lại để xem.
 
@@ -30,6 +30,8 @@ Kết quả trên draft ngày 02/11/2026:
 - npm run lint: PASS, exit 0, không auto-fix; bao phủ draft. Đã tách entry để sửa lỗi Fast Refresh.
 - npm run test:components: PASS 234/234, 0 skipped. Đây bộ kit/auth hiện có, không chứng minh giao diện draft đã render đúng.
 - Vite v8.3.4 khởi động được và đã dừng bằng Ctrl+C.
+
+Kiểm lại sau khi chủ dự án duyệt bố cục ngày 03/11/2026: `npm run lint` PASS; `npx tsc -p artifact_FE/2026-11-02-phase2-mockup/ref/tsconfig.mockup.json --noEmit` PASS; `npm run test:components` PASS 234/234. Vite tại cổng 5174 trả preview HTTP 200. Các lệnh này chưa chứng minh 360 px hoặc bàn phím thực tế.
 
 Chưa đạt Done when: chưa có ảnh thật desktop/360 px, chưa xác nhận cuộn ngang hoặc bàn phím. IAB không mở được loopback; Computer Use khi chọn Cốc Cốc trên Windows đã yêu cầu dừng vì URL policy enforcement chưa được hỗ trợ. Đã dừng và không dùng automation khác để vượt chặn. Giới hạn và checklist tiếp theo ghi đầy đủ trong ref/QA.md. Chưa được đánh P2-MOCK-01 hoặc P2-MOCK-02 hoàn tất.
 

@@ -1,6 +1,12 @@
 import { BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { BuildingsService } from './buildings.service.js';
 
+// CP-5 regression check: this is an UNMODIFIED copy of the main
+// src/modules/buildings/buildings.service.spec.ts (existing before CP-5), run here through the
+// preview resolver so it exercises the draft-mirrored BuildingsService. If this file goes red,
+// the CP-5 mirror broke existing building-unlock behavior (PLAN "Done when": existing
+// rooms/buildings tests must stay green against the mirror).
+
 // Prisma and audit are outside edges. The service itself and its assignment helper run unmocked.
 const manager = (id: number, role = 'MANAGER', isActive = true) => ({ id, role, isActive });
 const building = (overrides: Record<string, unknown> = {}) => ({
@@ -24,6 +30,11 @@ function harness() {
       update: vi.fn(async ({ where, data }: any) => { const b: any = state.buildings.find((x: any) => x.id === where.id); Object.assign(b, data, { manager: state.users.find((u: any) => u.id === (data.managerId ?? b.managerId)) ?? null }); return b; }),
       updateMany: vi.fn(async ({ where, data }: any) => { const b: any = state.buildings.find((x: any) => x.id === where.id && x.isActive === where.isActive); if (!b) return { count: 0 }; Object.assign(b, data, { manager: state.users.find((u: any) => u.id === (data.managerId !== undefined ? data.managerId : b.managerId)) ?? null }); return { count: 1 }; }),
     },
+    // CP-5: unlocking a building now calls syncRoomPrices(tx, roomIds), which reads tx.room.findMany
+    // and tx.roomPrice.findMany; default to no rooms found so pre-existing tests keep their original
+    // price-unaware assertions.
+    room: { findMany: vi.fn(async () => []) },
+    roomPrice: { findMany: vi.fn(async () => []) },
     contract: { count: vi.fn(async ({ where }: any) => state.contracts.filter((c) => c.buildingId === where.buildingId && where.status.in.includes(c.status)).length) },
     viewing: { findMany: vi.fn(async ({ where }: any) => state.viewingRows.filter((viewing: any) => where.status.in.includes(viewing.status) && where.room.buildingId.in.includes(viewing.room.buildingId))) },
     auditLog: { create: vi.fn(async ({ data }: any) => { state.audits.push(data); return data; }) },

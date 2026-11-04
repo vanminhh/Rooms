@@ -42,6 +42,7 @@ SELECT setval(pg_get_serial_sequence(t, 'id'), 100)
 `);
 
 const C = `INSERT INTO contracts (code, building_id, room_id, tenant_id, start_date, term_months, end_date, billing_day, rent, deposit, status, created_by_id, updated_at) VALUES`;
+const IDEM = `INSERT INTO pricing_idempotency_keys (actor_id, key, route, request_hash, status_code, response_json, expires_at)`;
 
 // [nhóm, tình huống, SQL, kết quả mong đợi: 'ok' hoặc tên ràng buộc/mã lỗi phải xuất hiện]
 const cases = [
@@ -95,6 +96,10 @@ const cases = [
   ['Yêu cầu', 'Ghi chi phí sửa cho yêu cầu gia hạn', `INSERT INTO requests (contract_id, type, title, cost, created_by_id, updated_at) VALUES (1,'RENEW','Gia hạn',100000,4,now())`, 'requests_cost'],
   ['Thông báo', 'Thông báo cho phòng của tòa khác', `INSERT INTO announcements (building_id, room_id, title, body, author_id) VALUES (2,1,'x','x',2)`, 'announcements_room_id_building_id_fkey'],
   ['Thông báo', 'Gửi một thông báo hai lần cho cùng người', `INSERT INTO notifications (user_id, kind, title, announcement_id) VALUES (4,'ANNOUNCEMENT','x',1),(4,'ANNOUNCEMENT','x',1)`, 'notifications_once_per_announcement'],
+  ['Idempotency', 'Cùng người, cùng khóa, cùng đường dẫn hai lần', `${IDEM} VALUES (2,'k-1','POST /room-prices','h1',201,'{}',now()+interval '1 day'),(2,'k-1','POST /room-prices','h2',201,'{}',now()+interval '1 day')`, 'pricing_idempotency_keys_actor_route_key_key'],
+  ['Idempotency', 'Cùng khóa nhưng khác đường dẫn', `${IDEM} VALUES (2,'k-1','POST /room-prices','h1',201,'{}',now()+interval '1 day'),(2,'k-1','POST /room-prices/:id/approve','h1',201,'{}',now()+interval '1 day')`, 'ok'],
+  ['Idempotency', 'Cùng khóa, cùng đường dẫn, khác người', `${IDEM} VALUES (2,'k-1','POST /room-prices','h1',201,'{}',now()+interval '1 day'),(3,'k-1','POST /room-prices','h1',201,'{}',now()+interval '1 day')`, 'ok'],
+  ['Idempotency', 'Bản ghi thiếu thời điểm hết hạn', `${IDEM.replace(', expires_at', '')} VALUES (2,'k-2','POST /room-prices','h1',201,'{}')`, 'null value in column "expires_at"'],
 ];
 
 let failed = 0;
