@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
-import { RoomsButton, RoomsHeader, RoomsFooter, SectionHeading, StatusBadge, RoomSearch, RoomAccordion, ImageJourney, FeatureList, FloorPlan, QuoteCarousel, CostBreakdown, Reveal, SmoothScroll, Preloader, TextField, PasswordField, Checkbox, FormError, Spinner } from '../components'
+import { RoomsButton, RoomsHeader, RoomsFooter, SectionHeading, StatusBadge, RoomSearch, RoomAccordion, ImageJourney, FeatureList, FloorPlan, QuoteCarousel, CostBreakdown, Reveal, SmoothScroll, Preloader, TextField, PasswordField, Checkbox, FormError, Spinner, ConfirmDialog, ImageUploader } from '../components'
 import type { JourneySlide, RoomCardData, RoomFeature, PlanArea } from '../components'
 import { formatMoney } from '../shared/formatters'
 
@@ -10,7 +10,8 @@ const logo = '/images/rooms-logo.webp'
 const sections = [
   ['foundation', 'Nền tảng'], ['search', 'Tìm phòng'], ['rooms', 'Thẻ phòng'],
   ['journey', 'Ảnh chiều sâu'], ['features', 'Tiện ích'], ['plan', 'Mặt bằng'],
-  ['quotes', 'Chia sẻ'], ['cost', 'Bảng chi phí'], ['motion', 'Chuyển động'], ['form', 'Biểu mẫu'], ['footer', 'Footer'],
+  ['quotes', 'Chia sẻ'], ['cost', 'Bảng chi phí'], ['motion', 'Chuyển động'], ['form', 'Biểu mẫu'],
+  ['dialog', 'Hộp xác nhận'], ['uploader', 'Tải ảnh'], ['footer', 'Footer'],
 ]
 const slides: JourneySlide[] = [
   { image: exterior, depth: '/images/rooms-hanoi-exterior-depth.webp', eyebrow: '01 / Từ ngõ nhỏ', title: 'Bước chậm lại.\nThấy mình ở nhà.', description: 'Một khoảng xanh giữa nhịp phố. Một lối về dành riêng cho bạn.' },
@@ -37,6 +38,7 @@ const quotes = [
   { quote: 'Có ánh sáng bên cửa sổ, có một khoảng lặng cho riêng mình. Vậy là đủ để bắt đầu.', author: 'Nội dung mẫu · Không gian sống' },
   { quote: 'Từ một nơi để ở, thành một nơi để trở về.', author: 'Nội dung mẫu · Cảm hứng thiết kế' },
 ]
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
 function Sample({ id, number, name, hint, code, children }: { id: string; number: string; name: string; hint: string; code: string; children: ReactNode }) {
   return <section id={id} className="preview-section">
@@ -52,10 +54,15 @@ export default function ComponentPreview() {
   const [progress, setProgress] = useState(0)
   const [signingIn, setSigningIn] = useState(false)
   const [signInError, setSignInError] = useState(false)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+  const [photos, setPhotos] = useState([{ id: 1, url: interior, alt: 'Phòng mẫu nhìn từ cửa' }, { id: 2, url: exterior, alt: '' }])
   const timer = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
   const signInTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const dialogTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   useEffect(() => () => clearInterval(timer.current), [])
   useEffect(() => () => clearTimeout(signInTimer.current), [])
+  useEffect(() => () => clearTimeout(dialogTimer.current), [])
   const showPreloader = () => {
     clearInterval(timer.current)
     let value = 0
@@ -77,6 +84,15 @@ export default function ComponentPreview() {
       setSignInError(true)
       setFeedback('Đây là bản xem thử: biểu mẫu chưa gọi API đăng nhập.')
     }, 1200)
+  }
+  const confirmDemo = () => {
+    if (confirming) return
+    setConfirming(true)
+    dialogTimer.current = setTimeout(() => {
+      setConfirming(false)
+      setDialogOpen(false)
+      setFeedback('Đây là bản xem thử: chưa khóa phòng thật.')
+    }, 1000)
   }
   return <div className="rooms-theme rooms-preview" id="top">
     <a className="preview-skip" href="#library">Đến bộ component</a>
@@ -138,7 +154,17 @@ export default function ComponentPreview() {
               <Spinner label="Đang tải" />
             </div>
           </Sample>
-          <Sample id="footer" number="11" name="Chân trang Rooms" hint="RoomsFooter · Nội dung liên hệ và các liên kết truyền từ bên ngoài." code={'<RoomsFooter\n  description="Không gian để thuộc về."\n  contact={<a href="/lien-he">Liên hệ Rooms ↗</a>}\n  links={[{ label: "Tìm phòng", href: "/phong" }]}\n/>'}>
+          <Sample id="dialog" number="11" name="Hộp xác nhận" hint="ConfirmDialog · Tab giữ trong hộp, Escape hoặc Hủy trả focus về nút đã mở; nút xác nhận chỉ nhận một lần khi đang xử lý." code={'<ConfirmDialog\n  open={open}\n  title="Khóa phòng 101?"\n  description="Còn 2 lịch hẹn chưa xử lý."\n  confirmLabel="Khóa phòng"\n  pending={pending}\n  onConfirm={lockRoom}\n  onClose={() => setOpen(false)}\n/>'}>
+            <RoomsButton variant="outline" onClick={() => setDialogOpen(true)}>Mở hộp xác nhận</RoomsButton>
+            <ConfirmDialog open={dialogOpen} title="Khóa phòng 101?" description="Còn 2 lịch hẹn chưa xử lý. Phòng sẽ không nhận lịch mới sau khi khóa." confirmLabel="Khóa phòng" cancelLabel="Giữ mở" pending={confirming} onConfirm={confirmDemo} onClose={() => setDialogOpen(false)} />
+          </Sample>
+          <Sample id="uploader" number="12" name="Tải ảnh" hint="ImageUploader · Chặn file quá dung lượng hoặc sai định dạng trước onUpload; giới hạn số ảnh; sắp xếp bằng nút Lên và Xuống." code={'<ImageUploader\n  images={photos}  // { id, url, alt }[]\n  maxImages={10}\n  maxBytes={5_000_000}\n  accept="image/jpeg,image/png,image/webp"\n  onUpload={uploadPhoto}\n  onDelete={deletePhoto}\n  onReorder={reorderPhotos}\n/>'}>
+            <ImageUploader images={photos} maxImages={10} maxBytes={5_000_000} accept="image/jpeg,image/png,image/webp"
+              onUpload={async file => { await wait(600); setPhotos(list => [...list, { id: Date.now(), url: interior, alt: file.name }]) }}
+              onDelete={async id => { await wait(300); setPhotos(list => list.filter(photo => photo.id !== id)) }}
+              onReorder={async ids => { await wait(300); setPhotos(list => ids.flatMap(id => list.filter(photo => photo.id === id))) }} />
+          </Sample>
+          <Sample id="footer" number="13" name="Chân trang Rooms" hint="RoomsFooter · Nội dung liên hệ và các liên kết truyền từ bên ngoài." code={'<RoomsFooter\n  description="Không gian để thuộc về."\n  contact={<a href="/lien-he">Liên hệ Rooms ↗</a>}\n  links={[{ label: "Tìm phòng", href: "/phong" }]}\n/>'}>
             <RoomsFooter description="Từ một căn phòng vừa vặn, đến một nhịp sống của riêng bạn." contact={<a href="#search">Khám phá không gian ↗</a>} links={[{ label: 'Tìm phòng', href: '#search' }, { label: 'Tiện ích', href: '#features' }, { label: 'Về đầu trang ↑', href: '#top' }]} />
           </Sample>
           <section id="usage" className="preview-usage"><span className="rooms-eyebrow">Sẵn sàng để ghép trang</span><h2>Import. Truyền dữ liệu.<br /><em>Đặt vào giao diện của bạn.</em></h2><p>Component nằm ở <code>src/components</code>. Bao vùng sử dụng bằng <code>rooms-theme</code> để áp dụng màu, font và kiểu hiển thị. Xem README trong thư mục để biết props và phần chuyển từ An Lâm.</p><pre><code>{'import { RoomsButton } from "./components"\n\n<div className="rooms-theme">\n  <RoomsButton onClick={handleSelect}>Xem phòng ↗</RoomsButton>\n</div>'}</code></pre></section>

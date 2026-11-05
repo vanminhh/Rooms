@@ -1,0 +1,15 @@
+/* Staff manager pages: toolbar, form, list and the one-time password notice; colors come from the kit tokens inside .rooms-theme. */
+.rooms-theme .managers-toolbar { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.rooms-theme .managers-form { display: grid; gap: 16px; width: 100%; max-width: 640px; margin-bottom: 32px; }
+.rooms-theme .managers-form-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.rooms-theme .managers-issued { display: grid; gap: 12px; justify-items: start; max-width: 640px; margin-bottom: 32px; padding: 20px; border-left: 4px solid var(--rooms-ink); background: var(--rooms-paper); color: var(--rooms-text); }
+.rooms-theme .managers-issued:focus-visible { outline: 2px solid var(--rooms-gold); outline-offset: 4px; }
+.rooms-theme .managers-issued p { margin: 0; overflow-wrap: anywhere; }
+.rooms-theme .managers-password { font-size: 22px; font-weight: 600; letter-spacing: 0.04em; user-select: all; }
+.rooms-theme .managers-state { display: grid; gap: 12px; justify-items: start; }
+.rooms-theme .managers-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.rooms-theme .managers-item { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; justify-content: space-between; padding: 20px; border: 1px solid var(--rooms-line); background: var(--rooms-paper); }
+.rooms-theme .managers-item > div:first-child { min-width: 0; flex: 1 1 220px; }
+.rooms-theme .managers-item-title { margin: 0; font-weight: 600; color: var(--rooms-text); overflow-wrap: anywhere; }
+.rooms-theme .managers-item-meta { margin: 4px 0 0; font-size: 13px; font-weight: 500; color: var(--rooms-muted); overflow-wrap: anywhere; }
+.rooms-theme .managers-pager { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 24px; }

@@ -58,6 +58,7 @@ class FakeElement extends FakeNode {
   removeAttribute(k) { delete this.attributes[k] }
   addEventListener(type, listener, options) { this.listeners.push({ type, listener, capture: options === true || options?.capture === true }) }
   removeEventListener(type, listener) { this.listeners = this.listeners.filter(l => !(l.type === type && l.listener === listener)) }
+  get options() { return this.tagName === 'SELECT' ? this.childNodes.filter(n => n.tagName === 'OPTION') : undefined } // react-dom reads select.options on mount
   focus() {}
   matches() { return false }
   closest(selector) { // enough for the `a[href]` lookup of internal-links.ts
@@ -603,12 +604,13 @@ test('Q4-A: unknown paths show "Không tìm thấy trang" inside PublicLayout an
   }
 })
 
-test('Q4-A: "/" and "/phong" show "Trang đang được xây dựng"; the 404 link "Về trang chủ" goes to "/" without a second refresh', async () => {
-  for (const path of ['/', '/phong']) {
-    const app = await mount(path)
-    await until(() => app.text().includes('Trang đang được xây dựng'), path)
-    await app.stop()
-  }
+test('Q4-A: "/" shows "Trang đang được xây dựng", "/phong" is the "Tìm phòng" placeholder (FE-P2-01); the 404 link "Về trang chủ" goes to "/" without a second refresh', async () => {
+  const home = await mount('/')
+  await until(() => home.text().includes('Trang đang được xây dựng'), '/')
+  await home.stop()
+  const rooms = await mount('/phong')
+  await until(() => rooms.text().includes('Tìm phòng') && rooms.text().includes('Đang làm'), '/phong')
+  await rooms.stop()
   const app = await mount('/khong-co')
   await until(() => app.text().includes('Không tìm thấy trang'), '404')
   const link = find(app.container, n => n.tagName === 'A' && n.textContent === 'Về trang chủ')[0]
@@ -656,20 +658,14 @@ test('FE-LOGIN-10, Q2-A: TenantLayout menu is exactly "Tổng quan" /thue and "T
   await app.stop()
 })
 
-test('FE-LOGIN-10, Q2-A, Q5-A: StaffLayout menu "Việc hôm nay" /ql + "Tài khoản" /ql/tai-khoan, read-only building line (manager 2, boss 3, empty), no select, no footer', async () => {
-  const cases = [
-    ['manager', 'Tòa đang quản lý: A01 · Tòa A'],
-    ['bossThree', 'Tòa đang quản lý: A01 · Tòa A, A02 · Tòa B, B01 · Tòa C'],
-    ['managerEmpty', 'Chưa được giao tòa nào'],
-    ['boss', 'Chưa được giao tòa nào'],
-  ]
-  for (const [session, line] of cases) {
+test('FE-LOGIN-10, Q2-A, Q5-A: StaffLayout menu follows role (manager 6 items, Boss 8), no read-only building line, no footer', async () => {
+  const common = [['Việc hôm nay', '/ql'], ['Tòa nhà', '/ql/toa-nha'], ['Phòng', '/ql/phong'], ['Đơn giá', '/ql/don-gia'], ['Lịch hẹn', '/ql/lich-hen'], ['Tài khoản', '/ql/tai-khoan']]
+  const boss = [['Việc hôm nay', '/ql'], ['Tòa nhà', '/ql/toa-nha'], ['Nhân sự', '/ql/nhan-su'], ['Phòng', '/ql/phong'], ['Đơn giá', '/ql/don-gia'], ['Duyệt giá', '/ql/duyet-gia'], ['Lịch hẹn', '/ql/lich-hen'], ['Tài khoản', '/ql/tai-khoan']]
+  for (const [session, links] of [['manager', common], ['managerEmpty', common], ['bossThree', boss], ['boss', boss]]) {
     const app = await mount('/ql', { session })
     await until(() => app.text().includes('Xin chào'), `staff home ${session}`)
-    assert.deepEqual(navLinks(app), [['Việc hôm nay', '/ql'], ['Tài khoản', '/ql/tai-khoan']], session)
-    const lines = find(app.container, n => n.tagName === 'P' && /^(Tòa đang quản lý|Chưa được giao tòa nào)/.test(n.textContent)).map(n => n.textContent)
-    assert.deepEqual(lines, [line], session)
-    assert.equal(find(app.container, n => n.tagName === 'SELECT').length, 0)
+    assert.deepEqual(navLinks(app), links, session)
+    assert.equal(find(app.container, n => n.tagName === 'P' && /^(Tòa đang quản lý|Chưa được giao tòa nào)/.test(n.textContent)).length, 0, 'old building line is gone')
     assert.equal(find(app.container, n => n.tagName === 'FOOTER').length, 0)
     await app.stop()
   }
