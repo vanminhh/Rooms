@@ -27,8 +27,8 @@ describe('CP-7 · BE-P2-28 · pricing.http.spec.ts (full-gate HTTP integration)'
     [2, { id: 2, role: 'MANAGER', isActive: true, mustChangePassword: false }],
     [3, { id: 3, role: 'TENANT', isActive: true, mustChangePassword: false }],
   ]);
-  const buildings = new Map<number, any>([[10, { id: 10, managerId: 2, isActive: true }]]);
-  const rooms = new Map<number, any>([[101, { id: 101, buildingId: 10, isActive: true, price: 2_000_000 }]]);
+  const buildings = new Map<number, any>([[10, { id: 10, managerId: 2, isActive: true, name: 'Chùa Gà' }]]);
+  const rooms = new Map<number, any>([[101, { id: 101, buildingId: 10, isActive: true, price: 2_000_000, code: '203' }]]);
   // 201: active, same building as the plans under test; 202: locked, same building (SVC-04);
   // 203: active, but belongs to a *different* building (Q-P5-8 A "thuộc tòa khác").
   const services = new Map<number, any>([
@@ -56,7 +56,10 @@ describe('CP-7 · BE-P2-28 · pricing.http.spec.ts (full-gate HTTP integration)'
       findUnique: vi.fn(async ({ where }: any) => {
         const r = rooms.get(where.id);
         if (!r) return null;
-        return { id: r.id, buildingId: r.buildingId, isActive: r.isActive, building: { isActive: buildings.get(r.buildingId)?.isActive ?? true } };
+        return {
+          id: r.id, buildingId: r.buildingId, code: r.code, isActive: r.isActive,
+          building: { isActive: buildings.get(r.buildingId)?.isActive ?? true, name: buildings.get(r.buildingId)?.name ?? 'Chùa Gà' },
+        };
       }),
       update: vi.fn(async ({ where, data }: any) => { const r = rooms.get(where.id); if (r) Object.assign(r, data); return r; }),
     },
@@ -71,7 +74,15 @@ describe('CP-7 · BE-P2-28 · pricing.http.spec.ts (full-gate HTTP integration)'
         const row = roomPriceRows.find((r) => r.id === where.id);
         if (!row) return null;
         const r = rooms.get(row.roomId);
-        return { ...row, room: r ? { buildingId: r.buildingId, isActive: r.isActive, building: { isActive: buildings.get(r.buildingId)?.isActive ?? true } } : undefined };
+        return {
+          ...row,
+          room: r
+            ? {
+                buildingId: r.buildingId, code: r.code, isActive: r.isActive,
+                building: { isActive: buildings.get(r.buildingId)?.isActive ?? true, name: buildings.get(r.buildingId)?.name ?? 'Chùa Gà' },
+              }
+            : undefined,
+        };
       }),
       findFirst: vi.fn(async () => null), // no prior APPROVED price in these fixtures (PRC-12 comparison lookup)
       updateMany: vi.fn(async ({ where, data }: any) => {
@@ -107,7 +118,8 @@ describe('CP-7 · BE-P2-28 · pricing.http.spec.ts (full-gate HTTP integration)'
       }),
       create: vi.fn(async ({ data }: any) => {
         const tiers = (data.tiers?.create ?? []).map((t: any, i: number) => ({ id: i + 1, ...t }));
-        const row = { id: nextRatePlanId++, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date(), ...data, tiers };
+        const building = { name: buildings.get(data.buildingId)?.name ?? 'Chùa Gà' };
+        const row = { id: nextRatePlanId++, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date(), ...data, tiers, building };
         ratePlanRows.push(row);
         return row;
       }),
@@ -148,7 +160,7 @@ describe('CP-7 · BE-P2-28 · pricing.http.spec.ts (full-gate HTTP integration)'
     idempotencyStore = new Map();
     auditCreate.mockClear();
     services.set(201, { id: 201, buildingId: 10, isActive: true }); // reset after the Q-P5-9 round trip locks it
-    rooms.set(101, { id: 101, buildingId: 10, isActive: true, price: 2_000_000 });
+    rooms.set(101, { id: 101, buildingId: 10, isActive: true, price: 2_000_000, code: '203' });
   });
 
   async function auth(id: number, role: 'BOSS' | 'MANAGER' | 'TENANT') {
@@ -253,8 +265,8 @@ describe('CP-7 · BE-P2-28 · pricing.http.spec.ts (full-gate HTTP integration)'
 
     it('same key approving two different plan ids is 409 CONFLICT_STATE on the second (request hash includes the path id)', async () => {
       ratePlanRows = [
-        { id: 1, buildingId: 10, kind: 'ELECTRIC', serviceId: null, effectiveFrom: todayHanoi(), status: 'PENDING', proposedById: 2, reason: null, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date(), tiers: [] },
-        { id: 2, buildingId: 10, kind: 'WATER', serviceId: null, effectiveFrom: todayHanoi(), status: 'PENDING', proposedById: 2, reason: null, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date(), tiers: [] },
+        { id: 1, buildingId: 10, kind: 'ELECTRIC', serviceId: null, effectiveFrom: todayHanoi(), status: 'PENDING', proposedById: 2, reason: null, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date(), tiers: [], building: { name: 'Chùa Gà' } },
+        { id: 2, buildingId: 10, kind: 'WATER', serviceId: null, effectiveFrom: todayHanoi(), status: 'PENDING', proposedById: 2, reason: null, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date(), tiers: [], building: { name: 'Chùa Gà' } },
       ];
       const boss1 = await auth(1, 'BOSS');
       const first = await request(app.getHttpServer())
@@ -287,6 +299,30 @@ describe('CP-7 · BE-P2-28 · pricing.http.spec.ts (full-gate HTTP integration)'
       const response = body === undefined ? await req : await req.send(body);
       expect(response.status).toBe(403);
       expect(response.body.error.code).toBe('FORBIDDEN');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Q-FE8B-2 (BE-P2-PRICE-NAMES-2): roomCode/buildingName through the full propose/approve HTTP flow.
+  // ---------------------------------------------------------------------------
+  describe('Q-FE8B-2: roomCode/buildingName over the full propose + approve HTTP round trip', () => {
+    it('a manager proposing a room price over HTTP gets roomCode and buildingName of room 101', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/room-prices').set('Authorization', await auth(2, 'MANAGER'))
+        .send({ roomId: 101, price: 2_500_000, effectiveFrom: today() });
+      expect(response.status).toBe(201);
+      expect(response.body.data).toMatchObject({ roomCode: '203', buildingName: 'Chùa Gà' });
+    });
+
+    it('the Boss approving that same proposal over HTTP keeps roomCode and buildingName in the response', async () => {
+      const propose = await request(app.getHttpServer())
+        .post('/api/v1/room-prices').set('Authorization', await auth(2, 'MANAGER'))
+        .send({ roomId: 101, price: 2_500_000, effectiveFrom: today() });
+      const id = propose.body.data.id;
+      const approve = await request(app.getHttpServer())
+        .post(`/api/v1/room-prices/${id}/approve`).set('Authorization', await auth(1, 'BOSS'));
+      expect(approve.status).toBe(201);
+      expect(approve.body.data).toMatchObject({ status: 'APPROVED', roomCode: '203', buildingName: 'Chùa Gà' });
     });
   });
 });

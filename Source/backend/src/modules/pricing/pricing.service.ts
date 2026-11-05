@@ -33,13 +33,27 @@ const APPROVE_RATE_ROUTE = 'POST /rate-plans/:id/approve';
 const REJECT_RATE_ROUTE = 'POST /rate-plans/:id/reject';
 const HTTP_CREATED = 201;
 
-// Shape read for review: the room (for scope and lock state) comes with the price row.
+// Shape read for review: the room (for scope, lock state and the view's names) comes with the price row.
 const ROOM_PRICE_INCLUDE = {
-  room: { select: { buildingId: true, isActive: true, building: { select: { isActive: true } } } },
+  room: {
+    select: {
+      buildingId: true,
+      code: true,
+      isActive: true,
+      building: { select: { isActive: true, name: true } },
+    },
+  },
 } as const;
 type LockedRoomPrice = RoomPrice & {
-  room: { buildingId: number; isActive: boolean; building: { isActive: boolean } };
+  room: { buildingId: number; code: string; isActive: boolean; building: { isActive: boolean; name: string } };
 };
+
+// Tiers and the building name come with the plan in the same query (Q-FE8B-2).
+const RATE_PLAN_INCLUDE = {
+  tiers: { orderBy: { tierNo: 'asc' } },
+  building: { select: { name: true } },
+} as const;
+type RatePlanRow = RatePlan & { tiers: RateTier[]; building: { name: string } };
 
 // PRC-07: a PENDING proposal whose effective_from is before today is expired (derived, not stored).
 function isExpired(status: string, effectiveFrom: Date): boolean {
@@ -85,7 +99,13 @@ export class PricingService {
           await tx.$queryRaw<Array<{ id: number }>>`SELECT id FROM rooms WHERE id = ${dto.roomId} FOR UPDATE`;
           const room = await tx.room.findUnique({
             where: { id: dto.roomId },
-            select: { id: true, buildingId: true, isActive: true, building: { select: { isActive: true } } },
+            select: {
+              id: true,
+              buildingId: true,
+              code: true,
+              isActive: true,
+              building: { select: { isActive: true, name: true } },
+            },
           });
           if (!room) throw new NotFoundException(ErrorCode.NOT_FOUND);
           this.assertRoomScope(user, room);
@@ -116,7 +136,7 @@ export class PricingService {
             tx,
           );
           if (user.role === 'BOSS') return this.approveRoomPriceInTx(tx, user, row.id, ip);
-          return this.toView(tx, row, room.buildingId);
+          return this.toView(tx, row, room);
         },
       ),
     );
@@ -181,7 +201,7 @@ export class PricingService {
               proposedById: user.id,
               tiers: { create: tiers },
             },
-            include: { tiers: { orderBy: { tierNo: 'asc' } } },
+            include: RATE_PLAN_INCLUDE,
           });
           await this.audit.log(
             user.id,
@@ -246,7 +266,7 @@ export class PricingService {
       ip ?? null,
       tx,
     );
-    return this.toView(tx, { ...row, status: 'APPROVED', reviewedById: user.id, reviewedAt }, row.room.buildingId);
+    return this.toView(tx, { ...row, status: 'APPROVED', reviewedById: user.id, reviewedAt }, row.room);
   }
 
   // PRC-07/09: an expired proposal can still be rejected; review_note is required (PRC-03).
@@ -285,7 +305,7 @@ export class PricingService {
           return this.toView(
             tx,
             { ...row, status: 'REJECTED', reviewedById: user.id, reviewedAt, reviewNote: dto.reviewNote },
-            row.room.buildingId,
+            row.room,
           );
         },
       ),
@@ -401,7 +421,7 @@ export class PricingService {
       this.prisma.roomPrice.findMany({ where, include: ROOM_PRICE_INCLUDE, orderBy: listOrder(query.sort), skip, take }),
       this.prisma.roomPrice.count({ where }),
     ]);
-    const data = await Promise.all(rows.map((row) => this.toView(this.prisma, row, row.room.buildingId)));
+    const data = await Promise.all(rows.map((row) => this.toView(this.prisma, row, row.room)));
     return paginated(data, page, limit, total);
   }
 
@@ -417,7 +437,7 @@ export class PricingService {
     const [rows, total] = await Promise.all([
       this.prisma.ratePlan.findMany({
         where,
-        include: { tiers: { orderBy: { tierNo: 'asc' } } },
+        include: RATE_PLAN_INCLUDE,
         orderBy: listOrder(query.sort),
         skip,
         take,
@@ -476,21 +496,25 @@ export class PricingService {
   }
 
   // Locks the building, then re-reads the plan under that lock (same order as proposals).
-  private async lockRatePlan(tx: Prisma.TransactionClient, id: number): Promise<RatePlan & { tiers: RateTier[] }> {
+  private async lockRatePlan(tx: Prisma.TransactionClient, id: number): Promise<RatePlanRow> {
     const target = await tx.ratePlan.findUnique({ where: { id }, select: { buildingId: true } });
     if (!target) throw new NotFoundException(ErrorCode.NOT_FOUND);
     await tx.$queryRaw<Array<{ id: number }>>`SELECT id FROM buildings WHERE id = ${target.buildingId} FOR UPDATE`;
-    const row = await tx.ratePlan.findUnique({ where: { id }, include: { tiers: { orderBy: { tierNo: 'asc' } } } });
+    const row = await tx.ratePlan.findUnique({ where: { id }, include: RATE_PLAN_INCLUDE });
     if (!row) throw new NotFoundException(ErrorCode.NOT_FOUND);
     return row;
   }
 
-  private async toView(db: Prisma.TransactionClient, row: RoomPrice, buildingId: number): Promise<RoomPriceView> {
+  private async toView(
+    db: Prisma.TransactionClient,
+    row: RoomPrice,
+    room: { buildingId: number; code: string; building: { name: string } },
+  ): Promise<RoomPriceView> {
     const oldPrice = await this.oldRoomPrice(db, row);
     return {
       id: row.id,
       roomId: row.roomId,
-      buildingId,
+      buildingId: room.buildingId,
       price: row.price,
       effectiveFrom: formatDateOnly(row.effectiveFrom),
       status: row.status,
@@ -502,10 +526,12 @@ export class PricingService {
       createdAt: row.createdAt.toISOString(),
       expired: isExpired(row.status, row.effectiveFrom),
       comparison: priceChange(oldPrice, row.price),
+      roomCode: room.code,
+      buildingName: room.building.name,
     };
   }
 
-  private async toRatePlanView(db: Prisma.TransactionClient, row: RatePlan & { tiers: RateTier[] }): Promise<RatePlanView> {
+  private async toRatePlanView(db: Prisma.TransactionClient, row: RatePlanRow): Promise<RatePlanView> {
     const tiers = row.tiers.map(toTierView);
     const oldTiers = await this.oldRateTiers(db, row);
     return {
@@ -524,6 +550,7 @@ export class PricingService {
       expired: isExpired(row.status, row.effectiveFrom),
       tiers,
       comparison: ratePlanComparison(row.kind, oldTiers, tiers),
+      buildingName: row.building.name,
     };
   }
 

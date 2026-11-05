@@ -41,6 +41,8 @@ export interface RoomPriceView {
   createdAt: string;
   expired: boolean; // PRC-07: PENDING with effective_from before today
   comparison: PriceChange;
+  roomCode: string; // Q-FE8B-2: rooms.code as the rooms API returns it, e.g. "203"
+  buildingName: string; // buildings.name
 }
 
 export interface RateTierView {
@@ -65,4 +67,5 @@ export interface RatePlanView {
   expired: boolean; // PRC-07
   tiers: RateTierView[];
   comparison: RatePlanComparison | null; // null when the plan has no tiers to compare
+  buildingName: string; // buildings.name (Q-FE8B-2)
 }

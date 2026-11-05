@@ -17,7 +17,7 @@ import { PricingService } from './pricing.service.js';
 const boss: AuthUser = { id: 1, role: 'BOSS', mustChangePassword: false, buildingIds: null };
 const manager: AuthUser = { id: 2, role: 'MANAGER', mustChangePassword: false, buildingIds: [10, 12] };
 
-interface BuildingFixture { id: number; isActive: boolean }
+interface BuildingFixture { id: number; isActive: boolean; name?: string }
 interface ServiceFixture { id: number; buildingId: number; isActive: boolean }
 
 function makeHarness(buildings: BuildingFixture[], services: ServiceFixture[]) {
@@ -67,9 +67,12 @@ function makeHarness(buildings: BuildingFixture[], services: ServiceFixture[]) {
       }),
       create: vi.fn(async ({ data }: any) => {
         const tiers = (data.tiers?.create ?? []).map((t: any) => ({ id: nextTierId++, ...t }));
+        // Q-FE8B-2: the real `tx.ratePlan.create({ include: RATE_PLAN_INCLUDE })` joins the
+        // building's name in the same query; the fake mirrors that from the buildings fixture.
+        const building = { name: buildingMap.get(data.buildingId)?.name ?? 'Chùa Gà' };
         const row = {
           id: nextPlanId++, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date(),
-          ...data, tiers, // `tiers` overrides data.tiers ({ create: [...] }) with the resolved rows, like real Prisma's include
+          ...data, tiers, building, // `tiers`/`building` override data.tiers/data.building like real Prisma's include
         };
         ratePlanRows.push(row);
         return row;
@@ -118,9 +121,9 @@ function serviceDto(overrides: Record<string, unknown> = {}) {
 }
 
 describe('CP-2 · PricingService.proposeRatePlan (unit, fake Prisma)', () => {
-  const activeBuilding10: BuildingFixture = { id: 10, isActive: true };
-  const outOfScopeBuilding11: BuildingFixture = { id: 11, isActive: true };
-  const lockedBuilding12: BuildingFixture = { id: 12, isActive: false };
+  const activeBuilding10: BuildingFixture = { id: 10, isActive: true, name: 'Chùa Gà' };
+  const outOfScopeBuilding11: BuildingFixture = { id: 11, isActive: true, name: 'Trúc Bạch' };
+  const lockedBuilding12: BuildingFixture = { id: 12, isActive: false, name: 'Giảng Võ' };
   const activeService201: ServiceFixture = { id: 201, buildingId: 10, isActive: true };
   const lockedService202: ServiceFixture = { id: 202, buildingId: 10, isActive: false };
   const otherBuildingService203: ServiceFixture = { id: 203, buildingId: 20, isActive: true };
@@ -440,6 +443,13 @@ describe('CP-2 · PricingService.proposeRatePlan (unit, fake Prisma)', () => {
       vi.useRealTimers();
     }
   });
+
+  // Q-FE8B-2 (BE-P2-PRICE-NAMES-2): the new buildingName field on the propose response.
+  it('Q-FE8B-2: a Boss ELECTRIC proposal response carries buildingName of the target building', async () => {
+    const { service } = makeHarness([activeBuilding10], []);
+    const result = await service.proposeRatePlan(boss, electricDto() as any);
+    expect(result.buildingName).toBe('Chùa Gà');
+  });
 });
 
 // HTTP-level: only PrismaService is mocked. Real guards, ValidationPipe, controller, service,
@@ -455,8 +465,8 @@ describe('CP-2 · BE-P2-23 · rate-plans HTTP contract and error order', () => {
   ]);
   // building 10: manager2's active building; 11: another manager's building (out of scope for manager2).
   const buildings = new Map<number, any>([
-    [10, { id: 10, managerId: 2, isActive: true }],
-    [11, { id: 11, managerId: 5, isActive: true }],
+    [10, { id: 10, managerId: 2, isActive: true, name: 'Chùa Gà' }],
+    [11, { id: 11, managerId: 5, isActive: true, name: 'Trúc Bạch' }],
   ]);
   const services = new Map<number, any>([
     [201, { id: 201, buildingId: 10, isActive: true }],
@@ -503,7 +513,8 @@ describe('CP-2 · BE-P2-23 · rate-plans HTTP contract and error order', () => {
       }),
       create: vi.fn(async ({ data }: any) => {
         const tiers = (data.tiers?.create ?? []).map((t: any, i: number) => ({ id: i + 1, ...t }));
-        const row = { id: nextId++, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date(), ...data, tiers };
+        const building = { name: buildings.get(data.buildingId)?.name ?? 'Chùa Gà' };
+        const row = { id: nextId++, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date(), ...data, tiers, building };
         ratePlanRows.push(row);
         return row;
       }),
@@ -609,5 +620,13 @@ describe('CP-2 · BE-P2-23 · rate-plans HTTP contract and error order', () => {
     expect(auditCreate).toHaveBeenCalledTimes(2);
     expect(auditCreate.mock.calls[0][0].data).toMatchObject({ actorId: 1, action: 'price.propose', entity: 'rate_plan' });
     expect(auditCreate.mock.calls[1][0].data).toMatchObject({ actorId: 1, action: 'price.approve', entity: 'rate_plan' });
+  });
+
+  // Q-FE8B-2 (BE-P2-PRICE-NAMES-2): buildingName over the full HTTP stack.
+  it('Q-FE8B-2: a manager proposal response over HTTP carries buildingName of building 10', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/api/v1/rate-plans').set('Authorization', await auth(2, 'MANAGER')).send(validElectricBody());
+    expect(response.status).toBe(201);
+    expect(response.body.data.buildingName).toBe('Chùa Gà');
   });
 });

@@ -96,7 +96,7 @@ function makeRoomHarness(rooms: RoomFixture[], rowFixtures: RoomPriceRowFixture[
 // pre-seeded rows for PRC-08 and an optional services table for the Q-P5-8/9 regression check.
 // ---------------------------------------------------------------------------
 
-interface BuildingFixture { id: number; isActive: boolean }
+interface BuildingFixture { id: number; isActive: boolean; name?: string }
 interface ServiceFixture { id: number; buildingId: number; isActive: boolean }
 interface RatePlanRowFixture {
   id: number; buildingId: number; kind: string; serviceId: number | null; effectiveFrom: Date; status: string;
@@ -107,8 +107,12 @@ interface RatePlanRowFixture {
 function makeRatePlanHarness(buildings: BuildingFixture[], services: ServiceFixture[] = [], rowFixtures: RatePlanRowFixture[] = []) {
   const buildingMap = new Map(buildings.map((b) => [b.id, { ...b }]));
   const serviceMap = new Map(services.map((s) => [s.id, s]));
+  // Q-FE8B-2: toRatePlanView reads row.building.name; every pre-seeded row carries it from the
+  // buildings fixture (same shape the real `include: { building: { select: { name: true } } }` gives).
   const ratePlanRows: any[] = rowFixtures.map((r) => ({
-    reason: null, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date(), tiers: [], ...r,
+    reason: null, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date(), tiers: [],
+    building: { name: buildingMap.get(r.buildingId)?.name ?? 'Chùa Gà' },
+    ...r,
   }));
   let nextId = rowFixtures.reduce((max, r) => Math.max(max, r.id), 0) + 1;
   let nextTierId = 1;
@@ -150,7 +154,8 @@ function makeRatePlanHarness(buildings: BuildingFixture[], services: ServiceFixt
       }),
       create: vi.fn(async ({ data }: any) => {
         const tiers = (data.tiers?.create ?? []).map((t: any) => ({ id: nextTierId++, ...t }));
-        const row = { id: nextId++, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date(), ...data, tiers };
+        const building = { name: buildingMap.get(data.buildingId)?.name ?? 'Chùa Gà' };
+        const row = { id: nextId++, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date(), ...data, tiers, building };
         ratePlanRows.push(row);
         return row;
       }),
@@ -312,7 +317,7 @@ describe('CP-4 · BE-P2-25 · PRC-08: approving a new price supersedes future AP
 
 describe('CP-4 · BE-P2-25 · PRC-04: Boss rate-plan proposal is APPROVED immediately (self-review)', () => {
   it('a Boss ELECTRIC proposal becomes APPROVED with reviewedById = proposedById, 2 audit rows in 1 transaction', async () => {
-    const building: BuildingFixture = { id: 10, isActive: true };
+    const building: BuildingFixture = { id: 10, isActive: true, name: 'Chùa Gà' };
     const { service, ratePlanRows, auditRows, prisma } = makeRatePlanHarness([building]);
     const dto = {
       buildingId: 10, kind: 'ELECTRIC', effectiveFrom: today(),
@@ -328,6 +333,7 @@ describe('CP-4 · BE-P2-25 · PRC-04: Boss rate-plan proposal is APPROVED immedi
     expect(auditRows[0]).toMatchObject({ actorId: 1, action: 'price.propose', entity: 'rate_plan' });
     expect(auditRows[1]).toMatchObject({ actorId: 1, action: 'price.approve', entity: 'rate_plan' });
     expect(ratePlanRows[0]).toMatchObject({ status: 'APPROVED' });
+    expect(result.buildingName).toBe('Chùa Gà'); // Q-FE8B-2
   });
 
   it('Q-P5-8 A, SVC-04: Boss self-proposing a SERVICE plan for an already-locked service is still 400 VALIDATION_FAILED at propose, never reaches self-approve', async () => {

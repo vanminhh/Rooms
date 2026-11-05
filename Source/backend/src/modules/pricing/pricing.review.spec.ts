@@ -27,7 +27,7 @@ const yesterday = () => addDays(todayHanoi(), -1);
 // pattern as CP-1/CP-2 to mirror Postgres FOR UPDATE serialization).
 // ---------------------------------------------------------------------------
 
-interface RoomFixture { id: number; buildingId: number; isActive: boolean; buildingActive: boolean; price: number }
+interface RoomFixture { id: number; buildingId: number; isActive: boolean; buildingActive: boolean; price: number; code?: string; buildingName?: string }
 interface RoomPriceRowFixture {
   id: number; roomId: number; price: number; effectiveFrom: Date; status: string;
   reason?: string | null; proposedById: number; reviewedById?: number | null;
@@ -51,7 +51,15 @@ function makeRoomReviewHarness(rooms: RoomFixture[], rowFixtures: RoomPriceRowFi
         const row = roomPriceRows.find((r) => r.id === where.id);
         if (!row) return null;
         const room = roomMap.get(row.roomId);
-        return { ...row, room: room ? { buildingId: room.buildingId, isActive: room.isActive, building: { isActive: room.buildingActive } } : undefined };
+        return {
+          ...row,
+          room: room
+            ? {
+                buildingId: room.buildingId, code: room.code ?? '101', isActive: room.isActive,
+                building: { isActive: room.buildingActive, name: room.buildingName ?? 'Chùa Gà' },
+              }
+            : undefined,
+        };
       }),
       // CP-6: toView's oldRoomPrice comparison lookup; no prior APPROVED price in these CP-3 fixtures.
       findFirst: vi.fn(async () => null),
@@ -335,7 +343,7 @@ describe('CP-3 · PricingService.approveRoomPrice / rejectRoomPrice (unit, fake 
 // this harness would throw "Cannot read properties of undefined" and fail the test.
 // ---------------------------------------------------------------------------
 
-interface BuildingFixture { id: number; isActive: boolean }
+interface BuildingFixture { id: number; isActive: boolean; name?: string }
 interface RatePlanRowFixture {
   id: number; buildingId: number; kind: string; serviceId: number | null; effectiveFrom: Date; status: string;
   reason?: string | null; proposedById: number; reviewedById?: number | null;
@@ -344,8 +352,13 @@ interface RatePlanRowFixture {
 }
 
 function makeRatePlanReviewHarness(buildings: BuildingFixture[], rowFixtures: RatePlanRowFixture[]) {
+  // Q-FE8B-2: toRatePlanView reads row.building.name, so every pre-seeded row carries it,
+  // looked up from the buildings fixture by buildingId (same as the real building include).
+  const buildingMap = new Map(buildings.map((b) => [b.id, b]));
   const ratePlanRows = rowFixtures.map((r) => ({
-    reason: null, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date(), tiers: [], ...r,
+    reason: null, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date(), tiers: [],
+    building: { name: buildingMap.get(r.buildingId)?.name ?? 'Chùa Gà' },
+    ...r,
   }));
   const auditRows: any[] = [];
 
@@ -399,7 +412,7 @@ function makeRatePlanReviewHarness(buildings: BuildingFixture[], rowFixtures: Ra
 }
 
 describe('CP-3 · PricingService.approveRatePlan / rejectRatePlan (unit, fake Prisma)', () => {
-  const buildingA: BuildingFixture = { id: 10, isActive: true };
+  const buildingA: BuildingFixture = { id: 10, isActive: true, name: 'Chùa Gà' };
 
   it('RATE-05: approving a PENDING ELECTRIC plan due today is APPROVED, audited', async () => {
     const { service, ratePlanRows, auditRows } = makeRatePlanReviewHarness([buildingA], [
@@ -567,7 +580,7 @@ describe('CP-3 · BE-P2-24 · room-prices/rate-plans review HTTP contract', () =
         const row = roomPriceRows.find((r) => r.id === where.id);
         if (!row) return null;
         const room = roomMap.get(row.roomId);
-        return { ...row, room: { buildingId: room.buildingId, isActive: room.isActive, building: { isActive: true } } };
+        return { ...row, room: { buildingId: room.buildingId, code: '203', isActive: room.isActive, building: { isActive: true, name: 'Chùa Gà' } } };
       }),
       // CP-6: toView's oldRoomPrice comparison lookup; no prior APPROVED price in these CP-3 HTTP fixtures.
       findFirst: vi.fn(async () => null),
@@ -642,7 +655,7 @@ describe('CP-3 · BE-P2-24 · room-prices/rate-plans review HTTP contract', () =
       { id: 1, roomId: 101, price: 3000000, effectiveFrom: todayHanoi(), status: 'PENDING', reason: null, proposedById: 2, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date() },
     ];
     ratePlanRows = [
-      { id: 1, buildingId: 10, kind: 'ELECTRIC', serviceId: null, effectiveFrom: todayHanoi(), status: 'PENDING', reason: null, proposedById: 2, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date(), tiers: [] },
+      { id: 1, buildingId: 10, kind: 'ELECTRIC', serviceId: null, effectiveFrom: todayHanoi(), status: 'PENDING', reason: null, proposedById: 2, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date(), tiers: [], building: { name: 'Chùa Gà' } },
     ];
     roomMap.set(101, { id: 101, buildingId: 10, isActive: true, price: 2000000 });
     auditCreate.mockClear();
@@ -764,5 +777,39 @@ describe('CP-3 · BE-P2-24 · room-prices/rate-plans review HTTP contract', () =
     expect(second.status).toBe(201);
     expect(second.body.data.id).toBe(first.body.data.id);
     expect(auditCreate).toHaveBeenCalledTimes(1); // replayed, not re-executed
+  });
+
+  // -----------------------------------------------------------------------
+  // Q-FE8B-2 (BE-P2-PRICE-NAMES-2): the two new fields in the approve/reject response.
+  // -----------------------------------------------------------------------
+  it('Q-FE8B-2: approving a room price over HTTP returns roomCode and buildingName for the room that was priced', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/api/v1/room-prices/1/approve').set('Authorization', await auth(1, 'BOSS'));
+    expect(response.status).toBe(201);
+    expect(response.body.data).toMatchObject({ roomCode: '203', buildingName: 'Chùa Gà' });
+  });
+
+  it('Q-FE8B-2: rejecting a room price over HTTP also returns roomCode and buildingName', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/api/v1/room-prices/1/reject').set('Authorization', await auth(1, 'BOSS')).send({ reviewNote: 'Không hợp lý' });
+    expect(response.status).toBe(201);
+    expect(response.body.data).toMatchObject({ roomCode: '203', buildingName: 'Chùa Gà' });
+  });
+
+  it('Q-FE8B-2: approving a rate plan over HTTP returns buildingName and never a roomCode key', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/api/v1/rate-plans/1/approve').set('Authorization', await auth(1, 'BOSS'));
+    expect(response.status).toBe(201);
+    expect(response.body.data).toMatchObject({ buildingName: 'Chùa Gà' });
+    expect(response.body.data).not.toHaveProperty('roomCode');
+  });
+
+  // PLAN §CP-2 scenario 5 (RATE-01, RATE-05): the third leg (propose, approve already covered above) — reject.
+  it('Q-FE8B-2, RATE-05: rejecting a rate plan over HTTP also returns buildingName, status REJECTED', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/api/v1/rate-plans/1/reject').set('Authorization', await auth(1, 'BOSS')).send({ reviewNote: 'Không hợp lý' });
+    expect(response.status).toBe(201);
+    expect(response.body.data).toMatchObject({ status: 'REJECTED', buildingName: 'Chùa Gà' });
+    expect(response.body.data).not.toHaveProperty('roomCode');
   });
 });

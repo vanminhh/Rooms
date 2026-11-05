@@ -112,27 +112,27 @@ describe('CP-6 · BE-P2-27 · listRoomPrices: PRC-10 status/expired, API-02 pagi
   function fixture() {
     const rows = [
       {
-        id: 1, roomId: 101, room: { buildingId: 10, isActive: true, building: { isActive: true } },
+        id: 1, roomId: 101, room: { buildingId: 10, code: '203', isActive: true, building: { isActive: true, name: 'Chùa Gà' } },
         price: 2_500_000, effectiveFrom: addDays(today(), -1), status: 'PENDING',
         reason: null, proposedById: 2, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: t(1),
       },
       {
-        id: 2, roomId: 101, room: { buildingId: 10, isActive: true, building: { isActive: true } },
+        id: 2, roomId: 101, room: { buildingId: 10, code: '203', isActive: true, building: { isActive: true, name: 'Chùa Gà' } },
         price: 2_600_000, effectiveFrom: addDays(today(), 1), status: 'PENDING',
         reason: null, proposedById: 2, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: t(2),
       },
       {
-        id: 3, roomId: 101, room: { buildingId: 10, isActive: true, building: { isActive: true } },
+        id: 3, roomId: 101, room: { buildingId: 10, code: '203', isActive: true, building: { isActive: true, name: 'Chùa Gà' } },
         price: 2_400_000, effectiveFrom: addDays(today(), -10), status: 'APPROVED',
         reason: null, proposedById: 2, reviewedById: 1, reviewedAt: t(3), reviewNote: null, createdAt: t(3),
       },
       {
-        id: 4, roomId: 105, room: { buildingId: 11, isActive: true, building: { isActive: true } },
+        id: 4, roomId: 105, room: { buildingId: 11, code: '101', isActive: true, building: { isActive: true, name: 'Trúc Bạch' } },
         price: 3_000_000, effectiveFrom: today(), status: 'REJECTED',
         reason: null, proposedById: 5, reviewedById: 1, reviewedAt: t(4), reviewNote: 'Không hợp lý', createdAt: t(4),
       },
       {
-        id: 5, roomId: 106, room: { buildingId: 10, isActive: true, building: { isActive: true } },
+        id: 5, roomId: 106, room: { buildingId: 10, code: '204', isActive: false, building: { isActive: true, name: 'Chùa Gà' } },
         price: 2_550_000, effectiveFrom: addDays(today(), -5), status: 'SUPERSEDED',
         reason: null, proposedById: 2, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: t(5),
       },
@@ -159,6 +159,14 @@ describe('CP-6 · BE-P2-27 · listRoomPrices: PRC-10 status/expired, API-02 pagi
     expect(byId.get(1)?.expired).toBe(true); // PENDING, yesterday
     expect(byId.get(2)?.expired).toBe(false); // PENDING, tomorrow
     expect(byId.get(3)?.expired).toBe(false); // APPROVED, 10 days ago — not PENDING, never expired
+  });
+
+  it('PRC-07, Q-FE8B-2: a PENDING proposal with effectiveFrom = yesterday (Asia/Ho_Chi_Minh) is expired, and still carries the correct roomCode/buildingName', async () => {
+    const { service } = fixture();
+    const result = await service.listRoomPrices(boss, {} as any);
+    const row = result.data.find((r) => r.id === 1)!;
+    expect(row.expired).toBe(true);
+    expect(row).toMatchObject({ roomCode: '203', buildingName: 'Chùa Gà' });
   });
 
   it('API-02: default sort is -createdAt (newest first)', async () => {
@@ -209,6 +217,16 @@ describe('CP-6 · BE-P2-27 · listRoomPrices: PRC-10 status/expired, API-02 pagi
     });
   });
 
+  // PLAN §CP-2 scenario 9 (SCOPE-02, API-08): the thrown exception carries only the error code,
+  // never the out-of-scope building's name ("Trúc Bạch") or id — full-body equality, not a subset match.
+  it('SCOPE-02, API-08: the OUT_OF_SCOPE response body for an out-of-scope buildingId never leaks the building name', async () => {
+    const { service } = fixture();
+    const error: any = await service.listRoomPrices(manager, { buildingId: 11 } as any).catch((e) => e);
+    expect(error).toMatchObject({ status: 403, response: { message: 'OUT_OF_SCOPE' } });
+    expect(Object.keys(error.response).sort()).toEqual(['error', 'message', 'statusCode']);
+    expect(JSON.stringify(error.response)).not.toContain('Trúc Bạch');
+  });
+
   it('API-08: a non-existent buildingId for Boss returns an empty list, not an error', async () => {
     const { service } = fixture();
     const result = await service.listRoomPrices(boss, { buildingId: 999 } as any);
@@ -235,6 +253,63 @@ describe('CP-6 · BE-P2-27 · listRoomPrices: PRC-10 status/expired, API-02 pagi
     const result = await service.listRoomPrices(manager, { roomId: 106 } as any);
     expect(result.data.map((r) => r.id)).toEqual([5]);
   });
+
+  // -------------------------------------------------------------------------
+  // Q-FE8B-2 (BE-P2-PRICE-NAMES-2): new roomCode/buildingName fields.
+  // -------------------------------------------------------------------------
+
+  it('Q-FE8B-2, PRC-10, PRC-12: every row carries roomCode and buildingName, and the pre-existing fields are untouched', async () => {
+    const { service } = fixture();
+    const result = await service.listRoomPrices(boss, { roomId: 101 } as any);
+    const row = result.data.find((r) => r.id === 3)!;
+    expect(row).toMatchObject({
+      id: 3, roomId: 101, buildingId: 10, price: 2_400_000, status: 'APPROVED',
+      roomCode: '203', buildingName: 'Chùa Gà',
+    });
+  });
+
+  it('Q-P5-5, Q-FE8B-2: a row of a locked room (isActive:false) still carries roomCode/buildingName, and never leaks an isActive key', async () => {
+    const { service } = fixture();
+    const result = await service.listRoomPrices(boss, {} as any);
+    const lockedRow = result.data.find((r) => r.id === 5)!;
+    expect(lockedRow).toMatchObject({ roomCode: '204', buildingName: 'Chùa Gà' });
+    expect(lockedRow).not.toHaveProperty('isActive');
+  });
+
+  it('API-08: an empty list (buildingId with no rows) has no roomCode/buildingName crash, just an empty array', async () => {
+    const { service } = fixture();
+    const result = await service.listRoomPrices(boss, { buildingId: 999 } as any);
+    expect(result.data).toEqual([]);
+    expect(result.meta).toEqual({ page: 1, limit: 20, total: 0 });
+  });
+
+  it('API-02: listRoomPrices issues exactly one findMany + one count + one findFirst-per-row (no N+1 from the new fields)', async () => {
+    const { service, prisma } = fixture();
+    await service.listRoomPrices(boss, {} as any); // 5 rows
+    expect(prisma.roomPrice.findMany).toHaveBeenCalledTimes(1);
+    expect(prisma.roomPrice.count).toHaveBeenCalledTimes(1);
+    expect(prisma.roomPrice.findFirst).toHaveBeenCalledTimes(5); // one comparison lookup per row, pre-existing shortcut
+    expect(prisma.room.findUnique).not.toHaveBeenCalled(); // no extra room/building query: it rides the findMany include
+  });
+
+  // PLAN §CP-2 scenario 7 (API-02): roomCode/buildingName ride the one findMany via its `include`,
+  // not a separate query — assert the include shape itself, not just the call count.
+  it('API-02, Q-FE8B-2: listRoomPrices\' findMany include selects room.code and room.building.name', async () => {
+    const { service, prisma } = fixture();
+    await service.listRoomPrices(boss, {} as any);
+    expect(prisma.roomPrice.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: expect.objectContaining({
+          room: expect.objectContaining({
+            select: expect.objectContaining({
+              code: true,
+              building: expect.objectContaining({ select: expect.objectContaining({ name: true }) }),
+            }),
+          }),
+        }),
+      }),
+    );
+  });
 });
 
 // ===========================================================================
@@ -248,25 +323,25 @@ describe('CP-6 · BE-P2-27 · listRatePlans: PRC-10/12, API-02/08, empty-tiers g
         id: 1, buildingId: 10, kind: 'ELECTRIC', serviceId: null, status: 'PENDING',
         effectiveFrom: addDays(today(), 1), reason: null, proposedById: 2,
         reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: t(1),
-        tiers: [{ tierNo: 1, upTo: null, unitPrice: 1_800 }],
+        tiers: [{ tierNo: 1, upTo: null, unitPrice: 1_800 }], building: { name: 'Chùa Gà' },
       },
       {
         id: 2, buildingId: 10, kind: 'WATER', serviceId: null, status: 'APPROVED',
         effectiveFrom: addDays(today(), -10), reason: null, proposedById: 2,
         reviewedById: 1, reviewedAt: t(2), reviewNote: null, createdAt: t(2),
-        tiers: [{ tierNo: 1, upTo: null, unitPrice: 20_000 }],
+        tiers: [{ tierNo: 1, upTo: null, unitPrice: 20_000 }], building: { name: 'Chùa Gà' },
       },
       {
         id: 3, buildingId: 11, kind: 'SERVICE', serviceId: 301, status: 'REJECTED',
         effectiveFrom: today(), reason: null, proposedById: 5,
         reviewedById: 1, reviewedAt: t(3), reviewNote: 'Không hợp lý', createdAt: t(3),
-        tiers: [{ tierNo: 1, upTo: null, unitPrice: 50_000 }],
+        tiers: [{ tierNo: 1, upTo: null, unitPrice: 50_000 }], building: { name: 'Trúc Bạch' },
       },
       {
         id: 4, buildingId: 10, kind: 'ELECTRIC', serviceId: null, status: 'PENDING',
         effectiveFrom: addDays(today(), -1), reason: null, proposedById: 2,
         reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: t(4),
-        tiers: [{ tierNo: 1, upTo: 100, unitPrice: 1_700 }, { tierNo: 2, upTo: null, unitPrice: 2_600 }],
+        tiers: [{ tierNo: 1, upTo: 100, unitPrice: 1_700 }, { tierNo: 2, upTo: null, unitPrice: 2_600 }], building: { name: 'Chùa Gà' },
       },
       {
         // CP-6 ghi chú coder: a plan row with no tiers at all (should never happen per RATE-02,
@@ -274,7 +349,7 @@ describe('CP-6 · BE-P2-27 · listRatePlans: PRC-10/12, API-02/08, empty-tiers g
         id: 5, buildingId: 10, kind: 'SERVICE', serviceId: 302, status: 'PENDING',
         effectiveFrom: today(), reason: null, proposedById: 2,
         reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: t(5),
-        tiers: [],
+        tiers: [], building: { name: 'Chùa Gà' },
       },
     ];
     return makeListHarness({ ratePlanRows: rows });
@@ -338,6 +413,41 @@ describe('CP-6 · BE-P2-27 · listRatePlans: PRC-10/12, API-02/08, empty-tiers g
     expect(result.data[0].tiers).toEqual([]);
     expect(result.data[0].comparison).toBeNull();
   });
+
+  // -------------------------------------------------------------------------
+  // Q-FE8B-2 (BE-P2-PRICE-NAMES-2): buildingName, never roomCode, on rate plan rows.
+  // -------------------------------------------------------------------------
+
+  it('Q-FE8B-2, RATE-01: every rate plan row carries buildingName and never a roomCode key', async () => {
+    const { service } = fixture();
+    const result = await service.listRatePlans(boss, {} as any);
+    expect(result.data).toHaveLength(5);
+    for (const row of result.data) {
+      expect(typeof row.buildingName).toBe('string');
+      expect(row).not.toHaveProperty('roomCode');
+    }
+    expect(result.data.find((r) => r.id === 3)?.buildingName).toBe('Trúc Bạch');
+    expect(result.data.find((r) => r.id === 1)?.buildingName).toBe('Chùa Gà');
+  });
+
+  it('API-02: listRatePlans issues exactly one findMany + one count + one findFirst-per-row (no N+1 from buildingName)', async () => {
+    const { service, prisma } = fixture();
+    await service.listRatePlans(boss, {} as any); // 5 rows
+    expect(prisma.ratePlan.findMany).toHaveBeenCalledTimes(1);
+    expect(prisma.ratePlan.count).toHaveBeenCalledTimes(1);
+    expect(prisma.ratePlan.findFirst).toHaveBeenCalledTimes(5);
+  });
+
+  // PLAN §CP-2 scenario 7 (API-02): buildingName rides the one findMany via its `include`.
+  it('API-02, Q-FE8B-2: listRatePlans\' findMany include selects building.name', async () => {
+    const { service, prisma } = fixture();
+    await service.listRatePlans(boss, {} as any);
+    expect(prisma.ratePlan.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: expect.objectContaining({ building: expect.objectContaining({ select: expect.objectContaining({ name: true }) }) }),
+      }),
+    );
+  });
 });
 
 // ===========================================================================
@@ -391,7 +501,7 @@ describe('CP-6 · BE-P2-27 · PRC-12: comparison old-value selection rule', () =
 // comparison in the POST propose/approve/reject responses (PLAN §2) — transaction harness.
 // ===========================================================================
 
-interface RoomFixture { id: number; buildingId: number; isActive: boolean; buildingActive: boolean; price: number }
+interface RoomFixture { id: number; buildingId: number; isActive: boolean; buildingActive: boolean; price: number; code?: string; buildingName?: string }
 interface RoomPriceRowFixture {
   id: number; roomId: number; price: number; effectiveFrom: Date; status: string;
   proposedById: number; reviewedById?: number | null; reviewedAt?: Date | null;
@@ -411,7 +521,12 @@ function makeTxRoomHarness(rooms: RoomFixture[], rowFixtures: RoomPriceRowFixtur
     room: {
       findUnique: vi.fn(async ({ where }: any) => {
         const r = roomMap.get(where.id);
-        return r ? { id: r.id, buildingId: r.buildingId, isActive: r.isActive, building: { isActive: r.buildingActive } } : null;
+        return r
+          ? {
+              id: r.id, buildingId: r.buildingId, code: r.code ?? '101', isActive: r.isActive,
+              building: { isActive: r.buildingActive, name: r.buildingName ?? 'Chùa Gà' },
+            }
+          : null;
       }),
       update: vi.fn(async ({ where, data }: any) => {
         const r: any = roomMap.get(where.id);
@@ -424,7 +539,15 @@ function makeTxRoomHarness(rooms: RoomFixture[], rowFixtures: RoomPriceRowFixtur
         const row = roomPriceRows.find((r) => r.id === where.id);
         if (!row) return null;
         const r: any = roomMap.get(row.roomId);
-        return { ...row, room: r ? { buildingId: r.buildingId, isActive: r.isActive, building: { isActive: r.buildingActive } } : undefined };
+        return {
+          ...row,
+          room: r
+            ? {
+                buildingId: r.buildingId, code: r.code ?? '101', isActive: r.isActive,
+                building: { isActive: r.buildingActive, name: r.buildingName ?? 'Chùa Gà' },
+              }
+            : undefined,
+        };
       }),
       // CP-6: a real (non-stub) findFirst so the comparison built inside propose/approve/reject is genuine.
       findFirst: vi.fn(async ({ where, orderBy }: any) =>
@@ -457,7 +580,7 @@ function makeTxRoomHarness(rooms: RoomFixture[], rowFixtures: RoomPriceRowFixtur
   return { service, tx, prisma, roomPriceRows };
 }
 
-interface BuildingFixture { id: number; isActive: boolean }
+interface BuildingFixture { id: number; isActive: boolean; name?: string }
 interface RatePlanRowFixture {
   id: number; buildingId: number; kind: string; serviceId: number | null; effectiveFrom: Date; status: string;
   proposedById: number; reviewedById?: number | null; reviewedAt?: Date | null; reviewNote?: string | null;
@@ -467,7 +590,9 @@ interface RatePlanRowFixture {
 function makeTxRatePlanHarness(buildings: BuildingFixture[], rowFixtures: RatePlanRowFixture[] = []) {
   const buildingMap = new Map(buildings.map((b) => [b.id, { ...b }]));
   const ratePlanRows: any[] = rowFixtures.map((r) => ({
-    reason: null, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date(), tiers: [], ...r,
+    reason: null, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date(), tiers: [],
+    building: { name: buildingMap.get(r.buildingId)?.name ?? 'Chùa Gà' },
+    ...r,
   }));
   let nextId = ratePlanRows.reduce((max, r) => Math.max(max, r.id), 0) + 1;
   let nextTierId = 1;
@@ -491,7 +616,8 @@ function makeTxRatePlanHarness(buildings: BuildingFixture[], rowFixtures: RatePl
       }),
       create: vi.fn(async ({ data }: any) => {
         const tiers = (data.tiers?.create ?? []).map((tier: any) => ({ id: nextTierId++, ...tier }));
-        const row = { id: nextId++, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date(), ...data, tiers };
+        const building = { name: buildingMap.get(data.buildingId)?.name ?? 'Chùa Gà' };
+        const row = { id: nextId++, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date(), ...data, tiers, building };
         ratePlanRows.push(row);
         return row;
       }),
@@ -605,6 +731,34 @@ describe('CP-6 · BE-P2-27 · comparison is present in the propose/approve/rejec
     expect((result.comparison as any).oldTiers).toHaveLength(2);
     expect((result.comparison as any).newTiers).toHaveLength(3);
   });
+
+  // -------------------------------------------------------------------------
+  // Q-FE8B-2 (BE-P2-PRICE-NAMES-2): new fields on propose/approve/reject responses.
+  // -------------------------------------------------------------------------
+
+  it('Q-FE8B-2, PRC-01, PRC-12: proposeRoomPrice over the tx path returns the proposed room\'s roomCode and buildingName', async () => {
+    const room: RoomFixture = { id: 101, buildingId: 10, isActive: true, buildingActive: true, price: 2_000_000, code: '305', buildingName: 'Láng Hạ' };
+    const { service } = makeTxRoomHarness([room], []);
+    const result = await service.proposeRoomPrice(manager, { roomId: 101, price: 2_200_000, effectiveFrom: formatDateOnly(addDays(today(), 1)) } as any);
+    expect(result).toMatchObject({ roomCode: '305', buildingName: 'Láng Hạ' });
+  });
+
+  it('Q-FE8B-2, PRC-04: a Boss self-approve (propose -> approve in one transaction) response still carries roomCode/buildingName', async () => {
+    const room: RoomFixture = { id: 101, buildingId: 10, isActive: true, buildingActive: true, price: 2_000_000, code: '305', buildingName: 'Láng Hạ' };
+    const { service } = makeTxRoomHarness([room], []);
+    const result = await service.proposeRoomPrice(boss, { roomId: 101, price: 2_200_000, effectiveFrom: formatDateOnly(today()) } as any);
+    expect(result.status).toBe('APPROVED');
+    expect(result).toMatchObject({ roomCode: '305', buildingName: 'Láng Hạ' });
+  });
+
+  it('Q-FE8B-2: proposeRatePlan over the tx path returns buildingName of the target building', async () => {
+    const building: BuildingFixture = { id: 10, isActive: true, name: 'Láng Hạ' };
+    const { service } = makeTxRatePlanHarness([building], []);
+    const result = await service.proposeRatePlan(manager, {
+      buildingId: 10, kind: 'WATER', effectiveFrom: formatDateOnly(addDays(today(), 1)), tiers: [{ tierNo: 1, upTo: null, unitPrice: 22_000 }],
+    } as any);
+    expect(result.buildingName).toBe('Láng Hạ');
+  });
 });
 
 // ===========================================================================
@@ -624,7 +778,7 @@ describe('CP-6 · BE-P2-27 · GET /room-prices, GET /rate-plans HTTP contract', 
   const buildings = new Map<number, any>([[10, { id: 10, managerId: 2, isActive: true }]]);
   const roomPriceRows = [
     {
-      id: 1, roomId: 101, room: { buildingId: 10, isActive: true, building: { isActive: true } },
+      id: 1, roomId: 101, room: { buildingId: 10, code: '203', isActive: true, building: { isActive: true, name: 'Chùa Gà' } },
       price: 2_500_000, effectiveFrom: todayHanoi(), status: 'APPROVED',
       reason: null, proposedById: 1, reviewedById: 1, reviewedAt: new Date(), reviewNote: null, createdAt: new Date(),
     },
@@ -677,6 +831,7 @@ describe('CP-6 · BE-P2-27 · GET /room-prices, GET /rate-plans HTTP contract', 
       .get('/api/v1/room-prices').set('Authorization', await auth(3, 'TENANT'));
     expect(response.status).toBe(403);
     expect(response.body.error.code).toBe('FORBIDDEN');
+    expect(fakePrisma.roomPrice.findMany).not.toHaveBeenCalled();
   });
 
   it('API-02: limit=0 is 400 VALIDATION_FAILED', async () => {
@@ -736,5 +891,20 @@ describe('CP-6 · BE-P2-27 · GET /room-prices, GET /rate-plans HTTP contract', 
       .get('/api/v1/room-prices?buildingId=11').set('Authorization', await auth(2, 'MANAGER'));
     expect(response.status).toBe(403);
     expect(response.body.error.code).toBe('OUT_OF_SCOPE');
+  });
+
+  // Q-FE8B-2 (BE-P2-PRICE-NAMES-2): the new fields over the full HTTP stack.
+  it('Q-FE8B-2: GET /room-prices over HTTP returns roomCode and buildingName per row', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/room-prices').set('Authorization', await auth(1, 'BOSS'));
+    expect(response.status).toBe(200);
+    expect(response.body.data[0]).toMatchObject({ roomCode: '203', buildingName: 'Chùa Gà' });
+  });
+
+  it('Q-FE8B-2: GET /rate-plans over HTTP returns an empty list cleanly (no crash) when there are no plans', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/rate-plans').set('Authorization', await auth(1, 'BOSS'));
+    expect(response.status).toBe(200);
+    expect(response.body.data).toEqual([]);
   });
 });
