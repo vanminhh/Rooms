@@ -251,7 +251,7 @@ describe('D2-14, BE-P2-09: Buildings and manager API against real Prisma', () =>
     }, boss);
     expect(unlockedAndAssigned.status).toBe(200);
     expect(unlockedAndAssigned.body.data).toMatchObject({ isActive: true, managerId: created.managerId });
-    const lockedList = await send(app, 'get', '/buildings?includeInactive=true', undefined, boss);
+    const lockedList = await send(app, 'get', '/buildings?includeInactive=true&sort=-createdAt', undefined, boss);
     expect(lockedList.status).toBe(200);
     expect(lockedList.body.data.some((row: { id: number }) => row.id === created.buildingIds[0])).toBe(true);
   });

@@ -3,12 +3,18 @@ export const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const SWEEP_ABOVE_KEYS = 10_000;
 
 // Sliding window: a hit counts while ts > now - window, so it stops counting exactly at ts + 15 minutes.
+// The defaults are AUTH-04; other callers pass their own limit (e.g. VIEW-02: 5 per hour).
 // shortcut: in-memory, single instance only; move to a shared store (DB/Redis) before running more than one instance
 export class RateLimiter {
   private readonly hits = new Map<string, number[]>();
 
+  constructor(
+    private readonly max: number = RATE_LIMIT_MAX,
+    private readonly windowMs: number = RATE_LIMIT_WINDOW_MS,
+  ) {}
+
   isBlocked(key: string, now: number = Date.now()): boolean {
-    return this.recent(key, now).length >= RATE_LIMIT_MAX;
+    return this.recent(key, now).length >= this.max;
   }
 
   record(key: string, now: number = Date.now()): void {
@@ -28,7 +34,7 @@ export class RateLimiter {
   }
 
   private recent(key: string, now: number): number[] {
-    return (this.hits.get(key) ?? []).filter((ts) => ts > now - RATE_LIMIT_WINDOW_MS);
+    return (this.hits.get(key) ?? []).filter((ts) => ts > now - this.windowMs);
   }
 
   // No timer (the app must close cleanly in tests): drop dead keys only when the map grows big.
