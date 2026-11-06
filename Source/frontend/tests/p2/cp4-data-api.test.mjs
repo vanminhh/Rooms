@@ -3,13 +3,16 @@ import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import test from 'node:test'
 import ts from 'typescript'
+import { draftFirst } from '../draft-root.mjs'
 
 // CP-4 (FE-P2-05 nền dữ liệu): src/shared/api.ts (apiRequestPage/listPath additions), src/shared/formatters.ts
 // (formatDate), src/features/{buildings,managers,rooms}/api.ts and buildings/schemas.ts.
 // Spec/PLAN: API-02/03/04/08, UI-05/09, SCOPE-02, BLD-01/02/06, ROOM-02, G-01/02, Q-FE8A-2 (PLAN CP-4 Q6).
 // Outside edge faked: globalThis.fetch only. Every module under test (api.ts, formatters.ts, schemas.ts)
 // is transpiled and run unmodified; zod is the real installed package, not a mock.
-const read = path => readFileSync(new URL(path, import.meta.url), 'utf8')
+// Mirrored from the main copy (PLAN.md CP-6, the P2-8a lesson): `read` resolves draft-first / main-fallback via
+// draft-root.mjs instead of a literal relative path (none of these files are touched by this draft).
+const read = path => readFileSync(draftFirst(path.replace(/^(\.\.\/)+/, '')), 'utf8')
 const req = createRequire(import.meta.url)
 
 function compile(path, modules) {

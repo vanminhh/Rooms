@@ -1,23 +1,33 @@
 import assert from 'node:assert/strict'
-import { readFileSync, existsSync } from 'node:fs'
+import { readFileSync, existsSync, statSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import test, { after } from 'node:test'
 import ts from 'typescript'
+import { draftRoot, mainRoot } from './draft-root.mjs'
 
 // TanStack Query keeps 5-minute garbage-collection timers alive; end the process once the tests are done.
 // The exit code stays whatever node:test set (1 when a test failed).
 after(() => { setTimeout(() => process.exit(process.exitCode ?? 0), 200).unref() })
 
-// CP-4 flow tests. The real draft modules (routes, layouts, RequireAuth/GuestOnly, AuthProvider, LoginPage, api client,
-// react-router, react-hook-form, zod, TanStack Query, the kit form fields) run unmodified on real React.
-// Only the outside edges are faked: `fetch` (the API) and a tiny DOM (Node has none; no jsdom is installed).
-// No backend, no database, no browser.
-
+// CP-4/CP-6 flow tests, mirrored from the main copy and updated for CP-2 (D-5 PublicLayout menu "Tìm phòng";
+// FE-P2-14 real home page instead of the old PlaceholderPage text). The real modules (routes, layouts,
+// RequireAuth/GuestOnly, AuthProvider, LoginPage, api client, react-router, react-hook-form, zod, TanStack
+// Query, the kit form fields) run unmodified on real React. Only the outside edges are faked: `fetch` (the API)
+// and a tiny DOM (Node has none; no jsdom is installed). No backend, no database, no browser.
+//
+// Module resolution is draft-first / main-fallback, rooted via tests/draft-root.mjs's "walk up from
+// import.meta.url" (the P2-8a lesson): the draft only has the CP-2 files (PublicHomePage, PlaceholderPage,
+// PublicLayout, features/public/*); every other module (routes.tsx, the other layouts/pages, the kit) is
+// missing from the draft and falls back to the main tree — exactly the state apply-draft.mjs leaves things in.
+// Unlike draft-root.mjs's own `loadModule` (which caches modules for the whole process), the loader below keeps
+// its original behaviour of a brand-new module cache per `mount()` call, so each mounted app gets its own copy
+// of shared/api.ts's module-scoped `accessToken`/`refreshing` state — tests stay isolated from each other.
 const here = dirname(fileURLToPath(import.meta.url))
-const draftSrc = resolve(here, '../src')
-const kitDir = existsSync(resolve(here, '../src/components')) ? resolve(here, '../src/components') : resolve(here, '../../../src/components')
+const draftSrcRoot = resolve(draftRoot, 'src')
+const mainSrcRoot = resolve(mainRoot, 'src')
+const kitDir = resolve(mainRoot, 'src/components') // the kit is never copied into a draft
 const nodeRequire = createRequire(import.meta.url)
 
 // ---------- minimal DOM ----------
@@ -91,6 +101,39 @@ const fakeWindow = {
 fakeDocument.defaultView = fakeWindow
 Object.assign(globalThis, { window: fakeWindow, document: fakeDocument, HTMLElement: FakeElement, Element: FakeElement, Node: FakeNode, HTMLIFrameElement: FakeIFrame })
 
+// ---------- module resolution: draft-first, main-fallback (same strategy as tests/draft-root.mjs) ----------
+// Bug fixed here (the file was mid-edit, per the task note): the previous version probed "is this a directory"
+// with `!existsSync(base + ext + '/')`, but on Windows `existsSync('<file>/')` is true for a plain *file* too,
+// not just directories — so every already-existing, already-extensioned path (e.g. srcPath('app/routes.tsx'))
+// was wrongly rejected and every single test below failed with "cannot resolve src file". Use `statSync(...).isFile()`
+// instead, same as draft-root.mjs's own (correct) resolveFile.
+function tryResolveFile(base) {
+  for (const ext of ['.ts', '.tsx']) if (existsSync(base + ext)) return base + ext
+  for (const ext of ['/index.ts', '/index.tsx']) if (existsSync(base + ext)) return base + ext
+  if (existsSync(base)) {
+    try { if (statSync(base).isFile()) return base } catch { /* not a plain file */ }
+  }
+  return null
+}
+function resolveRelative(fromDir, id) {
+  const candidate = resolve(fromDir, id)
+  const draftCandidate = candidate.startsWith(mainSrcRoot) ? candidate.replace(mainSrcRoot, draftSrcRoot) : candidate
+  const draftFile = tryResolveFile(draftCandidate)
+  if (draftFile) return draftFile
+  const mainCandidate = candidate.startsWith(draftSrcRoot) ? candidate.replace(draftSrcRoot, mainSrcRoot) : candidate
+  const mainFile = tryResolveFile(mainCandidate)
+  if (mainFile) return mainFile
+  throw new Error(`cannot resolve "${id}" from ${fromDir}`)
+}
+// Entry points are given as a path relative to `src/` (e.g. 'app/routes.tsx'): draft copy first, else main's.
+function srcPath(relPath) {
+  const draftFile = tryResolveFile(resolve(draftSrcRoot, relPath))
+  if (draftFile) return draftFile
+  const mainFile = tryResolveFile(resolve(mainSrcRoot, relPath))
+  if (mainFile) return mainFile
+  throw new Error(`cannot resolve src file "${relPath}"`)
+}
+
 // ---------- module loader ----------
 function loadFresh() {
   const cache = new Map()
@@ -105,23 +148,19 @@ function loadFresh() {
     Function('require', 'exports', 'module', code)(id => requireFrom(dirname(file), id), module.exports, module)
     return module.exports
   }
-  function resolveFile(base) {
-    for (const ext of ['', '.ts', '.tsx', '/index.ts', '/index.tsx']) if (existsSync(base + ext) && !existsSync(base + ext + '/')) return base + ext
-    for (const ext of ['.ts', '.tsx']) if (existsSync(base + ext)) return base + ext
-    throw new Error(`cannot resolve ${base}`)
-  }
   let kit
   function requireFrom(dir, id) {
     if (!id.startsWith('.')) return nodeRequire(id)
     if (id.endsWith('.css')) return {}
     if (/(^|\/)components$/.test(id)) {
-      // The kit index also pulls in three.js / motion scenes; the form fields, button, heading and navigation it re-exports run unmodified.
-      kit ??= Object.assign({}, ...['Button', 'FormFields', 'SectionHeading', 'Navigation'].map(n => load(resolve(kitDir, `${n}.tsx`))))
+      // The kit index also pulls in three.js / motion scenes; the form fields, button, heading, navigation and
+      // RoomSearch it re-exports (all PublicHomePage/PublicLayout need) run unmodified.
+      kit ??= Object.assign({}, ...['Button', 'FormFields', 'SectionHeading', 'Navigation', 'RoomSearch'].map(n => load(resolve(kitDir, `${n}.tsx`))))
       return kit
     }
-    return load(resolveFile(resolve(dir, id)))
+    return load(resolveRelative(dir, id))
   }
-  return { load, src: file => load(resolve(draftSrc, file)) }
+  return { load, src: file => load(srcPath(file)) }
 }
 
 // ---------- fake API (outside edge) ----------
@@ -154,6 +193,11 @@ function makeFetch({ session = null, contact = { phone: '0900000001', zaloUrl: '
     else if (path === '/auth/logout') result = { status: 200, body: { data: null } }
     else if (path === '/auth/me') result = session && init.headers?.Authorization === 'Bearer tok-0' ? { status: 200, body: { data: cfg.meOverride ?? ME[session] } } : err(401, 'UNAUTHENTICATED', 'Chưa đăng nhập')
     else if (path === '/public/contact') result = contact === 'error' ? err(500, 'INTERNAL_ERROR', 'Có lỗi xảy ra, vui lòng thử lại sau') : { status: 200, body: { data: contact } }
+    // CP-2 (FE-P2-14): "/" now fetches these for real (featured rooms, districts); default to empty so the
+    // home page's ListState shows its empty state instead of an error (PLAN §CP-6 "Test cũ phải sửa").
+    else if (path === '/public/locations') result = { status: 200, body: { data: [] } }
+    else if (path === '/public/featured-rooms') result = { status: 200, body: { data: [] } }
+    else if (path.startsWith('/public/rooms')) result = { status: 200, body: { data: [], meta: { page: 1, limit: 20, total: 0 } } }
     else if (path === '/auth/login') {
       if (loginOverride) result = loginOverride(body)
       else if (body.phone === '0900000005') result = err(403, 'ACCOUNT_LOCKED', 'Tài khoản đã bị khóa. Liên hệ quản lý.')
@@ -488,8 +532,8 @@ test('AUTH-T2: while booting a guarded route shows only the spinner "Đang tải
 test('AUTH-T2/AUTH-06: refresh 401 means signed out with status ready: no error block, no /auth/me call, public page works, guarded route goes to /dang-nhap?next=', async () => {
   const app = await mount('/')
   await until(() => navLinks(app).length > 0, 'header after boot')
-  assert.deepEqual(navLinks(app).filter(([, href]) => href !== '/'), [['Đăng nhập', '/dang-nhap']])
-  assert.ok(app.text().includes('Trang đang được xây dựng'))
+  assert.deepEqual(navLinks(app).filter(([, href]) => href !== '/'), [['Tìm phòng', '/phong'], ['Đăng nhập', '/dang-nhap']])
+  assert.ok(app.text().includes('Chọn chỗ ở.'), app.text())
   assert.equal(find(app.container, n => n.attributes.role === 'alert').length, 0)
   assert.equal(callsTo(app, 'GET', '/auth/me').length, 0, `me is not called after a 401 refresh; calls ${JSON.stringify(app.api.calls.map(c => [c.method, c.url, c.headers.Authorization]))}`)
   assert.equal(callsTo(app, 'POST', '/auth/refresh').length, 1)
@@ -558,10 +602,10 @@ test('Q6-A/A17: login from status error ends the error state: the guarded page s
   await app.stop()
 })
 
-test('Q6-A/A17: with a failed start-up public pages stay usable: "/" shows the placeholder and header "Đăng nhập" and no error block', async () => {
+test('Q6-A/A17: with a failed start-up public pages stay usable: "/" shows the home page and header "Đăng nhập" and no error block', async () => {
   const app = await mount('/', { refreshStatus: 500 })
   await until(() => navLinks(app).some(([label]) => label === 'Đăng nhập'), 'header Đăng nhập')
-  assert.ok(app.text().includes('Trang đang được xây dựng'))
+  assert.ok(app.text().includes('Chọn chỗ ở.'))
   assert.equal(find(app.container, n => n.attributes.role === 'alert').length, 0)
   await app.stop()
 })
@@ -604,12 +648,14 @@ test('Q4-A: unknown paths show "Không tìm thấy trang" inside PublicLayout an
   }
 })
 
-test('Q4-A: "/" shows "Trang đang được xây dựng", "/phong" is the "Tìm phòng" placeholder (FE-P2-01); the 404 link "Về trang chủ" goes to "/" without a second refresh', async () => {
+test('Q4-A/D-4: "/" shows the real home page hero ("Chọn chỗ ở." + "Bắt đầu an yên."), "/phong" is the real search page (CP-3, empty state "Chưa có phòng phù hợp với bộ lọc" from the default empty mock, not the old "Đang làm" placeholder); the 404 link "Về trang chủ" goes to "/" without a second refresh', async () => {
   const home = await mount('/')
-  await until(() => home.text().includes('Trang đang được xây dựng'), '/')
+  await until(() => home.text().includes('Chọn chỗ ở.'), '/')
+  assert.ok(home.text().includes('Bắt đầu an yên.'))
   await home.stop()
   const rooms = await mount('/phong')
-  await until(() => rooms.text().includes('Tìm phòng') && rooms.text().includes('Đang làm'), '/phong')
+  await until(() => rooms.text().includes('Tìm phòng') && rooms.text().includes('Chưa có phòng phù hợp với bộ lọc'), '/phong')
+  assert.ok(!rooms.text().includes('Đang làm'), 'CP-3 built the real page; the old placeholder text must be gone')
   await rooms.stop()
   const app = await mount('/khong-co')
   await until(() => app.text().includes('Không tìm thấy trang'), '404')
@@ -617,18 +663,18 @@ test('Q4-A: "/" shows "Trang đang được xây dựng", "/phong" is the "Tìm 
   assert.equal(link.attributes.href, '/')
   app.dispatch(link, 'click')
   await settle(app, '/', 'back home')
-  assert.ok(app.text().includes('Trang đang được xây dựng'))
+  assert.ok(app.text().includes('Chọn chỗ ở.'))
   assert.equal(callsTo(app, 'POST', '/auth/refresh').length, 1)
   await app.stop()
 })
 
-test('FE-LOGIN-10: PublicLayout header: "Đăng nhập" -> /dang-nhap when signed out; "Trang của tôi" -> /thue (tenant) or /ql (manager, boss); nothing while loading', async () => {
+test('FE-LOGIN-10/D-5: PublicLayout header has "Tìm phòng" -> /phong before the account link ("Đăng nhập" when signed out; "Trang của tôi" -> /thue for tenant or /ql for manager/boss); nothing while loading', async () => {
   for (const [session, expected] of [[undefined, ['Đăng nhập', '/dang-nhap']], ['tenant', ['Trang của tôi', '/thue']], ['manager', ['Trang của tôi', '/ql']], ['boss', ['Trang của tôi', '/ql']]]) {
     const app = await mount('/', { session, delay: 40 })
     await wait(10)
     assert.deepEqual(navLinks(app).filter(([, href]) => href !== '/'), [], 'no menu item while loading')
     await until(() => navLinks(app).some(([label]) => label !== ''), `menu for ${session ?? 'none'}`)
-    assert.deepEqual(navLinks(app).filter(([, href]) => href !== '/'), [expected], session ?? 'none')
+    assert.deepEqual(navLinks(app).filter(([, href]) => href !== '/'), [['Tìm phòng', '/phong'], expected], session ?? 'none')
     assert.ok(hasTheme(app))
     await app.stop()
   }
@@ -642,6 +688,16 @@ test('FE-LOGIN-10/A2: clicking a header link changes the route without reloading
   await settle(app, '/ql', 'header link click')
   assert.equal(callsTo(app, 'POST', '/auth/refresh').length, 1, 'no refresh after the click')
   assert.ok(app.text().includes('Việc hôm nay'))
+  await app.stop()
+})
+
+test('D-5: clicking "Tìm phòng" in the header changes the route to /phong without reloading the app (no new refresh)', async () => {
+  const app = await mount('/', { session: 'manager' })
+  await until(() => navLinks(app).some(([label]) => label === 'Tìm phòng'), 'header')
+  const link = find(app.container, n => n.tagName === 'A' && n.textContent === 'Tìm phòng')[0]
+  app.dispatch(link, 'click')
+  await settle(app, '/phong', '"Tìm phòng" click')
+  assert.equal(callsTo(app, 'POST', '/auth/refresh').length, 1, 'no refresh after the click')
   await app.stop()
 })
 
@@ -720,7 +776,7 @@ test('FE-LOGIN-10/T2: "Đăng xuất" is a type=button; click posts /auth/logout
 
 // ---------- source-level checks ----------
 test('A5/UI-08: LoginPage has the labelled fields, remember unchecked by default, and Vietnamese-only visible text', () => {
-  const page = readFileSync(resolve(draftSrc, 'pages/public/LoginPage.tsx'), 'utf8')
+  const page = readFileSync(srcPath('pages/public/LoginPage.tsx'), 'utf8')
   for (const needle of ['label="Số điện thoại"', 'type="tel"', 'inputMode="numeric"', 'autoComplete="username"', 'label="Mật khẩu"', 'autoComplete="current-password"', 'label="Ghi nhớ đăng nhập"', 'remember: false', 'Quên mật khẩu?', 'Xem phòng trống']) {
     assert.ok(page.includes(needle), `missing ${needle}`)
   }

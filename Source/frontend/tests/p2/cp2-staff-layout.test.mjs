@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import ts from 'typescript'
+import { draftFirst } from '../draft-root.mjs'
 
 // CP-2 (FE-P2-02/03): status-labels, StaffLayout menu/building-selector wiring, and the building-selection
 // logic (BuildingSelector, BuildingSelectionProvider, building-selection.ts). Spec: PLAN.md CP-2,
@@ -10,7 +11,9 @@ import ts from 'typescript'
 // have no outside deps and run fully unmodified; BuildingSelector/BuildingSelectionProvider run unmodified
 // too, wired to a real (unmodified) building-selection.ts so the sessionStorage/resolveSelection logic is
 // genuinely exercised, not mocked.
-const read = path => readFileSync(new URL(path, import.meta.url), 'utf8')
+// Mirrored from the main copy (PLAN.md CP-6, the P2-8a lesson): `read` resolves draft-first / main-fallback via
+// draft-root.mjs instead of a literal relative path (none of these files are touched by this draft).
+const read = path => readFileSync(draftFirst(path.replace(/^(\.\.\/)+/, '')), 'utf8')
 
 function compile(path, requireModule) {
   const code = ts.transpileModule(read(path), {

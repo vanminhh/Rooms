@@ -2,11 +2,14 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import ts from 'typescript'
+import { draftFirst } from '../draft-root.mjs'
 
 // CP-1 (FE-P2-01): route skeleton + placeholders + role guard. Spec: AUTH-05/06, UI-01/08, UI-03 (PLAN.md CP-1).
 // Outside edges faked: react/jsx-runtime and every imported page/layout/kit module. The files under test
-// (routes.tsx and the new placeholder pages) run unmodified, transpiled from source.
-const read = path => readFileSync(new URL(path, import.meta.url), 'utf8')
+// (routes.tsx and the remaining placeholder pages) run unmodified, transpiled from source.
+// Mirrored from the main copy (PLAN.md CP-6, the P2-8a lesson): `read` resolves draft-first / main-fallback via
+// draft-root.mjs instead of a literal relative path.
+const read = path => readFileSync(draftFirst(path.replace(/^(\.\.\/)+/, '')), 'utf8')
 
 function compile(path, requireModule) {
   const code = ts.transpileModule(read(path), {
@@ -28,35 +31,14 @@ const textOf = node => Array.isArray(node) ? node.map(textOf).join('') : node &&
 const find = (root, predicate) => flatten(root).find(n => n && typeof n === 'object' && predicate(n))
 const findAll = (root, predicate) => flatten(root).filter(n => n && typeof n === 'object' && predicate(n))
 
-// ---------------- UI-01/UI-03: the 3 new public pages ----------------
-const SectionHeading = () => null
-function loadPublicPage(name) {
-  const modules = { 'react/jsx-runtime': jsxRuntime, '../../components': { SectionHeading } }
-  const exports = compile(`../../src/pages/public/${name}.tsx`, id => { if (id in modules) return modules[id]; throw new Error(`unexpected import ${id}`) })
-  return exports[name]()
-}
-
-const publicPages = [
-  ['PublicRoomsPage', 'Tìm phòng'],
-  ['PublicBuildingPage', 'Chi tiết tòa nhà'],
-  ['PublicRoomPage', 'Chi tiết phòng'],
-]
-
-test('UI-01/UI-03: each new public page (/phong, /toa/:id, /phong/:id) has its own heading and only "Đang làm", no fake data', () => {
-  const headings = new Set()
-  for (const [name, heading] of publicPages) {
-    const tree = loadPublicPage(name)
-    const headingNode = find(tree, n => n.type === SectionHeading)
-    assert.ok(headingNode, `${name} should render a SectionHeading`)
-    assert.equal(textOf(headingNode), heading, name)
-    headings.add(heading)
-    const paragraphs = findAll(tree, n => n.type === 'p').map(textOf)
-    assert.deepEqual(paragraphs, ['Đang làm'], `${name} must show only the "Đang làm" placeholder, no real data`)
-    // UI-03: no list/table/img that would imply the page is already wired to real data
-    assert.equal(findAll(tree, n => ['table', 'ul', 'ol', 'img'].includes(n.type)).length, 0, `${name} must not fake a data list`)
-  }
-  assert.equal(headings.size, 3, 'the 3 public pages must have 3 distinct headings')
-})
+// ---------------- UI-01/UI-03: the 3 public pages from CP-1 (/phong, /toa/:id, /phong/:id) ----------------
+// PLAN.md CP-6 "Test cũ phải sửa": these 3 pages graduated from the shared "Đang làm" placeholder to real pages
+// built by this very draft (FE-P2-15/16/17: PublicRoomsPage, PublicBuildingPage, PublicRoomPage) — exactly the
+// same reasoning that already removed BuildingsPage/BuildingDetailPage/ManagersPage/RoomsPage from
+// `staffPlaceholderPages` below. They now import react-query/react-router/features/public/* that this minimal
+// CP-1 stub loader cannot satisfy; their real content is covered by fe-p2-15-search.test.mjs,
+// fe-p2-16-detail.test.mjs and fe-p2-17-viewing-form.test.mjs instead. No placeholder pages remain to check
+// here, so the old "each page has only Đang làm" test for this trio is removed rather than left empty.
 
 // ---------------- UI-01/UI-03: the remaining placeholder staff pages ----------------
 function loadStaffPage(name) {
@@ -64,6 +46,7 @@ function loadStaffPage(name) {
   const exports = compile(`../../src/pages/staff/${name}.tsx`, id => { if (id in modules) return modules[id]; throw new Error(`unexpected import ${id}`) })
   return exports[name]()
 }
+const SectionHeading = () => null
 
 // BuildingsPage/BuildingDetailPage (CP-5), ManagersPage (CP-6) and RoomsPage (CP-7) graduated from placeholder
 // to real pages (PLAN.md §1: "Các route chưa thuộc phần 8a hiện đúng trang riêng với 'Đang làm'" — ManagersPage

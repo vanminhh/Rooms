@@ -2,17 +2,15 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import ts from 'typescript'
+import { draftFirst } from './draft-root.mjs'
 
-// CP-1 drafted only src/app/routes.tsx and the new page placeholders in this folder; guards.ts, layouts,
-// pages/tenant and features/auth are unchanged by this checkpoint and are not mirrored into the draft, so a
-// missing draft path falls back to the applied main tree. Read-only: this never writes outside the draft.
+// Mirrored from the main copy (PLAN.md CP-6, the P2-8a lesson): `read` now resolves draft-first / main-fallback
+// via draft-root.mjs (replacing the old single-fixed-depth ENOENT fallback), so files this draft does touch
+// (layouts/PublicLayout.tsx) come from the draft and everything else (guards.ts, RequireAuth.tsx, the other
+// layouts, pages/tenant, features/auth) falls back to the applied main tree. Read-only: this never writes
+// outside the draft.
 function read(path) {
-  try {
-    return readFileSync(new URL(path, import.meta.url), 'utf8')
-  } catch (err) {
-    if (err.code !== 'ENOENT' || !path.startsWith('../src/')) throw err
-    return readFileSync(new URL(`../../../${path.slice(3)}`, import.meta.url), 'utf8')
-  }
+  return readFileSync(draftFirst(path.replace(/^(\.\.\/)+/, '')), 'utf8')
 }
 
 function compile(path, requireModule) {
@@ -264,20 +262,23 @@ function loadLayout(file, { auth = { status: 'ready', user: null }, contact = {}
 
 const headerOf = (root, fakes) => find(root, n => n.type === fakes.RoomsHeader)
 
-test('FE-LOGIN-10: PublicLayout menu is empty while loading, "Đăng nhập" when signed out or after a startup error', () => {
+// D-5 (PLAN.md CP-2, this draft): PublicLayout now always leads with { label: 'Tìm phòng', href: '/phong' }
+// before the account link, except while loading (menu still []). Mirrors the same D-5 update already made to
+// tests/auth-login-flow.test.mjs's FE-LOGIN-10 tests.
+test('FE-LOGIN-10/D-5: PublicLayout menu is empty while loading, "Tìm phòng"+"Đăng nhập" when signed out or after a startup error', () => {
   for (const status of ['ready', 'error']) {
     const { exports, fakes } = loadLayout('../src/layouts/PublicLayout.tsx', { auth: { status, user: null } })
-    assert.deepEqual(headerOf(exports.PublicLayout(), fakes).props.links, [{ label: 'Đăng nhập', href: '/dang-nhap' }], status)
+    assert.deepEqual(headerOf(exports.PublicLayout(), fakes).props.links, [{ label: 'Tìm phòng', href: '/phong' }, { label: 'Đăng nhập', href: '/dang-nhap' }], status)
   }
   const loading = loadLayout('../src/layouts/PublicLayout.tsx', { auth: { status: 'loading', user: null } })
   assert.deepEqual(headerOf(loading.exports.PublicLayout(), loading.fakes).props.links, [])
 })
 
-test('AUTH-06: PublicLayout shows "Trang của tôi" pointing at the role home', () => {
+test('AUTH-06/D-5: PublicLayout shows "Tìm phòng" then "Trang của tôi" pointing at the role home', () => {
   const expected = { TENANT: '/thue', MANAGER: '/ql', BOSS: '/ql' }
   for (const [role, href] of Object.entries(expected)) {
     const { exports, fakes } = loadLayout('../src/layouts/PublicLayout.tsx', { auth: { status: 'ready', user: { role } } })
-    assert.deepEqual(headerOf(exports.PublicLayout(), fakes).props.links, [{ label: 'Trang của tôi', href }], role)
+    assert.deepEqual(headerOf(exports.PublicLayout(), fakes).props.links, [{ label: 'Tìm phòng', href: '/phong' }, { label: 'Trang của tôi', href }], role)
   }
 })
 
@@ -489,9 +490,15 @@ test('FE-LOGIN-11: StaffHomePage "Việc hôm nay" greets by full name; no greet
   assert.deepEqual(findAll(anon.exports.StaffHomePage(), n => n.type === 'p'), [])
 })
 
-test('Q4-A: placeholder and not-found pages use the agreed wording; not-found links back to "/"', () => {
-  const placeholder = loadPage('../src/pages/public/PlaceholderPage.tsx', null)
-  assert.equal(textOf(placeholder.exports.PlaceholderPage()), 'Trang đang được xây dựng')
+// FE-P2-14/A-2 (PLAN.md CP-2, this draft): PlaceholderPage no longer shows the "Trang đang được xây dựng" text
+// itself — the route still points at it so routes.tsx stays unchanged, but it now only wraps the real home page
+// (src/pages/public/PublicHomePage.tsx), which has its own test file (tests/p2/fe-p2-14-home.test.mjs) and is
+// too real (useQuery, the kit, react-router Link) to render through this minimal stub-JSX loader. NotFoundPage
+// is unchanged by this draft and keeps its own check.
+test('Q4-A/A-2: PlaceholderPage renders PublicHomePage (the real "/" page); not-found uses the agreed wording and links back to "/"', () => {
+  const PublicHomePage = () => null
+  const placeholder = loadPage('../src/pages/public/PlaceholderPage.tsx', null, { './PublicHomePage': { PublicHomePage } })
+  assert.equal(placeholder.exports.PlaceholderPage().type, PublicHomePage)
   const notFound = loadPage('../src/pages/public/NotFoundPage.tsx', null)
   const tree = notFound.exports.NotFoundPage()
   assert.equal(textOf(find(tree, n => n.type === notFound.SectionHeading)), 'Không tìm thấy trang')

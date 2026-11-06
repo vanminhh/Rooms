@@ -23,7 +23,12 @@ import ts from 'typescript'
 const here = dirname(fileURLToPath(import.meta.url))
 const draftRoot = resolve(here, '..', '..')
 const draftSrcRoot = resolve(draftRoot, 'src')
-const mainSrcRoot = draftSrcRoot // applied tests run from Source/frontend, so main src is the same folder
+// Mirrored from the main copy (PLAN.md CP-6, the P2-8a lesson): the main copy's `mainSrcRoot = draftSrcRoot`
+// only holds once this file has been applied into Source/frontend/tests (draftRoot === mainRoot then). Before
+// apply — this draft's own tests/p2/ — none of these CP-5 files (BuildingsPage, BuildingForm, ...) exist in
+// this draft's src/, so mainSrcRoot must point at the real Source/frontend/src instead, same two-hop-above-
+// draftRoot formula cp6/7/8-*.test.mjs already use.
+const mainSrcRoot = resolve(draftRoot, '..', '..', 'src')
 const nodeRequire = createRequire(import.meta.url)
 
 // ---------- minimal real DOM (same shape as cp3-kit.test.mjs, plus value/valueAsNumber/checked helpers
@@ -180,21 +185,28 @@ function requireFrom(dir, id) {
   if (id.endsWith('.css')) return {}
   return load(resolveRelative(dir, id))
 }
+// Entry points (as opposed to relative imports resolved by resolveRelative above) were previously read
+// straight from draftSrcRoot with no main fallback; that only worked while mainSrcRoot === draftSrcRoot
+// (applied). A draft that does not touch these CP-5 files (this one, PLAN.md CP-6, the P2-8a lesson) has
+// none of them in its own src/, so every entry point here must fall back to main too.
+function entryPath(relPath) {
+  return resolveFile(resolve(draftSrcRoot, relPath)) ?? resolveFile(resolve(mainSrcRoot, relPath)) ?? resolve(draftSrcRoot, relPath)
+}
 
 const React = nodeRequire('react')
 const { createRoot } = nodeRequire('react-dom/client')
 const { QueryClient, QueryClientProvider } = nodeRequire('@tanstack/react-query')
 const { MemoryRouter, Routes, Route } = nodeRequire('react-router')
 
-const { BuildingsPage } = load(resolve(draftSrcRoot, 'pages/staff/BuildingsPage.tsx'))
-const { BuildingDetailPage } = load(resolve(draftSrcRoot, 'pages/staff/BuildingDetailPage.tsx'))
-const { BuildingForm, BuildingNotesForm } = load(resolve(draftSrcRoot, 'features/buildings/BuildingForm.tsx'))
-const { BuildingLockControl } = load(resolve(draftSrcRoot, 'features/buildings/BuildingLockControl.tsx'))
-const { ServiceForm } = load(resolve(draftSrcRoot, 'features/buildings/ServiceForm.tsx'))
-const { ServicesPanel } = load(resolve(draftSrcRoot, 'features/buildings/ServicesPanel.tsx'))
-const labels = load(resolve(draftSrcRoot, 'features/buildings/labels.ts'))
-const { BuildingSelectionContext } = load(resolve(draftSrcRoot, 'features/buildings/building-selection.ts'))
-const { AuthContext } = load(resolve(mainSrcRoot, 'app/auth-context.ts'))
+const { BuildingsPage } = load(entryPath('pages/staff/BuildingsPage.tsx'))
+const { BuildingDetailPage } = load(entryPath('pages/staff/BuildingDetailPage.tsx'))
+const { BuildingForm, BuildingNotesForm } = load(entryPath('features/buildings/BuildingForm.tsx'))
+const { BuildingLockControl } = load(entryPath('features/buildings/BuildingLockControl.tsx'))
+const { ServiceForm } = load(entryPath('features/buildings/ServiceForm.tsx'))
+const { ServicesPanel } = load(entryPath('features/buildings/ServicesPanel.tsx'))
+const labels = load(entryPath('features/buildings/labels.ts'))
+const { BuildingSelectionContext } = load(entryPath('features/buildings/building-selection.ts'))
+const { AuthContext } = load(entryPath('app/auth-context.ts'))
 
 // ---------- DOM query / event helpers (same style as cp3-kit.test.mjs) ----------
 const wait = ms => new Promise(r => setTimeout(r, ms))
@@ -625,7 +637,7 @@ test('SVC-04: ServicesPanel locks a service softly (PATCH isActive:false), never
 })
 
 test('src/features/buildings/api.ts defines no deleteService export at all (SVC-04 forbids hard delete)', () => {
-  const src = readFileSync(resolve(draftSrcRoot, 'features/buildings/api.ts'), 'utf8')
+  const src = readFileSync(entryPath('features/buildings/api.ts'), 'utf8')
   assert.ok(!/export function deleteService/.test(src), 'a hard-delete service function must not exist')
 })
 

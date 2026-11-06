@@ -1,7 +1,14 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { getJourneyFrame } from '../src/components/journey-frame.ts'
-import { formatMoney } from '../src/shared/formatters.ts'
+import { pathToFileURL } from 'node:url'
+import { draftFirst } from './draft-root.mjs'
+
+// Mirrored from the main copy (PLAN.md CP-6, the P2-8a lesson): these two files are untouched by this draft, so
+// the only change versus main is resolving them draft-first / main-fallback via draft-root.mjs instead of a
+// literal relative import, which would break once this file moves (it does not, here, but must still resolve
+// the same way before and after apply-draft.mjs).
+const { getJourneyFrame } = await import(pathToFileURL(draftFirst('src/components/journey-frame.ts')).href)
+const { formatMoney } = await import(pathToFileURL(draftFirst('src/shared/formatters.ts')).href)
 
 test('empty journeys have no texture indices to load', () => {
   assert.equal(getJourneyFrame(0.5, 0), null)

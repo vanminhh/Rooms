@@ -2,9 +2,11 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import ts from 'typescript'
+import { draftFirst } from './draft-root.mjs'
 
-// Execute the real component with a controllable GPU loader to reproduce async races.
-const source = readFileSync(new URL('../src/components/ImageJourney.tsx', import.meta.url), 'utf8')
+// Execute the real component with a controllable GPU loader to reproduce async races. Mirrored from the main
+// copy (PLAN.md CP-6, the P2-8a lesson): draft-first / main-fallback via draft-root.mjs.
+const source = readFileSync(draftFirst('src/components/ImageJourney.tsx'), 'utf8')
 const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText
 const flush = () => new Promise(resolve => setImmediate(resolve))
 const slides = [{ image: '/photo.png', depth: '/depth.webp', title: 'Phòng', eyebrow: 'Rooms', description: 'Mẫu' }]

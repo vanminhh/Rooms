@@ -152,17 +152,23 @@ function requireFrom(dir, id) {
   if (id.endsWith('.css')) return {}
   return load(resolveRelative(dir, id))
 }
+// Entry points (as opposed to relative imports resolved by resolveRelative above) were previously read
+// straight from draftSrcRoot with no main fallback; a draft that does not touch these CP-8 files (this one,
+// PLAN.md CP-6, the P2-8a lesson) has none of them in its own src/, so every entry point must fall back too.
+function entryPath(relPath) {
+  return resolveFile(resolve(draftSrcRoot, relPath)) ?? resolveFile(resolve(mainSrcRoot, relPath)) ?? resolve(draftSrcRoot, relPath)
+}
 
 const React = nodeRequire('react')
 const { createRoot } = nodeRequire('react-dom/client')
 const { QueryClient, QueryClientProvider } = nodeRequire('@tanstack/react-query')
 const { MemoryRouter } = nodeRequire('react-router')
 
-const upload = load(resolve(draftSrcRoot, 'features/rooms/upload.ts'))
-const roomsApi = load(resolve(draftSrcRoot, 'features/rooms/api.ts'))
-const { RoomImages } = load(resolve(draftSrcRoot, 'features/rooms/RoomImages.tsx'))
-const { RoomInspector } = load(resolve(draftSrcRoot, 'features/rooms/RoomInspector.tsx'))
-const { setAccessToken } = load(resolve(draftSrcRoot, 'shared/api.ts'))
+const upload = load(entryPath('features/rooms/upload.ts'))
+const roomsApi = load(entryPath('features/rooms/api.ts'))
+const { RoomImages } = load(entryPath('features/rooms/RoomImages.tsx'))
+const { RoomInspector } = load(entryPath('features/rooms/RoomInspector.tsx'))
+const { setAccessToken } = load(entryPath('shared/api.ts'))
 
 const { assertRoomImageFile, signUpload, uploadToCloudinary, ROOM_IMAGE_MAX_BYTES, ROOM_IMAGE_TYPES } = upload
 const { attachRoomImage, reorderRoomImages, deleteRoomImage } = roomsApi

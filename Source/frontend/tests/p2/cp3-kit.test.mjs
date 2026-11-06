@@ -133,8 +133,20 @@ function requireFrom(dir, id) {
   if (id.endsWith('.css')) return {}
   return load(resolveRelative(dir, id))
 }
-const { ConfirmDialog } = load(resolve(draftSrcRoot, 'components/ConfirmDialog.tsx'))
-const { ImageUploader } = load(resolve(draftSrcRoot, 'components/ImageUploader.tsx'))
+// Entry points (as opposed to relative imports resolved by resolveRelative above) were previously read
+// straight from draftSrcRoot with no main fallback at all; that only ever worked because the draft that first
+// wrote this file (CP-3) happened to add ConfirmDialog.tsx/ImageUploader.tsx into its own src/components/. A
+// draft that does not touch the kit (this one, PLAN.md CP-6, the P2-8a lesson) has neither file in its own
+// src/, so every entry point here must fall back to main just like resolveRelative does.
+function entryPath(relPath) {
+  const draftCandidate = resolve(draftSrcRoot, relPath)
+  for (const ext of ['', '.ts', '.tsx']) if (existsSync(draftCandidate + ext)) return draftCandidate + ext
+  const mainCandidate = resolve(mainSrcRoot, relPath)
+  for (const ext of ['', '.ts', '.tsx']) if (existsSync(mainCandidate + ext)) return mainCandidate + ext
+  throw new Error(`cannot resolve entry "${relPath}"`)
+}
+const { ConfirmDialog } = load(entryPath('components/ConfirmDialog.tsx'))
+const { ImageUploader } = load(entryPath('components/ImageUploader.tsx'))
 
 const React = nodeRequire('react')
 const { act } = React
@@ -340,7 +352,7 @@ test('KIT-07/Q2: onDelete runs directly on "Xóa", no confirm dialog is rendered
 
 test('KIT-03/KIT-07: ConfirmDialog and ImageUploader import nothing from features/ or shared/api, and never call fetch', () => {
   for (const file of ['ConfirmDialog.tsx', 'ImageUploader.tsx']) {
-    const src = readFileSync(resolve(draftSrcRoot, 'components', file), 'utf8')
+    const src = readFileSync(entryPath(`components/${file}`), 'utf8')
     assert.ok(!/from ['"][^'"]*features/.test(src), `${file} must not import a feature module`)
     assert.ok(!/from ['"][^'"]*shared\/api/.test(src), `${file} must not import the API client`)
     assert.ok(!src.includes('fetch('), `${file} must not call fetch`)
@@ -348,14 +360,14 @@ test('KIT-03/KIT-07: ConfirmDialog and ImageUploader import nothing from feature
 })
 
 test('KIT-07: index.ts exports ConfirmDialog/ImageUploader and their prop types', () => {
-  const src = readFileSync(resolve(draftSrcRoot, 'components/index.ts'), 'utf8')
+  const src = readFileSync(entryPath('components/index.ts'), 'utf8')
   for (const needle of ['export { ConfirmDialog }', 'export type { ConfirmDialogProps }', 'export { ImageUploader }', 'export type { ImageUploaderProps }']) {
     assert.ok(src.includes(needle), `index.ts missing: ${needle}`)
   }
 })
 
 test('CP-3: ComponentPreview.tsx has a new gallery sample rendering <ConfirmDialog> and one rendering <ImageUploader>', () => {
-  const src = readFileSync(resolve(draftSrcRoot, 'pages/ComponentPreview.tsx'), 'utf8')
+  const src = readFileSync(entryPath('pages/ComponentPreview.tsx'), 'utf8')
   assert.ok(/id="dialog"/.test(src), 'missing a "dialog" sample section')
   assert.ok(/<ConfirmDialog/.test(src), 'ComponentPreview must render <ConfirmDialog>')
   assert.ok(/id="uploader"/.test(src), 'missing an "uploader" sample section')

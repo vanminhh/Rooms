@@ -152,18 +152,24 @@ function requireFrom(dir, id) {
   if (id.endsWith('.css')) return {}
   return load(resolveRelative(dir, id))
 }
+// Entry points (as opposed to relative imports resolved by resolveRelative above) were previously read
+// straight from draftSrcRoot with no main fallback; a draft that does not touch these CP-7 files (this one,
+// PLAN.md CP-6, the P2-8a lesson) has none of them in its own src/, so every entry point must fall back too.
+function entryPath(relPath) {
+  return resolveFile(resolve(draftSrcRoot, relPath)) ?? resolveFile(resolve(mainSrcRoot, relPath)) ?? resolve(draftSrcRoot, relPath)
+}
 
 const React = nodeRequire('react')
 const { createRoot } = nodeRequire('react-dom/client')
 const { QueryClient, QueryClientProvider } = nodeRequire('@tanstack/react-query')
 const { MemoryRouter } = nodeRequire('react-router')
 
-const { RoomsPage } = load(resolve(draftSrcRoot, 'pages/staff/RoomsPage.tsx'))
-const { RoomGrid } = load(resolve(draftSrcRoot, 'features/rooms/RoomGrid.tsx'))
-const { RoomForm } = load(resolve(draftSrcRoot, 'features/rooms/RoomForm.tsx'))
-const { RoomInspector } = load(resolve(draftSrcRoot, 'features/rooms/RoomInspector.tsx'))
-const { roomFormSchema } = load(resolve(draftSrcRoot, 'features/rooms/schemas.ts'))
-const { BuildingSelectionContext } = load(resolve(draftSrcRoot, 'features/buildings/building-selection.ts'))
+const { RoomsPage } = load(entryPath('pages/staff/RoomsPage.tsx'))
+const { RoomGrid } = load(entryPath('features/rooms/RoomGrid.tsx'))
+const { RoomForm } = load(entryPath('features/rooms/RoomForm.tsx'))
+const { RoomInspector } = load(entryPath('features/rooms/RoomInspector.tsx'))
+const { roomFormSchema } = load(entryPath('features/rooms/schemas.ts'))
+const { BuildingSelectionContext } = load(entryPath('features/buildings/building-selection.ts'))
 
 // ---------- DOM query / event helpers (same style as the other cp*.test.mjs files) ----------
 const wait = ms => new Promise(r => setTimeout(r, ms))

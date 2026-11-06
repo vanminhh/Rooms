@@ -151,15 +151,21 @@ function requireFrom(dir, id) {
   if (id.endsWith('.css')) return {}
   return load(resolveRelative(dir, id))
 }
+// Entry points (as opposed to relative imports resolved by resolveRelative above) were previously read
+// straight from draftSrcRoot with no main fallback; a draft that does not touch these CP-6 files (this one,
+// PLAN.md CP-6, the P2-8a lesson) has none of them in its own src/, so every entry point must fall back too.
+function entryPath(relPath) {
+  return resolveFile(resolve(draftSrcRoot, relPath)) ?? resolveFile(resolve(mainSrcRoot, relPath)) ?? resolve(draftSrcRoot, relPath)
+}
 
 const React = nodeRequire('react')
 const { createRoot } = nodeRequire('react-dom/client')
 const { QueryClient, QueryClientProvider } = nodeRequire('@tanstack/react-query')
 
-const { ManagersPage } = load(resolve(draftSrcRoot, 'pages/staff/ManagersPage.tsx'))
-const { ManagerForm } = load(resolve(draftSrcRoot, 'features/managers/ManagerForm.tsx'))
-const { ManagerList } = load(resolve(draftSrcRoot, 'features/managers/ManagerList.tsx'))
-const schemasModule = load(resolve(draftSrcRoot, 'features/managers/schemas.ts'))
+const { ManagersPage } = load(entryPath('pages/staff/ManagersPage.tsx'))
+const { ManagerForm } = load(entryPath('features/managers/ManagerForm.tsx'))
+const { ManagerList } = load(entryPath('features/managers/ManagerList.tsx'))
+const schemasModule = load(entryPath('features/managers/schemas.ts'))
 const { managerFormSchema } = schemasModule
 
 // ---------- DOM query / event helpers (same style as the other cp*.test.mjs files) ----------
