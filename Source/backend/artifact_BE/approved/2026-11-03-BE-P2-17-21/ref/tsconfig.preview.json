@@ -1,0 +1,15 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
+    "paths": {
+      "@prisma/client": ["./generated/index.d.ts"]
+    },
+    "rootDirs": ["../src", "../../../src"],
+    "noEmit": true,
+    "incremental": false,
+    "declaration": false
+  },
+  "include": ["../src/**/*.ts"]
+}
