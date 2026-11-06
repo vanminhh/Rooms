@@ -1,8 +1,13 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import test from 'node:test'
 import ts from 'typescript'
 import { draftFirst } from './draft-root.mjs'
+// Restored FE-LOGIN-11 (StaffHomePage) test below reuses this fake DOM/fetch harness (its own two outside
+// edges: globalThis.fetch and the DOM, see tests/p2/cp7-rooms.test.mjs and tests/p2/fe12-dashboard.test.mjs for
+// the same shape); `find` is aliased, this file already declares its own `find` for the stub-JSX tree above.
+import { loadModule, mount, fakeFetch, find as domFind } from './p2/public-dom.mjs'
 
 // Mirrored from the main copy (PLAN.md CP-6, the P2-8a lesson): `read` now resolves draft-first / main-fallback
 // via draft-root.mjs (replacing the old single-fixed-depth ENOENT fallback), so files this draft does touch
@@ -481,13 +486,45 @@ test('FE-LOGIN-11: TenantHomePage "Tổng quan" greets by full name and shows no
   assert.deepEqual(findAll(tree, n => n.type === 'p').map(textOf), ['Xin chào, Nguyễn Văn An'])
 })
 
-test('FE-LOGIN-11: StaffHomePage "Việc hôm nay" greets by full name; no greeting without a user', () => {
-  const page = loadPage('../src/pages/staff/StaffHomePage.tsx', { fullName: 'Nguyễn Thu Hà' })
-  const tree = page.exports.StaffHomePage()
-  assert.equal(textOf(find(tree, n => n.type === page.SectionHeading)), 'Việc hôm nay')
-  assert.deepEqual(findAll(tree, n => n.type === 'p').map(textOf), ['Xin chào, Nguyễn Thu Hà'])
-  const anon = loadPage('../src/pages/staff/StaffHomePage.tsx', null)
-  assert.deepEqual(findAll(anon.exports.StaffHomePage(), n => n.type === 'p'), [])
+// FE-LOGIN-11 (StaffHomePage) restored (owner's request, 2026-11-06): this draft makes StaffHomePage call
+// useQuery()/getDashboard() (NOTI-06) and read useBuildingSelection(), so it can no longer be called as a plain
+// function through the minimal stub-JSX loader above (no QueryClient in scope). Mounted instead with a real
+// react-dom render inside QueryClientProvider + AuthContext.Provider + BuildingSelectionContext.Provider
+// (MemoryRouter for its <Link>s), reusing tests/p2/public-dom.mjs's fake DOM / fetch harness. StaffHomePage,
+// dashboard/api.ts, auth-context.ts and building-selection.ts all run unmodified; only globalThis.fetch and the
+// DOM are faked. GET /dashboard is faked to never resolve so the page stays in its pending state (a Spinner,
+// not a <p>), isolating exactly what the original assertion checked: the heading and the single greeting <p>
+// (or none, with no user).
+test('FE-LOGIN-11: StaffHomePage "Việc hôm nay" greets by full name; no greeting without a user', async () => {
+  const nodeRequire = createRequire(import.meta.url)
+  const React = nodeRequire('react')
+  const { QueryClient, QueryClientProvider } = nodeRequire('@tanstack/react-query')
+  const { MemoryRouter } = nodeRequire('react-router')
+  const { StaffHomePage } = loadModule(draftFirst('src/pages/staff/StaffHomePage.tsx'))
+  const { AuthContext } = loadModule(draftFirst('src/app/auth-context.ts'))
+  const { BuildingSelectionContext } = loadModule(draftFirst('src/features/buildings/building-selection.ts'))
+  const selectionValue = { selectedBuildingId: 'all', setSelectedBuildingId: () => {} }
+
+  async function renderWith(staffUser) {
+    fakeFetch([{ prefix: '/dashboard', method: 'GET', handler: () => new Promise(() => {}) }]) // never resolves: isolates the pending state
+    const authValue = { status: 'ready', user: staffUser, login: async () => { throw new Error('unused in test') }, logout: async () => {}, refreshMe: async () => null, retry() {} }
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 1000 } } })
+    return mount(
+      React.createElement(QueryClientProvider, { client },
+        React.createElement(AuthContext.Provider, { value: authValue },
+          React.createElement(BuildingSelectionContext.Provider, { value: selectionValue },
+            React.createElement(MemoryRouter, null, React.createElement(StaffHomePage))))))
+  }
+
+  const withUser = await renderWith({ fullName: 'Nguyễn Thu Hà' })
+  assert.deepEqual(domFind(withUser.container, n => n.tagName === 'H2').map(n => n.textContent), ['Việc hôm nay'])
+  assert.deepEqual(domFind(withUser.container, n => n.tagName === 'P').map(n => n.textContent), ['Xin chào, Nguyễn Thu Hà'])
+  await withUser.stop()
+
+  const anon = await renderWith(null)
+  assert.deepEqual(domFind(anon.container, n => n.tagName === 'H2').map(n => n.textContent), ['Việc hôm nay'])
+  assert.deepEqual(domFind(anon.container, n => n.tagName === 'P'), [])
+  await anon.stop()
 })
 
 // FE-P2-14/A-2 (PLAN.md CP-2, this draft): PlaceholderPage no longer shows the "Trang đang được xây dựng" text

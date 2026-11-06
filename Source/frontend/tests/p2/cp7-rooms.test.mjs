@@ -10,18 +10,30 @@ import ts from 'typescript'
 // decisions Q-FE8A-2/3 (one GET /rooms/:id carrying both pendingViewingCount and images, endpoint pending on the
 // backend — tested here only through a mock fetch) and Q6 CP-4 (pendingViewingCount is never defaulted to 0).
 //
+// CP-2 (FE-P2-09, PLAN §4 CP-2) update by the tester: RoomInspector no longer renders a <Link to="/ql/don-gia">
+// for "Đề xuất giá"/"Đề xuất lại" — it opens RoomPriceDialog in place. The last two tests below (originally
+// "renders as a link to /ql/don-gia") are rewritten to assert a <button> that opens the dialog (role="dialog"),
+// per PLAN §4 CP-2 "Cập nhật cp7-rooms.test.mjs". Everything else in this file is unchanged from P2-8a.
+// Changed asserts and why:
+//   - was: find <A> with text "Đề xuất giá"/"Đề xuất lại", assert href="/ql/don-gia".
+//   - now: find <BUTTON> with that same text, click it, assert a role="dialog" opens with the matching
+//     title ("Đề xuất giá phòng {code}" / "Đề xuất lại giá phòng {code}"), because CP-2 replaced the link
+//     with RoomPriceDialog ([ASSUMPTION FE8B-13]); the button text itself (PRC-07/PRC-10) is unchanged.
+//
 // Outside edges faked: globalThis.fetch (network) and the minimal fake DOM below (Node has none; no jsdom
 // installed), same shape as cp5/cp6. Every module under test (RoomsPage, RoomGrid, RoomForm, RoomInspector,
-// schemas.ts) is transpiled and run unmodified, mounted with real react-dom/client, real @tanstack/react-query,
-// real react-hook-form + zod and the real react-router (MemoryRouter) so RoomInspector's <Link to="/ql/don-gia">
-// behaves like the real router. The kit (RoomsButton, Checkbox, ConfirmDialog, FormError, Spinner, StatusBadge,
-// SectionHeading) and shared/{formatters,form-errors}.ts, features/buildings/{building-selection,fields}.ts are
-// loaded unmodified via the same relative-import fallback to main `src/` the other cp*.test.mjs files use.
+// RoomPriceDialog, schemas.ts, pricing/api.ts, pricing/schemas.ts, pricing/labels.ts) is transpiled and run
+// unmodified, mounted with real react-dom/client, real @tanstack/react-query, real react-hook-form + zod and
+// the real react-router (MemoryRouter). RoomPriceDialog reads useAuth(), so these mounts now also wrap an
+// AuthContext.Provider (a fixture value, not a mock of the unit under test). The kit (RoomsButton, Checkbox,
+// ConfirmDialog, FormError, Spinner, StatusBadge, TextField, SectionHeading) and shared/{formatters,form-errors,
+// status-labels}.ts, features/buildings/{building-selection,fields,api}.ts are loaded unmodified via the same
+// relative-import fallback to main `src/` the other cp*.test.mjs files use.
 
 const here = dirname(fileURLToPath(import.meta.url))
 const draftRoot = resolve(here, '..', '..')
 const draftSrcRoot = resolve(draftRoot, 'src')
-const mainSrcRoot = resolve(draftRoot, '..', '..', 'src')
+const mainSrcRoot = draftSrcRoot // approved fix 2026-11-05-FE-P2-8a-test-path-fix: path-depth independent
 
 // ---------- minimal real DOM (same shape as cp5/cp6) ----------
 class FakeNode {
@@ -170,6 +182,7 @@ const { RoomForm } = load(entryPath('features/rooms/RoomForm.tsx'))
 const { RoomInspector } = load(entryPath('features/rooms/RoomInspector.tsx'))
 const { roomFormSchema } = load(entryPath('features/rooms/schemas.ts'))
 const { BuildingSelectionContext } = load(entryPath('features/buildings/building-selection.ts'))
+const { AuthContext } = load(entryPath('app/auth-context.ts'))
 
 // ---------- DOM query / event helpers (same style as the other cp*.test.mjs files) ----------
 const wait = ms => new Promise(r => setTimeout(r, ms))
@@ -214,6 +227,15 @@ function newClient() {
 }
 function withRouter(children, client) {
   return React.createElement(QueryClientProvider, { client: client ?? newClient() }, React.createElement(MemoryRouter, null, children))
+}
+
+// BOSS fixture for RoomPriceDialog's useAuth() (CP-2): a context value, not a mock of RoomInspector/RoomPriceDialog.
+const BOSS_USER = { id: 1, role: 'BOSS', phone: '0900000001', fullName: 'Chủ nhà', email: null, mustChangePassword: false, contactPhone: null, zaloUrl: null, facebookUrl: null, buildings: [] }
+function withAuthedRouter(children, client) {
+  const authValue = { status: 'ready', user: BOSS_USER, login: async () => { throw new Error('unused in test') }, logout: async () => {}, refreshMe: async () => null, retry() {} }
+  return React.createElement(QueryClientProvider, { client: client ?? newClient() },
+    React.createElement(AuthContext.Provider, { value: authValue },
+      React.createElement(MemoryRouter, null, children)))
 }
 
 // ---------- fetch fake: routes by URL prefix, outside edge only ----------
@@ -661,22 +683,31 @@ test('ROOM-09: a 409 CONFLICT_STATE on lock (open contract) keeps the dialog ope
 })
 
 // ======================================================================================
-// RoomInspector — "Đề xuất giá" link to /ql/don-gia (PRC-07/10)
+// RoomInspector — "Đề xuất giá" opens RoomPriceDialog (CP-2, PRC-07/10, [ASSUMPTION FE8B-13])
 // ======================================================================================
 
-test('PRC-10: "Đề xuất giá" renders as a link to /ql/don-gia when there is no pending proposal', async () => {
-  const app = await mount(withRouter(React.createElement(RoomInspector, { room: baseRoomGridItem({ pendingProposal: null }) })))
-  const link = find(app.container, n => n.tagName === 'A').find(a => a.textContent.trim() === 'Đề xuất giá')
-  assert.ok(link, 'the "Đề xuất giá" link must render')
-  assert.equal(link.getAttribute('href'), '/ql/don-gia')
+test('PRC-10: "Đề xuất giá" renders as a <button> (not a link) when there is no pending proposal; clicking it opens the dialog', async () => {
+  const app = await mount(withAuthedRouter(React.createElement(RoomInspector, { room: baseRoomGridItem({ pendingProposal: null }) })))
+  const opener = buttonByText(app.container, 'Đề xuất giá')
+  assert.ok(opener, 'the "Đề xuất giá" button must render')
+  assert.equal(find(app.container, n => n.tagName === 'A').find(a => a.textContent.trim() === 'Đề xuất giá'), undefined, 'CP-2: this must no longer be a link')
+  dispatch(app.container, opener, 'click')
+  await wait(30)
+  const dialog = find(app.container, n => n.getAttribute('role') === 'dialog')[0]
+  assert.ok(dialog, 'clicking "Đề xuất giá" must open the RoomPriceDialog (role="dialog")')
+  assert.ok(dialog.textContent.includes('Đề xuất giá phòng A101'), 'the dialog title must read "Đề xuất giá phòng {code}"')
   await app.stop()
 })
 
-test('PRC-07: an expired pending proposal changes the link text to "Đề xuất lại", still pointing at /ql/don-gia', async () => {
-  const app = await mount(withRouter(React.createElement(RoomInspector, { room: baseRoomGridItem({ pendingProposal: { id: 1, effectiveFrom: '2026-01-01', expired: true } }) })))
-  const link = find(app.container, n => n.tagName === 'A').find(a => a.textContent.trim() === 'Đề xuất lại')
-  assert.ok(link, 'the expired-proposal link must read "Đề xuất lại"')
-  assert.equal(link.getAttribute('href'), '/ql/don-gia')
-  assert.equal(find(app.container, n => n.tagName === 'A').find(a => a.textContent.trim() === 'Đề xuất giá'), undefined, 'the non-expired wording must not also render')
+test('PRC-07: an expired pending proposal changes the button text to "Đề xuất lại"; clicking it opens the dialog titled "Đề xuất lại giá phòng {code}"', async () => {
+  const app = await mount(withAuthedRouter(React.createElement(RoomInspector, { room: baseRoomGridItem({ pendingProposal: { id: 1, effectiveFrom: '2026-01-01', expired: true } }) })))
+  const opener = buttonByText(app.container, 'Đề xuất lại')
+  assert.ok(opener, 'the expired-proposal button must read "Đề xuất lại"')
+  assert.equal(buttonByText(app.container, 'Đề xuất giá'), undefined, 'the non-expired wording must not also render')
+  dispatch(app.container, opener, 'click')
+  await wait(30)
+  const dialog = find(app.container, n => n.getAttribute('role') === 'dialog')[0]
+  assert.ok(dialog, 'clicking "Đề xuất lại" must open the RoomPriceDialog')
+  assert.ok(dialog.textContent.includes('Đề xuất lại giá phòng A101'), 'the dialog title must read "Đề xuất lại giá phòng {code}"')
   await app.stop()
 })

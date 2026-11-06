@@ -1,0 +1,16 @@
+/* Staff viewings: form layout only; colors and type come from the kit tokens inside .rooms-theme. */
+.rooms-theme .viewings-form { display: grid; gap: 16px; width: 100%; max-width: 640px; margin-bottom: 32px; }
+.rooms-theme .viewings-form-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.rooms-theme .viewings-toolbar { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin-bottom: 24px; }
+.rooms-theme .viewings-hint { margin: 0 0 16px; font-size: 13px; font-weight: 500; color: var(--rooms-muted); }
+.rooms-theme .viewings-state { display: grid; gap: 12px; justify-items: start; }
+.rooms-theme .viewings-days { display: grid; gap: 28px; }
+.rooms-theme .viewings-day h3 { margin-bottom: 12px; font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 600; }
+.rooms-theme .viewings-cards { display: grid; gap: 12px; }
+.rooms-theme .viewings-card { display: grid; gap: 6px; padding: 16px 20px; border: 1px solid var(--rooms-line); background: var(--rooms-paper); }
+.rooms-theme .viewings-card-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; justify-content: space-between; }
+.rooms-theme .viewings-card-title { margin: 0; font-weight: 600; color: var(--rooms-text); }
+.rooms-theme .viewings-card-meta { margin: 0; font-size: 12px; font-weight: 500; color: var(--rooms-muted); }
+.rooms-theme .viewings-status { font-size: 12px; font-weight: 600; color: var(--rooms-text); }
+.rooms-theme .viewings-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px; }
+.rooms-theme .viewings-panel { display: grid; gap: 12px; margin-top: 6px; }

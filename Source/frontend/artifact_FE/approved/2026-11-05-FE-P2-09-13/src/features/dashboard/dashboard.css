@@ -1,0 +1,8 @@
+/* "Việc hôm nay" cards on /ql: layout only; colors and type come from the kit tokens inside .rooms-theme. */
+.rooms-theme .dashboard-cards { display: grid; gap: 16px; margin-top: 24px; }
+.rooms-theme .dashboard-card { display: grid; gap: 8px; max-width: 640px; padding: 20px 24px; border: 1px solid var(--rooms-line); background: var(--rooms-paper); }
+.rooms-theme .dashboard-card h3 { margin: 0; font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 600; }
+.rooms-theme .dashboard-card p { margin: 0; font-weight: 600; color: var(--rooms-text); }
+.rooms-theme .dashboard-card ul { margin: 0; padding-left: 18px; font-size: 13px; }
+.rooms-theme .dashboard-card a { justify-self: start; display: inline-flex; align-items: center; min-height: 44px; color: var(--rooms-gold-text); font-weight: 600; text-decoration: underline; }
+.rooms-theme .dashboard-state { display: grid; gap: 12px; justify-items: start; margin-top: 24px; }

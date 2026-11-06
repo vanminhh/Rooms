@@ -40,36 +40,17 @@ const findAll = (root, predicate) => flatten(root).filter(n => n && typeof n ===
 // fe-p2-16-detail.test.mjs and fe-p2-17-viewing-form.test.mjs instead. No placeholder pages remain to check
 // here, so the old "each page has only Đang làm" test for this trio is removed rather than left empty.
 
-// ---------------- UI-01/UI-03: the remaining placeholder staff pages ----------------
-function loadStaffPage(name) {
-  const modules = { 'react/jsx-runtime': jsxRuntime, '../../components': { SectionHeading } }
-  const exports = compile(`../../src/pages/staff/${name}.tsx`, id => { if (id in modules) return modules[id]; throw new Error(`unexpected import ${id}`) })
-  return exports[name]()
-}
-const SectionHeading = () => null
-
-// BuildingsPage/BuildingDetailPage (CP-5), ManagersPage (CP-6) and RoomsPage (CP-7) graduated from placeholder
-// to real pages (PLAN.md §1: "Các route chưa thuộc phần 8a hiện đúng trang riêng với 'Đang làm'" — ManagersPage
-// is FE-P2-06, RoomsPage is FE-P2-07, so neither is a placeholder by design any more). They import
-// react-query/router/auth-context/etc. that this minimal CP-1 stub loader cannot satisfy, and their real
-// content is covered by cp5-buildings-services.test.mjs, cp6-managers.test.mjs and cp7-rooms.test.mjs instead.
-// Only the staff pages NOT yet built by any applied checkpoint stay in this "still just Đang làm" check.
-const staffPlaceholderPages = [
-  ['PricesPage', 'Đơn giá'],
-  ['ApprovalsPage', 'Duyệt giá'],
-  ['ViewingsPage', 'Lịch hẹn'],
-]
-
-test('UI-01/UI-03: each staff page not yet built (/ql/don-gia, /ql/duyet-gia, /ql/lich-hen) has its own heading and only "Đang làm"', () => {
-  for (const [name, heading] of staffPlaceholderPages) {
-    const tree = loadStaffPage(name)
-    const headingNode = find(tree, n => n.type === SectionHeading)
-    assert.ok(headingNode, `${name} should render a SectionHeading`)
-    assert.equal(textOf(headingNode), heading, name)
-    const paragraphs = findAll(tree, n => n.type === 'p').map(textOf)
-    assert.deepEqual(paragraphs, ['Đang làm'], `${name} must show only the "Đang làm" placeholder, no real data`)
-  }
-})
+// ---------------- UI-01/UI-03: no staff page is still a placeholder ----------------
+// BuildingsPage/BuildingDetailPage (CP-5), ManagersPage (CP-6), RoomsPage (CP-7), PricesPage (P2-8b CP-3,
+// FE-P2-10), ApprovalsPage (P2-8b CP-4, FE-P2-11) and now ViewingsPage (P2-8b CP-6, FE-P2-12, this draft)
+// graduated from placeholder to real pages (PLAN.md §1: "Các route chưa thuộc phần 8a hiện đúng trang riêng
+// với 'Đang làm'" — none of them is a placeholder by design any more). Their real content is covered by
+// cp5-buildings-services.test.mjs, cp6-managers.test.mjs, cp7-rooms.test.mjs, fe10-rate-plans.test.mjs,
+// fe11-approvals.test.mjs and (for ViewingsPage) fe12-viewings-page.test.mjs instead. There is no staff page
+// left for this minimal CP-1 stub loader to check as "still just Đang làm" (the loader cannot satisfy the
+// react-query/router/auth-context/building-selection imports those real pages need), so the test block that
+// used to iterate `staffPlaceholderPages` (last entry: ViewingsPage) is removed rather than left to loop over
+// an empty list, which would be an assertion-free no-op.
 
 // ---------------- routes.tsx: 10 dedicated new routes, each its own component ----------------
 function compileRoutes() {

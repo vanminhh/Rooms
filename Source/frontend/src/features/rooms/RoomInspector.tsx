@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ConfirmDialog, FormError, RoomsButton, Spinner, StatusBadge } from '../../components'
+import { RoomPriceDialog } from '../pricing/RoomPriceDialog'
 import { formatDate, formatMoney } from '../../shared/formatters'
 import { approvalStatusLabels, derivedApprovalLabels, roomStatusLabels } from '../../shared/status-labels'
 import { getRoom, updateRoom } from './api'
@@ -40,11 +40,12 @@ function RoomEditPanel({ room, onDone }: { room: RoomGridItem; onDone(): void })
   return <RoomForm buildingId={room.buildingId} room={detail.data} onSaved={onDone} onCancel={onDone} />
 }
 
-// Selected room: facts, edit, lock and maintenance with the VIEW-13 count, and the link to pricing.
+// Selected room: facts, edit, lock and maintenance with the VIEW-13 count, and the price proposal dialog.
 export function RoomInspector({ room }: { room: RoomGridItem }) {
   const queryClient = useQueryClient()
   const [editing, setEditing] = useState(false)
   const [showImages, setShowImages] = useState(false)
+  const [pricing, setPricing] = useState(false)
   const [dialog, setDialog] = useState<PendingToggle | null>(null)
   const [openError, setOpenError] = useState('')
   const toggle = useMutation({
@@ -89,7 +90,7 @@ export function RoomInspector({ room }: { room: RoomGridItem }) {
     {!room.isActive && <p className="staff-room-notice">Phòng đã khóa, không xuất hiện trong danh sách công khai.</p>}
     {proposal && <div className="staff-room-notice">
       <div><StatusBadge tone={proposal.expired ? 'maintenance' : 'reserved'}>{proposal.expired ? derivedApprovalLabels.expired : approvalStatusLabels.PENDING}</StatusBadge></div>
-      <p>Đề xuất giá áp dụng từ {formatDate(proposal.effectiveFrom)}{proposal.expired ? '. Cần đề xuất lại để duyệt.' : '.'}</p>
+      <p>{proposal.expired ? 'Đề xuất đã quá hạn. Cần đề xuất lại để duyệt.' : `Đề xuất giá áp dụng từ ${formatDate(proposal.effectiveFrom)}.`}</p>
     </div>}
 
     <div className="staff-room-actions">
@@ -98,7 +99,7 @@ export function RoomInspector({ room }: { room: RoomGridItem }) {
       <RoomsButton variant="outline" onClick={() => void openToggle('isActive', !room.isActive)}>{room.isActive ? 'Khóa phòng' : 'Mở khóa phòng'}</RoomsButton>
       <RoomsButton variant="outline" onClick={() => void openToggle('underMaintenance', !room.underMaintenance)}>{room.underMaintenance ? 'Tắt bảo trì' : 'Bật bảo trì'}</RoomsButton>
       {openError && <FormError>{openError}</FormError>}
-      <Link className="staff-room-link" to="/ql/don-gia">{proposal?.expired ? 'Đề xuất lại' : 'Đề xuất giá'}</Link>
+      <RoomsButton variant="outline" onClick={() => setPricing(true)}>{proposal?.expired ? 'Đề xuất lại' : 'Đề xuất giá'}</RoomsButton>
     </div>
 
     {/* Gallery loads only when opened: opening, unlocking or turning maintenance off must not call GET /rooms/:id (ROOM-09). */}
@@ -118,5 +119,7 @@ export function RoomInspector({ room }: { room: RoomGridItem }) {
       onConfirm={() => toggle.mutate(dialog)}
       onClose={() => setDialog(null)}
     />}
+
+    {pricing && <RoomPriceDialog room={room} onClose={() => setPricing(false)} />}
   </aside>
 }

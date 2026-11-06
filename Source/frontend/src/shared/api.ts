@@ -68,10 +68,11 @@ export function setAuthHandlers(next: AuthHandlers) {
   handlers = next
 }
 
-async function send<T>(path: string, method: Method, body: unknown, token: string | null): Promise<Envelope<T>> {
+async function send<T>(path: string, method: Method, body: unknown, token: string | null, idempotencyKey?: string): Promise<Envelope<T>> {
   const headers: Record<string, string> = { Accept: 'application/json' }
   if (body !== undefined) headers['Content-Type'] = 'application/json'
   if (token) headers.Authorization = `Bearer ${token}`
+  if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey
 
   let response: Response
   try {
@@ -123,11 +124,11 @@ export function refreshAccessToken(): Promise<string> {
   return refreshing
 }
 
-async function request<T>(path: string, options: { method?: Method; body?: unknown } = {}): Promise<Envelope<T>> {
-  const { method = 'GET', body } = options
+async function request<T>(path: string, options: { method?: Method; body?: unknown; idempotencyKey?: string } = {}): Promise<Envelope<T>> {
+  const { method = 'GET', body, idempotencyKey } = options
   const sentToken = accessToken
   try {
-    return await send<T>(path, method, body, sentToken)
+    return await send<T>(path, method, body, sentToken, idempotencyKey)
   } catch (error) {
     // A wrong-password login is a 401 too; only an expired session triggers a refresh.
     if (!isUnauthorized(error) || !sentToken || path === '/auth/login') throw error
@@ -138,7 +139,7 @@ async function request<T>(path: string, options: { method?: Method; body?: unkno
       signOutAndThrow(error)
     }
     try {
-      return await send<T>(path, method, body, accessToken)
+      return await send<T>(path, method, body, accessToken, idempotencyKey)
     } catch (retryError) {
       if (isUnauthorized(retryError)) signOutAndThrow(retryError)
       throw retryError
@@ -146,7 +147,7 @@ async function request<T>(path: string, options: { method?: Method; body?: unkno
   }
 }
 
-export async function apiRequest<T>(path: string, options: { method?: Method; body?: unknown } = {}): Promise<T> {
+export async function apiRequest<T>(path: string, options: { method?: Method; body?: unknown; idempotencyKey?: string } = {}): Promise<T> {
   return (await request<T>(path, options)).data
 }
 
