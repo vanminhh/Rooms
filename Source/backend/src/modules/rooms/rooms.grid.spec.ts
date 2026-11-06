@@ -50,7 +50,7 @@ describe('BE-P2-20 · rooms floor grid', () => {
     vi.setSystemTime(new Date('2026-11-02T17:00:00.000Z'));
     try {
       const { service, prisma } = harness([room({
-        prices: [{ id: 7, effectiveFrom: new Date('2026-11-03T00:00:00.000Z') }],
+        prices: [{ id: 7, price: 2_500_000, effectiveFrom: new Date('2026-11-03T00:00:00.000Z') }],
       })], 1);
       const result = await service.list(boss, { page: 1, limit: 1 });
 
@@ -58,7 +58,7 @@ describe('BE-P2-20 · rooms floor grid', () => {
       expect(result.data[0]).toMatchObject({
         id: 101, buildingId: 10, code: '203', floor: 2, areaM2: 24.5,
         price: 2500000, maxOccupants: 2, isActive: true, underMaintenance: false,
-        status: 'Trống', pendingProposal: { id: 7, effectiveFrom: '2026-11-03', expired: false }, imageCount: 3,
+        status: 'Trống', pendingProposal: { id: 7, price: 2_500_000, effectiveFrom: '2026-11-03', expired: false }, imageCount: 3,
       });
       expect(Number.isInteger(result.data[0].price)).toBe(true);
       expect(prisma.room.findMany).toHaveBeenCalledWith(expect.objectContaining({
@@ -124,15 +124,15 @@ describe('BE-P2-20 · rooms floor grid', () => {
       const previous = new Date('2026-10-31T00:00:00.000Z');
       const today = new Date('2026-11-01T00:00:00.000Z');
       const { service, prisma } = harness([
-        room({ id: 1, code: '201', prices: [{ id: 11, effectiveFrom: previous }] }),
-        room({ id: 2, code: '202', prices: [{ id: 12, effectiveFrom: today }] }),
+        room({ id: 1, code: '201', prices: [{ id: 11, price: 2_600_000, effectiveFrom: previous }] }),
+        room({ id: 2, code: '202', prices: [{ id: 12, price: 2_700_000, effectiveFrom: today }] }),
         room({ id: 3, code: '203', prices: [] }),
       ]);
 
       const result = await service.list(boss, { page: 1, limit: 20 });
       expect(result.data.map((item) => item.pendingProposal)).toEqual([
-        { id: 11, effectiveFrom: '2026-10-31', expired: true },
-        { id: 12, effectiveFrom: '2026-11-01', expired: false },
+        { id: 11, price: 2_600_000, effectiveFrom: '2026-10-31', expired: true },
+        { id: 12, price: 2_700_000, effectiveFrom: '2026-11-01', expired: false },
         null,
       ]);
       expect(prisma.room.findMany).toHaveBeenCalledWith(expect.objectContaining({

@@ -22,15 +22,15 @@ Do not edit `routes.tsx`, `package.json` or `src/components/` (skeleton of part 
 
 ## Tasks
 
-- [~] **14** `/` home: featured rooms, districts with counts; `PublicLayout` menu "Tìm phòng".
+- [x] **14** `/` home: featured rooms, districts with counts; `PublicLayout` menu "Tìm phòng".
   Done when: tests for the 4 list states (UI-03).
-- [~] **15** `/phong` search: district, ward, building, price range and sort kept in the URL query.
+- [x] **15** `/phong` search: district, ward, building, price range and sort kept in the URL query.
   Done when: tests URL ↔ filters both ways.
-- [~] **16** `/toa/:id` and `/phong/:id`: photos with `alt` or "Chưa có ảnh", price, furniture, deposit, estimate and "chưa gồm" lines from the API (UI-06), current and upcoming rates, contact; 404 page for non-public.
+- [x] **16** `/toa/:id` and `/phong/:id`: photos with `alt` or "Chưa có ảnh", price, furniture, deposit, estimate and "chưa gồm" lines from the API (UI-06), current and upcoming rates, contact; 404 page for non-public.
   Done when: tests; 360 px without horizontal scroll.
-- [~] **17** Viewing form (VIEW-01, VIEW-08): 3 slots, date today..+30, slots already started today disabled, hidden honeypot, zod like the BE, 429 / `ROOM_NOT_AVAILABLE` message from the API, same success screen always.
+- [x] **17** Viewing form (VIEW-01, VIEW-08): 3 slots, date today..+30, slots already started today disabled, hidden honeypot, zod like the BE, 429 / `ROOM_NOT_AVAILABLE` message from the API, same success screen always.
   Done when: tests for the form rules.
-- [~] **18** `npm run lint`, `npm run build`, `npm run test:components` pass; manual booking after applying.
+- [x] **18** `npm run lint`, `npm run build`, `npm run test:components` pass; manual booking after applying.
   Done when: all pass.
 
 ## Questions for the owner
@@ -41,3 +41,4 @@ None yet.
 
 <!-- When a task is [!], add: date · task ID · what failed · what is needed -->
 - 06/11/2026 · FE-P2-14..17 · Chủ dự án duyệt trước và áp dụng P2-9 (trang công khai, form đặt lịch). Trên main: lint PASS, build PASS, test:components 497 test (1 test harness lỗi thời đã sửa; các file riêng lẻ đạt; khi chạy toàn bộ song song 3-4 test timeout ngẫu nhiên do tải CPU, chạy riêng đều đạt). FE-P2-18 còn [~]: chưa kiểm tay 360 px và đặt lịch hẹn thật với backend (làm ở P2-10).
+- 06/11/2026 · FE-P2-18 · Chủ dự án chạy checklist tay (A1–A11, D1–D3, mục 360 px và đặt lịch thật) và cho đạt hết; đã sửa A5 (liên kết tòa) và D3 (Spinner) trước khi đạt. FE-P2-14..18 đánh [x].

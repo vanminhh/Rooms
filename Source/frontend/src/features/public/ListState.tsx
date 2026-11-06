@@ -16,7 +16,7 @@ export function ListState({ status, error, isEmpty, loadingLabel, emptyTitle, em
   onRetry: () => void
   children: ReactNode
 }): ReactElement | null {
-  if (status === 'pending') return <Spinner label={loadingLabel} />
+  if (status === 'pending') return <Spinner block label={loadingLabel} />
   if (status === 'error') return <div className="public-state">
     <FormError>{error instanceof Error ? error.message : GENERIC_MESSAGE}</FormError>
     <RoomsButton variant="sand" onClick={onRetry}>Thử lại</RoomsButton>

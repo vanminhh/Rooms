@@ -42,7 +42,7 @@ export function StaffHomePage() {
     <SectionHeading>Việc hôm nay</SectionHeading>
     {user && <p>Xin chào, {user.fullName}</p>}
     {dashboard.isPending
-      ? <Spinner label="Đang xử lý" />
+      ? <Spinner block label="Đang xử lý" />
       : dashboard.isError
         ? <div className="dashboard-state">
           <FormError>{dashboard.error.message}</FormError>

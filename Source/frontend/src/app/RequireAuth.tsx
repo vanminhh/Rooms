@@ -9,7 +9,7 @@ export function RequireAuth({ allow }: { allow: readonly Role[] | 'any' }) {
   const location = useLocation()
 
   if (status === 'loading') {
-    return <div className="rooms-theme"><Spinner label="Đang tải" /></div>
+    return <div className="rooms-theme"><Spinner block label="Đang tải" /></div>
   }
   if (status === 'error') {
     return (
@@ -30,7 +30,7 @@ export function GuestOnly() {
   const { status, user } = useAuth()
   const location = useLocation()
 
-  if (status === 'loading') return <Spinner label="Đang tải" />
+  if (status === 'loading') return <Spinner block label="Đang tải" />
   if (user) return <Navigate to={postLoginPath(user.role, new URLSearchParams(location.search).get('next'))} replace />
   return <Outlet />
 }

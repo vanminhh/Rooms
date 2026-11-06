@@ -24,7 +24,7 @@ export function RatePlanList({ buildingId }: { buildingId: number }) {
   return <>
     <RatePlanSection buildingId={buildingId} kind="ELECTRIC" title={rateKindLabels.ELECTRIC} canPropose services={services} />
     <RatePlanSection buildingId={buildingId} kind="WATER" title={rateKindLabels.WATER} canPropose services={services} />
-    {servicesQuery.isPending && <Spinner label="Đang xử lý" />}
+    {servicesQuery.isPending && <Spinner block label="Đang xử lý" />}
     {servicesQuery.isError && <div className="pricing-state">
       <FormError>{servicesQuery.error.message}</FormError>
       <RoomsButton variant="sand" onClick={() => void servicesQuery.refetch()}>Thử lại</RoomsButton>
@@ -62,7 +62,7 @@ function RatePlanSection({ buildingId, kind, serviceId, title, canPropose, servi
     </div>
     {proposing && <RatePlanForm buildingId={buildingId} kind={kind} serviceId={serviceId} services={services}
       prefillTiers={groups.current?.tiers} onSaved={() => setProposing(false)} onCancel={() => setProposing(false)} />}
-    {plans.isPending && <Spinner label="Đang xử lý" />}
+    {plans.isPending && <Spinner block label="Đang xử lý" />}
     {plans.isError && <div className="pricing-state">
       <FormError>{plans.error.message}</FormError>
       <RoomsButton variant="sand" onClick={() => void plans.refetch()}>Thử lại</RoomsButton>

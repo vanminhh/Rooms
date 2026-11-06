@@ -22,15 +22,15 @@ Do not edit `routes.tsx`, `package.json` or `src/components/` (skeleton of part 
 
 ## Tasks
 
-- [~] **09** "Đề xuất giá" on `/ql/phong`: dialog, "Quá hạn" and "Đề xuất lại" (PRC-07).
+- [x] **09** "Đề xuất giá" on `/ql/phong`: dialog, "Quá hạn" and "Đề xuất lại" (PRC-07).
   Done when: tests; API errors on fields.
-- [~] **10** `/ql/don-gia`: current rates per building (tier ladder), upcoming rates, history, propose, proposal status.
+- [x] **10** `/ql/don-gia`: current rates per building (tier ladder), upcoming rates, history, propose, proposal status.
   Done when: tests for tier input matching RATE-02.
-- [~] **11** `/ql/duyet-gia` (Boss): PRC-12 table, confirm dialog with the amount and the PRC-08 note (UI-04), reject with note, expired apart.
+- [x] **11** `/ql/duyet-gia` (Boss): PRC-12 table, confirm dialog with the amount and the PRC-08 note (UI-04), reject with note, expired apart.
   Done when: tests; values and % come from the API (UI-06).
-- [~] **12** `/ql/lich-hen`: by date, manual add (VIEW-03), call / Zalo buttons, status changes allowed by VIEW-04, change date/slot (VIEW-09); no "Chốt" yet. `/ql` shows the two cards (NOTI-06 Phase 2).
+- [x] **12** `/ql/lich-hen`: by date, manual add (VIEW-03), call / Zalo buttons, status changes allowed by VIEW-04, change date/slot (VIEW-09); no "Chốt" yet. `/ql` shows the two cards (NOTI-06 Phase 2).
   Done when: tests for allowed status buttons per status and the two cards per role.
-- [~] **13** `npm run lint`, `npm run build`, `npm run test:components` pass; manual flow after applying.
+- [x] **13** `npm run lint`, `npm run build`, `npm run test:components` pass; manual flow after applying.
   Done when: all pass.
 
 ## Questions for the owner
@@ -57,3 +57,4 @@ None yet.
 
 <!-- When a task is [!], add: date · task ID · what failed · what is needed -->
 - 06/11/2026 · FE-P2-09..12 · Chủ dự án duyệt trước và áp dụng P2-8b (đơn giá, duyệt giá, lịch hẹn, Việc hôm nay). Trên main: lint PASS, build PASS, test:components 645/645 (tuần tự và song song). FE-P2-13 còn [~]: chưa kiểm tay luồng 'quản lý đề xuất → Boss duyệt → giá đổi' trên trình duyệt với backend thật (làm ở P2-10).
+- 06/11/2026 · FE-P2-13 · Chủ dự án chạy checklist tay (nhóm B: đề xuất, duyệt, từ chối, giá có hiệu lực ngày mai, biểu giá điện, Boss tự đề xuất) và cho đạt hết; đã sửa B1 (hiện giá đề xuất) trước khi đạt. FE-P2-09..13 đánh [x]. Mục 12 ghi "no Chốt yet": nay có nút "Chốt" bị mờ theo yêu cầu của chủ dự án (VIEW-05, bật ở Phase 3).

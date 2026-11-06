@@ -30,6 +30,7 @@ export interface RoomView {
 
 export interface RoomPendingProposal {
   id: number
+  price: number
   effectiveFrom: string
   expired: boolean
 }

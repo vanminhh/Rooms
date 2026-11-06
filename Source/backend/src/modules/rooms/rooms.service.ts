@@ -34,7 +34,7 @@ const ROOM_GRID_INCLUDE = {
   contracts: { select: { status: true } },
   prices: {
     where: { status: 'PENDING' },
-    select: { id: true, effectiveFrom: true },
+    select: { id: true, price: true, effectiveFrom: true },
     take: 1,
   },
   _count: { select: { images: true } },
@@ -366,6 +366,7 @@ export class RoomsService {
       status: deriveRoomStatus({ underMaintenance: row.underMaintenance, contracts }),
       pendingProposal: pending ? {
         id: pending.id,
+        price: pending.price,
         effectiveFrom: formatDateOnly(pending.effectiveFrom),
         expired: formatDateOnly(pending.effectiveFrom) < formatDateOnly(today),
       } : null,

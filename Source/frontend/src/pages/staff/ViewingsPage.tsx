@@ -31,7 +31,7 @@ function ViewingList({ selection, status, from, to }: { selection: BuildingSelec
     queryFn: () => listViewings({ buildingId: selection, status: status || undefined, from, to, limit: LIST_LIMIT }),
   })
 
-  if (query.isPending) return <Spinner label="Đang xử lý" />
+  if (query.isPending) return <Spinner block label="Đang xử lý" />
   if (query.isError) return <div className="viewings-state">
     <FormError>{query.error.message}</FormError>
     <RoomsButton variant="sand" onClick={() => void query.refetch()}>Thử lại</RoomsButton>

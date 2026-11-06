@@ -60,6 +60,8 @@
 .rooms-form-error a { text-decoration: underline; }
 .rooms-spinner { display: inline-flex; align-items: center; }
 .rooms-spinner-ring { width: 1em; height: 1em; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: rooms-spin .8s linear infinite; }
+.rooms-spinner--block { display: flex; flex-direction: column; justify-content: center; gap: 12px; width: 100%; padding: 48px 16px; text-align: center; }
+.rooms-spinner--block .rooms-spinner-ring { width: 2em; height: 2em; }
 @keyframes rooms-spin { to { transform: rotate(360deg); } }
 .rooms-visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .rooms-header { display: flex; align-items: center; justify-content: space-between; gap: 30px; padding: 26px 36px; border-bottom: 1px solid var(--rooms-line); }

@@ -122,10 +122,13 @@ export function ViewingCard({ viewing }: { viewing: ViewingView }) {
     </div>
     {open && <div className="viewings-actions">
       {viewing.status === 'NEW' && <RoomsButton disabled={update.isPending} onClick={() => change({ status: 'CONFIRMED' })}>Xác nhận</RoomsButton>}
+      {viewing.status === 'CONFIRMED' && <RoomsButton disabled aria-describedby={`won-hint-${viewing.id}`}>Chốt</RoomsButton>}
       {viewing.status === 'CONFIRMED' && <RoomsButton disabled={update.isPending} onClick={() => openPanel('LOST')}>Không thành</RoomsButton>}
       <RoomsButton variant="outline" disabled={update.isPending} onClick={() => openPanel('CANCELLED')}>Hủy lịch</RoomsButton>
       <RoomsButton variant="outline" disabled={update.isPending} onClick={() => openPanel('RESCHEDULE')}>Đổi ngày/giờ</RoomsButton>
     </div>}
+    {/* VIEW-05: "Chốt" is set only by contract creation (Phase 3); until then the button is shown off, with the reason. */}
+    {open && viewing.status === 'CONFIRMED' && <p id={`won-hint-${viewing.id}`} className="viewings-card-meta">Chốt lịch sẽ có khi làm phần Hợp đồng.</p>}
     <FormError>{actionError}</FormError>
     {open && (panel === 'LOST' || panel === 'CANCELLED') && <OutcomePanel key={panel} status={panel} pending={update.isPending} onSave={save} onCancel={() => setPanel(null)} />}
     {open && panel === 'RESCHEDULE' && <ReschedulePanel viewing={viewing} pending={update.isPending} onSave={save} onCancel={() => setPanel(null)} />}

@@ -27,7 +27,7 @@ export function ServicesPanel({ buildingId, canManage }: { buildingId: number; c
     {canManage && !adding && <div><RoomsButton variant="outline" onClick={() => setAdding(true)}>Thêm dịch vụ</RoomsButton></div>}
     {canManage && adding && <ServiceForm buildingId={buildingId} onClose={() => setAdding(false)} />}
     <FormError>{setActive.error?.message}</FormError>
-    {services.isPending && <Spinner label="Đang tải dịch vụ" />}
+    {services.isPending && <Spinner block label="Đang tải dịch vụ" />}
     {services.isError && <div className="buildings-state">
       <FormError>{services.error.message}</FormError>
       <RoomsButton variant="sand" onClick={() => void services.refetch()}>Thử lại</RoomsButton>

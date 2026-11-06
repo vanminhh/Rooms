@@ -152,6 +152,7 @@ export default function ComponentPreview() {
               <TextField label="Số điện thoại" defaultValue="0912" error="Số điện thoại gồm 10 chữ số, bắt đầu bằng 0" />
               <TextField label="Ô bị khóa" defaultValue="Không nhập được" disabled />
               <Spinner label="Đang tải" />
+              <Spinner block label="Đang tải danh sách" />
             </div>
           </Sample>
           <Sample id="dialog" number="11" name="Hộp xác nhận" hint="ConfirmDialog · Tab giữ trong hộp, Escape hoặc Hủy trả focus về nút đã mở; nút xác nhận chỉ nhận một lần khi đang xử lý." code={'<ConfirmDialog\n  open={open}\n  title="Khóa phòng 101?"\n  description="Còn 2 lịch hẹn chưa xử lý."\n  confirmLabel="Khóa phòng"\n  pending={pending}\n  onConfirm={lockRoom}\n  onClose={() => setOpen(false)}\n/>'}>

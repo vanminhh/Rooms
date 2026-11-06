@@ -19,7 +19,7 @@ export function RoomImages({ roomId }: { roomId: number }) {
     }
   }
 
-  if (detail.isPending) return <Spinner label="Đang tải ảnh phòng" />
+  if (detail.isPending) return <Spinner block label="Đang tải ảnh phòng" />
   if (detail.isError) return <div className="staff-room-state">
     <FormError>{detail.error.message}</FormError>
     <RoomsButton variant="sand" onClick={() => void detail.refetch()}>Thử lại</RoomsButton>

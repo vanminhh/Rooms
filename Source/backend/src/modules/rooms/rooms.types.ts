@@ -26,6 +26,6 @@ export interface RoomView {
 }
 
 export interface RoomGridItem extends Omit<RoomView, 'furniture' | 'description' | 'images'> {
-  pendingProposal: null | { id: number; effectiveFrom: string; expired: boolean };
+  pendingProposal: null | { id: number; price: number; effectiveFrom: string; expired: boolean };
   imageCount: number;
 }

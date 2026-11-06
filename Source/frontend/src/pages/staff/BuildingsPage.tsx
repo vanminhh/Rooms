@@ -34,7 +34,7 @@ export function BuildingsPage() {
     </div>
     {isBoss && creating && <BuildingForm onSaved={() => setCreating(false)} onCancel={() => setCreating(false)} />}
 
-    {query.isPending && <Spinner label="Đang tải danh sách tòa" />}
+    {query.isPending && <Spinner block label="Đang tải danh sách tòa" />}
     {query.isError && <div className="buildings-state">
       <FormError>{query.error.message}</FormError>
       <RoomsButton variant="sand" onClick={() => void query.refetch()}>Thử lại</RoomsButton>

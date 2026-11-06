@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { useParams } from 'react-router'
+import { Link, useParams } from 'react-router'
 import { SectionHeading } from '../../components'
 import { getPublicRoom, publicQueryKeys } from '../../features/public/api'
 import type { PublicRoomDetail } from '../../features/public/api'
@@ -36,7 +36,7 @@ function RoomDetail({ room }: { room: PublicRoomDetail }) {
   const { building } = room
   return <div className="public-detail">
     <SectionHeading>Phòng {room.code}</SectionHeading>
-    <p>{building.name}</p>
+    <p><Link to={`/toa/${building.id}`}>{building.name}</Link></p>
     <p>{building.address}, {building.ward}, {building.district}</p>
     {room.images.length === 0
       ? <span className="public-room-media">Chưa có ảnh</span>

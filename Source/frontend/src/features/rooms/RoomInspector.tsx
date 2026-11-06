@@ -32,7 +32,7 @@ function toggleCopy(toggle: PendingToggle, code: string) {
 // Edit needs furniture and description, which the grid item does not carry: read the room first (GET /rooms/:id).
 function RoomEditPanel({ room, onDone }: { room: RoomGridItem; onDone(): void }) {
   const detail = useQuery({ queryKey: ['rooms', 'detail', room.id], queryFn: () => getRoom(room.id) })
-  if (detail.isPending) return <Spinner label="Đang tải thông tin phòng" />
+  if (detail.isPending) return <Spinner block label="Đang tải thông tin phòng" />
   if (detail.isError) return <div className="staff-room-state">
     <FormError>{detail.error.message}</FormError>
     <RoomsButton variant="sand" onClick={() => void detail.refetch()}>Thử lại</RoomsButton>
@@ -90,7 +90,7 @@ export function RoomInspector({ room }: { room: RoomGridItem }) {
     {!room.isActive && <p className="staff-room-notice">Phòng đã khóa, không xuất hiện trong danh sách công khai.</p>}
     {proposal && <div className="staff-room-notice">
       <div><StatusBadge tone={proposal.expired ? 'maintenance' : 'reserved'}>{proposal.expired ? derivedApprovalLabels.expired : approvalStatusLabels.PENDING}</StatusBadge></div>
-      <p>{proposal.expired ? 'Đề xuất đã quá hạn. Cần đề xuất lại để duyệt.' : `Đề xuất giá áp dụng từ ${formatDate(proposal.effectiveFrom)}.`}</p>
+      <p>{proposal.expired ? 'Đề xuất đã quá hạn. Cần đề xuất lại để duyệt.' : `Đề xuất giá ${formatMoney(proposal.price)} áp dụng từ ${formatDate(proposal.effectiveFrom)}.`}</p>
     </div>}
 
     <div className="staff-room-actions">

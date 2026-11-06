@@ -298,14 +298,16 @@ test('VIEW-04: a NEW card shows "Xác nhận", "Hủy lịch", "Đổi ngày/gi�
   await app.stop()
 })
 
-test('VIEW-04: a CONFIRMED card shows "Không thành", "Hủy lịch", "Đổi ngày/giờ"; never "Xác nhận" or "Chốt"', async () => {
+test('VIEW-04/05: a CONFIRMED card shows "Không thành", "Hủy lịch", "Đổi ngày/giờ" and a disabled "Chốt" (contracts are Phase 3); never "Xác nhận"', async () => {
   const { tree } = mountCard(baseViewing({ status: 'CONFIRMED', statusLabel: 'Đã xác nhận' }))
   const app = await mount(tree)
   assert.ok(buttonByText(app.container, 'Không thành'))
   assert.ok(buttonByText(app.container, 'Hủy lịch'))
   assert.ok(buttonByText(app.container, 'Đổi ngày/giờ'))
   assert.ok(!buttonByText(app.container, 'Xác nhận'))
-  assert.ok(!buttonByText(app.container, 'Chốt'))
+  const won = buttonByText(app.container, 'Chốt')
+  assert.ok(won, 'a CONFIRMED card shows "Chốt"')
+  assert.ok(won.disabled === true || won.hasAttribute('disabled'), '"Chốt" must be disabled until contracts exist (VIEW-05)')
   await app.stop()
 })
 

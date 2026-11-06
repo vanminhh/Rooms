@@ -35,7 +35,7 @@ export function BuildingDetailPage() {
   if (!building) {
     return <>
       <SectionHeading>Chi tiết tòa nhà</SectionHeading>
-      {query.isPending && <Spinner label="Đang tải tòa nhà" />}
+      {query.isPending && <Spinner block label="Đang tải tòa nhà" />}
       {query.isError && <div className="buildings-state">
         <FormError>{query.error.message}</FormError>
         <RoomsButton variant="sand" onClick={() => void query.refetch()}>Thử lại</RoomsButton>

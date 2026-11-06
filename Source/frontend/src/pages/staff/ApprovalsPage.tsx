@@ -43,7 +43,7 @@ export function ApprovalsPage() {
         <RoomsButton variant="sand" onClick={() => { void rooms.refetch(); void rates.refetch() }}>Thử lại</RoomsButton>
       </div>
       : rooms.isPending || rates.isPending
-        ? <Spinner label="Đang xử lý" />
+        ? <Spinner block label="Đang xử lý" />
         : <>
           {items.length > 0 && <p className="pricing-hint">{live.length} đề xuất chờ duyệt (chỉ còn hạn)</p>}
           {items.length === 0 && <p className="rooms-empty">Chưa có đề xuất nào chờ duyệt</p>}

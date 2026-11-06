@@ -29,7 +29,7 @@ export function RoomGrid({ selection, includeInactive }: { selection: BuildingSe
   const meta = query.data?.meta
 
   return <>
-    {query.isPending && <Spinner label="Đang tải danh sách phòng" />}
+    {query.isPending && <Spinner block label="Đang tải danh sách phòng" />}
     {query.isError && <div className="staff-room-state">
       <FormError>{query.error.message}</FormError>
       <RoomsButton variant="sand" onClick={() => void query.refetch()}>Thử lại</RoomsButton>

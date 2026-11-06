@@ -44,7 +44,7 @@ export function RoomPriceDialog({ room, onClose }: { room: RoomGridItem; onClose
         {room.pendingProposal && !expired && <p>Đề xuất đang chờ duyệt cho phòng này sẽ được thay thế.</p>}
       </div>
       {expired && previousQuery.isPending
-        ? <Spinner label="Đang xử lý" />
+        ? <Spinner block label="Đang xử lý" />
         : <PriceForm room={room} previous={previous} onClose={onClose} />}
     </div>
   </div>

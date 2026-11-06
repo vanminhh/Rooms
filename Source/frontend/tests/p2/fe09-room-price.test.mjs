@@ -569,9 +569,9 @@ test('PRC-07: an expired proposal\'s notice reads exactly "Đề xuất đã qu�
   await app.stop()
 })
 
-test('PRC-07: a non-expired proposal keeps "Đề xuất giá áp dụng từ {ngày}." and never shows "Quá hạn"', async () => {
-  const app = await mount(withAuthedQuery(React.createElement(RoomInspector, { room: baseRoomGridItem({ pendingProposal: { id: 1, effectiveFrom: '2026-07-01', expired: false } }) })))
-  assert.ok(app.container.textContent.includes('Đề xuất giá áp dụng từ'))
+test('PRC-07, B1: a non-expired proposal shows "Đề xuất giá {số tiền} áp dụng từ {ngày}." and never shows "Quá hạn"', async () => {
+  const app = await mount(withAuthedQuery(React.createElement(RoomInspector, { room: baseRoomGridItem({ pendingProposal: { id: 1, price: 2_500_000, effectiveFrom: '2026-07-01', expired: false } }) })))
+  assert.ok(app.container.textContent.includes('Đề xuất giá 2.500.000 đ áp dụng từ'))
   assert.ok(!app.container.textContent.includes('Quá hạn'))
   await app.stop()
 })
