@@ -3,8 +3,12 @@ import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import test from 'node:test'
 import ts from 'typescript'
+import { draftFirst } from './draft-root.mjs'
 
-const read = path => readFileSync(new URL(path, import.meta.url), 'utf8')
+// Mirrored from the main copy (PLAN.md CP-6, the P2-8a lesson): `read` now resolves draft-first / main-fallback
+// via draft-root.mjs. None of these files (auth feature, layouts css, index.html) are touched by this draft, so
+// every read falls back to the main tree.
+const read = path => readFileSync(draftFirst(path.replace(/^(\.\.\/)+/, '')), 'utf8')
 
 function compile(path, modules) {
   const code = ts.transpileModule(read(path), {

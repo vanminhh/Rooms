@@ -199,6 +199,7 @@ model User {
   invoicesCreated     Invoice[]
   settingsUpdated     Setting[]
   auditLogs           AuditLog[]
+  pricingIdempotencyKeys PricingIdempotencyKey[]
 
   @@map("users")
 }
@@ -296,6 +297,7 @@ model RoomImage {
   roomId    Int    @map("room_id")
   url       String
   publicId  String @map("public_id") // id ảnh trên Cloudinary
+  assetId   String @unique @map("asset_id") // immutable Cloudinary asset ID
   sortOrder Int    @default(0) @map("sort_order")
 
   room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
@@ -381,6 +383,24 @@ model RateTier {
 
   @@unique([ratePlanId, tierNo])
   @@map("rate_tiers")
+}
+
+/// Kho Idempotency-Key của các POST giá (API-05, Q-P5-6): khóa theo (actor, route, key), hết hạn sau 24 giờ.
+model PricingIdempotencyKey {
+  id           Int      @id @default(autoincrement())
+  actorId      Int      @map("actor_id")
+  key          String   @db.VarChar(255)
+  route        String   @db.VarChar(100) // method + đường dẫn mẫu, không chứa id thật
+  requestHash  String   @map("request_hash") @db.VarChar(64) // SHA-256 hex của payload đã chuẩn hóa
+  statusCode   Int      @map("status_code")
+  responseJson Json     @map("response_json")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  expiresAt    DateTime @map("expires_at") @db.Timestamptz
+
+  actor User @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@unique([actorId, route, key], map: "pricing_idempotency_keys_actor_route_key_key")
+  @@map("pricing_idempotency_keys")
 }
 
 // ───────────── 4. Khách và hợp đồng ─────────────
@@ -751,3 +771,4 @@ model AuditLog {
   @@index([actorId, createdAt])
   @@map("audit_logs")
 }
+

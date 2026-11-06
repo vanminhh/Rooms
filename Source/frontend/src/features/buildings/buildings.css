@@ -1,0 +1,22 @@
+/* Staff building pages: lists, forms and facts; colors come from the kit tokens inside .rooms-theme. */
+.rooms-theme .buildings-toolbar { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.rooms-theme .buildings-form { display: grid; gap: 16px; width: 100%; max-width: 640px; margin-bottom: 32px; }
+.rooms-theme .buildings-form-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.rooms-theme .buildings-textarea { min-height: 112px; resize: vertical; }
+.rooms-theme .buildings-notice { margin: 0 0 16px; padding: 12px 16px; border-left: 4px solid var(--rooms-ink); background: var(--rooms-paper); color: var(--rooms-text); }
+.rooms-theme .buildings-lock { margin-bottom: 32px; }
+.rooms-theme .buildings-section { display: grid; gap: 16px; margin-top: 40px; }
+.rooms-theme .buildings-state { display: grid; gap: 12px; justify-items: start; }
+.rooms-theme .buildings-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.rooms-theme .buildings-item { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; justify-content: space-between; padding: 20px; border: 1px solid var(--rooms-line); background: var(--rooms-paper); }
+.rooms-theme .buildings-item > div:first-child { min-width: 0; flex: 1 1 220px; }
+.rooms-theme .buildings-item-title { margin: 0; font-weight: 600; color: var(--rooms-text); overflow-wrap: anywhere; }
+.rooms-theme .buildings-item-meta { margin: 4px 0 0; font-size: 13px; font-weight: 500; color: var(--rooms-muted); overflow-wrap: anywhere; }
+.rooms-theme .buildings-item-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.rooms-theme .buildings-item .buildings-form { margin-bottom: 0; }
+.rooms-theme .buildings-facts { display: grid; gap: 16px; margin: 0 0 32px; }
+.rooms-theme .buildings-facts div { display: grid; gap: 4px; }
+.rooms-theme .buildings-facts dt { font-size: 13px; font-weight: 500; color: var(--rooms-muted); }
+.rooms-theme .buildings-facts dd { margin: 0; color: var(--rooms-text); overflow-wrap: anywhere; }
+.rooms-theme .buildings-link { color: var(--rooms-gold-text); font-weight: 600; text-decoration: underline; }
+.rooms-theme .buildings-pager { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 24px; }

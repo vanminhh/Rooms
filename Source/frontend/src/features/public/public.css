@@ -1,0 +1,77 @@
+/* Public pages: list states, room cards and grids; colors and fonts come from the kit tokens inside .rooms-theme. */
+.rooms-theme .public-state { display: grid; gap: 12px; justify-items: start; }
+.rooms-theme .public-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 16px; min-width: 0; }
+.rooms-theme .public-room-card { display: flex; flex-direction: column; gap: 12px; min-width: 0; height: 100%; padding: 16px; border: 1px solid var(--rooms-line); background: var(--rooms-paper); color: var(--rooms-text); text-decoration: none; }
+.rooms-theme .public-room-card:focus-visible { outline: 2px solid var(--rooms-ink); outline-offset: 2px; }
+.rooms-theme .public-room-card h3 { margin: 0; font-size: 26px; overflow-wrap: anywhere; }
+.rooms-theme .public-room-card p { margin: 0; font-size: 13px; font-weight: 500; color: var(--rooms-muted); overflow-wrap: anywhere; }
+.rooms-theme .public-room-image { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+.rooms-theme .public-room-media { display: grid; place-items: center; width: 100%; aspect-ratio: 4 / 3; border: 1px dashed var(--rooms-line); background: var(--rooms-sand); font-size: 13px; font-weight: 500; color: var(--rooms-muted); }
+.rooms-theme .public-room-facts { display: grid; gap: 4px; margin: 0; font-size: 12px; }
+.rooms-theme .public-room-facts > div { display: flex; justify-content: space-between; gap: 12px; }
+.rooms-theme .public-room-facts dt { font-weight: 500; color: var(--rooms-muted); }
+.rooms-theme .public-room-facts dd { margin: 0; font-weight: 600; text-align: right; }
+.rooms-theme .public-room-price { margin-top: auto; font-size: 18px; font-weight: 600; color: var(--rooms-text); }
+
+/* Home page: hero, search band, sections and district tiles. */
+.rooms-theme .public-hero { display: grid; gap: 32px; align-items: center; }
+.rooms-theme .public-hero h1 { font-size: clamp(40px, 6vw, 64px); overflow-wrap: anywhere; }
+.rooms-theme .public-hero h1 em { font-weight: inherit; color: var(--rooms-gold-text); }
+.rooms-theme .public-hero p { margin: 20px 0 0; font-size: 14px; color: var(--rooms-muted); }
+.rooms-theme .public-hero .rooms-eyebrow { margin: 0 0 18px; font-size: 10px; color: var(--rooms-accent-text); }
+.rooms-theme .public-hero-link { display: inline-block; margin-top: 24px; font-size: 13px; font-weight: 600; color: var(--rooms-accent-text); }
+.rooms-theme .public-hero-image { display: block; width: 100%; height: 300px; object-fit: cover; border-radius: 100px 100px 0 0; }
+.rooms-theme .public-search { margin-top: 40px; min-width: 0; }
+.rooms-theme .public-section { display: grid; gap: 16px; margin-top: 56px; min-width: 0; }
+.rooms-theme .public-section-link { margin: 0; font-size: 13px; font-weight: 600; }
+.rooms-theme .public-section-link a { color: var(--rooms-accent-text); }
+.rooms-theme .public-districts { display: grid; min-width: 0; }
+.rooms-theme .public-district { display: grid; gap: 8px; padding: 24px 0; border-top: 1px solid var(--rooms-line); color: var(--rooms-text); text-decoration: none; }
+.rooms-theme .public-district:focus-visible { outline: 2px solid var(--rooms-ink); outline-offset: 2px; }
+.rooms-theme .public-district h3 { margin: 0; font-size: 30px; overflow-wrap: anywhere; }
+.rooms-theme .public-district .rooms-eyebrow { color: var(--rooms-muted); }
+
+/* Search page: filter form, active building filter, result count and pager. */
+.rooms-theme .public-filters { display: grid; gap: 16px; min-width: 0; margin-top: 32px; padding: 20px; border: 1px solid var(--rooms-line); background: var(--rooms-paper); }
+.rooms-theme .public-filter-prices { display: grid; gap: 16px; min-width: 0; }
+.rooms-theme .public-filter-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.rooms-theme .public-building-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 16px 0 0; font-size: 13px; font-weight: 500; color: var(--rooms-muted); }
+.rooms-theme .public-results { display: grid; gap: 16px; min-width: 0; margin-top: 24px; }
+.rooms-theme .public-results > p { margin: 0; font-size: 13px; font-weight: 600; }
+.rooms-theme .public-pager { display: flex; justify-content: space-between; gap: 12px; }
+
+/* Detail pages: one column of sections, rate list, furniture tags and estimate notes. */
+.rooms-theme .public-detail { display: grid; gap: 24px; min-width: 0; margin-top: 32px; overflow-wrap: anywhere; }
+.rooms-theme .public-detail h3 { margin: 0; font-size: 26px; }
+.rooms-theme .public-detail-note { margin: 0; font-size: 13px; font-weight: 500; color: var(--rooms-muted); }
+.rooms-theme .public-rates { display: grid; gap: 12px; min-width: 0; }
+.rooms-theme .public-rate-list { display: grid; gap: 0; margin: 0; }
+.rooms-theme .public-rate-list > div { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--rooms-line); font-size: 13px; }
+.rooms-theme .public-rate-list dt { color: var(--rooms-muted); }
+.rooms-theme .public-rate-list dd { margin: 0; font-weight: 600; text-align: right; }
+.rooms-theme .public-tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; font-size: 13px; }
+.rooms-theme .public-tags li { padding: 6px 12px; border: 1px solid var(--rooms-line); background: var(--rooms-paper); }
+.rooms-theme .public-contact { display: grid; gap: 8px; min-width: 0; }
+.rooms-theme .public-contact h3 { margin: 0; font-size: 26px; }
+.rooms-theme .public-contact p { margin: 0; font-size: 13px; font-weight: 600; }
+.rooms-theme .public-contact a { color: var(--rooms-accent-text); }
+
+/* Viewing form on the room page: a card of stacked fields, radio slots and the success message. */
+.rooms-theme .public-viewing { display: grid; gap: 16px; min-width: 0; padding: 20px; border: 1px solid var(--rooms-line); background: var(--rooms-paper); }
+.rooms-theme .public-hint { margin: 0; font-size: 13px; font-weight: 500; color: var(--rooms-muted); }
+.rooms-theme .public-slots { display: grid; gap: 8px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.rooms-theme .public-slots legend { margin-bottom: 8px; padding: 0; font-size: 13px; font-weight: 600; }
+.rooms-theme .public-slot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 14px; }
+.rooms-theme .public-slot small { font-size: 12px; font-weight: 500; color: var(--rooms-muted); }
+.rooms-theme .public-slot input:disabled + span { color: var(--rooms-muted); }
+
+@media (min-width: 680px) {
+  .rooms-theme .public-districts { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; }
+  .rooms-theme .public-hero-image { height: 380px; }
+  .rooms-theme .public-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rooms-theme .public-filter-prices { grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rooms-theme .public-filter-actions { grid-column: 1 / -1; }
+}
+@media (min-width: 900px) {
+  .rooms-theme .public-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 56px; }
+}

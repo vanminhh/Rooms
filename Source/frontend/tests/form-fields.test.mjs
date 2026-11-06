@@ -2,8 +2,13 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import ts from 'typescript'
+import { draftFirst } from './draft-root.mjs'
 
-const read = path => readFileSync(new URL(path, import.meta.url), 'utf8')
+// Mirrored from the main copy (PLAN.md CP-6, the P2-8a lesson): `read` now resolves draft-first / main-fallback
+// via draft-root.mjs instead of a literal relative path, so it works the same before and after apply-draft.mjs.
+// Call sites are unchanged (still e.g. '../src/components/FormFields.tsx', '../package.json'); only the leading
+// '../' is stripped before handing the root-relative path to draftFirst.
+const read = path => readFileSync(draftFirst(path.replace(/^(\.\.\/)+/, '')), 'utf8')
 
 // Only the outside edges are replaced: the React hooks (useState, useId) and the JSX runtime.
 // FormFields.tsx itself is transpiled and run unmodified; nested function components are expanded by `render`.

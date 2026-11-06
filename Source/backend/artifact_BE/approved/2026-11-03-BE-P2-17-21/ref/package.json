@@ -1,0 +1,8 @@
+{
+  "name": "p2-4-preview-deps",
+  "private": true,
+  "version": "0.0.0",
+  "dependencies": {
+    "@electric-sql/pglite": "0.2.17"
+  }
+}

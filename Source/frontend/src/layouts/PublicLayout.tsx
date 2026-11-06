@@ -13,9 +13,10 @@ export function PublicLayout() {
   const navigate = useNavigate()
   const contact = usePublicContact()
   // A failed startup (status 'error') counts as signed out (A17).
-  const links = status === 'loading' ? [] : user
-    ? [{ label: 'Trang của tôi', href: homeOf(user.role) }]
-    : [{ label: 'Đăng nhập', href: '/dang-nhap' }]
+  const account = user
+    ? { label: 'Trang của tôi', href: homeOf(user.role) }
+    : { label: 'Đăng nhập', href: '/dang-nhap' }
+  const links = status === 'loading' ? [] : [{ label: 'Tìm phòng', href: '/phong' }, account]
 
   return <div className="rooms-theme" onClick={event => handleInternalLinkClick(event, navigate)}>
     <RoomsHeader homeHref="/" links={links} logoSrc="/images/rooms-logo.webp" />

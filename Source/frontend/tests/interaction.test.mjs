@@ -2,9 +2,11 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import ts from 'typescript'
+import { draftFirst } from './draft-root.mjs'
 
+// Mirrored from the main copy (PLAN.md CP-6, the P2-8a lesson): draft-first / main-fallback via draft-root.mjs.
 function component(name, media = () => ({ matches: false })) {
-  const source = readFileSync(new URL(`../src/components/${name}.tsx`, import.meta.url), 'utf8')
+  const source = readFileSync(draftFirst(`src/components/${name}.tsx`), 'utf8')
   const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText
   const states = []
   let cursor = 0

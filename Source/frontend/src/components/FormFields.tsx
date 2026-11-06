@@ -52,9 +52,11 @@ export function FormError({ children }: { children?: ReactNode }) {
   return children ? <div className="rooms-form-error" role="alert">{children}</div> : null
 }
 
-export function Spinner({ label }: { label: string }) {
-  return <span className="rooms-spinner" role="status">
+// `block`: a loading state that stands alone (a list, a page, a panel). It is centered and shows the label as text.
+// Without it the spinner is a small inline ring whose label is for screen readers only (use it inside a button).
+export function Spinner({ label, block = false }: { label: string; block?: boolean }) {
+  return <span className={block ? 'rooms-spinner rooms-spinner--block' : 'rooms-spinner'} role="status">
     <span className="rooms-spinner-ring" aria-hidden="true" />
-    <span className="rooms-visually-hidden">{label}</span>
+    <span className={block ? 'rooms-spinner-label' : 'rooms-visually-hidden'}>{label}</span>
   </span>
 }

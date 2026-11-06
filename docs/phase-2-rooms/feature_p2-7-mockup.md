@@ -17,9 +17,11 @@ All parts and their order: [README.md](README.md).
 
 ## Tasks
 
-- [ ] **P2-MOCK-01** `preview.html` + sample `.tsx` built only from the kit, data like the seed: public `/`, `/phong`, `/toa/:id`, `/phong/:id` (3-slot form, estimate per ROOM-08, deposit, "Chưa có ảnh"), and staff `/ql/phong` (floor grid, "Hiện phòng đã khóa", "Quá hạn") and `/ql/duyet-gia` (old → new, %, electric tiers, expired apart). Screenshots at 360 px and desktop in `ref/`. List every place that differs from the spec.
+- [!] **P2-MOCK-01** `preview.html` + sample `.tsx` built only from the kit, data like the seed: public `/`, `/phong`, `/toa/:id`, `/phong/:id` (3-slot form, estimate per ROOM-08, deposit, "Chưa có ảnh"), and staff `/ql/phong` (floor grid, "Hiện phòng đã khóa", "Quá hạn") and `/ql/duyet-gia` (old → new, %, electric tiers, expired apart). Screenshots at 360 px and desktop in `ref/`. List every place that differs from the spec.
+  Đã dựng sáu màn, TypeScript/lint qua; chưa thể hoàn tất kiểm trình duyệt và ảnh 360 px/desktop vì Computer Use bị dừng bởi giới hạn URL policy trên trình duyệt Windows.
   Done when: opens; no horizontal scroll at 360 px; keyboard reaches every control.
-- [ ] **P2-MOCK-02** Owner review.
+- [x] **P2-MOCK-02** Owner review.
+  Chủ dự án đã duyệt bố cục sáu màn trong chat ngày 03/11/2026; mockup không chép vào file chính.
   Done when: approved in chat; the answers are written into the files of parts 8a and 9 if they change a task.
 
 ## Questions for the owner
@@ -29,3 +31,6 @@ None yet.
 ## Issues log
 
 <!-- When a task is [!], add: date · task ID · what failed · what is needed -->
+
+- 02/11/2026 · P2-MOCK-01 · Draft tại Source/frontend/artifact_FE/2026-11-02-phase2-mockup; TypeScript/lint PASS, bộ test hiện có 234/234. IAB loopback timeout; CUA dừng do browser URL policy enforcement chưa hỗ trợ trên trình duyệt Windows. Không có screenshot hoặc xác nhận không tràn ngang/bàn phím. Chưa đủ Done when; chi tiết ref/QA.md. Server Vite đã dừng. Cần kiểm trình duyệt và chủ dự án xem mockup.
+- 03/11/2026 · P2-MOCK-02 · Chủ dự án đã duyệt bố cục mockup trong chat. Vite trên cổng 5174 trả preview HTTP 200; kiểm 360 px, bàn phím và screenshot của P2-MOCK-01 vẫn thiếu bằng chứng do giới hạn công cụ, nên P2-MOCK-01 giữ [!].

@@ -1,6 +1,5 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { parseEnv } from 'node:util';
 import { JWT_SECRET_MIN_LENGTH, REQUIRED_ENV, validateEnv } from './env.js';
 
 // validateEnv takes the env object as a parameter, so no mocking is needed:
@@ -32,12 +31,12 @@ describe('BE-LOGIN-03: validateEnv', () => {
   it('BE-LOGIN-03: empty env throws the exact Vietnamese message with all 4 names', () => {
     expect(() => validateEnv({})).toThrow(
       new Error(
-        'Thiếu biến môi trường: DATABASE_URL, DIRECT_URL, JWT_SECRET, APP_URL (xem .env.example)',
+        'Thiếu biến môi trường: DATABASE_URL, DIRECT_URL, JWT_SECRET, APP_URL (xem ../.env)',
       ),
     );
     // toThrow(new Error(..)) compares message only; make the exact text explicit too
     expect(messageOf({})).toBe(
-      'Thiếu biến môi trường: DATABASE_URL, DIRECT_URL, JWT_SECRET, APP_URL (xem .env.example)',
+      'Thiếu biến môi trường: DATABASE_URL, DIRECT_URL, JWT_SECRET, APP_URL (xem ../.env)',
     );
   });
 
@@ -48,23 +47,23 @@ describe('BE-LOGIN-03: validateEnv', () => {
   it('BE-LOGIN-03: only DATABASE_URL missing names DATABASE_URL and not DIRECT_URL', () => {
     const { DATABASE_URL: _omit, ...rest } = full;
     const message = messageOf(rest);
-    expect(message).toBe('Thiếu biến môi trường: DATABASE_URL (xem .env.example)');
+    expect(message).toBe('Thiếu biến môi trường: DATABASE_URL (xem ../.env)');
     expect(message).not.toContain('DIRECT_URL');
   });
 
   it('BE-LOGIN-03: only DIRECT_URL missing names DIRECT_URL and not DATABASE_URL', () => {
     const { DIRECT_URL: _omit, ...rest } = full;
-    expect(messageOf(rest)).toBe('Thiếu biến môi trường: DIRECT_URL (xem .env.example)');
+    expect(messageOf(rest)).toBe('Thiếu biến môi trường: DIRECT_URL (xem ../.env)');
   });
 
   it('BE-LOGIN-03 (P10): only APP_URL missing names only APP_URL', () => {
     const { APP_URL: _omit, ...rest } = full;
-    expect(messageOf(rest)).toBe('Thiếu biến môi trường: APP_URL (xem .env.example)');
+    expect(messageOf(rest)).toBe('Thiếu biến môi trường: APP_URL (xem ../.env)');
   });
 
   it('BE-LOGIN-03 (P10): only JWT_SECRET missing names only JWT_SECRET (not the length message)', () => {
     const { JWT_SECRET: _omit, ...rest } = full;
-    expect(messageOf(rest)).toBe('Thiếu biến môi trường: JWT_SECRET (xem .env.example)');
+    expect(messageOf(rest)).toBe('Thiếu biến môi trường: JWT_SECRET (xem ../.env)');
   });
 
   it('BE-LOGIN-03 boundary: empty string counts as missing', () => {
@@ -76,16 +75,16 @@ describe('BE-LOGIN-03: validateEnv', () => {
     expect(() => validateEnv({ ...full, DIRECT_URL: '   ' })).toThrow(/DIRECT_URL/);
     expect(() => validateEnv({ ...full, DATABASE_URL: '\t\n ' })).toThrow(/DATABASE_URL/);
     expect(messageOf({ ...full, JWT_SECRET: '   ' })).toBe(
-      'Thiếu biến môi trường: JWT_SECRET (xem .env.example)',
+      'Thiếu biến môi trường: JWT_SECRET (xem ../.env)',
     );
   });
 
   it('BE-LOGIN-03: several blank values are listed in REQUIRED_ENV order', () => {
     expect(messageOf({ ...full, DATABASE_URL: '  ', DIRECT_URL: '' })).toBe(
-      'Thiếu biến môi trường: DATABASE_URL, DIRECT_URL (xem .env.example)',
+      'Thiếu biến môi trường: DATABASE_URL, DIRECT_URL (xem ../.env)',
     );
     expect(messageOf({ ...full, DIRECT_URL: '', APP_URL: ' ' })).toBe(
-      'Thiếu biến môi trường: DIRECT_URL, APP_URL (xem .env.example)',
+      'Thiếu biến môi trường: DIRECT_URL, APP_URL (xem ../.env)',
     );
   });
 
@@ -112,7 +111,7 @@ describe('BE-LOGIN-03: validateEnv', () => {
       } catch (e) {
         message = (e as Error).message;
       }
-      expect(message).toBe('Thiếu biến môi trường: DATABASE_URL (xem .env.example)');
+      expect(message).toBe('Thiếu biến môi trường: DATABASE_URL (xem ../.env)');
       expect(message).not.toContain('TOPSECRET');
     } finally {
       process.env = saved;
@@ -121,7 +120,7 @@ describe('BE-LOGIN-03: validateEnv', () => {
 });
 
 describe('BE-LOGIN-03 (P10): JWT_SECRET length', () => {
-  const LENGTH_MESSAGE = 'JWT_SECRET phải dài ít nhất 32 ký tự (xem .env.example)';
+  const LENGTH_MESSAGE = 'JWT_SECRET phải dài ít nhất 32 ký tự (xem ../.env)';
 
   it('P10: JWT_SECRET_MIN_LENGTH is 32', () => {
     expect(JWT_SECRET_MIN_LENGTH).toBe(32);
@@ -154,45 +153,8 @@ describe('BE-LOGIN-03 (P10): JWT_SECRET length', () => {
     // short JWT_SECRET + missing APP_URL -> reports the missing variable
     const { APP_URL: _omit, ...rest } = full;
     expect(messageOf({ ...rest, JWT_SECRET: 'short' })).toBe(
-      'Thiếu biến môi trường: APP_URL (xem .env.example)',
+      'Thiếu biến môi trường: APP_URL (xem ../.env)',
     );
-  });
-
-  it('P10: the sample value in .env.example does not pass the length check', () => {
-    const parsed = parseEnv(src('../../.env.example'));
-    expect(messageOf({ ...full, JWT_SECRET: parsed.JWT_SECRET })).toBe(LENGTH_MESSAGE);
-  });
-});
-
-describe('BE-LOGIN-03: .env.example', () => {
-  const parsed = parseEnv(src('../../.env.example'));
-
-  it('BE-LOGIN-03: has exactly the 8 keys named by the feature', () => {
-    expect(Object.keys(parsed).sort()).toEqual(
-      [
-        'APP_URL',
-        'BANK_WEBHOOK_SECRET',
-        'CCCD_KEY',
-        'CLOUDINARY_URL',
-        'DATABASE_URL',
-        'DIRECT_URL',
-        'JWT_SECRET',
-        'MAIL_FROM',
-      ].sort(),
-    );
-  });
-
-  it('BE-LOGIN-03: placeholder values only, no real Supabase host', () => {
-    for (const [key, value] of Object.entries(parsed)) {
-      expect(value, key).toBeTruthy();
-      expect(value, key).not.toMatch(/supabase|pooler/i);
-    }
-    expect(parsed.DATABASE_URL).toContain('USER:PASSWORD');
-    expect(parsed.DIRECT_URL).toContain('USER:PASSWORD');
-  });
-
-  it('BE-LOGIN-03: required variables are also listed in .env.example', () => {
-    for (const name of REQUIRED_ENV) expect(parsed).toHaveProperty(name);
   });
 });
 
@@ -218,8 +180,9 @@ describe('BE-LOGIN-01 / BE-LOGIN-03: wiring in main.ts, app.module.ts, package.j
     expect(pkg.devDependencies).not.toHaveProperty('@nestjs/observe');
   });
 
-  it('BE-LOGIN-03: main.ts loads .env, then validates env, then creates the app (order)', () => {
+  it('BE-LOGIN-03: main.ts loads Source/.env, then validates env, then creates the app (order)', () => {
     const main = src('../main.ts');
+    expect(main).toContain("existsSync('../.env')");
     const load = main.indexOf('loadEnvFile');
     const validate = main.indexOf('validateEnv()');
     const create = main.indexOf('NestFactory.create');

@@ -5,7 +5,9 @@
   padding: 32px 20px 64px;
 }
 
-/* Long building names wrap instead of pushing the 360px frame wider (UI-07). */
-.rooms-theme .layout-buildings {
+/* Full width on 360px, capped on desktop; long building names wrap instead of widening the frame (UI-07). */
+.rooms-theme .layout-building-select {
+  max-width: 420px;
+  margin-bottom: 24px;
   overflow-wrap: anywhere;
 }

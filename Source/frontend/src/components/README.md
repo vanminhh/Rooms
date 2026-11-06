@@ -89,7 +89,7 @@ Import từ `index.ts` tự tải `rooms.css`. CSS được giới hạn trong v
 | `PasswordField` | Như `TextField` trừ `type`; nút "Hiện"/"Ẩn" | Bổ sung cho Rooms: tắt kiểm tra chính tả và tự viết hoa; truyền `autoComplete` |
 | `Checkbox` | Props input HTML trừ `type`, `label`, `error?` | Bổ sung cho Rooms: nhãn bọc quanh ô, vùng bấm cao tối thiểu 44px |
 | `FormError` | `children?` | Bổ sung cho Rooms: khối báo lỗi chung của biểu mẫu (`role="alert"`), không có nội dung thì không hiển thị |
-| `Spinner` | `label` (bắt buộc) | Bổ sung cho Rooms: vòng xoay, `label` chỉ đọc cho trình đọc màn hình; dùng được trong `RoomsButton` |
+| `Spinner` | `label` (bắt buộc), `block` | Bổ sung cho Rooms: vòng xoay, `label` chỉ đọc cho trình đọc màn hình; dùng được trong `RoomsButton`. Có `block`: trạng thái đang tải đứng riêng (danh sách, trang, khung), căn giữa và hiện `label` thành chữ |
 
 `logoSrc` chỉ dùng với `/images/rooms-logo.webp`: CSS cắt phần cửa vòm + chìa khóa theo đúng bố cục file này (1275 × 1233). Đổi file logo thì phải sửa lại phần cắt trong `rooms.css`.
 

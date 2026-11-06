@@ -2,9 +2,11 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import ts from 'typescript'
+import { draftFirst } from './draft-root.mjs'
 
+// Mirrored from the main copy (PLAN.md CP-6, the P2-8a lesson): draft-first / main-fallback via draft-root.mjs.
 test('motion preference subscribes to live changes and removes the listener on unmount', () => {
-  const source = readFileSync(new URL('../src/components/useReducedMotion.ts', import.meta.url), 'utf8')
+  const source = readFileSync(draftFirst('src/components/useReducedMotion.ts'), 'utf8')
   const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText
   let listener, unsubscribe, snapshot, current
   const media = {

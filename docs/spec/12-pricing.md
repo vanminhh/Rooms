@@ -27,7 +27,7 @@ Module: `pricing`. Tables: `room_prices`, `rate_plans`, `rate_tiers`.
 
 - **PRC-10** Labels (UI-02): PENDING "Chờ duyệt", APPROVED "Đã duyệt", REJECTED "Từ chối", SUPERSEDED "Đã thay thế", expired (PRC-07) "Quá hạn".
 - **PRC-11** "Giá chờ duyệt" on Boss's "Việc hôm nay" counts only PENDING items that are not expired.
-- **PRC-12** The page shows old → new. Room price, water and service (1 tier): old → new and % change. Electric: a tier table old → new with % per tier; when the number of tiers differs, the two tables without %. No old value → "Giá mới", no %. % is computed by the BE, rounded to 1 decimal. Approving shows a confirm dialog with the amount (UI-04) and says when it will supersede another approved price (PRC-08).
+- **PRC-12** The page shows old → new. Room price, water and service (1 tier): old → new and % change. Electric: a tier table old → new with % per tier; when the number of tiers differs, the two tables without %. No old value → "Giá mới", no %. % is computed by the BE, rounded to 1 decimal. Approving shows a confirm dialog with the amount (UI-04) and says when it will supersede another approved price (PRC-08). Every room-price list row and every propose/approve/reject response carries `roomCode` (`rooms.code`, e.g. "203") and `buildingName`, so the page can identify the room and building; a rate plan carries `buildingName`, plus `serviceName` (`services.name`) when `kind = SERVICE` and `null` for ELECTRIC or WATER.
 
 ## Electric tier calculation
 

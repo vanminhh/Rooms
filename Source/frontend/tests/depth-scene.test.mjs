@@ -1,10 +1,15 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
+import { pathToFileURL } from 'node:url'
 import test from 'node:test'
 import ts from 'typescript'
-import { getJourneyFrame } from '../src/components/journey-frame.ts'
+import { draftFirst } from './draft-root.mjs'
 
-const code = ts.transpileModule(readFileSync(new URL('../src/components/depth-scene.ts', import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText
+// Mirrored from the main copy (PLAN.md CP-6, the P2-8a lesson): draft-first / main-fallback via draft-root.mjs
+// instead of a literal relative path, so this resolves the same way before and after apply-draft.mjs.
+const { getJourneyFrame } = await import(pathToFileURL(draftFirst('src/components/journey-frame.ts')).href)
+
+const code = ts.transpileModule(readFileSync(draftFirst('src/components/depth-scene.ts'), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText
 
 test('WebGL suspends its frame loop offscreen, in hidden tabs, and after disposal', async () => {
   let renderer

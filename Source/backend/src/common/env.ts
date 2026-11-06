@@ -9,10 +9,10 @@ export function validateEnv(env: NodeJS.ProcessEnv = process.env): void {
   if (missing.length > 0) {
     // Names only, never values (they may be secrets).
     throw new Error(
-      `Thiếu biến môi trường: ${missing.join(', ')} (xem .env.example)`,
+      `Thiếu biến môi trường: ${missing.join(', ')} (xem ../.env)`,
     );
   }
   if (env.JWT_SECRET!.trim().length < JWT_SECRET_MIN_LENGTH) {
-    throw new Error(`JWT_SECRET phải dài ít nhất ${JWT_SECRET_MIN_LENGTH} ký tự (xem .env.example)`);
+    throw new Error(`JWT_SECRET phải dài ít nhất ${JWT_SECRET_MIN_LENGTH} ký tự (xem ../.env)`);
   }
 }

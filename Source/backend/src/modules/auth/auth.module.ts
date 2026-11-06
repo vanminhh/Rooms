@@ -8,14 +8,17 @@ import { AuditModule } from '../audit/audit.module.js';
 import { MailerModule } from '../mailer/mailer.module.js';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
+import { ManagersController } from './managers.controller.js';
+import { ManagersService } from './managers.service.js';
 import { TokenService } from './token.service.js';
 
 @Module({
   imports: [JwtModule.register({}), AuditModule, MailerModule],
-  controllers: [AuthController],
+  controllers: [AuthController, ManagersController],
   providers: [
     TokenService,
     AuthService,
+    ManagersService,
     // Order matters: authenticate, then password-change check, then role check.
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: MustChangePasswordGuard },

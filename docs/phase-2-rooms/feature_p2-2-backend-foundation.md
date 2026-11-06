@@ -42,8 +42,8 @@ Out: any endpoint of buildings, rooms, pricing, viewings (parts 3–6). Do not e
   Done when: signature equals Cloudinary's documented sample vector; manager of another building → `OUT_OF_SCOPE`; wrong folder rejected; missing env → 503.
 - [x] **BE-P2-08** Seed: service "Gửi xe điện" (VEHICLE) with an approved rate plan 150.000 đ for each seeded building (SVC-05). Idempotent.
   Done when: seed runs twice without errors or duplicates.
-- [~] **BE-P2-09** e2e runner `test/e2e-run.ts` + `test/e2e-cleanup.mjs` (owner D2-14, 01/11/2026):
-  Pending: no Phase 2 e2e spec exists yet, so no run log was written; the "two runs, both logs CLEANED" check moves to the first e2e spec (P2-3).
+- [x] **BE-P2-09** e2e runner `test/e2e-run.ts` + `test/e2e-cleanup.mjs` (owner D2-14, 01/11/2026):
+  P2-3 đã áp dụng và có e2e spec, nhưng lượt e2e ngày 03/11/2026 chưa khởi tạo Prisma vì thiếu DATABASE_URL/.env trên máy này; log FAILED_CLEANUP có mọi ID rỗng. Chờ cấu hình DB dev để chạy hai lượt và xác nhận hai log CLEANED.
   - one `runId` (timestamp + 4 random chars) and one log `test/e2e-runs/<runId>.json` per e2e file; `test/e2e-runs/` in `.gitignore`;
   - names start with `[E2E <runId>]` (services: `[E2E] …`, 50-char limit); building code `E2` + 4 random `A-Z0-9`, checked in the DB and regenerated on a clash; test phones `09` + 8 random digits, same check; test-manager passwords random, kept in memory only;
   - Boss = existing seed account; managers are created by the test through `/managers`, never Quản lý 1/2; dev buildings, rooms and rates are read only;
@@ -55,6 +55,8 @@ Out: any endpoint of buildings, rooms, pricing, viewings (parts 3–6). Do not e
 - [x] **BE-P2-10** `npm run lint`, `npm run test`, `npm run build`, `npm run test:e2e` pass; list every `[ASSUMPTION]` used.
 
 ## Questions for the owner
+
+- 03/11/2026 · BE-P2-09 · Máy hiện thiếu `Source/backend/.env` và biến `DATABASE_URL`/`DIRECT_URL`. Chủ dự án có thể chỉ dẫn nơi đặt cấu hình DB dev qua kênh bí mật để chạy hai lượt e2e thật và kiểm CLEANED không? Không gửi bí mật vào chat.
 
 - 01/11/2026 · BE-P2-02 · `src/app.setup.spec.ts` (lines ~757, 784–788) expects exactly 23 `ErrorCode` members; spec 01 now has 25. A) draft a copy of that test with the 2 new rows and 23 → 25, applied with this part (recommended); B) drop the 2 new codes (against spec 01); C) other.
   Answered 01/11/2026 (owner): A.
@@ -73,6 +75,9 @@ Out: any endpoint of buildings, rooms, pricing, viewings (parts 3–6). Do not e
 - 02/11/2026 · BE-P2-10 · test fix approved and applied; on the main files `npm run test` 30 files / 787 tests pass, `npm run lint` 0, build and e2e pass (see above) · pass
 - 02/11/2026 · BE-P2-08 · seed run 3 times on dev: "Seed xong: 5 tài khoản, 3 tòa, 7 phòng, 1 hợp đồng", exactly 3 "Gửi xe điện" services and 3 approved plans 150.000 đ · pass
 - 02/11/2026 · BE-P2-09 · `npm run test:e2e` twice: 2 files / 17 tests pass both times; `node scripts/e2e/cleanup.mjs`: no open log, no unlogged [E2E rows · pass
+- 03/11/2026 · BE-P2-09 · Sau apply P2-3, `npm run test:e2e` thất bại trước kết nối Prisma: thiếu DATABASE_URL. Log `20261103T1003-8Y2Y.json` là FAILED_CLEANUP, mọi ID rỗng; không có dữ liệu thử được tạo. Chưa đạt gate Phase 2 (hai lượt P2-3 CLEANED). Cần DB dev hợp lệ rồi chạy lại.
+- 03/11/2026 · BE-P2-09 · Chủ dự án xác nhận `Source/.env` là DB dev; hotfix P2-3 và draft env đã duyệt/áp dụng. Hai lượt e2e đầy đủ 23/23 PASS, log `20261103T1542-N0N9` và `20261103T1555-CZIT` đều CLEANED. `node --env-file=../.env scripts/e2e/cleanup.mjs` chế độ chỉ liệt kê, không ghi DB, báo duy nhất log cũ `20261103T1003-8Y2Y` FAILED_CLEANUP với mọi ID rỗng. Runner thực tế nằm trong `scripts/e2e/` theo quyết định pipeline P2-2; unit runner và 17 bài e2e Phase 1 nằm trong bộ test đã PASS. Gate hai lượt PASS/CLEANED đạt.
+- 03/11/2026 · BE-P2-09 / P2-QA-03 · Chủ dự án xem danh sách và đồng ý `--apply 20261103T1003-8Y2Y` (mọi ID rỗng). Lệnh trả “Đã dọn nhật ký”, status file là CLEANED; list mode sau đó báo không có nhật ký chưa dọn và không có bản ghi `[E2E` lạ.
 - 01/11/2026 · BE-P2-02 · coder stopped after checkpoint 1: adding the 2 spec error codes breaks the Phase 1 count test in `src/app.setup.spec.ts` · owner chooses A/B/C (answered A)
 - 01/11/2026 · BE-P2-02 · tester FAIL round 1: draft `app.setup.spec.ts` cannot import `./app.setup.js`; 31 other CP-1 tests pass · owner chooses (a)/(b)/(c) (answered (b))
 - 01/11/2026 · BE-P2-07 · coder stopped before CP-5: the Cloudinary test vector in PLAN.md was wrong (string without `eager`, hash partly invented) · main session checked https://cloudinary.com/documentation/authentication_signatures: `timestamp=1315060510` + `abcd` → `a21ad0f63beb4de2e5575204b79ab90bffb02c10`; `eager=w_400,h_300,c_pad|w_260,h_200,c_crop&public_id=sample_image&timestamp=1315060510` + `abcd` → `bfd09f95f331f558cbd1320e67aa8d488770583e` (both recomputed with node:crypto); resumed

@@ -1,0 +1,21 @@
+/* Pricing dialogs and rate pages: layout only; colors and type come from the kit tokens inside .rooms-theme. */
+.rooms-theme .pricing-dialog-form { display: grid; gap: 16px; margin-top: 20px; }
+.rooms-theme .pricing-hint { margin: 0 0 16px; font-size: 13px; font-weight: 500; color: var(--rooms-muted); }
+.rooms-theme .pricing-section { display: grid; gap: 16px; margin-top: 40px; min-width: 0; }
+.rooms-theme .pricing-section-head { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+.rooms-theme .pricing-state { display: grid; gap: 12px; justify-items: start; }
+.rooms-theme .pricing-group h3 { margin-bottom: 12px; font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 600; }
+.rooms-theme .pricing-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.rooms-theme .pricing-plan { display: grid; gap: 6px; padding: 16px 20px; border: 1px solid var(--rooms-line); background: var(--rooms-paper); }
+.rooms-theme .pricing-plan-title { margin: 0; font-weight: 600; color: var(--rooms-text); }
+.rooms-theme .pricing-plan-meta { margin: 0; font-size: 12px; font-weight: 500; color: var(--rooms-muted); }
+.rooms-theme .pricing-tiers { margin: 0; padding-left: 18px; font-size: 13px; }
+.rooms-theme .pricing-form { display: grid; gap: 16px; width: 100%; max-width: 640px; padding: 24px; border: 1px solid var(--rooms-line); background: var(--rooms-paper); }
+.rooms-theme .pricing-form-title { margin: 0; font-weight: 600; color: var(--rooms-text); }
+.rooms-theme .pricing-tier { display: grid; gap: 12px; padding: 16px; border: 1px dashed var(--rooms-line); }
+.rooms-theme .pricing-tier-title { margin: 0; font-size: 13px; font-weight: 600; }
+.rooms-theme .pricing-tier-open { margin: 0; font-size: 13px; color: var(--rooms-muted); }
+.rooms-theme table.pricing-tiers { width: 100%; padding: 0; border-collapse: collapse; }
+.rooms-theme table.pricing-tiers caption { margin-bottom: 6px; font-weight: 600; text-align: left; }
+.rooms-theme table.pricing-tiers th, .rooms-theme table.pricing-tiers td { padding: 6px 8px; border-bottom: 1px solid var(--rooms-line); text-align: left; }
+.rooms-theme table.pricing-tiers th { font-size: 12px; font-weight: 600; color: var(--rooms-muted); }

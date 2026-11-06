@@ -14,13 +14,13 @@ Modules: `buildings`, `rooms`. Tables: `buildings`, `rooms`, `room_images`, `ser
 
 ## Rooms
 
-- **ROOM-01** Managers and Boss create/edit rooms in scope: `code` (unique in building), `floor`, `area_m2`, `max_occupants`, `furniture`, `description`, images.
+- **ROOM-01** Managers and Boss create/edit rooms in scope: `code` (unique in building), `floor`, `area_m2`, `max_occupants`, `furniture`, `description`, images. Reducing `max_occupants` below the active occupant count defined by DB-B6/CON-13 is refused in the same transaction with 409 `CONFLICT_STATE` (owner 04/11/2026).
 - **ROOM-02** `rooms.price` is never written by the room form. A new room has `price = null` until a room price proposal is approved ([12-pricing.md](12-pricing.md)).
 - **ROOM-03** `under_maintenance` can be toggled only when the room has no HOLD/ACTIVE contract.
 - **ROOM-04** Deactivate (`is_active = false`) only when no HOLD/ACTIVE contract. Never delete.
 - **ROOM-05** A room is **public** iff room active, building active, not under maintenance, `price` not null, no HOLD/ACTIVE contract, **and** the building has an ELECTRIC and a WATER rate in effect today (RATE-06).
 - **ROOM-06** `code` stays unique in the building also for locked rooms; the duplicate error says "Mã phòng đã có trong tòa (kể cả phòng đã khóa)". A room cannot be created in a locked building (`CONFLICT_STATE`).
-- **ROOM-07** Images: at most 10 per room, JPG/PNG/WebP, uploaded directly to Cloudinary with a signature from `POST /files/sign` (FILE-01, FILE-02). The FE rejects files over 5 MB before upload (Cloudinary cannot sign a size limit). Deleting an image deletes the `room_images` row (no history) and then the Cloudinary asset; a Cloudinary failure is logged and does not block. Order by `sort_order`.
+- **ROOM-07** Images: at most 10 per room, JPG/PNG/WebP, uploaded directly to Cloudinary with a signature from `POST /files/sign` (FILE-01, FILE-02). The FE rejects files over 5 MB before upload (Cloudinary cannot sign a size limit). Each attached image stores a unique, verified Cloudinary `asset_id` (FILE-02). Deleting an image deletes the `room_images` row (no history) and then requests Cloudinary destroy by that immutable `asset_id`; a Cloudinary failure is logged and does not block. A late destroy must not remove a new asset that reuses the old `publicId`. Order by `sort_order`. Owner decision Q-P24-9, 03/11/2026.
 - **ROOM-08** Public room detail shows the deposit = 1 month of the current price, and `monthlyEstimate` (A-05, owner 01/11/2026) = `price` + every active ROOM service + every active PERSON service × 1 + water × 1 person when `water_mode = PER_PERSON`, all at today's rates (RATE-06). Electricity and per-m³ water are not added; their unit prices are listed with "chưa gồm điện, nước – tính theo đồng hồ của phòng". An active service without a rate in effect is not added and is listed as "chưa gồm: <tên> (chưa có giá)". Locked services are left out entirely. Computed by the BE only (UI-06).
 - **ROOM-09** Turning on maintenance (ROOM-03) or locking (ROOM-04) a room that has NEW/CONFIRMED viewings is allowed; the response gives their count so the FE confirm dialog says "Còn N lịch hẹn chưa xử lý" (VIEW-13).
 
@@ -62,6 +62,7 @@ Derived, never stored. Priority top to bottom:
 | GET | `/public/featured-rooms` | public – PUB-01 |
 | GET/POST/PATCH | `/buildings` | staff (POST, assignment fields, lock: **Boss**; managers: `amenities`, `description` only) |
 | GET/POST/PATCH | `/rooms`, `/rooms/:id/images` | staff in scope |
+| GET | `/rooms/:id` | staff in scope – chi tiết phòng: như `/rooms` + `furniture`, `description`, `images` (ROOM-07) và `pendingViewingCount` (ROOM-09, VIEW-13) |
 | GET/POST/PATCH | `/services` | GET staff; POST/PATCH **Boss** |
 | POST | `/files/sign` | staff in scope (FILE-01) |
 

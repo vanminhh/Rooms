@@ -2,8 +2,13 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import ts from 'typescript'
+import { draftFirst } from './draft-root.mjs'
 
-const read = path => readFileSync(new URL(path, import.meta.url), 'utf8')
+// Mirrored from the main copy (PLAN.md CP-6, the P2-8a lesson): `read` now resolves draft-first / main-fallback
+// via draft-root.mjs instead of a literal relative path. None of these three files (api.ts, form-errors.ts,
+// features/auth/api.ts) are touched by this draft, so every read falls back to the main tree; the mechanism
+// still matters for when this file is moved into Source/frontend/tests by apply-draft.mjs.
+const read = path => readFileSync(draftFirst(path.replace(/^(\.\.\/)+/, '')), 'utf8')
 
 // Only the outside edge is replaced: globalThis.fetch is a fake that records calls and replays canned responses.
 // api.ts, form-errors.ts and features/auth/api.ts are transpiled and run unmodified (fresh module state per load).
