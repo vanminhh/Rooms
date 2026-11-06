@@ -79,3 +79,4 @@ Out: billing use of rates (Phase 4), FE (parts 8a/8b).
 - 04/11/2026 · BE-P2-28 · Còn [~]: e2e "manager đề xuất → giá công khai không đổi → Boss duyệt → job `roomIds` → giá đổi" chưa được viết (draft không kèm file e2e). Cần một draft nhỏ thêm `test/pricing.e2e-spec.ts`.
 - 04/11/2026 · BE-P2-28 · E2E giá đã duyệt và áp dụng (`test/pricing.e2e-spec.ts`). Trên main: `npm run test:e2e` 4 file/33 test PASS trên DB dev. Part 5 đạt Done when; giá công khai kiểm bằng `rooms.price` (API công khai thuộc P2-6).
 - 05/11/2026 · Q-FE8B-2 · API giá trả thêm `roomCode`/`buildingName` (RoomPriceView, RatePlanView), spec 12 cập nhật; đã duyệt và áp dụng. Trên main: lint 0 lỗi, build PASS, unit 77 file/1483 test PASS, e2e 5 file/43 test PASS (197 s). Chưa commit.
+- 06/11/2026 · Q-FE8B-7 · API bảng giá trả thêm `serviceName`, spec 12 cập nhật; đã áp dụng. Trên main: lint 0 lỗi, build PASS, unit 77 file/1502 test PASS, e2e 5 file/43 test PASS (182 s).

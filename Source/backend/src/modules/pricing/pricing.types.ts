@@ -68,4 +68,5 @@ export interface RatePlanView {
   tiers: RateTierView[];
   comparison: RatePlanComparison | null; // null when the plan has no tiers to compare
   buildingName: string; // buildings.name (Q-FE8B-2)
+  serviceName: string | null; // Q-FE8B-7: services.name when kind = SERVICE, null for ELECTRIC/WATER
 }

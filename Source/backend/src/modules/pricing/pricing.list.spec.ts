@@ -95,6 +95,10 @@ function makeListHarness(options: {
         sortRows(ratePlanRows.filter((r) => matchesWhere(r, where)), orderBy)[0] ?? null),
     },
     room: { findUnique: vi.fn(async ({ where }: any) => roomsById.get(where.id) ?? null) },
+    // Q-FE8B-7: listRatePlans must never query services directly — serviceName rides the
+    // ratePlan include. Present so "not called" assertions are a real spy check, not a
+    // thrown "undefined has no findUnique" error that would hide a real N+1 regression.
+    service: { findUnique: vi.fn(async () => null) },
   };
   const audit = new AuditService(prisma);
   const service = new PricingService(prisma, audit);
@@ -323,25 +327,25 @@ describe('CP-6 · BE-P2-27 · listRatePlans: PRC-10/12, API-02/08, empty-tiers g
         id: 1, buildingId: 10, kind: 'ELECTRIC', serviceId: null, status: 'PENDING',
         effectiveFrom: addDays(today(), 1), reason: null, proposedById: 2,
         reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: t(1),
-        tiers: [{ tierNo: 1, upTo: null, unitPrice: 1_800 }], building: { name: 'Chùa Gà' },
+        tiers: [{ tierNo: 1, upTo: null, unitPrice: 1_800 }], building: { name: 'Chùa Gà' }, service: null,
       },
       {
         id: 2, buildingId: 10, kind: 'WATER', serviceId: null, status: 'APPROVED',
         effectiveFrom: addDays(today(), -10), reason: null, proposedById: 2,
         reviewedById: 1, reviewedAt: t(2), reviewNote: null, createdAt: t(2),
-        tiers: [{ tierNo: 1, upTo: null, unitPrice: 20_000 }], building: { name: 'Chùa Gà' },
+        tiers: [{ tierNo: 1, upTo: null, unitPrice: 20_000 }], building: { name: 'Chùa Gà' }, service: null,
       },
       {
         id: 3, buildingId: 11, kind: 'SERVICE', serviceId: 301, status: 'REJECTED',
         effectiveFrom: today(), reason: null, proposedById: 5,
         reviewedById: 1, reviewedAt: t(3), reviewNote: 'Không hợp lý', createdAt: t(3),
-        tiers: [{ tierNo: 1, upTo: null, unitPrice: 50_000 }], building: { name: 'Trúc Bạch' },
+        tiers: [{ tierNo: 1, upTo: null, unitPrice: 50_000 }], building: { name: 'Trúc Bạch' }, service: { name: 'Rác' },
       },
       {
         id: 4, buildingId: 10, kind: 'ELECTRIC', serviceId: null, status: 'PENDING',
         effectiveFrom: addDays(today(), -1), reason: null, proposedById: 2,
         reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: t(4),
-        tiers: [{ tierNo: 1, upTo: 100, unitPrice: 1_700 }, { tierNo: 2, upTo: null, unitPrice: 2_600 }], building: { name: 'Chùa Gà' },
+        tiers: [{ tierNo: 1, upTo: 100, unitPrice: 1_700 }, { tierNo: 2, upTo: null, unitPrice: 2_600 }], building: { name: 'Chùa Gà' }, service: null,
       },
       {
         // CP-6 ghi chú coder: a plan row with no tiers at all (should never happen per RATE-02,
@@ -349,7 +353,7 @@ describe('CP-6 · BE-P2-27 · listRatePlans: PRC-10/12, API-02/08, empty-tiers g
         id: 5, buildingId: 10, kind: 'SERVICE', serviceId: 302, status: 'PENDING',
         effectiveFrom: today(), reason: null, proposedById: 2,
         reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: t(5),
-        tiers: [], building: { name: 'Chùa Gà' },
+        tiers: [], building: { name: 'Chùa Gà' }, service: { name: 'Giữ xe' },
       },
     ];
     return makeListHarness({ ratePlanRows: rows });
@@ -447,6 +451,101 @@ describe('CP-6 · BE-P2-27 · listRatePlans: PRC-10/12, API-02/08, empty-tiers g
         include: expect.objectContaining({ building: expect.objectContaining({ select: expect.objectContaining({ name: true }) }) }),
       }),
     );
+  });
+
+  // -------------------------------------------------------------------------
+  // Q-FE8B-7 (BE-P2-SERVICE-NAME): new serviceName field. PLAN §CP-2 scenarios 1/2/8/9/11/12/14.
+  // -------------------------------------------------------------------------
+
+  it('Q-FE8B-7, PRC-12, SVC-01: a SERVICE row carries the service\'s name in serviceName; buildingName/serviceId/tiers/comparison/expired are untouched', async () => {
+    const { service } = fixture();
+    const result = await service.listRatePlans(boss, {} as any);
+    const row = result.data.find((r) => r.id === 3)!;
+    expect(row).toMatchObject({
+      id: 3, buildingId: 11, kind: 'SERVICE', serviceId: 301, status: 'REJECTED',
+      buildingName: 'Trúc Bạch', serviceName: 'Rác', expired: false,
+    });
+    expect(row.tiers).toEqual([{ tierNo: 1, upTo: null, unitPrice: 50_000 }]);
+  });
+
+  it('Q-FE8B-7, RATE-01: ELECTRIC and WATER rows carry serviceName: null as an actual key, not undefined', async () => {
+    const { service } = fixture();
+    const result = await service.listRatePlans(boss, {} as any);
+    const electric = result.data.find((r) => r.id === 1)!;
+    const water = result.data.find((r) => r.id === 2)!;
+    expect(electric).toHaveProperty('serviceName', null);
+    expect(water).toHaveProperty('serviceName', null);
+  });
+
+  it('Q-FE8B-7, API-08: a SERVICE row with an empty tiers array still carries its serviceName', async () => {
+    const { service } = fixture();
+    const result = await service.listRatePlans(boss, { buildingId: 10, kind: 'SERVICE' } as any);
+    expect(result.data[0]).toMatchObject({ id: 5, serviceId: 302, serviceName: 'Giữ xe' });
+  });
+
+  // PLAN §CP-2 scenario 8: no extra query — service.findUnique must stay at 0 calls.
+  it('Q-FE8B-7, API-02: listRatePlans never queries the services table — serviceName rides the ratePlan include', async () => {
+    const { service, prisma } = fixture();
+    await service.listRatePlans(boss, {} as any); // 5 rows
+    expect(prisma.ratePlan.findMany).toHaveBeenCalledTimes(1);
+    expect(prisma.ratePlan.count).toHaveBeenCalledTimes(1);
+    expect(prisma.ratePlan.findFirst).toHaveBeenCalledTimes(5);
+    expect(prisma.service.findUnique).not.toHaveBeenCalled();
+  });
+
+  // PLAN §CP-2 scenario 9: assert the include shape itself, not just the call count.
+  it('Q-FE8B-7, API-02: listRatePlans\' findMany include selects service.name alongside building.name', async () => {
+    const { service, prisma } = fixture();
+    await service.listRatePlans(boss, {} as any);
+    expect(prisma.ratePlan.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: expect.objectContaining({ service: { select: { name: true } } }),
+      }),
+    );
+  });
+
+  // PLAN §CP-2 scenario 11: a plan of a now-locked service still gets its serviceName, and no isActive key leaks.
+  it('Q-P5-9 A, A3: a SERVICE plan whose service is locked (isActive:false) still carries its serviceName and no isActive key', async () => {
+    const { service } = makeListHarness({
+      ratePlanRows: [
+        {
+          id: 30, buildingId: 10, kind: 'SERVICE', serviceId: 303, status: 'APPROVED',
+          effectiveFrom: addDays(today(), -5), reason: null, proposedById: 2,
+          reviewedById: 1, reviewedAt: t(6), reviewNote: null, createdAt: t(6),
+          tiers: [{ tierNo: 1, upTo: null, unitPrice: 60_000 }], building: { name: 'Chùa Gà' },
+          service: { name: 'Bảo vệ' }, // the service row itself may be is_active:false; the view never carries that flag
+        },
+      ],
+    });
+    const result = await service.listRatePlans(boss, {} as any);
+    expect(result.data[0]).toMatchObject({ serviceId: 303, serviceName: 'Bảo vệ' });
+    expect(result.data[0]).not.toHaveProperty('isActive');
+  });
+
+  // PLAN §CP-2 scenario 12 / A4: fixture drift (serviceId set, but the included service relation is null).
+  it('Q-FE8B-7, A4: a SERVICE row whose fixture has service: null (data drift) yields serviceName: null, no throw', async () => {
+    const { service } = makeListHarness({
+      ratePlanRows: [
+        {
+          id: 20, buildingId: 10, kind: 'SERVICE', serviceId: 999, status: 'PENDING',
+          effectiveFrom: today(), reason: null, proposedById: 2,
+          reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: t(9),
+          tiers: [{ tierNo: 1, upTo: null, unitPrice: 10_000 }], building: { name: 'Chùa Gà' }, service: null,
+        },
+      ],
+    });
+    const result = await service.listRatePlans(boss, {} as any);
+    expect(result.data[0]).toMatchObject({ serviceId: 999, serviceName: null });
+  });
+
+  // PLAN §CP-2 scenario 14: the OUT_OF_SCOPE body must never leak the service (or building) name either.
+  it('Q-FE8B-7, SCOPE-02, API-08: the OUT_OF_SCOPE body for listRatePlans never leaks the building or service name', async () => {
+    const { service } = fixture();
+    const error: any = await service.listRatePlans(manager, { buildingId: 11 } as any).catch((e) => e);
+    expect(error).toMatchObject({ status: 403, response: { message: 'OUT_OF_SCOPE' } });
+    expect(Object.keys(error.response).sort()).toEqual(['error', 'message', 'statusCode']);
+    expect(JSON.stringify(error.response)).not.toContain('Trúc Bạch');
+    expect(JSON.stringify(error.response)).not.toContain('Rác');
   });
 });
 
@@ -586,12 +685,20 @@ interface RatePlanRowFixture {
   proposedById: number; reviewedById?: number | null; reviewedAt?: Date | null; reviewNote?: string | null;
   reason?: string | null; createdAt?: Date; tiers?: Array<{ tierNo: number; upTo: number | null; unitPrice: number }>;
 }
+// Q-FE8B-7: a service catalogue for makeTxRatePlanHarness, so proposeRatePlan's own
+// tx.service.findUnique lookup (SVC-04 / Q-P5-8 A) and the created row's `service` relation
+// agree on the same (buildingId, isActive, name) — never two sources of truth in the fixture.
+interface ServiceFixture { id: number; buildingId: number; isActive: boolean; name: string }
 
-function makeTxRatePlanHarness(buildings: BuildingFixture[], rowFixtures: RatePlanRowFixture[] = []) {
+function makeTxRatePlanHarness(buildings: BuildingFixture[], rowFixtures: RatePlanRowFixture[] = [], services: ServiceFixture[] = []) {
   const buildingMap = new Map(buildings.map((b) => [b.id, { ...b }]));
+  const serviceMap = new Map(services.map((s) => [s.id, { ...s }]));
+  const serviceRelation = (serviceId: number | null) =>
+    serviceId == null ? null : serviceMap.has(serviceId) ? { name: serviceMap.get(serviceId)!.name } : null;
   const ratePlanRows: any[] = rowFixtures.map((r) => ({
     reason: null, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date(), tiers: [],
     building: { name: buildingMap.get(r.buildingId)?.name ?? 'Chùa Gà' },
+    service: serviceRelation(r.serviceId),
     ...r,
   }));
   let nextId = ratePlanRows.reduce((max, r) => Math.max(max, r.id), 0) + 1;
@@ -601,7 +708,12 @@ function makeTxRatePlanHarness(buildings: BuildingFixture[], rowFixtures: RatePl
   const tx: any = {
     $queryRaw: vi.fn(async () => [{ id: 1 }]),
     building: { findUnique: vi.fn(async ({ where }: any) => { const b = buildingMap.get(where.id); return b ? { id: b.id, isActive: b.isActive } : null; }) },
-    service: { findUnique: vi.fn(async () => null) },
+    service: {
+      findUnique: vi.fn(async ({ where }: any) => {
+        const s = serviceMap.get(where.id);
+        return s ? { buildingId: s.buildingId, isActive: s.isActive } : null;
+      }),
+    },
     ratePlan: {
       findUnique: vi.fn(async ({ where }: any) => {
         const row = ratePlanRows.find((r) => r.id === where.id);
@@ -617,7 +729,8 @@ function makeTxRatePlanHarness(buildings: BuildingFixture[], rowFixtures: RatePl
       create: vi.fn(async ({ data }: any) => {
         const tiers = (data.tiers?.create ?? []).map((tier: any) => ({ id: nextTierId++, ...tier }));
         const building = { name: buildingMap.get(data.buildingId)?.name ?? 'Chùa Gà' };
-        const row = { id: nextId++, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date(), ...data, tiers, building };
+        const service = serviceRelation(data.serviceId ?? null);
+        const row = { id: nextId++, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date(), ...data, tiers, building, service };
         ratePlanRows.push(row);
         return row;
       }),
@@ -758,6 +871,45 @@ describe('CP-6 · BE-P2-27 · comparison is present in the propose/approve/rejec
       buildingId: 10, kind: 'WATER', effectiveFrom: formatDateOnly(addDays(today(), 1)), tiers: [{ tierNo: 1, upTo: null, unitPrice: 22_000 }],
     } as any);
     expect(result.buildingName).toBe('Láng Hạ');
+  });
+});
+
+// ===========================================================================
+// Q-FE8B-7 (BE-P2-SERVICE-NAME): serviceName through propose/approve. PLAN §CP-2 scenarios 3/4/5.
+// Reject is exercised via pricing.review.spec.ts's makeRatePlanReviewHarness (scenario 7).
+// ===========================================================================
+
+describe('Q-FE8B-7 · serviceName in the proposeRatePlan response (PLAN §CP-2 scenarios 3/4/5)', () => {
+  const building: BuildingFixture = { id: 10, isActive: true, name: 'Chùa Gà' };
+  const trashService: ServiceFixture = { id: 301, buildingId: 10, isActive: true, name: 'Rác' };
+
+  it('RATE-01, Q-FE8B-7: a manager proposing a SERVICE plan gets the chosen service\'s serviceName in the PENDING response', async () => {
+    const { service } = makeTxRatePlanHarness([building], [], [trashService]);
+    const result = await service.proposeRatePlan(manager, {
+      buildingId: 10, kind: 'SERVICE', serviceId: 301, effectiveFrom: formatDateOnly(addDays(today(), 1)),
+      tiers: [{ tierNo: 1, upTo: null, unitPrice: 50_000 }],
+    } as any);
+    expect(result.status).toBe('PENDING');
+    expect(result.serviceName).toBe('Rác');
+  });
+
+  it('RATE-01: a manager proposing an ELECTRIC plan gets serviceName: null in the response', async () => {
+    const { service } = makeTxRatePlanHarness([building], [], []);
+    const result = await service.proposeRatePlan(manager, {
+      buildingId: 10, kind: 'ELECTRIC', effectiveFrom: formatDateOnly(addDays(today(), 1)),
+      tiers: [{ tierNo: 1, upTo: null, unitPrice: 1_800 }],
+    } as any);
+    expect(result).toHaveProperty('serviceName', null);
+  });
+
+  it('PRC-04, Q-FE8B-7: a Boss self-approve of a SERVICE proposal (propose -> approve in one transaction) still carries the correct serviceName', async () => {
+    const { service } = makeTxRatePlanHarness([building], [], [trashService]);
+    const result = await service.proposeRatePlan(boss, {
+      buildingId: 10, kind: 'SERVICE', serviceId: 301, effectiveFrom: formatDateOnly(today()),
+      tiers: [{ tierNo: 1, upTo: null, unitPrice: 50_000 }],
+    } as any);
+    expect(result.status).toBe('APPROVED');
+    expect(result.serviceName).toBe('Rác');
   });
 });
 
@@ -906,5 +1058,18 @@ describe('CP-6 · BE-P2-27 · GET /room-prices, GET /rate-plans HTTP contract', 
       .get('/api/v1/rate-plans').set('Authorization', await auth(1, 'BOSS'));
     expect(response.status).toBe(200);
     expect(response.body.data).toEqual([]);
+  });
+
+  // PLAN §CP-2 scenario 15 (PUB-04, API-07): tenant on /rate-plans too (not just /room-prices above).
+  // The fake Prisma's findMany mock is shared and already called by earlier tests in this describe
+  // block (no per-test reset here), so the assertion compares the call count before/after this one
+  // request instead of asserting "never called" against the whole suite run.
+  it('Q-FE8B-7, API-07, PUB-04: a tenant gets 403 FORBIDDEN on GET /rate-plans, never a row queried', async () => {
+    const callsBefore = fakePrisma.ratePlan.findMany.mock.calls.length;
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/rate-plans').set('Authorization', await auth(3, 'TENANT'));
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe('FORBIDDEN');
+    expect(fakePrisma.ratePlan.findMany.mock.calls.length).toBe(callsBefore);
   });
 });

@@ -48,12 +48,17 @@ type LockedRoomPrice = RoomPrice & {
   room: { buildingId: number; code: string; isActive: boolean; building: { isActive: boolean; name: string } };
 };
 
-// Tiers and the building name come with the plan in the same query (Q-FE8B-2).
+// Tiers, building name and service name come with the plan in the same query (Q-FE8B-2, Q-FE8B-7).
 const RATE_PLAN_INCLUDE = {
   tiers: { orderBy: { tierNo: 'asc' } },
   building: { select: { name: true } },
+  service: { select: { name: true } },
 } as const;
-type RatePlanRow = RatePlan & { tiers: RateTier[]; building: { name: string } };
+type RatePlanRow = RatePlan & {
+  tiers: RateTier[];
+  building: { name: string };
+  service: { name: string } | null; // optional relation: null when serviceId = null
+};
 
 // PRC-07: a PENDING proposal whose effective_from is before today is expired (derived, not stored).
 function isExpired(status: string, effectiveFrom: Date): boolean {
@@ -551,6 +556,7 @@ export class PricingService {
       tiers,
       comparison: ratePlanComparison(row.kind, oldTiers, tiers),
       buildingName: row.building.name,
+      serviceName: row.service?.name ?? null,
     };
   }
 

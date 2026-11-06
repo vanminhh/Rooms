@@ -349,6 +349,7 @@ interface RatePlanRowFixture {
   reason?: string | null; proposedById: number; reviewedById?: number | null;
   reviewedAt?: Date | null; reviewNote?: string | null; createdAt?: Date;
   tiers?: Array<{ tierNo: number; upTo: number | null; unitPrice: number }>;
+  service?: { name: string } | null; // Q-FE8B-7: explicit override; default is derived from serviceId below
 }
 
 function makeRatePlanReviewHarness(buildings: BuildingFixture[], rowFixtures: RatePlanRowFixture[]) {
@@ -358,6 +359,9 @@ function makeRatePlanReviewHarness(buildings: BuildingFixture[], rowFixtures: Ra
   const ratePlanRows = rowFixtures.map((r) => ({
     reason: null, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date(), tiers: [],
     building: { name: buildingMap.get(r.buildingId)?.name ?? 'Chùa Gà' },
+    // Q-FE8B-7: default service derived from serviceId (null -> null); callers can still
+    // override explicitly in the fixture for the A4 data-drift scenario.
+    service: r.serviceId == null ? null : { name: 'Rác' },
     ...r,
   }));
   const auditRows: any[] = [];
@@ -551,6 +555,51 @@ describe('CP-3 · PricingService.approveRatePlan / rejectRatePlan (unit, fake Pr
     expect(prisma.$transaction).toHaveBeenCalledTimes(1);
     expect(ratePlanRows).toHaveLength(1); // only ever existed in this failed mocked tx
   });
+
+  // -------------------------------------------------------------------------
+  // Q-FE8B-7 (BE-P2-SERVICE-NAME): serviceName through approve/reject. PLAN §CP-2 scenarios 6/7/10/12.
+  // -------------------------------------------------------------------------
+
+  it('Q-FE8B-7, RATE-01, PRC-08: approving a SERVICE plan returns the service\'s serviceName; status/reviewedById/reviewedAt as usual', async () => {
+    const { service, ratePlanRows } = makeRatePlanReviewHarness([buildingA], [
+      { id: 1, buildingId: 10, kind: 'SERVICE', serviceId: 301, effectiveFrom: today(), status: 'PENDING', proposedById: 2, service: { name: 'Rác' } },
+    ]);
+    const result = await service.approveRatePlan(boss, 1);
+    expect(result).toMatchObject({ status: 'APPROVED', serviceName: 'Rác' });
+    expect(result.reviewedById).toBe(1);
+    expect(result.reviewedAt).not.toBeNull();
+    expect(ratePlanRows[0].status).toBe('APPROVED');
+  });
+
+  it('Q-FE8B-7, RATE-05: rejecting a SERVICE plan returns the service\'s serviceName and keeps reviewNote', async () => {
+    const { service } = makeRatePlanReviewHarness([buildingA], [
+      { id: 1, buildingId: 10, kind: 'SERVICE', serviceId: 301, effectiveFrom: today(), status: 'PENDING', proposedById: 2, service: { name: 'Rác' } },
+    ]);
+    const result = await service.rejectRatePlan(boss, 1, { reviewNote: 'Giá dịch vụ chưa hợp lý' });
+    expect(result).toMatchObject({ status: 'REJECTED', serviceName: 'Rác', reviewNote: 'Giá dịch vụ chưa hợp lý' });
+  });
+
+  // Q-P5-9 A regression, restated for Q-FE8B-7: approve/reject must keep working — and keep
+  // returning the right serviceName — without ever touching the services table, even when the
+  // plan's own service is locked (isActive:false on the real row; irrelevant here, A3).
+  it('Q-FE8B-7, Q-P5-9 A, A3: a SERVICE plan of a locked service still returns its serviceName with no services-table query', async () => {
+    const { service, tx } = makeRatePlanReviewHarness([buildingA], [
+      { id: 1, buildingId: 10, kind: 'SERVICE', serviceId: 202, effectiveFrom: today(), status: 'PENDING', proposedById: 2, service: { name: 'Bảo vệ' } },
+    ]);
+    const result = await service.approveRatePlan(boss, 1);
+    expect(result).toMatchObject({ status: 'APPROVED', serviceName: 'Bảo vệ' });
+    expect(result).not.toHaveProperty('isActive');
+    expect((tx as any).service).toBeUndefined(); // no services delegate ever touched, same proof as above
+  });
+
+  // PLAN §CP-2 scenario 12 / A4: fixture drift inside the review harness too (serviceId set, service relation null).
+  it('Q-FE8B-7, A4: approving a SERVICE plan whose fixture service relation is null yields serviceName: null, no throw', async () => {
+    const { service } = makeRatePlanReviewHarness([buildingA], [
+      { id: 1, buildingId: 10, kind: 'SERVICE', serviceId: 999, effectiveFrom: today(), status: 'PENDING', proposedById: 2, service: null },
+    ]);
+    const result = await service.approveRatePlan(boss, 1);
+    expect(result).toMatchObject({ status: 'APPROVED', serviceName: null });
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -655,7 +704,7 @@ describe('CP-3 · BE-P2-24 · room-prices/rate-plans review HTTP contract', () =
       { id: 1, roomId: 101, price: 3000000, effectiveFrom: todayHanoi(), status: 'PENDING', reason: null, proposedById: 2, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date() },
     ];
     ratePlanRows = [
-      { id: 1, buildingId: 10, kind: 'ELECTRIC', serviceId: null, effectiveFrom: todayHanoi(), status: 'PENDING', reason: null, proposedById: 2, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date(), tiers: [], building: { name: 'Chùa Gà' } },
+      { id: 1, buildingId: 10, kind: 'ELECTRIC', serviceId: null, effectiveFrom: todayHanoi(), status: 'PENDING', reason: null, proposedById: 2, reviewedById: null, reviewedAt: null, reviewNote: null, createdAt: new Date(), tiers: [], building: { name: 'Chùa Gà' }, service: null },
     ];
     roomMap.set(101, { id: 101, buildingId: 10, isActive: true, price: 2000000 });
     auditCreate.mockClear();
@@ -811,5 +860,31 @@ describe('CP-3 · BE-P2-24 · room-prices/rate-plans review HTTP contract', () =
     expect(response.status).toBe(201);
     expect(response.body.data).toMatchObject({ status: 'REJECTED', buildingName: 'Chùa Gà' });
     expect(response.body.data).not.toHaveProperty('roomCode');
+  });
+
+  // -----------------------------------------------------------------------
+  // Q-FE8B-7 (BE-P2-SERVICE-NAME): serviceName in approve/reject over HTTP. PLAN §CP-2 scenarios 6/7.
+  // -----------------------------------------------------------------------
+  it('Q-FE8B-7, RATE-01: approving a SERVICE rate plan over HTTP returns the correct serviceName', async () => {
+    ratePlanRows[0] = { ...ratePlanRows[0], kind: 'SERVICE', serviceId: 301, service: { name: 'Rác' } };
+    const response = await request(app.getHttpServer())
+      .post('/api/v1/rate-plans/1/approve').set('Authorization', await auth(1, 'BOSS'));
+    expect(response.status).toBe(201);
+    expect(response.body.data).toMatchObject({ status: 'APPROVED', serviceId: 301, serviceName: 'Rác' });
+  });
+
+  it('Q-FE8B-7, RATE-05: rejecting a SERVICE rate plan over HTTP returns the correct serviceName', async () => {
+    ratePlanRows[0] = { ...ratePlanRows[0], kind: 'SERVICE', serviceId: 301, service: { name: 'Rác' } };
+    const response = await request(app.getHttpServer())
+      .post('/api/v1/rate-plans/1/reject').set('Authorization', await auth(1, 'BOSS')).send({ reviewNote: 'Không hợp lý' });
+    expect(response.status).toBe(201);
+    expect(response.body.data).toMatchObject({ status: 'REJECTED', serviceId: 301, serviceName: 'Rác' });
+  });
+
+  it('Q-FE8B-7: approving an ELECTRIC rate plan over HTTP returns serviceName: null', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/api/v1/rate-plans/1/approve').set('Authorization', await auth(1, 'BOSS'));
+    expect(response.status).toBe(201);
+    expect(response.body.data).toMatchObject({ status: 'APPROVED', serviceName: null });
   });
 });
