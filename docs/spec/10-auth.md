@@ -11,7 +11,7 @@ Module: `auth` + `src/common/guards`. Tables: `users`, `sessions`, `password_res
 - **AUTH-05** If `must_change_password`, every API except `POST /auth/change-password`, `POST /auth/logout`, `GET /auth/me` returns `PASSWORD_CHANGE_REQUIRED`. FE redirects to `/doi-mat-khau`.
 - **AUTH-06** After login FE routes by role: `TENANT` → `/thue`, `MANAGER`/`BOSS` → `/ql`. Opening `/dang-nhap` while logged in redirects the same way.
 - **AUTH-07** Forgot password: if the user has an email, send a single-use link valid 30 minutes; otherwise the response is identical (no account enumeration) and the page shows the building manager's contact. Staff can reset a tenant's password (temporary password, `must_change_password = true`, sessions revoked).
-- **AUTH-08** Boss creates manager accounts (temporary password). Boss is created only by seed. Details (owner 01/11/2026):
+- **AUTH-08** Boss creates manager accounts (temporary password). Boss is created only by seed; on production the seeded Boss is edited, not re-created (DEP-08). Details (owner 01/11/2026):
   - Create `{ phone, fullName, email? }` → the BE generates a temporary password, returns it **once** in the response, and sets `must_change_password = true`. Duplicate phone → `PHONE_TAKEN`.
   - Deactivate (`is_active = false`) revokes all sessions (AUTH-T3) and **keeps** `buildings.manager_id`. While inactive, the building's public contact and tasks fall back to Boss (BLD-04, SCOPE-04). Reactivating gives the buildings back. An inactive manager's buildings still count toward the 2-building limit (BLD-03).
   - The endpoints live in the `auth` module (`managers.controller.ts`). Assigning buildings is done on the building (`PATCH /buildings/:id`), not here.

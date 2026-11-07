@@ -110,6 +110,19 @@ Scale: one chain of mini apartment buildings, hundreds of rooms. One server is e
 - **DEP-05** `NODE_ENV` is required (`development`, `test` or `production`; added to `REQUIRED_ENV` and `.env.example`). Production runs with `production`, which makes the refresh cookie `Secure` (AUTH-T2); the app refuses to start without it instead of silently running with a non-secure cookie.
 - **DEP-06** A CDN (e.g. Cloudflare) in front of the origin caches public GET responses for 60 s (PUB-05) and blocks obvious bots. Its cache rule covers only `GET /api/v1/public/*`; CDNs do not cache JSON by default.
 
+### Go-live checklist (owner 08/11/2026)
+
+The dev seed (`prisma/seed.ts`) creates 5 accounts with fixed, public passwords (`0900000001` Boss, `0900000002`–`0900000003` managers, `0900000004`–`0900000005` tenants) and sample data (3 buildings, rooms, contract HD000001). The seed has no production guard by decision: it is dev only, and the steps below make the production database safe instead.
+
+- **DEP-07** Never run `prisma db seed` on the production database: it resets the password of the 5 accounts above to the public ones, even after they were changed.
+- **DEP-08** Before the domain points at the production site, in this order:
+  1. Change the Boss account: real phone, a new password (hashed with argon2id, never written as plain text), `must_change_password` off. There is exactly one Boss ([00-overview.md](00-overview.md) roles, [02-database.md](02-database.md)), so the existing row is edited, not replaced.
+  2. Change the Boss's public contact (`contact_phone`, `zalo_url`, `facebook_url`, AUTH-09) and `settings.default_contact`: the seed uses `0900000001`, and these are shown to guests.
+  3. Deactivate (`is_active = false`) the two dev managers and the two dev tenants. Do not delete them while they have history (G-05); delete rows only on a database that has no real data yet and only if foreign keys allow it.
+  4. Remove the sample buildings, rooms and contract, or lock the buildings so they do not appear in public lists (BLD-06, ROOM-05).
+  5. Set `NODE_ENV=production` (DEP-05) and check that no dev password logs in.
+- **DEP-09** The same steps apply when the production database is created from a copy of the dev database.
+
 ## Roadmap
 
 | Phase | Scope | Done when |

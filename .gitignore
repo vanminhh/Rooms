@@ -9,3 +9,9 @@ dist/
 
 # Sinh ra khi chạy kiểm tra database (xem docs/spec/02-database.md)
 Source/backend/prisma/schema.sql
+
+# Cache tạm của bản nháp BE P2-17-21
+/Source/backend/artifact_BE/approved/2026-11-03-BE-P2-17-21/ref/node-compile-cache/
+/Source/backend/artifact_BE/approved/2026-11-03-BE-P2-17-21/ref/temp/
+/Source/backend/artifact_BE/approved/2026-11-03-BE-P2-17-21/ref/node-cache/
+/Source/backend/artifact_BE/approved/2026-11-03-BE-P2-17-21/ref/tmp-cache/
