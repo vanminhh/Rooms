@@ -1,0 +1,266 @@
+/* Boss contact block; text inherits the color of its container (page or footer). */
+.rooms-theme .auth-contact {
+  display: grid;
+  gap: 8px;
+}
+
+.rooms-theme .auth-contact-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+/* Form column shared by auth pages; login expands it only inside its dedicated panel. */
+.rooms-theme .auth-column {
+  display: grid;
+  gap: 24px;
+  width: 100%;
+  max-width: 440px;
+}
+
+.rooms-theme .auth-column form {
+  display: grid;
+  gap: 16px;
+}
+
+/* Success notice: a status, not an error, so no error color. */
+.rooms-theme .auth-notice {
+  margin: 0;
+  padding: 12px 16px;
+  border-left: 4px solid var(--rooms-ink);
+  background: var(--rooms-paper);
+  color: var(--rooms-text);
+}
+
+.rooms-theme .auth-login-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(380px, .92fr);
+  gap: clamp(18px, 2.5vw, 32px);
+  min-width: 0;
+}
+
+.rooms-theme .auth-login-visual,
+.rooms-theme .auth-login-panel {
+  min-width: 0;
+  min-height: 620px;
+  border-radius: var(--rooms-radius-card);
+  overflow: hidden;
+}
+
+.rooms-theme .auth-login-visual {
+  position: relative;
+  isolation: isolate;
+  color: var(--rooms-paper);
+  background: var(--rooms-ink);
+}
+
+.rooms-theme .auth-login-visual::after {
+  position: absolute;
+  z-index: -1;
+  inset: 45% 0 0;
+  content: '';
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--rooms-ink) 91%, transparent) 72%, color-mix(in srgb, var(--rooms-ink) 96%, transparent));
+}
+
+.rooms-theme .auth-login-visual > img {
+  position: absolute;
+  z-index: -2;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rooms-theme .auth-login-image-label {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+.rooms-theme .auth-login-visual-copy {
+  position: absolute;
+  right: clamp(24px, 5vw, 56px);
+  bottom: clamp(28px, 5vw, 58px);
+  left: clamp(24px, 5vw, 56px);
+}
+
+.rooms-theme .auth-login-visual-copy .rooms-eyebrow {
+  margin-top: 24px;
+  color: color-mix(in srgb, var(--rooms-gold) 72%, white);
+}
+
+.rooms-theme .auth-login-promise {
+  max-width: 480px;
+  font: 500 clamp(34px, 4vw, 54px)/1.12 'Taviraj', Georgia, serif;
+}
+
+.rooms-theme .auth-login-promise em {
+  color: color-mix(in srgb, var(--rooms-gold) 62%, white);
+  font-weight: 500;
+}
+
+.rooms-theme .auth-login-panel {
+  display: grid;
+  align-content: center;
+  padding: clamp(28px, 5vw, 56px);
+  border: 1px solid color-mix(in srgb, white 50%, transparent);
+  background: color-mix(in srgb, var(--rooms-paper) 92%, white);
+  box-shadow: 0 18px 50px color-mix(in srgb, var(--rooms-ink) 7%, transparent);
+}
+
+.rooms-theme .auth-login-heading {
+  margin-bottom: 28px;
+}
+
+.rooms-theme .auth-login-heading > span {
+  display: block;
+  width: 56px;
+  height: 1px;
+  margin-bottom: 24px;
+  background: var(--rooms-gold);
+}
+
+.rooms-theme .auth-login-heading h1 {
+  font-size: clamp(38px, 4vw, 54px);
+}
+
+.rooms-theme .auth-login-heading p {
+  margin-top: 8px;
+  color: var(--rooms-muted);
+}
+
+.rooms-theme .auth-login-panel .auth-column {
+  max-width: none;
+}
+
+/* Reserve one validation line per field so errors do not resize the two-column frame. */
+.rooms-theme .auth-login-panel .rooms-field {
+  min-height: 112px;
+  align-content: start;
+}
+
+/* AUTH-01/02/04 use one shared API message; its slot also remains stable while empty. */
+.rooms-theme .auth-login-form-message {
+  min-height: 48px;
+}
+
+.rooms-theme .auth-login-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 18px;
+}
+
+.rooms-theme .auth-login-options > a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--rooms-text);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.rooms-theme .auth-login-submit {
+  width: 100%;
+}
+
+.rooms-theme .auth-login-account-note {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+  border-top: 1px solid var(--rooms-line);
+  border-radius: var(--rooms-radius-input);
+  background: color-mix(in srgb, var(--rooms-paper) 72%, var(--rooms-line));
+  text-align: center;
+}
+
+.rooms-theme .auth-login-account-note > p:first-child {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.rooms-theme .auth-login-account-note .auth-contact {
+  font-size: 12px;
+}
+
+.rooms-theme .auth-login-account-note .auth-contact-links {
+  justify-content: center;
+}
+
+.rooms-theme .auth-contact-status {
+  color: var(--rooms-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.rooms-theme .auth-login-account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 24px;
+}
+
+.rooms-theme .auth-login-account-actions :is(a, span) {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.rooms-theme .auth-login-account-actions a {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+@media (max-width: 860px) {
+  .rooms-theme .auth-login-page {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rooms-theme .auth-login-visual {
+    min-height: 420px;
+  }
+
+  .rooms-theme .auth-login-panel {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .rooms-theme .auth-login-visual {
+    display: none;
+  }
+
+  .rooms-theme .auth-login-panel {
+    padding: 26px 18px;
+  }
+
+  .rooms-theme .auth-login-heading h1 {
+    font-size: 36px;
+  }
+
+  .rooms-theme .auth-login-options {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .rooms-theme .auth-login-account-note {
+    padding: 18px 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rooms-theme .auth-login-page *,
+  .rooms-theme .auth-login-page *::before,
+  .rooms-theme .auth-login-page *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation: none !important;
+  }
+}
+

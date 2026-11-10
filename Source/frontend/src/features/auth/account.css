@@ -1,0 +1,78 @@
+/* /thue/tai-khoan and /ql/tai-khoan (UI-33, mockups 06 and 07). Password fields reuse forgot-password.css. */
+.rooms-theme .auth-account-page {
+  min-width: 0;
+}
+
+.rooms-theme .auth-account-page > .rooms-section-heading .rooms-section-description {
+  margin-top: 10px !important;
+}
+
+.rooms-theme .auth-account-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(16px, 2vw, 24px);
+  align-items: start;
+}
+
+.rooms-theme .auth-account-stack {
+  display: grid;
+  gap: clamp(16px, 2vw, 24px);
+  min-width: 0;
+  max-width: 640px;
+}
+
+.rooms-theme .auth-account-grid > .auth-account-stack {
+  max-width: none;
+}
+
+.rooms-theme .auth-account-card {
+  display: grid;
+  gap: 16px;
+}
+
+.rooms-theme .auth-account-card-heading h3 {
+  font-size: clamp(24px, 2.4vw, 30px);
+}
+
+.rooms-theme .auth-account-card-heading p {
+  margin-top: 6px;
+  color: var(--rooms-muted);
+  font-size: 13px;
+}
+
+.rooms-theme .auth-account-form {
+  display: grid;
+  gap: 16px;
+}
+
+.rooms-theme .auth-account-submit {
+  width: 100%;
+  justify-content: center;
+}
+
+.rooms-theme .auth-account-preview {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid var(--rooms-line);
+  border-radius: var(--rooms-radius-input);
+  background: color-mix(in srgb, var(--rooms-paper) 72%, var(--rooms-line));
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.rooms-theme .auth-account-preview-title {
+  font-weight: 600;
+}
+
+@media (max-width: 960px) {
+  .rooms-theme .auth-account-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .rooms-theme .auth-account-card {
+    padding: 22px 16px;
+  }
+}

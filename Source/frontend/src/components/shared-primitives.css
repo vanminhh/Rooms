@@ -1,0 +1,81 @@
+.rooms-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 44px;
+  max-width: 100%;
+  padding: 9px 16px;
+  border: 1px solid var(--rooms-line);
+  border-radius: var(--rooms-radius-chip);
+  background: var(--rooms-paper);
+  color: var(--rooms-text);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  scale: 1;
+  transition: border-color .16s ease, background-color .16s ease, color .16s ease, scale .12s var(--rooms-ease-out);
+}
+.rooms-filter-chip > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.rooms-filter-chip-count {
+  display: grid;
+  min-width: 23px;
+  min-height: 23px;
+  padding-inline: 6px;
+  place-items: center;
+  border-radius: var(--rooms-radius-chip);
+  background: #153d3610;
+  color: currentColor;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.rooms-filter-chip[aria-pressed='true'] { border-color: var(--rooms-ink); background: var(--rooms-ink); color: var(--rooms-paper); }
+.rooms-filter-chip[aria-pressed='true'] .rooms-filter-chip-count { background: #ffffff20; }
+.rooms-filter-chip:disabled { opacity: .45; cursor: not-allowed; }
+.rooms-filter-chip:active:not(:disabled):not(:focus-visible) { scale: .97; }
+.rooms-filter-chip:focus-visible { scale: 1; transition: none; }
+
+.rooms-elevated-card {
+  min-width: 0;
+  padding: clamp(20px, 3vw, 30px);
+  border: 1px solid #153d3612;
+  border-radius: var(--rooms-radius-card);
+  background: var(--rooms-paper);
+  box-shadow: 0 14px 34px #153d3610;
+}
+
+.rooms-illustration-label {
+  position: absolute;
+  z-index: 1;
+  top: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  max-width: calc(100% - 28px);
+  padding: 5px 11px;
+  border: 1px solid #ffffff3d;
+  border-radius: var(--rooms-radius-chip);
+  background: #0f2b26e8;
+  color: var(--rooms-paper);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: .04em;
+}
+
+/* UI-12: trạng thái gọn hơn theo mockup Stitch, vẫn giữ bốn tone KIT-06. */
+.rooms-status { min-height: 27px; border: 1px solid transparent; padding: 5px 11px; letter-spacing: .02em; }
+.rooms-status > span { width: 6px; height: 6px; box-shadow: 0 0 0 3px currentColor; opacity: .82; }
+.rooms-status--available { border-color: #afc9aa; background: #e7f0e4; color: #24432e; }
+.rooms-status--occupied { border-color: #b7c8d1; background: #e7edf0; color: #29434f; }
+.rooms-status--reserved { border-color: #dac18f; background: #f7ecd4; color: #624817; }
+.rooms-status--maintenance { border-color: #c9c0b9; background: #eee9e5; color: #514944; }
+
+@media (hover: hover) and (pointer: fine) {
+  .rooms-filter-chip:hover:not(:disabled):not([aria-pressed='true']) { border-color: var(--rooms-ink); background: #153d3608; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rooms-filter-chip { transition-duration: 0s !important; scale: 1 !important; }
+}

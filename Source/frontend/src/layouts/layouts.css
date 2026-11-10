@@ -1,0 +1,100 @@
+/* Frame shared by the three layouts; colors come from the kit tokens inside .rooms-theme. */
+/* UI-40: on short pages the sand background reaches the bottom of the viewport. */
+.rooms-theme:has(> .layout-main) {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.rooms-theme .layout-main {
+  width: min(100%, 1120px);
+  min-width: 0;
+  margin: 0 auto;
+  padding: 32px 20px 64px;
+}
+
+/* Full width on 360px, capped on desktop; long building names wrap instead of widening the frame (UI-07). */
+.rooms-theme .layout-building-select {
+  max-width: 420px;
+  margin-bottom: 24px;
+  overflow-wrap: anywhere;
+}
+
+/* Keep the native select behaviour, but position its visual indicator a deliberate 14px from the edge. */
+.rooms-theme .layout-main select.rooms-field-input {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23153d36' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 12px 8px;
+  padding-right: 36px;
+}
+
+/* UI-13: API data can contain long names, addresses, URLs and notes. Keep every card inside the layout frame. */
+.rooms-theme .layout-main :where(
+  .dashboard-card,
+  .buildings-item,
+  .buildings-facts,
+  .staff-room-card,
+  .staff-room-inspector,
+  .pricing-plan,
+  .pricing-form,
+  .viewings-card,
+  .managers-item,
+  .managers-issued,
+  .auth-column
+) {
+  min-width: 0;
+}
+
+.rooms-theme .layout-main :where(
+  .dashboard-card,
+  .buildings-item,
+  .buildings-facts,
+  .staff-room-inspector,
+  .pricing-plan,
+  .viewings-card,
+  .managers-item,
+  .managers-issued,
+  .auth-column
+) :where(h1, h2, h3, p, li, dt, dd, a, label) {
+  overflow-wrap: anywhere;
+}
+
+/* Tier tables belong to forms/cards and may be wider than a phone when more tiers are added. */
+.rooms-theme .layout-main table.pricing-tiers {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+
+@media (max-width: 480px) {
+  .rooms-theme .layout-main {
+    padding: 24px 14px 48px;
+  }
+
+  .rooms-theme .staff-room-facts > div {
+    flex-wrap: wrap;
+  }
+
+  .rooms-theme .staff-room-facts dd {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .rooms-theme :where(
+    .buildings-form-actions,
+    .staff-room-form-actions,
+    .viewings-form-actions,
+    .viewings-actions,
+    .managers-form-actions
+  ) > .rooms-button {
+    flex: 1 1 140px;
+    max-width: 100%;
+    justify-content: center;
+    white-space: normal;
+    text-align: center;
+  }
+}
+

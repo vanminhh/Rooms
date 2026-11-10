@@ -1,6 +1,6 @@
 # Rooms — bộ component từ An Lâm
 
-15 component React/TypeScript dùng cho Trọ Thông Minh. Giữ sắc cát ấm, xanh trầm, chữ Taviraj/Manrope và các chuyển động của An Lâm; thay nội dung villa bằng phòng thuê theo tháng.
+20 component React/TypeScript dùng cho Trọ Thông Minh. Giữ sắc cát ấm, xanh trầm, chữ Taviraj/Manrope và các chuyển động của An Lâm; thay nội dung villa bằng phòng thuê theo tháng.
 
 Đây là **giao diện chính thức của frontend** (chủ dự án chốt ngày 25/10/2026). Luật dùng bộ component: `docs/spec/31-ui-kit.md`.
 
@@ -28,6 +28,7 @@ Mở đường dẫn `/components.html` trên địa chỉ Vite in ra. Trang `/`
 | `src/components/Navigation.tsx` | Header có menu di động và footer Rooms |
 | `src/components/SectionHeading.tsx` | Tiêu đề, nhãn và mô tả nhất quán |
 | `src/components/StatusBadge.tsx` | Nhãn trạng thái có màu và chữ rõ ràng |
+| `src/components/SharedPrimitives.tsx` | Chip lọc, thẻ nổi và nhãn “Ảnh minh họa” dùng chung |
 | `src/components/RoomSearch.tsx` | Form chọn quận và ngân sách, trả dữ liệu qua callback |
 | `src/components/RoomAccordion.tsx` | Danh sách thẻ phòng mở rộng theo lựa chọn |
 | `src/components/ImageJourney.tsx` · `depth-scene.ts` · `journey-frame.ts` | Ảnh 3D theo cuộn và ảnh tĩnh dự phòng · shader chiều sâu Three.js · chọn cặp ảnh chuyển cảnh |
@@ -36,10 +37,12 @@ Mở đường dẫn `/components.html` trên địa chỉ Vite in ra. Trang `/`
 | `src/components/QuoteCarousel.tsx` | Chuyển lời chia sẻ có điều khiển rõ ràng |
 | `src/components/CostBreakdown.tsx` | Hiển thị các khoản và tổng tiền có sẵn |
 | `src/components/effects.tsx` | Reveal, cuộn mượt và preloader do trang cha điều khiển |
+| `src/components/FormFields.tsx` | Ô nhập, ô mật khẩu, checkbox, khối báo lỗi và spinner cho biểu mẫu |
 | `src/components/useReducedMotion.ts` | Theo dõi tùy chọn giảm chuyển động và dọn listener |
 | `src/shared/formatters.ts` | Định dạng tiền VND dùng chung |
 | `public/images/rooms-*.webp` | Ảnh gallery (bản WebP nhẹ) và 2 bản đồ chiều sâu `*-depth.webp` của ảnh Hà Nội; ảnh PNG gốc `mini-*.png` vẫn giữ |
-| `tests/*.test.mjs` | 14 test Node: chuyển cảnh, định dạng tiền, WebGL, giảm chuyển động, tương tác (`npm run test:components`) |
+| `tests/*.test.mjs` | 40 test Node: chuyển cảnh, định dạng tiền, WebGL, giảm chuyển động, tương tác, biểu mẫu (`npm run test:components`) |
+| `tests/form-fields.test.mjs` | 26 test của `FormFields.tsx` và CSS biểu mẫu: nối nhãn/lỗi, bật tắt mật khẩu, tương phản, kích thước vùng bấm |
 | `vite.config.ts` | Build đồng thời `index.html` và `components.html` |
 
 ## Dùng trong một trang
@@ -73,6 +76,9 @@ Import từ `index.ts` tự tải `rooms.css`. CSS được giới hạn trong v
 | `RoomsButton` | Props button HTML, `variant: primary/sand/outline`, `magnetic?` | Nút hút theo chuột |
 | `SectionHeading` | `children`, `eyebrow?`, `description?` | Tiêu đề serif, chữ nghiêng |
 | `StatusBadge` | `children`, `tone: available/occupied/reserved/maintenance` | Trạng thái phòng bổ sung cho Rooms |
+| `FilterChip` | `selected`, `count` và props của `button` | Bộ lọc viên thuốc; trang cha quản lý trạng thái |
+| `ElevatedCard` | `children` và props của `div` | Mặt giấy bo góc, bóng nhẹ cho nội dung dùng lại |
+| `IllustrationLabel` | `children` tùy chọn, mặc định “Ảnh minh họa” | Nhãn nhìn thấy được trên ảnh AI; khung cha đặt `position: relative` |
 | `RoomSearch` | `districts`, `budgets: {value,label}[]`, `onSearch` | Thanh đặt phòng → lọc quận/ngân sách |
 | `RoomAccordion` | `rooms: RoomCardData[]`, `onSelect` | Thẻ villa mở rộng → thẻ phòng |
 | `ImageJourney` | `slides: JourneySlide[]` | Ảnh 3D theo chuột/cuộn, chuyển cảnh theo chiều sâu |
@@ -83,6 +89,11 @@ Import từ `index.ts` tự tải `rooms.css`. CSS được giới hạn trong v
 | `Reveal` | `children`, `delay?`, `className?` | Hiện nội dung khi cuộn |
 | `SmoothScroll` | `children` | Cuộn mượt Lenis, chỉ bọc một lần ở gốc trang |
 | `Preloader` | `visible`, `progress: 0..100`, `logoSrc?` | Màn hình chờ Rooms, tiến độ do bên gọi cung cấp; có `logoSrc` thì biểu tượng logo thay hình mặt trời |
+| `TextField` | Props input HTML (gồm `ref`, `name`, `onChange`, `onBlur`), `label`, `error?` | Bổ sung cho Rooms (biểu mẫu): `<label>` nối bằng `for`, chữ lỗi nối bằng `aria-describedby`, không kiểm tra dữ liệu |
+| `PasswordField` | Như `TextField` trừ `type`; nút "Hiện"/"Ẩn" | Bổ sung cho Rooms: tắt kiểm tra chính tả và tự viết hoa; truyền `autoComplete` |
+| `Checkbox` | Props input HTML trừ `type`, `label`, `error?` | Bổ sung cho Rooms: nhãn bọc quanh ô, vùng bấm cao tối thiểu 44px |
+| `FormError` | `children?` | Bổ sung cho Rooms: khối báo lỗi chung của biểu mẫu (`role="alert"`), không có nội dung thì không hiển thị |
+| `Spinner` | `label` (bắt buộc), `block` | Bổ sung cho Rooms: vòng xoay, `label` chỉ đọc cho trình đọc màn hình; dùng được trong `RoomsButton`. Có `block`: trạng thái đang tải đứng riêng (danh sách, trang, khung), căn giữa và hiện `label` thành chữ |
 
 `logoSrc` chỉ dùng với `/images/rooms-logo.webp`: CSS cắt phần cửa vòm + chìa khóa theo đúng bố cục file này (1275 × 1233). Đổi file logo thì phải sửa lại phần cắt trong `rooms.css`.
 
@@ -128,3 +139,5 @@ Ba dependency hiệu ứng `lenis`, `motion`, `three` dùng cùng phiên bản v
 Đợt rà soát 25/10/2026: 12 test, build và lint qua; kiểm tra trực tiếp menu Escape, tìm/chọn phòng, focus khi hover, mặt bằng bằng bàn phím, carousel, preloader, dữ liệu dài ở 360px, chuyển chế độ giảm chuyển động khi trang đang mở và ảnh dự phòng sau mất WebGL. `npm audit` và `npm audit --omit=dev` báo 0 lỗ hổng đã biết tại thời điểm kiểm tra.
 
 Chưa đo bộ nhớ GPU hoặc hiệu năng trên điện thoại thật. Gói Three.js tải riêng 529,78 kB trước gzip (132,66 kB nén); Vite còn cảnh báo kích thước gói này. Xem kết quả và đề xuất bước tiếp theo ở `../../../../Artifacts/reviews/2026-10-25-rooms-components-review.md`.
+
+

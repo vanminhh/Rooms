@@ -1,21 +1,19 @@
 import { Module } from '@nestjs/common';
-import { createObserveModule } from '@nestjs/observe';
-import { AppController } from './app.controller.js';
-import { AppService } from './app.service.js';
+import { ScheduleModule } from '@nestjs/schedule';
+import { PrismaModule } from './common/prisma/prisma.module.js';
+import { AuthModule } from './modules/auth/auth.module.js';
+import { FilesModule } from './modules/files/files.module.js';
+import { SettingsModule } from './modules/settings/settings.module.js';
+import { BuildingsModule } from './modules/buildings/buildings.module.js';
+import { RoomsModule } from './modules/rooms/rooms.module.js';
+import { PricingModule } from './modules/pricing/pricing.module.js';
+import { ViewingsModule } from './modules/viewings/viewings.module.js';
+import { NotificationsModule } from './modules/notifications/notifications.module.js';
 
-export const { ObserveModule, ObserveInstrument } = createObserveModule();
+// Cron (PRC-06 job) runs outside tests only.
+const scheduleImports = process.env.NODE_ENV === 'test' ? [] : [ScheduleModule.forRoot()];
 
 @Module({
-  imports: [
-    // Distributed tracing, auto-correlated logs, request/job metrics, error
-    // telemetry, alarms, and more — out of the box. Sign up at https://observe.nestjs.com
-    ObserveModule.forRoot({
-      appKey: 'YOUR_APP_KEY',
-      appSecret: 'YOUR_APP_SECRET',
-      serviceId: 'backend',
-    }),
-  ],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [PrismaModule, AuthModule, SettingsModule, FilesModule, BuildingsModule, RoomsModule, PricingModule, ViewingsModule, NotificationsModule, ...scheduleImports],
 })
 export class AppModule {}

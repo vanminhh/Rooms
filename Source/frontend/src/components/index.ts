@@ -1,4 +1,5 @@
 import './rooms.css'
+import './shared-primitives.css'
 
 export { RoomsButton } from './Button'
 export type { RoomsButtonProps } from './Button'
@@ -19,3 +20,14 @@ export type { PlanArea } from './FloorPlan'
 export { QuoteCarousel } from './QuoteCarousel'
 export { CostBreakdown } from './CostBreakdown'
 export { Reveal, SmoothScroll, Preloader } from './effects'
+export { TextField, PasswordField, Checkbox, FormError, Spinner } from './FormFields'
+export type { TextFieldProps, PasswordFieldProps, CheckboxProps } from './FormFields'
+export { ConfirmDialog } from './ConfirmDialog'
+export type { ConfirmDialogProps } from './ConfirmDialog'
+export { ImageUploader } from './ImageUploader'
+export type { ImageUploaderProps } from './ImageUploader'
+
+
+export { FilterChip, ElevatedCard, IllustrationLabel } from './SharedPrimitives'
+export type { FilterChipProps, ElevatedCardProps, IllustrationLabelProps } from './SharedPrimitives'
+

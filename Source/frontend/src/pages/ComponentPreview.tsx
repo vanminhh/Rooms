@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ReactNode } from 'react'
-import { RoomsButton, RoomsHeader, RoomsFooter, SectionHeading, StatusBadge, RoomSearch, RoomAccordion, ImageJourney, FeatureList, FloorPlan, QuoteCarousel, CostBreakdown, Reveal, SmoothScroll, Preloader } from '../components'
+import type { FormEvent, ReactNode } from 'react'
+import { RoomsButton, RoomsHeader, RoomsFooter, SectionHeading, StatusBadge, FilterChip, ElevatedCard, IllustrationLabel, RoomSearch, RoomAccordion, ImageJourney, FeatureList, FloorPlan, QuoteCarousel, CostBreakdown, Reveal, SmoothScroll, Preloader, TextField, PasswordField, Checkbox, FormError, Spinner, ConfirmDialog, ImageUploader } from '../components'
 import type { JourneySlide, RoomCardData, RoomFeature, PlanArea } from '../components'
 import { formatMoney } from '../shared/formatters'
 
@@ -8,9 +8,10 @@ const exterior = '/images/rooms-hanoi-exterior.webp'
 const interior = '/images/rooms-hanoi-room.webp'
 const logo = '/images/rooms-logo.webp'
 const sections = [
-  ['foundation', 'Nền tảng'], ['search', 'Tìm phòng'], ['rooms', 'Thẻ phòng'],
+  ['foundation', 'Nền tảng'], ['shared', 'Dùng chung'], ['search', 'Tìm phòng'], ['rooms', 'Thẻ phòng'],
   ['journey', 'Ảnh chiều sâu'], ['features', 'Tiện ích'], ['plan', 'Mặt bằng'],
-  ['quotes', 'Chia sẻ'], ['cost', 'Bảng chi phí'], ['motion', 'Chuyển động'], ['footer', 'Footer'],
+  ['quotes', 'Chia sẻ'], ['cost', 'Bảng chi phí'], ['motion', 'Chuyển động'], ['form', 'Biểu mẫu'],
+  ['dialog', 'Hộp xác nhận'], ['uploader', 'Tải ảnh'], ['footer', 'Footer'],
 ]
 const slides: JourneySlide[] = [
   { image: exterior, depth: '/images/rooms-hanoi-exterior-depth.webp', eyebrow: '01 / Từ ngõ nhỏ', title: 'Bước chậm lại.\nThấy mình ở nhà.', description: 'Một khoảng xanh giữa nhịp phố. Một lối về dành riêng cho bạn.' },
@@ -37,6 +38,7 @@ const quotes = [
   { quote: 'Có ánh sáng bên cửa sổ, có một khoảng lặng cho riêng mình. Vậy là đủ để bắt đầu.', author: 'Nội dung mẫu · Không gian sống' },
   { quote: 'Từ một nơi để ở, thành một nơi để trở về.', author: 'Nội dung mẫu · Cảm hứng thiết kế' },
 ]
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
 function Sample({ id, number, name, hint, code, children }: { id: string; number: string; name: string; hint: string; code: string; children: ReactNode }) {
   return <section id={id} className="preview-section">
@@ -48,10 +50,20 @@ function Sample({ id, number, name, hint, code, children }: { id: string; number
 
 export default function ComponentPreview() {
   const [feedback, setFeedback] = useState('Thử chọn khu vực, thẻ phòng hoặc các nút bên dưới.')
+  const [previewDistrict, setPreviewDistrict] = useState('Tất cả')
   const [loading, setLoading] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [signingIn, setSigningIn] = useState(false)
+  const [signInError, setSignInError] = useState(false)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+  const [photos, setPhotos] = useState([{ id: 1, url: interior, alt: 'Phòng mẫu nhìn từ cửa' }, { id: 2, url: exterior, alt: '' }])
   const timer = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
+  const signInTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const dialogTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   useEffect(() => () => clearInterval(timer.current), [])
+  useEffect(() => () => clearTimeout(signInTimer.current), [])
+  useEffect(() => () => clearTimeout(dialogTimer.current), [])
   const showPreloader = () => {
     clearInterval(timer.current)
     let value = 0
@@ -63,12 +75,32 @@ export default function ComponentPreview() {
       if (value === 100) { clearInterval(timer.current); setLoading(false) }
     }, 150)
   }
+  const submitDemoForm = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (signingIn) return
+    setSigningIn(true)
+    setSignInError(false)
+    signInTimer.current = setTimeout(() => {
+      setSigningIn(false)
+      setSignInError(true)
+      setFeedback('Đây là bản xem thử: biểu mẫu chưa gọi API đăng nhập.')
+    }, 1200)
+  }
+  const confirmDemo = () => {
+    if (confirming) return
+    setConfirming(true)
+    dialogTimer.current = setTimeout(() => {
+      setConfirming(false)
+      setDialogOpen(false)
+      setFeedback('Đây là bản xem thử: chưa khóa phòng thật.')
+    }, 1000)
+  }
   return <div className="rooms-theme rooms-preview" id="top">
     <a className="preview-skip" href="#library">Đến bộ component</a>
     <SmoothScroll>
       <RoomsHeader homeHref="#top" logoSrc={logo} links={[{ label: 'Thư viện', href: '#library' }, { label: 'Không gian', href: '#journey' }, { label: 'Cách dùng', href: '#usage' }]} action={<RoomsButton variant="outline" onClick={showPreloader}>Thử mở Rooms <span aria-hidden="true">↗</span></RoomsButton>} />
       <div className="preview-intro">
-        <div><span className="rooms-eyebrow">Rooms / Component collection / 02</span><h1>Những mảnh ghép<br />của <em>một nơi ở.</em></h1><p>Tinh thần An Lâm, trong hình hài Rooms. Một bộ component để bạn ghép nên giao diện Trọ Thông Minh.</p><div className="preview-intro-meta"><span>15 component</span><i /><span>React + TypeScript</span><i /><span>Chuột · Cảm ứng · Bàn phím</span></div></div>
+        <div><span className="rooms-eyebrow">Rooms / Component collection / 02</span><h1>Những mảnh ghép<br />của <em>một nơi ở.</em></h1><p>Tinh thần An Lâm, trong hình hài Rooms. Một bộ component để bạn ghép nên giao diện Trọ Thông Minh.</p><div className="preview-intro-meta"><span>23 component</span><i /><span>React + TypeScript</span><i /><span>Chuột · Cảm ứng · Bàn phím</span></div></div>
         <figure><img src={exterior} alt="Tòa nhà với ban công xanh trong bộ ảnh Rooms" /><figcaption><span>Chất liệu có sẵn, câu chuyện mới.</span><span>Hà Nội / 01</span></figcaption></figure>
       </div>
       <div className="preview-shell" id="library">
@@ -81,35 +113,68 @@ export default function ComponentPreview() {
             <div className="preview-button-row"><RoomsButton onClick={() => setFeedback('Đã nhấn nút chính — bạn có thể truyền onClick để mở chi tiết phòng.')}>Khám phá phòng ↗</RoomsButton><RoomsButton variant="outline" onClick={() => setFeedback('Đã nhấn nút viền — hành động do trang sử dụng component quyết định.')}>Tìm hiểu thêm</RoomsButton><RoomsButton disabled>Chưa khả dụng</RoomsButton></div>
             <div className="preview-badges"><StatusBadge>Còn trống</StatusBadge><StatusBadge tone="occupied">Đang thuê</StatusBadge><StatusBadge tone="reserved">Đã giữ chỗ</StatusBadge><StatusBadge tone="maintenance">Bảo trì</StatusBadge></div>
           </Sample>
-          <Sample id="search" number="02" name="Tìm phòng" hint="RoomSearch · Chọn quận và ngân sách, gửi dữ liệu qua onSearch." code={'<RoomSearch\n  districts={["Ba Đình", "Cầu Giấy"]}\n  budgets={[{ value: "5000000", label: "Đến 5 triệu" }]}\n  onSearch={({ district, maxPrice }) => searchRooms({ district, maxPrice })}\n/>'}>
+          <Sample id="shared" number="02" name="Thành phần dùng chung" hint="FilterChip · ElevatedCard · IllustrationLabel · StatusBadge theo hướng Stitch." code={'<FilterChip selected count={5}>Ba Đình</FilterChip>\n<ElevatedCard>Nội dung thẻ</ElevatedCard>\n<div style={{ position: "relative" }}>\n  <img src={image} alt="Tòa nhà tại Hà Nội" />\n  <IllustrationLabel />\n</div>'}>
+            <div className="preview-shared-grid">
+              <ElevatedCard><span className="rooms-eyebrow">Thẻ nổi</span><h3>Nền giấy, bóng nhẹ.</h3><p>Dùng lại ở trang chủ, danh sách phòng và khung thông tin khi cần tách lớp nội dung.</p></ElevatedCard>
+              <figure className="preview-illustration"><img src="/images/hero-building.webp" alt="Tòa nhà phong cách Đông Dương tại Hà Nội" /><IllustrationLabel /><figcaption>Ảnh AI tạm luôn có nhãn nhìn thấy được.</figcaption></figure>
+            </div>
+            <div className="preview-filter-chips" aria-label="Lọc theo quận">{[['Tất cả', 18], ['Ba Đình', 5], ['Cầu Giấy', 8], ['Đống Đa', 5]].map(([label, count]) => <FilterChip key={label} selected={previewDistrict === label} count={Number(count)} onClick={() => setPreviewDistrict(String(label))}>{label}</FilterChip>)}<FilterChip disabled count={0}>Tây Hồ</FilterChip></div>
+            <div className="preview-badges"><StatusBadge>Còn trống</StatusBadge><StatusBadge tone="occupied">Đang thuê</StatusBadge><StatusBadge tone="reserved">Đã cọc</StatusBadge><StatusBadge tone="maintenance">Bảo trì</StatusBadge></div>
+          </Sample>
+          <Sample id="search" number="03" name="Tìm phòng" hint="RoomSearch · Chọn quận và ngân sách, gửi dữ liệu qua onSearch." code={'<RoomSearch\n  districts={["Ba Đình", "Cầu Giấy"]}\n  budgets={[{ value: "5000000", label: "Đến 5 triệu" }]}\n  onSearch={({ district, maxPrice }) => searchRooms({ district, maxPrice })}\n/>'}>
             <SectionHeading eyebrow="Một nơi phù hợp">Bắt đầu từ điều bạn cần.</SectionHeading>
             <RoomSearch districts={['Ba Đình', 'Cầu Giấy', 'Tây Hồ']} budgets={[{ value: '5000000', label: 'Đến 5 triệu' }, { value: '7000000', label: 'Đến 7 triệu' }]} onSearch={({ district, maxPrice }) => setFeedback(`Đã nhận bộ lọc: ${district || 'Tất cả quận'} · ${maxPrice ? `Đến ${formatMoney(Number(maxPrice))}/tháng` : 'Mọi ngân sách'}. Đây là bản xem thử, chưa gọi API.`)} />
           </Sample>
-          <Sample id="rooms" number="03" name="Thẻ phòng mở rộng" hint="RoomAccordion · Rê chuột, chạm hoặc dùng Tab để chọn một phòng." code={'<RoomAccordion rooms={rooms} onSelect={(room) => openRoom(room.id)} />\n// rooms: { id, name, image, description, metadata, price }[]'}>
+          <Sample id="rooms" number="04" name="Thẻ phòng mở rộng" hint="RoomAccordion · Rê chuột, chạm hoặc dùng Tab để chọn một phòng." code={'<RoomAccordion rooms={rooms} onSelect={(room) => openRoom(room.id)} />\n// rooms: { id, name, image, description, metadata, price }[]'}>
             <SectionHeading eyebrow="Một góc sống của riêng bạn" description="Giữ chuyển động mở rộng của thẻ villa An Lâm, chuyển nội dung sang phòng thuê theo tháng.">Chọn một nhịp sống.</SectionHeading>
             <RoomAccordion rooms={rooms} onSelect={(room) => setFeedback(`Đã chọn ${room.name} (${room.id}). Gắn onSelect với trang chi tiết khi ghép vào ứng dụng.`)} />
           </Sample>
-          <Sample id="journey" number="04" name="Hành trình ảnh 3D" hint="ImageJourney · Di chuyển chuột và cuộn qua hai không gian." code={'<ImageJourney slides={[{\n  image: "/images/rooms-hanoi-exterior.webp",\n  depth: "/images/rooms-hanoi-exterior-depth.webp",\n  eyebrow: "01 / Chào Rooms",\n  title: "Một nơi để trở về.",\n  description: "Khoảng xanh giữa lòng phố."\n}]} />'}>
+          <Sample id="journey" number="05" name="Hành trình ảnh 3D" hint="ImageJourney · Di chuyển chuột và cuộn qua hai không gian." code={'<ImageJourney slides={[{\n  image: "/images/rooms-hanoi-exterior.webp",\n  depth: "/images/rooms-hanoi-exterior-depth.webp",\n  eyebrow: "01 / Chào Rooms",\n  title: "Một nơi để trở về.",\n  description: "Khoảng xanh giữa lòng phố."\n}]} />'}>
             <ImageJourney slides={slides} />
           </Sample>
-          <Sample id="features" number="05" name="Danh sách tiện ích" hint="FeatureList · Ảnh đi theo chuột, nội dung thay khi chọn từng mục." code={'<FeatureList items={features} />\n// features: { id, title, description, image }[]'}>
+          <Sample id="features" number="06" name="Danh sách tiện ích" hint="FeatureList · Ảnh đi theo chuột, nội dung thay khi chọn từng mục." code={'<FeatureList items={features} />\n// features: { id, title, description, image }[]'}>
             <SectionHeading eyebrow="Những điều nhỏ, vừa đủ">Ở dễ chịu.<br /><em>Sống nhẹ nhàng.</em></SectionHeading>
             <FeatureList items={features} />
           </Sample>
-          <Sample id="plan" number="06" name="Mặt bằng tương tác" hint="FloorPlan · Chọn từng vùng bằng chuột, cảm ứng hoặc bàn phím." code={'<FloorPlan areas={areas} viewBox="0 0 600 460" />\n// areas: { id, name, description, image, path, labelX, labelY }[]'}>
+          <Sample id="plan" number="07" name="Mặt bằng tương tác" hint="FloorPlan · Chọn từng vùng bằng chuột, cảm ứng hoặc bàn phím." code={'<FloorPlan areas={areas} viewBox="0 0 600 460" />\n// areas: { id, name, description, image, path, labelX, labelY }[]'}>
             <SectionHeading eyebrow="Hiểu không gian trước khi đến">Mỗi góc, một công năng.</SectionHeading>
             <FloorPlan areas={areas} />
           </Sample>
-          <Sample id="quotes" number="07" name="Chia sẻ dạng trình chiếu" hint="QuoteCarousel · Chuột và chạm chuyển nhẹ; bàn phím đổi ngay. Không tự chạy." code={'<QuoteCarousel quotes={[{ quote: "Một nơi để trở về.", author: "Tên người chia sẻ" }]} />'}>
+          <Sample id="quotes" number="08" name="Chia sẻ dạng trình chiếu" hint="QuoteCarousel · Chuột và chạm chuyển nhẹ; bàn phím đổi ngay. Không tự chạy." code={'<QuoteCarousel quotes={[{ quote: "Một nơi để trở về.", author: "Tên người chia sẻ" }]} />'}>
             <QuoteCarousel quotes={quotes} />
           </Sample>
-          <Sample id="cost" number="08" name="Bảng chi phí" hint="CostBreakdown · Chỉ trình bày số tiền đã nhận, không tính hóa đơn." code={'<CostBreakdown\n  items={invoice.items}\n  total={invoice.total}\n  note="Số tiền do hệ thống cung cấp."\n/>'}>
+          <Sample id="cost" number="09" name="Bảng chi phí" hint="CostBreakdown · Chỉ trình bày số tiền đã nhận, không tính hóa đơn." code={'<CostBreakdown\n  items={invoice.items}\n  total={invoice.total}\n  note="Số tiền do hệ thống cung cấp."\n/>'}>
             <CostBreakdown items={[{ label: 'Tiền phòng', amount: 4500000 }, { label: 'Internet', amount: 100000 }, { label: 'Dịch vụ chung', amount: 150000 }]} total={4750000} note="Ví dụ trình bày · Không phải báo giá. Chưa gồm điện, nước. Khi dùng thật, nhận từng khoản và tổng tiền từ backend." />
           </Sample>
-          <Sample id="motion" number="09" name="Chuyển động & mở đầu" hint="Reveal · SmoothScroll · Preloader · Tôn trọng tùy chọn giảm chuyển động." code={'<SmoothScroll>\n  <Reveal><SectionHeading>Chào Rooms.</SectionHeading></Reveal>\n</SmoothScroll>\n<Preloader visible={isLoading} progress={progress} />'}>
+          <Sample id="motion" number="10" name="Chuyển động & mở đầu" hint="Reveal · SmoothScroll · Preloader · Tôn trọng tùy chọn giảm chuyển động." code={'<SmoothScroll>\n  <Reveal><SectionHeading>Chào Rooms.</SectionHeading></Reveal>\n</SmoothScroll>\n<Preloader visible={isLoading} progress={progress} />'}>
             <Reveal><div className="preview-motion-card"><span className="rooms-eyebrow">Nhẹ vừa đủ để cảm nhận</span><h3>Mượt mà,<br /><em>không vội vàng.</em></h3><p>Hiệu ứng hiện khi cuộn đang được dùng trong trang này. Nút bên dưới mở bản xem thử màn hình chờ.</p><RoomsButton onClick={showPreloader}>Xem preloader <span aria-hidden="true">↗</span></RoomsButton></div></Reveal>
           </Sample>
-          <Sample id="footer" number="10" name="Chân trang Rooms" hint="RoomsFooter · Nội dung liên hệ và các liên kết truyền từ bên ngoài." code={'<RoomsFooter\n  description="Không gian để thuộc về."\n  contact={<a href="/lien-he">Liên hệ Rooms ↗</a>}\n  links={[{ label: "Tìm phòng", href: "/phong" }]}\n/>'}>
+          <Sample id="form" number="11" name="Biểu mẫu" hint="TextField · PasswordField · Checkbox · FormError · Spinner · Nhãn, chữ lỗi và viền focus cho bàn phím." code={'<form onSubmit={handleSubmit(onSubmit)}>\n  <FormError>{apiError?.message}</FormError>\n  <TextField label="Số điện thoại" type="tel" autoComplete="tel" {...register("phone")} error={errors.phone?.message} />\n  <PasswordField label="Mật khẩu" autoComplete="current-password" {...register("password")} error={errors.password?.message} />\n  <Checkbox label="Ghi nhớ đăng nhập" {...register("remember")} />\n  <RoomsButton type="submit" disabled={isSubmitting}>{isSubmitting && <Spinner label="Đang đăng nhập" />}Đăng nhập</RoomsButton>\n</form>'}>
+            <form className="preview-form" noValidate onSubmit={submitDemoForm}>
+              <FormError>{signInError && 'Số điện thoại hoặc mật khẩu không đúng'}</FormError>
+              <TextField label="Số điện thoại" type="tel" inputMode="numeric" autoComplete="tel" />
+              <PasswordField label="Mật khẩu" autoComplete="current-password" />
+              <Checkbox label="Ghi nhớ đăng nhập" />
+              <RoomsButton type="submit" disabled={signingIn}>{signingIn && <Spinner label="Đang đăng nhập" />}Đăng nhập</RoomsButton>
+            </form>
+            <div className="preview-form-states">
+              <TextField label="Số điện thoại" defaultValue="0912" error="Số điện thoại gồm 10 chữ số, bắt đầu bằng 0" />
+              <TextField label="Ô bị khóa" defaultValue="Không nhập được" disabled />
+              <Spinner label="Đang tải" />
+              <Spinner block label="Đang tải danh sách" />
+            </div>
+          </Sample>
+          <Sample id="dialog" number="12" name="Hộp xác nhận" hint="ConfirmDialog · Tab giữ trong hộp, Escape hoặc Hủy trả focus về nút đã mở; nút xác nhận chỉ nhận một lần khi đang xử lý." code={'<ConfirmDialog\n  open={open}\n  title="Khóa phòng 101?"\n  description="Còn 2 lịch hẹn chưa xử lý."\n  confirmLabel="Khóa phòng"\n  pending={pending}\n  onConfirm={lockRoom}\n  onClose={() => setOpen(false)}\n/>'}>
+            <RoomsButton variant="outline" onClick={() => setDialogOpen(true)}>Mở hộp xác nhận</RoomsButton>
+            <ConfirmDialog open={dialogOpen} title="Khóa phòng 101?" description="Còn 2 lịch hẹn chưa xử lý. Phòng sẽ không nhận lịch mới sau khi khóa." confirmLabel="Khóa phòng" cancelLabel="Giữ mở" pending={confirming} onConfirm={confirmDemo} onClose={() => setDialogOpen(false)} />
+          </Sample>
+          <Sample id="uploader" number="13" name="Tải ảnh" hint="ImageUploader · Chặn file quá dung lượng hoặc sai định dạng trước onUpload; giới hạn số ảnh; sắp xếp bằng nút Lên và Xuống." code={'<ImageUploader\n  images={photos}  // { id, url, alt }[]\n  maxImages={10}\n  maxBytes={5_000_000}\n  accept="image/jpeg,image/png,image/webp"\n  onUpload={uploadPhoto}\n  onDelete={deletePhoto}\n  onReorder={reorderPhotos}\n/>'}>
+            <ImageUploader images={photos} maxImages={10} maxBytes={5_000_000} accept="image/jpeg,image/png,image/webp"
+              onUpload={async file => { await wait(600); setPhotos(list => [...list, { id: Date.now(), url: interior, alt: file.name }]) }}
+              onDelete={async id => { await wait(300); setPhotos(list => list.filter(photo => photo.id !== id)) }}
+              onReorder={async ids => { await wait(300); setPhotos(list => ids.flatMap(id => list.filter(photo => photo.id === id))) }} />
+          </Sample>
+          <Sample id="footer" number="14" name="Chân trang Rooms" hint="RoomsFooter · Nội dung liên hệ và các liên kết truyền từ bên ngoài." code={'<RoomsFooter\n  description="Không gian để thuộc về."\n  contact={<a href="/lien-he">Liên hệ Rooms ↗</a>}\n  links={[{ label: "Tìm phòng", href: "/phong" }]}\n/>'}>
             <RoomsFooter description="Từ một căn phòng vừa vặn, đến một nhịp sống của riêng bạn." contact={<a href="#search">Khám phá không gian ↗</a>} links={[{ label: 'Tìm phòng', href: '#search' }, { label: 'Tiện ích', href: '#features' }, { label: 'Về đầu trang ↑', href: '#top' }]} />
           </Sample>
           <section id="usage" className="preview-usage"><span className="rooms-eyebrow">Sẵn sàng để ghép trang</span><h2>Import. Truyền dữ liệu.<br /><em>Đặt vào giao diện của bạn.</em></h2><p>Component nằm ở <code>src/components</code>. Bao vùng sử dụng bằng <code>rooms-theme</code> để áp dụng màu, font và kiểu hiển thị. Xem README trong thư mục để biết props và phần chuyển từ An Lâm.</p><pre><code>{'import { RoomsButton } from "./components"\n\n<div className="rooms-theme">\n  <RoomsButton onClick={handleSelect}>Xem phòng ↗</RoomsButton>\n</div>'}</code></pre></section>
@@ -120,3 +185,5 @@ export default function ComponentPreview() {
     </SmoothScroll>
   </div>
 }
+
+
