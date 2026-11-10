@@ -1,4 +1,15 @@
 /* Frame shared by the three layouts; colors come from the kit tokens inside .rooms-theme. */
+
+/* Session check before a protected layout renders (RequireAuth): fill the screen with sand, not white. */
+.rooms-theme.layout-startup {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 16px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 24px;
+}
 /* UI-40: on short pages the sand background reaches the bottom of the viewport. */
 .rooms-theme:has(> .layout-main) {
   min-height: 100vh;

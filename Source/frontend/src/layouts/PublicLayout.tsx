@@ -27,6 +27,6 @@ export function PublicLayout() {
       logoSrc="/images/rooms-logo.webp"
     />
     <main className="layout-main"><Outlet /></main>
-    <RoomsFooter id="lien-he" description="Chung cư mini cho thuê tại Hà Nội." contact={<ContactInfo contact={contact.data ?? null} />} links={[{ label: 'Xem phòng trống', href: '/phong' }]} />
+    <RoomsFooter id="lien-he" description="Chung cư mini cho thuê tại Hà Nội." contact={<ContactInfo contact={contact.data ?? null} />} links={[{ label: 'Xem phòng trống', href: '/phong' }]} areaLinks={[{ label: 'Xem các khu vực', href: '/#khu-vuc' }]} />
   </div>
 }

@@ -197,6 +197,9 @@ async function mount(element) {
   const root = createRoot(container)
   root.render(element)
   await wait(30)
+  // Flake fix (11/11/2026): 30 ms is not always enough on a busy machine; wait until the first commit has put
+  // something into the container (max 3 s) so a test never queries an empty tree.
+  for (let tries = 0; tries < 300 && container.childNodes.length === 0; tries++) await wait(10)
   return { container, rerender: async next => { root.render(next); await wait(30) }, stop: async () => { root.unmount(); await wait(10) } }
 }
 
@@ -444,7 +447,8 @@ test('UI-03: ManagerList shows a loading spinner, then an empty state with a nex
     root.render(withQuery(React.createElement(ManagerList, {})))
     await wait(5)
     assert.ok(find(container, n => n.getAttribute('role') === 'status').length > 0, 'loading state must show a Spinner')
-    await wait(40)
+    // Flake fix (11/11/2026): poll (max 3 s) instead of a fixed 40 ms, which a busy machine can overrun.
+    for (let tries = 0; tries < 300 && !container.textContent.includes('Chưa có tài khoản quản lý nào'); tries++) await wait(10)
     assert.ok(container.textContent.includes('Chưa có tài khoản quản lý nào'), 'empty state text with next step missing')
   } finally {
     // Always unmount, even if an assertion threw above: an unmounted-but-still-querying tree left running in

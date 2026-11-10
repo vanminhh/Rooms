@@ -218,6 +218,9 @@ async function mount(element) {
   const root = createRoot(container)
   root.render(element)
   await wait(30)
+  // Flake fix (11/11/2026): 30 ms is not always enough on a busy machine; wait until the first commit has put
+  // something into the container (max 3 s) so a test never queries an empty tree.
+  for (let tries = 0; tries < 300 && container.childNodes.length === 0; tries++) await wait(10)
   return { container, rerender: async next => { root.render(next); await wait(30) }, stop: async () => { root.unmount(); await wait(10) } }
 }
 
@@ -324,7 +327,7 @@ test('ROOM-01/ROOM-02: roomFormSchema has no "price" field at all — the form c
 
 test('ROOM-02: creating a room sends buildingId/code/floor/areaM2/maxOccupants/furniture/description, never price, and defaults maxOccupants to 2 when left untouched', async () => {
   const calls = fakeFetch([{ prefix: '/rooms', method: 'POST', handler: () => ok(baseRoomView()) }])
-  const app = await mount(withRouter(React.createElement(RoomForm, { buildingId: 5, onCancel: () => {} })))
+  const app = await mountRoomForm()
   fill(app.container, byName(app.container, 'code'), 'A101')
   fill(app.container, byName(app.container, 'floor'), '3')
   fill(app.container, byName(app.container, 'areaM2'), '20.5')
@@ -342,7 +345,7 @@ test('ROOM-02: creating a room sends buildingId/code/floor/areaM2/maxOccupants/f
 test('ROOM-01: a one-character code (1) and a ten-character code (10) both pass client validation and reach POST /rooms', async () => {
   for (const code of ['A', 'A123456789']) {
     const calls = fakeFetch([{ prefix: '/rooms', method: 'POST', handler: () => ok(baseRoomView({ code })) }])
-    const app = await mount(withRouter(React.createElement(RoomForm, { buildingId: 5, onCancel: () => {} })))
+    const app = await mountRoomForm()
     fill(app.container, byName(app.container, 'code'), code)
     fill(app.container, byName(app.container, 'floor'), '1')
     fill(app.container, byName(app.container, 'areaM2'), '10')
@@ -357,7 +360,7 @@ test('ROOM-01: a one-character code (1) and a ten-character code (10) both pass 
 
 test('ROOM-01: an 11-character code fails client-side; POST /rooms is never sent', async () => {
   const calls = fakeFetch([{ prefix: '/rooms', method: 'POST', handler: () => ok(baseRoomView()) }])
-  const app = await mount(withRouter(React.createElement(RoomForm, { buildingId: 5, onCancel: () => {} })))
+  const app = await mountRoomForm()
   fill(app.container, byName(app.container, 'code'), 'A'.repeat(11))
   fill(app.container, byName(app.container, 'floor'), '1')
   fill(app.container, byName(app.container, 'areaM2'), '10')
@@ -369,7 +372,7 @@ test('ROOM-01: an 11-character code fails client-side; POST /rooms is never sent
 
 test('ROOM-01: furniture text "Giường, Tủ" becomes ["Giường","Tủ"] in the request body', async () => {
   const calls = fakeFetch([{ prefix: '/rooms', method: 'POST', handler: () => ok(baseRoomView()) }])
-  const app = await mount(withRouter(React.createElement(RoomForm, { buildingId: 5, onCancel: () => {} })))
+  const app = await mountRoomForm()
   fill(app.container, byName(app.container, 'code'), 'A101')
   fill(app.container, byName(app.container, 'floor'), '1')
   fill(app.container, byName(app.container, 'areaM2'), '10')
@@ -382,7 +385,7 @@ test('ROOM-01: furniture text "Giường, Tủ" becomes ["Giường","Tủ"] in 
 
 test('ROOM-01: a 409 CONFLICT_STATE from a duplicate code (even against a locked room) is shown as the form message', async () => {
   const calls = fakeFetch([{ prefix: '/rooms', method: 'POST', handler: () => fail(400, 'VALIDATION_FAILED', 'Mã phòng đã tồn tại trong tòa này', { code: 'Mã phòng đã tồn tại trong tòa này' }) }])
-  const app = await mount(withRouter(React.createElement(RoomForm, { buildingId: 5, onCancel: () => {} })))
+  const app = await mountRoomForm()
   fill(app.container, byName(app.container, 'code'), 'A101')
   fill(app.container, byName(app.container, 'floor'), '1')
   fill(app.container, byName(app.container, 'areaM2'), '10')
@@ -711,3 +714,12 @@ test('PRC-07: an expired pending proposal changes the button text to "Đề xu�
   assert.ok(dialog.textContent.includes('Đề xuất lại giá phòng A101'), 'the dialog title must read "Đề xuất lại giá phòng {code}"')
   await app.stop()
 })
+
+// UI-40 flake fix: on a busy machine mount() can resolve before RoomForm has rendered its fields, so the first
+// fill() got `undefined`. Wait (max 3 s) until the code input exists before a test starts typing.
+async function mountRoomForm() {
+  const app = await mount(withRouter(React.createElement(RoomForm, { buildingId: 5, onCancel: () => {} })))
+  for (let tries = 0; tries < 300 && !byName(app.container, 'code'); tries++) await wait(10)
+  assert.ok(byName(app.container, 'code'), 'RoomForm did not render its fields')
+  return app
+}

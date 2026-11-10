@@ -47,7 +47,7 @@ export function RoomsHeader({ links, supplementalLinks = [], accountHref, action
   </header>
 }
 
-export function RoomsFooter({ description, contact, links = [], id }: { description: string; contact: ReactNode; links?: RoomsLink[]; id?: string }) {
+export function RoomsFooter({ description, contact, links = [], areaLinks = [], id }: { description: string; contact: ReactNode; links?: RoomsLink[]; areaLinks?: RoomsLink[]; id?: string }) {
   return <footer className="rooms-footer" id={id}>
     <section className="rooms-footer-intro" aria-labelledby="rooms-footer-brand">
       <p className="rooms-footer-brand" id="rooms-footer-brand">ROOMS</p>
@@ -62,6 +62,7 @@ export function RoomsFooter({ description, contact, links = [], id }: { descript
     <section>
       <h2>Khu vực</h2>
       <p>Khám phá các tòa nhà tại Hà Nội theo khu vực.</p>
+      {areaLinks.length > 0 && <nav aria-label="Khu vực">{areaLinks.map(link => <a key={`${link.label}-${link.href}`} href={link.href}>{link.label}</a>)}</nav>}
     </section>
     <section className="rooms-footer-contact">
       <h2>Liên hệ</h2>

@@ -126,7 +126,8 @@ const texts = nodes => nodes.filter(n => typeof n === 'string')
 test('Q6-A: RequireAuth while loading shows a Spinner "Đang tải" inside .rooms-theme', () => {
   const m = loadRequireAuth({ status: 'loading', user: null, retry() {} })
   const root = m.RequireAuth({ allow: 'any' })
-  assert.equal(root.props.className, 'rooms-theme')
+  // UI-13 (10/11/2026): the startup screen fills the viewport (layout-startup) instead of leaving white below.
+  assert.equal(root.props.className, 'rooms-theme layout-startup')
   const nodes = flatten(root)
   assert.ok(nodes.some(n => n.type === m.Spinner && n.props.label === 'Đang tải'))
 })
@@ -135,7 +136,7 @@ test('Q6-A: RequireAuth on startup error shows the alert and "Thử lại" (retr
   let retried = 0
   const m = loadRequireAuth({ status: 'error', user: null, retry: () => { retried++ } })
   const root = m.RequireAuth({ allow: ['TENANT'] })
-  assert.equal(root.props.className, 'rooms-theme')
+  assert.equal(root.props.className, 'rooms-theme layout-startup')
   const nodes = flatten(root)
   const alert = nodes.find(n => n.type === 'p' && n.props.role === 'alert')
   assert.ok(alert)
@@ -304,6 +305,8 @@ test('UI-11/Q3-A: PublicLayout footer carries the Hà Nội description, room li
   const footer = find(exports.PublicLayout(), n => n.type === fakes.RoomsFooter)
   assert.equal(footer.props.description, 'Chung cư mini cho thuê tại Hà Nội.')
   assert.deepEqual(footer.props.links, [{ label: 'Xem phòng trống', href: '/phong' }])
+  // UI review 10/11/2026: the "Khu vực" column links to the district section of the home page.
+  assert.deepEqual(footer.props.areaLinks, [{ label: 'Xem các khu vực', href: '/#khu-vuc' }])
   assert.equal(footer.props.contact.type, fakes.ContactInfo)
   assert.equal(footer.props.contact.props.contact, data)
 })

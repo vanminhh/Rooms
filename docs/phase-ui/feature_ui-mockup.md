@@ -150,10 +150,12 @@ Chưa có.
 
 <!-- Khi task [!]: ngày · mã task · lỗi gì · cần gì -->
 - 10/11/2026 · UI-03..33 · Giao diện được làm thẳng vào file chính, không có bản nháp và REVIEW.md, spec chưa cập nhật (xử lý ở UI-01). Dấu `[?]` chờ chủ dự án kiểm tay theo mục "Bạn kiểm tay" của từng task.
-- 10/11/2026 · UI-24 · Sau 18:00, chọn "Hôm nay" thì cả 3 khung giờ bị khóa, khách không gửi được (`ViewingForm.tsx:84`). Cần khóa nút "Hôm nay" khi không còn khung nào (P2).
-- 10/11/2026 · UI-11 · Chữ "APARTMENTS HANOI" 6–7 px (`Navigation.css:140`), nhãn thanh lọc 9 px (`rooms.css:94`), eyebrow 10 px; nên ≥ 11–12 px (P2).
-- 10/11/2026 · UI-24 · Trên điện thoại khung đặt lịch nằm cuối trang chi tiết phòng; cần nút "Đặt lịch xem" cố định dẫn xuống form (P2).
-- 10/11/2026 · UI-40 · `npm run test:components`: 5/731 test đỏ khi chạy cả bộ (`cp7-rooms`, `fe-p2-14-home`, `fe11-approvals`) nhưng xanh khi chạy riêng: test chập chờn (P2).
-- 10/11/2026 · UI-13 · Tải lại trang quản lý: khoảng 8 giây nền trắng với vòng "Đang tải" trước khi hiện trang (P2).
-- 10/11/2026 · UI-23/UI-40 · P3: viền dày một bên (`rooms.css:63`, `auth.css:30`, `public-room-detail.css:56`); cột "Khu vực" ở chân trang không có liên kết; khung ảnh lớn hiện nút ‹ › khi chỉ 1 ảnh, không dùng phím mũi tên; giá "Đến 5.000.000" và "Trên 5.000.000" cùng tính 5.000.000.
+- 10/11/2026 · UI-24 · Sau 18:00, chọn "Hôm nay" thì cả 3 khung giờ bị khóa, khách không gửi được (`ViewingForm.tsx:84`). Cần khóa nút "Hôm nay" khi không còn khung nào (P2). **Đã sửa 10/11/2026** (`approved/2026-11-10-UI-P2-fixes`).
+- 10/11/2026 · UI-11 · Chữ "APARTMENTS HANOI" 6–7 px (`Navigation.css:140`), nhãn thanh lọc 9 px (`rooms.css:94`), eyebrow 10 px; nên ≥ 11–12 px (P2). **Đã sửa 10/11/2026**: chữ logo 9/10 px, còn lại ≥ 11 px.
+- 10/11/2026 · UI-24 · Trên điện thoại khung đặt lịch nằm cuối trang chi tiết phòng; cần nút "Đặt lịch xem" cố định dẫn xuống form (P2). **Đã sửa 10/11/2026** (`BookingJumpBar`).
+- 10/11/2026 · UI-40 · `npm run test:components`: 5/731 test đỏ khi chạy cả bộ (`cp7-rooms`, `fe-p2-14-home`, `fe11-approvals`) nhưng xanh khi chạy riêng: test chập chờn (P2). **Đã sửa 10/11/2026**: test chờ form hiện đủ / chỉ đếm 2 khối danh sách.
+- 10/11/2026 · UI-13 · Tải lại trang quản lý: khoảng 8 giây nền trắng với vòng "Đang tải" trước khi hiện trang (P2). **Đã sửa nền 10/11/2026** (`layout-startup`); thời gian chờ là do BE/DB dev, chưa xử lý.
+- 10/11/2026 · UI-23/UI-40 · P3: viền dày một bên (`rooms.css:63`, `auth.css:30`, `public-room-detail.css:56`); cột "Khu vực" ở chân trang không có liên kết; khung ảnh lớn hiện nút ‹ › khi chỉ 1 ảnh, không dùng phím mũi tên; giá "Đến 5.000.000" và "Trên 5.000.000" cùng tính 5.000.000. **Đã sửa 11/11/2026** (sửa thẳng file chính theo chủ dự án): viền 1 px bo góc thay viền dày; chân trang thêm "Xem các khu vực" → `/#khu-vuc`; khung ảnh lớn ẩn ‹ › khi 1 ảnh, có phím ← →; đổi chữ thành "Từ 5.000.000 đ" (cách lọc giữ theo A-8). Bộ dò impeccable: 0 lỗi.
+- 11/11/2026 · UI-23 · Báo nhầm (gỡ): "khung ảnh lớn lệch trên 360 px" là do khung xem của app thu nhỏ ảnh chụp; đo thực tế khung phủ kín 360×780, nút đóng và ‹ › đúng chỗ.
+- 11/11/2026 · UI-40 · Test chập chờn còn ở nhiều file cũ (RoomCard UI-08, RATE-01, AUTH-08, API-05…). Gốc rễ: 11 hàm `mount` chờ cứng 30 ms rồi coi như đã vẽ xong. **Đã sửa**: chờ tới khi container có nội dung (tối đa 3 s) trong `public-dom.mjs` và 10 file test, cùng 1 chỗ chờ cứng 40 ms trong `cp6-managers`. Giới hạn 4 file song song đã thử và không đủ, nên không dùng. Kết quả: 3 lần chạy liền 738/738.
 - 10/11/2026 · dữ liệu dev · Phòng 201 (id 7) trên DB dev dùng ảnh quảng cáo điện thoại; dọn trước khi go-live.

@@ -353,7 +353,9 @@ test('KIT-01: form styles live under the kit tokens: error token inside .rooms-t
   assert.match(theme, /--rooms-error:\s*#9b2c1f/)
   assert.match(css, /\.rooms-field-input\[aria-invalid='true'\]\s*\{\s*border-color:\s*var\(--rooms-error\)/)
   assert.match(css, /\.rooms-field-error\s*\{[^}]*color:\s*var\(--rooms-error\)/)
-  assert.match(css, /\.rooms-form-error\s*\{[^}]*border-left:\s*3px solid var\(--rooms-error\)/)
+  // UI review 10/11/2026: a full 1 px error border with the input radius instead of a thick left stripe.
+  assert.match(css, /\.rooms-form-error\s*\{[^}]*border:\s*1px solid var\(--rooms-error\)/)
+  assert.doesNotMatch(css, /\.rooms-form-error\s*\{[^}]*border-left/)
 })
 
 test('UI-08: keyboard focus ring covers inputs (3px gold, offset <= 3px) and the checkbox', () => {

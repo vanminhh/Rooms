@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent, MouseEvent, ReactNode } from 'react'
 import { Link } from 'react-router'
+import { BookingJumpBar } from '../../features/public/BookingJumpBar'
 import '../../features/public/public-room-detail.css'
 
 export interface RoomDetailViewData {
@@ -38,6 +39,7 @@ export interface RoomDetailViewProps {
 export function RoomDetailView({ room, statusBadge, estimatePanel, rateTable, contactCard, viewingForm, formatMoney }: RoomDetailViewProps) {
   const { building } = room
   const [shareMessage, setShareMessage] = useState('')
+  const bookingCard = useRef<HTMLElement>(null)
 
   async function copyCurrentLink() {
     if (navigator.clipboard?.writeText) {
@@ -120,7 +122,7 @@ export function RoomDetailView({ room, statusBadge, estimatePanel, rateTable, co
           {rateTable}
         </section>
       </div>
-      <aside className="public-detail-aside public-booking-card" aria-label={`Đặt lịch xem phòng ${room.code}`}>
+      <aside ref={bookingCard} className="public-detail-aside public-booking-card" aria-label={`Đặt lịch xem phòng ${room.code}`}>
         <div className="public-booking-price">
           <p className="rooms-eyebrow">Giá thuê niêm yết</p>
           <p><strong>{formatMoney(room.price)}</strong></p>
@@ -137,6 +139,7 @@ export function RoomDetailView({ room, statusBadge, estimatePanel, rateTable, co
         {contactCard}
       </aside>
     </div>
+    <BookingJumpBar target={bookingCard} roomCode={room.code} priceLabel={formatMoney(room.price)} />
   </article>
 }
 
@@ -164,15 +167,27 @@ function RoomGallery({ room }: { room: RoomDetailViewData }) {
     setActiveIndex(null)
   }
 
+  const hasMany = room.images.length > 1
+
+  function step(delta: number) {
+    setActiveIndex(index => index === null ? null : (index + delta + room.images.length) % room.images.length)
+  }
+
   function handleDialogKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key === 'Escape') {
       event.preventDefault()
       closeImage()
       return
     }
+    if (hasMany && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
+      event.preventDefault()
+      step(event.key === 'ArrowLeft' ? -1 : 1)
+      return
+    }
     if (event.key !== 'Tab') return
     const first = closeButton.current
-    const last = nextButton.current
+    // With one photo there are no ‹ › buttons, so the close button is the only stop in the trap.
+    const last = hasMany ? nextButton.current : closeButton.current
     if (event.shiftKey && document.activeElement === first) {
       event.preventDefault()
       last?.focus()
@@ -195,9 +210,9 @@ function RoomGallery({ room }: { room: RoomDetailViewData }) {
     </div>
     {activeIndex !== null && <div className="public-lightbox" role="dialog" aria-modal="true" aria-label={`Ảnh lớn phòng ${room.code}`} onKeyDown={handleDialogKeyDown}>
       <button ref={closeButton} type="button" className="public-lightbox-close" onClick={closeImage} aria-label="Đóng ảnh lớn">×</button>
-      <button ref={previousButton} type="button" className="public-lightbox-nav public-lightbox-nav--prev" onClick={() => setActiveIndex((activeIndex - 1 + room.images.length) % room.images.length)} aria-label="Ảnh trước">‹</button>
+      {hasMany && <button ref={previousButton} type="button" className="public-lightbox-nav public-lightbox-nav--prev" onClick={() => step(-1)} aria-label="Ảnh trước">‹</button>}
       <img src={room.images[activeIndex].url} alt={`Phòng ${room.code} – ảnh lớn ${activeIndex + 1}/${room.images.length}`} />
-      <button ref={nextButton} type="button" className="public-lightbox-nav public-lightbox-nav--next" onClick={() => setActiveIndex((activeIndex + 1) % room.images.length)} aria-label="Ảnh tiếp theo">›</button>
+      {hasMany && <button ref={nextButton} type="button" className="public-lightbox-nav public-lightbox-nav--next" onClick={() => step(1)} aria-label="Ảnh tiếp theo">›</button>}
       <p>{activeIndex + 1} / {room.images.length}</p>
     </div>}
   </>

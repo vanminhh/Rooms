@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ROOMS · Mô phỏng các lỗi đã sửa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Taviraj:ital,wght@0,400;0,500;1,500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --sand: #f8f2e6; --paper: #fcf8ee; --cream: #efe8d4; --line: #ddd5c0;
+    --text: #0f2b26; --muted: #2f3530; --ink: #153d36; --gold-text: #775830; --error: #9b2c1f;
+    --bad: #9b2c1f; --good: #2f6b4f;
+    --r-card: 14px; --r-input: 10px; --r-pill: 999px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--sand); color: var(--text); font: 15px/1.6 'Manrope', system-ui, sans-serif; }
+  h1, h2, h3 { font-family: 'Taviraj', Georgia, serif; font-weight: 500; line-height: 1.15; margin: 0; }
+  a { color: inherit; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 40px 16px 80px; }
+  header.page { display: grid; gap: 10px; margin-bottom: 28px; }
+  header.page h1 { font-size: clamp(32px, 5vw, 52px); }
+  header.page p { margin: 0; max-width: 70ch; color: var(--muted); }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  .tag { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: var(--r-pill); font-size: 12px; font-weight: 700; }
+  .tag.p1 { background: #f3dcd6; color: #7a2418; } .tag.p2 { background: #f1e6cf; color: #5f4520; } .tag.p3 { background: #dde9e1; color: #24513c; }
+  nav.toc { position: sticky; top: 0; z-index: 5; display: flex; gap: 6px; overflow-x: auto; padding: 10px 0; margin-bottom: 18px; background: var(--sand); border-bottom: 1px solid var(--line); }
+  nav.toc a { flex: none; padding: 6px 12px; border: 1px solid var(--line); border-radius: var(--r-pill); background: var(--paper); font-size: 13px; font-weight: 600; text-decoration: none; }
+  section.fix { margin-top: 30px; padding: clamp(18px, 3vw, 28px); border: 1px solid var(--line); border-radius: var(--r-card); background: var(--paper); }
+  section.fix > header { display: grid; gap: 6px; margin-bottom: 18px; }
+  section.fix > header h2 { font-size: clamp(24px, 3vw, 32px); }
+  section.fix > header p { margin: 0; color: var(--muted); max-width: 75ch; }
+  .where { font-size: 12px; color: var(--gold-text); font-weight: 600; }
+  .compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  @media (max-width: 720px) { .compare { grid-template-columns: 1fr; } }
+  .side { display: grid; align-content: start; gap: 10px; min-width: 0; }
+  .side > b { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+  .side.before > b { color: var(--bad); } .side.after > b { color: var(--good); }
+  .stage { min-width: 0; padding: 18px; border-radius: var(--r-card); background: var(--sand); border: 1px dashed var(--line); }
+  .note { margin: 0; font-size: 13px; color: var(--muted); }
+
+  /* Mini kit pieces used inside the stages */
+  .eyebrow { display: block; font-size: 11px; font-weight: 600; letter-spacing: .19em; text-transform: uppercase; color: var(--gold-text); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 18px; border: 0; border-radius: var(--r-pill); background: var(--ink); color: var(--paper); font: 600 13px 'Manrope', sans-serif; cursor: pointer; }
+  .btn.ghost { background: var(--paper); color: var(--text); border: 1px solid var(--line); }
+  .btn[disabled] { opacity: .45; cursor: not-allowed; }
+  .chiprow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .chiprow button { min-height: 44px; border: 1px solid var(--line); border-radius: var(--r-input); background: var(--paper); font: 600 12px 'Manrope', sans-serif; color: var(--text); cursor: pointer; }
+  .chiprow button[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+  .chiprow button[disabled] { opacity: .45; cursor: not-allowed; }
+  .slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .slots span { display: grid; place-items: center; min-height: 52px; padding: 4px; border: 1px solid var(--line); border-radius: var(--r-input); background: var(--paper); font-size: 11px; text-align: center; }
+  .slots span.off { opacity: .45; text-decoration: line-through; }
+  .hint { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
+  .hint.warn { color: var(--gold-text); font-weight: 600; }
+
+  .promises p { margin: 6px 0; font-size: 13px; }
+  .strike { text-decoration: line-through; color: var(--bad); }
+  .cost { padding: 16px; border: 1px solid var(--line); border-radius: var(--r-card); background: var(--paper); }
+  .cost h3 { font-size: 24px; margin: 4px 0 10px; }
+  .cost dl { display: grid; gap: 6px; margin: 0; }
+  .cost dl div { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
+  .cost .total { padding-top: 8px; border-top: 1px solid var(--line); font-weight: 700; }
+  .cost small { display: block; margin-top: 8px; font-size: 11px; color: var(--muted); }
+
+  .logo { display: inline-grid; gap: 2px; }
+  .logo strong { font: 500 15px/1 'Taviraj', serif; letter-spacing: .07em; }
+  .logo small { font: 600 var(--wm, 9px)/1.3 'Manrope', sans-serif; letter-spacing: .12em; color: var(--gold-text); }
+  .sizes { display: grid; gap: 8px; }
+  .sizes div { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding-bottom: 6px; border-bottom: 1px dotted var(--line); }
+  .sizes code { font-size: 11px; color: var(--muted); }
+
+  .phone { position: relative; width: 100%; max-width: 300px; height: 460px; margin: 0 auto; overflow: hidden; border: 8px solid #1d2a27; border-radius: 30px; background: var(--sand); }
+  .phone .screen { height: 100%; overflow-y: auto; padding: 14px 12px 90px; scroll-behavior: smooth; }
+  .phone .block { height: 120px; margin-bottom: 10px; border-radius: 10px; background: var(--cream); display: grid; place-items: center; font-size: 12px; color: var(--muted); }
+  .phone .booking { padding: 12px; border: 1px solid var(--line); border-radius: var(--r-card); background: var(--paper); font-size: 12px; }
+  .phone .booking h3 { font-size: 18px; margin-bottom: 6px; }
+  .jump { position: absolute; left: 8px; right: 8px; bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 6px 6px 12px; border-radius: var(--r-card); background: var(--ink); color: var(--paper); box-shadow: 0 10px 24px #0f2b2633; transition: opacity .2s, transform .2s; }
+  .jump[hidden] { display: flex; opacity: 0; transform: translateY(12px); pointer-events: none; }
+  .jump p { display: grid; gap: 2px; margin: 0; font-size: 10px; color: #fcf8eecc; }
+  .jump strong { font: 500 16px/1.1 'Taviraj', serif; color: var(--paper); }
+  .jump button { min-height: 40px; padding: 0 12px; border: 0; border-radius: var(--r-pill); background: var(--paper); color: var(--text); font: 600 11px 'Manrope', sans-serif; cursor: pointer; }
+
+  .loading { display: grid; place-items: center; height: 220px; border-radius: var(--r-card); border: 1px solid var(--line); overflow: hidden; }
+  .loading.white { background: #fff; align-items: start; }
+  .loading.white .band { width: 100%; padding: 14px; background: var(--sand); text-align: center; font-size: 12px; }
+  .loading.sand { background: var(--sand); font-size: 12px; }
+  .spin { display: inline-block; width: 16px; height: 16px; margin-right: 6px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -3px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .formerr-old { padding: 12px 16px; border-left: 3px solid var(--error); background: var(--paper); color: var(--error); font-size: 13px; font-weight: 600; }
+  .formerr-new { padding: 12px 16px; border: 1px solid var(--error); border-radius: var(--r-input); background: var(--paper); color: var(--error); font-size: 13px; font-weight: 600; }
+  .card-old { padding: 16px; border-top: 6px solid var(--ink); border-radius: var(--r-card); background: var(--paper); box-shadow: 0 18px 42px #153d3612; }
+  .card-new { padding: 16px; border: 1px solid var(--line); border-radius: var(--r-card); background: var(--paper); box-shadow: 0 18px 42px #153d3612; }
+
+  .footer { display: grid; gap: 6px; padding: 16px; border-radius: var(--r-card); background: var(--ink); color: #d8dfd8; font-size: 12px; }
+  .footer h4 { margin: 0; font: 500 18px 'Taviraj', serif; color: var(--paper); }
+  .footer a { color: #fff; text-decoration: underline; text-decoration-color: #ffffff4d; text-underline-offset: 4px; }
+
+  .lightbox { position: relative; display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 6px; height: 200px; padding: 10px; border-radius: var(--r-card); background: #071513ee; color: #fff; }
+  .lightbox .img { height: 140px; border-radius: 8px; background: linear-gradient(135deg, #5d4a2c, #24433b); display: grid; place-items: center; font-size: 12px; color: #fff; }
+  .lightbox .nav { width: 40px; height: 40px; border-radius: 50%; border: 1px solid #ffffff4d; background: #0f2b26cc; color: #fff; font-size: 22px; }
+  .lightbox .close { position: absolute; top: 8px; right: 8px; width: 34px; height: 34px; border-radius: 50%; border: 1px solid #ffffff4d; background: #0f2b26cc; color: #fff; }
+  .lightbox .count { position: absolute; bottom: 8px; left: 0; right: 0; text-align: center; font-size: 11px; }
+  kbd { padding: 1px 6px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; background: var(--paper); font: 600 11px 'Manrope', sans-serif; }
+
+  select { width: 100%; min-height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: var(--r-input); background: var(--paper); font: 500 13px 'Manrope', sans-serif; color: var(--text); }
+  .range { display: grid; gap: 4px; margin-bottom: 10px; font-size: 12px; font-weight: 600; }
+  input[type=range] { width: 100%; accent-color: var(--ink); }
+
+  .tests { display: grid; gap: 8px; font-size: 13px; }
+  .bar { height: 12px; border-radius: var(--r-pill); background: var(--cream); overflow: hidden; }
+  .bar span { display: block; height: 100%; }
+  :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="page">
+    <span class="eyebrow">ROOMS · Review giao diện 10–11/11/2026</span>
+    <h1>Mô phỏng các lỗi đã sửa</h1>
+    <p>Mỗi mục so sánh <strong>trước</strong> và <strong>sau</strong> bằng bản dựng tĩnh giống kit. Đây chỉ là mô phỏng để xem nhanh; giao diện thật nằm ở <code>Source/frontend</code>.</p>
+    <div class="legend"><span class="tag p1">P1 · trước khi đưa lên</span><span class="tag p2">P2 · khó chịu, có cách né</span><span class="tag p3">P3 · làm đẹp</span></div>
+  </header>
+
+  <nav class="toc" aria-label="Các mục">
+    <a href="#copy">Câu chữ</a><a href="#today">Nút Hôm nay</a><a href="#sizes">Cỡ chữ</a><a href="#jump">Nút đặt lịch</a><a href="#loading">Màn tải</a><a href="#tests">Test</a><a href="#borders">Viền</a><a href="#footer">Chân trang</a><a href="#lightbox">Ảnh lớn</a><a href="#price">Mức giá</a>
+  </nav>
+
+  <section class="fix" id="copy">
+    <header><span class="tag p1">P1</span><h2>Câu cam kết và câu sai sự thật</h2>
+      <p>Bỏ các câu chưa được chủ dự án duyệt hoặc không đúng thực tế; tên khách thấy là ROOMS.</p>
+      <span class="where">RoomDetailView.tsx · CostBreakdown.tsx · PublicHomePage.tsx · index.html</span></header>
+    <div class="compare">
+      <div class="side before"><b>Trước</b><div class="stage">
+        <div class="promises"><p>✓ Quản lý tòa nhà trực tiếp đón tiếp, không qua trung gian.</p><p>✓ Xem phòng và tư vấn hoàn toàn miễn phí.</p></div>
+        <div class="cost" style="margin-top:12px"><span class="eyebrow">Chi phí minh bạch</span><h3>Một tháng,<br><em>an tâm ở lại.</em></h3>
+          <dl><div><dt>Giá thuê</dt><dd>2.800.000 đ</dd></div><div><dt>Wifi</dt><dd>100.000 đ</dd></div><div class="total"><dt>Tổng chi phí</dt><dd>2.900.000 đ</dd></div></dl><small>chưa gồm điện, nước</small></div>
+        <p class="note" style="margin-top:10px">Trang chủ: "Xem <u>hình ảnh thật</u>…" · Tab: "Trọ Thông Minh"</p>
+      </div></div>
+      <div class="side after"><b>Sau</b><div class="stage">
+        <div class="promises"><p>✓ Quản lý tòa nhà sẽ gọi lại để xác nhận lịch hẹn.</p><p>✓ Gửi yêu cầu chưa giữ chỗ phòng.</p></div>
+        <div class="cost" style="margin-top:12px"><h3>Chi phí mỗi tháng</h3>
+          <dl><div><dt>Giá thuê</dt><dd>2.800.000 đ</dd></div><div><dt>Wifi</dt><dd>100.000 đ</dd></div><div class="total"><dt>Ước tính mỗi tháng</dt><dd>2.900.000 đ</dd></div></dl><small>chưa gồm điện, nước</small></div>
+        <p class="note" style="margin-top:10px">Trang chủ: "Xem ảnh phòng…" · Tab: "ROOMS · Phòng thuê tại Hà Nội"</p>
+      </div></div>
+    </div>
+  </section>
+
+  <section class="fix" id="today">
+    <header><span class="tag p2">P2</span><h2>Nút "Hôm nay" sau 18:00</h2>
+      <p>Kéo thanh giờ để thử. Trước: sau 18:00 vẫn bấm được "Hôm nay" nhưng cả 3 buổi bị khóa, khách kẹt. Sau: nút tự khóa và có lời nhắc.</p>
+      <span class="where">ViewingForm.tsx</span></header>
+    <label class="range">Giờ Hà Nội: <output id="hourOut">19:00</output><input id="hour" type="range" min="7" max="21" step="0.5" value="19"></label>
+    <div class="compare">
+      <div class="side before"><b>Trước</b><div class="stage" id="todayBefore"></div></div>
+      <div class="side after"><b>Sau</b><div class="stage" id="todayAfter"></div></div>
+    </div>
+  </section>
+
+  <section class="fix" id="sizes">
+    <header><span class="tag p2">P2</span><h2>Chữ quá nhỏ</h2>
+      <p>Chữ dưới logo, nhãn thanh lọc và các nhãn nhỏ được nâng cỡ để đọc được trên điện thoại.</p>
+      <span class="where">Navigation.css · rooms.css · booking-panel.css · public.css</span></header>
+    <div class="compare">
+      <div class="side before"><b>Trước</b><div class="stage sizes">
+        <div><span class="logo" style="--wm:6px"><strong>ROOMS</strong><small>APARTMENTS HANOI</small></span><code>6 px</code></div>
+        <div><span style="font-size:9px;letter-spacing:.1em;text-transform:uppercase">Quận / Khu vực</span><code>9 px</code></div>
+        <div><span style="font-size:10px;font-weight:600;letter-spacing:.19em;text-transform:uppercase;color:var(--gold-text)">Phòng thuê tại Hà Nội</span><code>10 px</code></div>
+        <div><span style="font-size:9px">© ROOMS Apartments Hanoi</span><code>9 px</code></div>
+      </div></div>
+      <div class="side after"><b>Sau</b><div class="stage sizes">
+        <div><span class="logo" style="--wm:9px"><strong>ROOMS</strong><small>APARTMENTS HANOI</small></span><code>9 px (chữ logo)</code></div>
+        <div><span style="font-size:11px;letter-spacing:.1em;text-transform:uppercase">Quận / Khu vực</span><code>11 px</code></div>
+        <div><span class="eyebrow">Phòng thuê tại Hà Nội</span><code>11 px</code></div>
+        <div><span style="font-size:11px">© ROOMS Apartments Hanoi</span><code>11 px</code></div>
+      </div></div>
+    </div>
+  </section>
+
+  <section class="fix" id="jump">
+    <header><span class="tag p2">P2</span><h2>Nút đặt lịch cố định trên điện thoại</h2>
+      <p>Cuộn màn hình điện thoại bên phải: thanh ở đáy chỉ hiện khi khung đặt lịch còn ở phía dưới, tự ẩn khi đã tới. Bấm nút để nhảy xuống.</p>
+      <span class="where">BookingJumpBar.tsx · RoomDetailView.tsx</span></header>
+    <div class="compare">
+      <div class="side before"><b>Trước</b>
+        <div class="phone"><div class="screen">
+          <div class="block">Ảnh phòng</div><div class="block">Thông số</div><div class="block">Chi phí</div><div class="block">Bảng đơn giá</div>
+          <div class="booking"><h3>Đặt lịch xem</h3>Khung đặt lịch nằm cuối, phải cuộn qua 4 khối.</div>
+        </div></div></div>
+      <div class="side after"><b>Sau</b>
+        <div class="phone"><div class="screen" id="phoneAfter">
+          <div class="block">Ảnh phòng</div><div class="block">Thông số</div><div class="block">Chi phí</div><div class="block">Bảng đơn giá</div>
+          <div class="booking" id="bookingCard"><h3>Đặt lịch xem</h3><div class="chiprow"><button>Hôm nay</button><button>Ngày mai</button><button>Chọn ngày khác</button></div></div>
+        </div>
+        <div class="jump" id="jumpBar"><p>Giá thuê<strong>2.800.000 đ</strong></p><button type="button" id="jumpBtn">Đặt lịch xem phòng 201</button></div>
+        </div></div>
+    </div>
+  </section>
+
+  <section class="fix" id="loading">
+    <header><span class="tag p2">P2</span><h2>Màn tải khi mở lại trang quản lý</h2>
+      <p>Lúc kiểm tra phiên đăng nhập (khoảng 8 giây trên DB dev), trước kia chỉ có một dải cát, phần dưới trắng. Nay phủ kín màn hình. Thời gian chờ thì chưa đổi.</p>
+      <span class="where">RequireAuth.tsx · layouts.css</span></header>
+    <div class="compare">
+      <div class="side before"><b>Trước</b><div class="loading white"><div class="band"><span class="spin"></span>Đang tải</div></div></div>
+      <div class="side after"><b>Sau</b><div class="loading sand"><span><span class="spin"></span>Đang tải</span></div></div>
+    </div>
+  </section>
+
+  <section class="fix" id="tests">
+    <header><span class="tag p2">P2</span><h2>Test chập chờn</h2>
+      <p>Khi máy bận, test tìm phần tử trước khi component kịp vẽ: 11 hàm <code>mount</code> chờ cứng 30 ms. Nay chờ tới khi có nội dung (tối đa 3 giây).</p>
+      <span class="where">public-dom.mjs · cp5 · cp6 · cp7 · cp8 · fe09 · fe10 · fe11 · fe12 (3 file) · fe-p2-14-home</span></header>
+    <div class="tests">
+      <div>Trước (lần review đầu): <strong>726/731</strong> pass<div class="bar"><span style="width:99.3%;background:var(--gold-text)"></span></div></div>
+      <div>Sau sửa P2 trên file chính: <strong>737/737</strong> pass<div class="bar"><span style="width:100%;background:var(--good)"></span></div></div>
+      <div>Sau sửa hàm <code>mount</code>: <strong>738/738</strong> pass, 3 lần chạy liền<div class="bar"><span style="width:100%;background:var(--good)"></span></div></div>
+    </div>
+  </section>
+
+  <section class="fix" id="borders">
+    <header><span class="tag p3">P3</span><h2>Viền dày một bên</h2>
+      <p>Viền dày một cạnh trên thẻ bo góc trông như mẫu AI. Thay bằng viền 1 px quanh thẻ.</p>
+      <span class="where">rooms.css (FormError) · auth.css (thông báo) · public-room-detail.css · booking-panel.css</span></header>
+    <div class="compare">
+      <div class="side before"><b>Trước</b><div class="stage" style="display:grid;gap:12px">
+        <div class="formerr-old">Số điện thoại hoặc mật khẩu không đúng</div>
+        <div class="card-old"><span class="eyebrow">Giá thuê niêm yết</span><h3 style="font-size:28px">2.800.000 đ</h3></div>
+      </div></div>
+      <div class="side after"><b>Sau</b><div class="stage" style="display:grid;gap:12px">
+        <div class="formerr-new">Số điện thoại hoặc mật khẩu không đúng</div>
+        <div class="card-new"><span class="eyebrow">Giá thuê niêm yết</span><h3 style="font-size:28px">2.800.000 đ</h3></div>
+      </div></div>
+    </div>
+  </section>
+
+  <section class="fix" id="footer">
+    <header><span class="tag p3">P3</span><h2>Cột "Khu vực" ở chân trang</h2>
+      <p>Cột có chữ mà không có đường đi. Thêm liên kết "Xem các khu vực" tới mục khu vực trên trang chủ.</p>
+      <span class="where">Navigation.tsx (RoomsFooter) · PublicLayout.tsx</span></header>
+    <div class="compare">
+      <div class="side before"><b>Trước</b><div class="footer"><h4>Khu vực</h4>Khám phá các tòa nhà tại Hà Nội theo khu vực.</div></div>
+      <div class="side after"><b>Sau</b><div class="footer"><h4>Khu vực</h4>Khám phá các tòa nhà tại Hà Nội theo khu vực.<a href="#footer">Xem các khu vực</a></div></div>
+    </div>
+  </section>
+
+  <section class="fix" id="lightbox">
+    <header><span class="tag p3">P3</span><h2>Khung xem ảnh lớn</h2>
+      <p>Phòng có 1 ảnh không còn nút ‹ › vô nghĩa; phòng nhiều ảnh dùng được phím <kbd>←</kbd> <kbd>→</kbd>. Bấm vào khung "Sau" rồi thử phím mũi tên.</p>
+      <span class="where">RoomDetailView.tsx</span></header>
+    <div class="compare">
+      <div class="side before"><b>Trước · phòng 1 ảnh</b><div class="lightbox"><button class="close" aria-label="Đóng">×</button><button class="nav">‹</button><div class="img">Ảnh 1</div><button class="nav">›</button><span class="count">1 / 1</span></div></div>
+      <div class="side after"><b>Sau · 1 ảnh và 3 ảnh</b>
+        <div class="lightbox" style="grid-template-columns:1fr"><button class="close" aria-label="Đóng">×</button><div class="img">Ảnh 1</div><span class="count">1 / 1</span></div>
+        <div class="lightbox" id="lb3" tabindex="0" aria-label="Khung ảnh lớn mô phỏng, dùng phím mũi tên"><button class="close" aria-label="Đóng">×</button><button class="nav" id="lbPrev" aria-label="Ảnh trước">‹</button><div class="img" id="lbImg">Ảnh 1</div><button class="nav" id="lbNext" aria-label="Ảnh tiếp theo">›</button><span class="count" id="lbCount">1 / 3</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="fix" id="price">
+    <header><span class="tag p3">P3</span><h2>Mức giá 5.000.000</h2>
+      <p>Lọc "từ 5.000.000" đã được chủ dự án chốt (A-8) và vẫn tính cả 5.000.000, nên chữ đổi thành "Từ" cho đúng nghĩa.</p>
+      <span class="where">PublicHomePage.tsx</span></header>
+    <div class="compare">
+      <div class="side before"><b>Trước</b><div class="stage"><select aria-label="Khoảng giá trước"><option>Đến 5.000.000 đ</option><option selected>Trên 5.000.000 đ</option></select><p class="hint">"Trên" nhưng vẫn lọc cả 5.000.000.</p></div></div>
+      <div class="side after"><b>Sau</b><div class="stage"><select aria-label="Khoảng giá sau"><option>Đến 5.000.000 đ</option><option selected>Từ 5.000.000 đ</option></select><p class="hint">Cách lọc giữ nguyên: minPrice=5000000.</p></div></div>
+    </div>
+  </section>
+</div>
+
+<script>
+  // "Hôm nay" demo: slots start at 8, 14, 18 (VIEW-08).
+  const starts = [8, 14, 18], labels = ['Sáng (8:00–11:00)', 'Chiều (14:00–17:00)', 'Tối (18:00–20:00)']
+  const hour = document.getElementById('hour'), out = document.getElementById('hourOut')
+  function render(after) {
+    const h = Number(hour.value), started = starts.map(s => h >= s), closed = started.every(Boolean)
+    const disableToday = after && closed
+    return `<div class="chiprow"><button aria-pressed="true" ${disableToday ? 'disabled' : ''}>Hôm nay</button><button>Ngày mai</button><button>Chọn ngày khác</button></div>
+      ${disableToday ? '<p class="hint warn">Hôm nay đã hết buổi xem, vui lòng chọn từ ngày mai.</p>' : ''}
+      <div class="slots" style="margin-top:10px">${labels.map((l, i) => `<span class="${started[i] && !disableToday ? 'off' : ''}">${l}${started[i] && !disableToday ? '<br>Đã bắt đầu' : ''}</span>`).join('')}</div>
+      <p class="hint">${disableToday ? 'Ngày mai: cả 3 buổi đều chọn được.' : closed ? 'Khách đã chọn "Hôm nay" nhưng không còn buổi nào: không gửi được.' : 'Còn buổi chưa bắt đầu hôm nay.'}</p>`
+  }
+  function update() {
+    const h = Number(hour.value); out.textContent = `${Math.floor(h)}:${h % 1 ? '30' : '00'}`
+    document.getElementById('todayBefore').innerHTML = render(false)
+    document.getElementById('todayAfter').innerHTML = render(true)
+  }
+  hour.addEventListener('input', update); update()
+
+  // Phone jump bar: visible only while the booking card is below the phone viewport.
+  const screen = document.getElementById('phoneAfter'), card = document.getElementById('bookingCard'), bar = document.getElementById('jumpBar')
+  function syncBar() {
+    const s = screen.getBoundingClientRect(), c = card.getBoundingClientRect()
+    bar.hidden = !(c.top >= s.bottom - 4)
+  }
+  screen.addEventListener('scroll', syncBar); window.addEventListener('resize', syncBar); syncBar()
+  document.getElementById('jumpBtn').addEventListener('click', () => {
+    screen.scrollTo({ top: card.offsetTop - 10, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
+  })
+
+  // Lightbox demo with arrow keys.
+  let idx = 0
+  const show = () => { document.getElementById('lbImg').textContent = `Ảnh ${idx + 1}`; document.getElementById('lbCount').textContent = `${idx + 1} / 3` }
+  const stepLb = d => { idx = (idx + d + 3) % 3; show() }
+  document.getElementById('lbPrev').addEventListener('click', () => stepLb(-1))
+  document.getElementById('lbNext').addEventListener('click', () => stepLb(1))
+  document.getElementById('lb3').addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); stepLb(e.key === 'ArrowLeft' ? -1 : 1) }
+  })
+</script>
+</body>
+</html>

@@ -27,7 +27,8 @@
 .rooms-theme .auth-notice {
   margin: 0;
   padding: 12px 16px;
-  border-left: 4px solid var(--rooms-ink);
+  border: 1px solid var(--rooms-line);
+  border-radius: var(--rooms-radius-input);
   background: var(--rooms-paper);
   color: var(--rooms-text);
 }

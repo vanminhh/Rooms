@@ -742,7 +742,8 @@ test('Q3-A, AUTH-10: PublicLayout footer has the description and Boss contact (o
   const footer = find(full.container, n => n.tagName === 'FOOTER')
   assert.equal(footer.length, 1)
   assert.ok(footer[0].textContent.includes('Chung cư mini cho thuê tại Hà Nội.'))
-  assert.deepEqual(find(footer[0], n => n.tagName === 'A').map(a => a.textContent), ['Xem phòng trống', 'Zalo'])
+  // "Xem các khu vực" (→ /#khu-vuc) added to the "Khu vực" column after the UI review of 10/11/2026.
+  assert.deepEqual(find(footer[0], n => n.tagName === 'A').map(a => a.textContent), ['Xem phòng trống', 'Xem các khu vực', 'Zalo'])
   assert.equal(callsTo(full, 'GET', '/public/contact').length, 1)
   await full.stop()
   for (const contact of ['error', null]) {

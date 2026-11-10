@@ -1,0 +1,35 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "undersized-ui-text",
+        "value": "*",
+        "files": [
+          "Artifacts/2026-11-11-UI-fixes-demo/preview.html"
+        ],
+        "createdAt": "2026-11-10T18:02:05.237Z",
+        "reason": "Claude: demo page deliberately reproduces the pre-fix 'Trước' states (6–9 px text, thick accent borders) for side-by-side comparison"
+      },
+      {
+        "rule": "border-accent-on-rounded",
+        "value": "*",
+        "files": [
+          "Artifacts/2026-11-11-UI-fixes-demo/preview.html"
+        ],
+        "createdAt": "2026-11-10T18:02:05.452Z",
+        "reason": "Claude: demo page deliberately reproduces the pre-fix 'Trước' states (6–9 px text, thick accent borders) for side-by-side comparison"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "Artifacts/2026-11-11-UI-fixes-demo/preview.html"
+        ],
+        "createdAt": "2026-11-10T18:02:05.665Z",
+        "reason": "Claude: demo page deliberately reproduces the pre-fix 'Trước' states (6–9 px text, thick accent borders) for side-by-side comparison"
+      }
+    ]
+  }
+}

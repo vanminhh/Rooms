@@ -32,7 +32,7 @@
 .rooms-theme .public-hero-availability > span { flex: 0 0 auto; width: 11px; height: 11px; border-radius: 50%; background: #76a85c; box-shadow: 0 0 0 5px #76a85c2e; }
 .rooms-theme .public-hero-availability p { display: grid; min-width: 0; gap: 1px; }
 .rooms-theme .public-hero-availability strong { font-size: 13px; }
-.rooms-theme .public-hero-availability small { color: var(--rooms-muted); font-size: 10px; }
+.rooms-theme .public-hero-availability small { color: var(--rooms-muted); font-size: 11px; }
 .rooms-theme .public-search { position: relative; z-index: 2; margin-top: clamp(24px, 5vw, 54px); min-width: 0; }
 .rooms-theme .public-search .rooms-search { border: 1px solid #153d3612; background: var(--rooms-paper); box-shadow: 0 18px 42px #153d3614; color: var(--rooms-text); }
 .rooms-theme .public-search .rooms-search select { border-bottom-color: var(--rooms-line); color: var(--rooms-text); }

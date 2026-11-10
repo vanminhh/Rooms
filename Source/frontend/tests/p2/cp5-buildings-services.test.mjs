@@ -215,6 +215,15 @@ const find = (root, pred) => walkTree(root).filter(n => n.nodeType === 1 && pred
 const buttons = container => find(container, n => n.tagName === 'BUTTON')
 const buttonByText = (container, label) => buttons(container).find(b => b.textContent.trim() === label)
 const byName = (container, name) => find(container, n => ['INPUT', 'SELECT', 'TEXTAREA'].includes(n.tagName) && n.name === name)[0]
+
+// UI review 10/11/2026, flake fix: on a busy machine mount() can resolve before BuildingForm has rendered its
+// fields, so the first fill() got `undefined`. Wait (max 3 s) for the code input before a test starts typing.
+async function mountBuildingForm() {
+  const app = await mount(withQuery(React.createElement(BuildingForm, {})))
+  for (let tries = 0; tries < 300 && !byName(app.container, 'code'); tries++) await wait(10)
+  assert.ok(byName(app.container, 'code'), 'BuildingForm did not render its fields')
+  return app
+}
 const isDisabled = el => el?.disabled === true || el?.hasAttribute('disabled')
 
 function dispatch(container, target, type, extra = {}) {
@@ -254,6 +263,9 @@ async function mount(element) {
   const root = createRoot(container)
   root.render(element)
   await wait(30)
+  // Flake fix (11/11/2026): 30 ms is not always enough on a busy machine; wait until the first commit has put
+  // something into the container (max 3 s) so a test never queries an empty tree.
+  for (let tries = 0; tries < 300 && container.childNodes.length === 0; tries++) await wait(10)
   return { container, rerender: async next => { root.render(next); await wait(30) }, stop: async () => { root.unmount(); await wait(10) } }
 }
 
@@ -341,7 +353,7 @@ test('BLD-06: due_days mặc định 5 — creating without touching "Số ngày
     { prefix: '/managers', handler: () => ok([], pageMeta([])) },
     { prefix: '/buildings', method: 'POST', handler: () => ok(baseBuilding()) },
   ])
-  const app = await mount(withQuery(React.createElement(BuildingForm, {})))
+  const app = await mountBuildingForm()
   fill(app.container, byName(app.container, 'code'), 'ab')
   fill(app.container, byName(app.container, 'name'), 'Tòa test')
   fill(app.container, byName(app.container, 'address'), 'Địa chỉ')
@@ -366,7 +378,7 @@ test('BLD-06: a lowercase 2-character code ("ab") is accepted as-is by the form 
     { prefix: '/managers', handler: () => ok([], pageMeta([])) },
     { prefix: '/buildings', method: 'POST', handler: () => ok(baseBuilding()) },
   ])
-  const app = await mount(withQuery(React.createElement(BuildingForm, {})))
+  const app = await mountBuildingForm()
   fill(app.container, byName(app.container, 'code'), 'ab')
   fill(app.container, byName(app.container, 'name'), 'Tòa test')
   fill(app.container, byName(app.container, 'address'), 'Địa chỉ')
@@ -382,7 +394,7 @@ test('BLD-06: a lowercase 2-character code ("ab") is accepted as-is by the form 
 
 test('BLD-06: a 1-character code fails validation client-side; POST /buildings is never sent', async () => {
   fakeFetch([{ prefix: '/managers', handler: () => ok([], pageMeta([])) }])
-  const app = await mount(withQuery(React.createElement(BuildingForm, {})))
+  const app = await mountBuildingForm()
   fill(app.container, byName(app.container, 'code'), 'a')
   fill(app.container, byName(app.container, 'name'), 'Tòa test')
   fill(app.container, byName(app.container, 'address'), 'Địa chỉ')
@@ -400,7 +412,7 @@ test('BLD-06: a 6-character code is accepted and sent unchanged', async () => {
     { prefix: '/managers', handler: () => ok([], pageMeta([])) },
     { prefix: '/buildings', method: 'POST', handler: () => ok(baseBuilding()) },
   ])
-  const app = await mount(withQuery(React.createElement(BuildingForm, {})))
+  const app = await mountBuildingForm()
   fill(app.container, byName(app.container, 'code'), 'abcdef')
   fill(app.container, byName(app.container, 'name'), 'Tòa test')
   fill(app.container, byName(app.container, 'address'), 'Địa chỉ')
@@ -417,7 +429,7 @@ test('BLD-06: a 6-character code is accepted and sent unchanged', async () => {
 
 test('BLD-06: a 7-character code fails validation client-side; POST /buildings is never sent', async () => {
   fakeFetch([{ prefix: '/managers', handler: () => ok([], pageMeta([])) }])
-  const app = await mount(withQuery(React.createElement(BuildingForm, {})))
+  const app = await mountBuildingForm()
   fill(app.container, byName(app.container, 'code'), 'abcdefg')
   fill(app.container, byName(app.container, 'name'), 'Tòa test')
   fill(app.container, byName(app.container, 'address'), 'Địa chỉ')
@@ -433,7 +445,7 @@ test('BLD-06: a 7-character code fails validation client-side; POST /buildings i
 test('BLD-06: dueDays 0 and 32 (just outside 1..31) fail validation client-side; POST /buildings is never sent', async () => {
   fakeFetch([{ prefix: '/managers', handler: () => ok([], pageMeta([])) }])
   for (const invalid of [0, 32]) {
-    const app = await mount(withQuery(React.createElement(BuildingForm, {})))
+    const app = await mountBuildingForm()
     fill(app.container, byName(app.container, 'code'), 'ab')
     fill(app.container, byName(app.container, 'name'), 'Tòa test')
     fill(app.container, byName(app.container, 'address'), 'Địa chỉ')
@@ -454,7 +466,7 @@ test('BLD-06: dueDays 1 and 31 (the boundary) are accepted and sent as-is', asyn
       { prefix: '/managers', handler: () => ok([], pageMeta([])) },
       { prefix: '/buildings', method: 'POST', handler: () => ok(baseBuilding()) },
     ])
-    const app = await mount(withQuery(React.createElement(BuildingForm, {})))
+    const app = await mountBuildingForm()
     fill(app.container, byName(app.container, 'code'), 'ab')
     fill(app.container, byName(app.container, 'name'), 'Tòa test')
     fill(app.container, byName(app.container, 'address'), 'Địa chỉ')
@@ -477,7 +489,7 @@ test('BLD-03: assigning a manager already at 2 buildings gets 409 MANAGER_MAX_2_
     { prefix: '/managers', handler: () => ok([manager], pageMeta([manager])) },
     { prefix: '/buildings', method: 'POST', handler: () => fail(409, 'MANAGER_MAX_2_BUILDINGS', 'Mỗi quản lý chỉ phụ trách tối đa 2 tòa') },
   ])
-  const app = await mount(withQuery(React.createElement(BuildingForm, {})))
+  const app = await mountBuildingForm()
   await wait(30)
   fill(app.container, byName(app.container, 'code'), 'ab')
   fill(app.container, byName(app.container, 'name'), 'Tòa test')
@@ -498,7 +510,7 @@ test('VALIDATION_FAILED: a duplicate code from the API is shown as a field error
     { prefix: '/managers', handler: () => ok([], pageMeta([])) },
     { prefix: '/buildings', method: 'POST', handler: () => fail(400, 'VALIDATION_FAILED', 'Dữ liệu không hợp lệ', { code: 'Mã tòa đã tồn tại' }) },
   ])
-  const app = await mount(withQuery(React.createElement(BuildingForm, {})))
+  const app = await mountBuildingForm()
   fill(app.container, byName(app.container, 'code'), 'ab')
   fill(app.container, byName(app.container, 'name'), 'Tòa test')
   fill(app.container, byName(app.container, 'address'), 'Địa chỉ')

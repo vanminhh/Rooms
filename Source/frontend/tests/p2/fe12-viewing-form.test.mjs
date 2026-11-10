@@ -215,6 +215,9 @@ async function mount(element) {
   const root = createRoot(container)
   root.render(element)
   await wait(30)
+  // Flake fix (11/11/2026): 30 ms is not always enough on a busy machine; wait until the first commit has put
+  // something into the container (max 3 s) so a test never queries an empty tree.
+  for (let tries = 0; tries < 300 && container.childNodes.length === 0; tries++) await wait(10)
   return { container, rerender: async next => { root.render(next); await wait(30) }, stop: async () => { root.unmount(); await wait(10) } }
 }
 

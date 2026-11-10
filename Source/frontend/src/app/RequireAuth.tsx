@@ -9,11 +9,11 @@ export function RequireAuth({ allow }: { allow: readonly Role[] | 'any' }) {
   const location = useLocation()
 
   if (status === 'loading') {
-    return <div className="rooms-theme"><Spinner block label="Đang tải" /></div>
+    return <div className="rooms-theme layout-startup"><Spinner block label="Đang tải" /></div>
   }
   if (status === 'error') {
     return (
-      <div className="rooms-theme">
+      <div className="rooms-theme layout-startup">
         <p role="alert">Không tải được phiên đăng nhập.</p>
         <RoomsButton onClick={retry}>Thử lại</RoomsButton>
       </div>

@@ -29,7 +29,7 @@
 .rooms-theme img { display: block; max-width: 100%; }
 .rooms-theme :is(h1, h2, h3, p, dt, figcaption, a, button) { overflow-wrap: anywhere; }
 .rooms-theme ::selection { background: #d6c6a6; color: #153d36; }
-.rooms-eyebrow { display: block; font-size: 10px; font-weight: 600; letter-spacing: .19em; text-transform: uppercase; }
+.rooms-eyebrow { display: block; font-size: 11px; font-weight: 600; letter-spacing: .19em; text-transform: uppercase; }
 .rooms-empty { padding: 28px; border: 1px dashed var(--rooms-line); color: var(--rooms-muted); }
 .rooms-button {
   display: inline-flex; align-items: center; justify-content: space-between; gap: 24px;
@@ -60,7 +60,7 @@
 .rooms-checkbox { display: grid; gap: 8px; }
 .rooms-checkbox label { display: inline-flex; align-items: center; justify-self: start; gap: 10px; min-height: 44px; font-size: 13px; cursor: pointer; }
 .rooms-checkbox input { flex-shrink: 0; width: 18px; height: 18px; margin: 0; accent-color: var(--rooms-ink); cursor: pointer; }
-.rooms-form-error { padding: 12px 16px; border-left: 3px solid var(--rooms-error); background: var(--rooms-paper); color: var(--rooms-error); font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+.rooms-form-error { padding: 12px 16px; border: 1px solid var(--rooms-error); border-radius: var(--rooms-radius-input); background: var(--rooms-paper); color: var(--rooms-error); font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
 .rooms-form-error a { text-decoration: underline; }
 .rooms-spinner { display: inline-flex; align-items: center; }
 .rooms-spinner-ring { width: 1em; height: 1em; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: rooms-spin .8s linear infinite; }
@@ -70,7 +70,7 @@
 .rooms-visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .rooms-header { display: flex; align-items: center; justify-content: space-between; gap: 30px; padding: 26px 36px; border-bottom: 1px solid var(--rooms-line); }
 .rooms-brand { font: 400 29px/1 'Taviraj', Georgia, serif; letter-spacing: .18em; white-space: nowrap; }
-.rooms-brand small { display: block; font: 400 8px/1.5 'Manrope', sans-serif; letter-spacing: .08em; margin-top: 9px; }
+.rooms-brand small { display: block; font: 400 9px/1.5 'Manrope', sans-serif; letter-spacing: .08em; margin-top: 9px; }
 .rooms-brand:has(.rooms-brand-mark) { display: inline-flex; align-items: center; gap: 14px; }
 /* Shows only the arched window and key of the square logo (source crop x 336–950, y 214–716 of 1275 × 1233). */
 .rooms-brand-mark { position: relative; flex-shrink: 0; width: 58px; aspect-ratio: 614 / 502; overflow: hidden; }
@@ -91,7 +91,7 @@
 .rooms-status--reserved { background: #f2e5ca; color: #564019; }
 .rooms-status--maintenance { background: #e8e4e0; color: #4c4541; }
 .rooms-search { display: flex; align-items: stretch; background: var(--rooms-ink); padding: 24px; gap: 26px; border-radius: var(--rooms-radius-card); color: var(--rooms-paper); }
-.rooms-search label { display: grid; gap: 8px; flex: 1; min-width: 0; font-size: 9px; letter-spacing: .1em; text-transform: uppercase; }
+.rooms-search label { display: grid; gap: 8px; flex: 1; min-width: 0; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
 .rooms-search select { min-width: 0; width: 100%; padding: 8px 26px 8px 0; color: inherit; border: 0; border-bottom: 1px solid #ffffff40; border-radius: 0; background: transparent; font-size: 13px; letter-spacing: 0; text-transform: none; }
 .rooms-search option { background: var(--rooms-ink); color: var(--rooms-paper); }
 .rooms-search .rooms-button { align-self: center; flex-shrink: 0; }

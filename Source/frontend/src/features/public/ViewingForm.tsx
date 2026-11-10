@@ -22,6 +22,8 @@ export function ViewingForm({ roomId, roomCode }: { roomId: number; roomCode?: s
   const visitDateInput = useRef<HTMLInputElement | null>(null)
   const today = hanoiToday()
   const tomorrow = addVisitDays(today, 1)
+  // After the last slot has started (VIEW-08), today has nothing left to book.
+  const todayClosed = startedSlots(today).length === TIME_SLOTS.length
   const { control, register, handleSubmit, setError, setValue, formState: { errors, isSubmitting } } = useForm<ViewingFormValues>({
     resolver: zodResolver(viewingFormSchema),
     defaultValues: { guestName: '', guestPhone: '', visitDate: '', note: '', website: '' },
@@ -81,14 +83,16 @@ export function ViewingForm({ roomId, roomCode }: { roomId: number; roomCode?: s
         {visitDate && <span>{new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit' }).format(new Date(`${visitDate}T00:00:00+07:00`))}</span>}
       </div>
       <div className="public-date-shortcuts" role="group" aria-label="Chọn nhanh ngày xem">
-        <button type="button" aria-pressed={visitDate === today} onClick={() => setValue('visitDate', today, { shouldValidate: true })}>Hôm nay</button>
+        <button type="button" aria-pressed={visitDate === today} disabled={todayClosed} aria-describedby={todayClosed ? 'viewing-today-closed' : undefined}
+          onClick={() => setValue('visitDate', today, { shouldValidate: true })}>Hôm nay</button>
         <button type="button" aria-pressed={visitDate === tomorrow} onClick={() => setValue('visitDate', tomorrow, { shouldValidate: true })}>Ngày mai</button>
         <button type="button" aria-pressed={Boolean(visitDate && visitDate !== today && visitDate !== tomorrow)} onClick={openVisitDatePicker}>Chọn ngày khác</button>
       </div>
-      <TextField label="Ngày muốn xem" type="date" min={today} max={maxVisitDate()} aria-describedby="viewing-visit-date-hint"
+      <TextField label="Ngày muốn xem" type="date" min={todayClosed ? tomorrow : today} max={maxVisitDate()} aria-describedby="viewing-visit-date-hint"
         error={errors.visitDate?.message} {...visitDateRegistration}
         ref={element => { visitDateInput.current = element; visitDateRegistration.ref(element) }} />
       <p id="viewing-visit-date-hint" className="public-hint">Chọn trong 30 ngày tới, theo giờ Hà Nội</p>
+      {todayClosed && <p id="viewing-today-closed" className="public-hint">Hôm nay đã hết buổi xem, vui lòng chọn từ ngày mai.</p>}
     </section>
 
     <fieldset className="public-slots" aria-describedby={errors.timeSlot ? 'viewing-time-slot-error' : undefined}>

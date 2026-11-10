@@ -36,8 +36,8 @@
 
 .rooms-brand-wordmark small {
   margin: 0;
-  font: 600 6px/1.3 'Manrope', sans-serif;
-  letter-spacing: .13em;
+  font: 600 9px/1.3 'Manrope', sans-serif;
+  letter-spacing: .12em;
   color: var(--rooms-gold-text);
 }
 
@@ -137,7 +137,7 @@
 .rooms-footer-wordmark {
   margin-top: 7px !important;
   color: #c9ae7d !important;
-  font-size: 7px !important;
+  font-size: 10px !important;
   font-weight: 600 !important;
   letter-spacing: .16em;
 }
@@ -171,7 +171,7 @@
   padding-top: 22px;
   border-top: 1px solid #ffffff26;
   color: #bdc9c0;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 @media (hover: hover) and (pointer: fine) {

@@ -112,6 +112,30 @@ test('UI-23 · KIT-05: lightbox closes by button and Escape, traps focus, restor
   await app.stop()
 })
 
+test('UI-23 · KIT-05: arrow keys change the large photo; one photo shows no ‹ › buttons and Tab stays on close', async () => {
+  const many = Array.from({ length: 3 }, (_, index) => ({ id: index + 1, url: `/room-${index + 1}.webp`, sortOrder: index }))
+  const app = await renderRoom(baseRoom({ images: many }))
+  dispatch(app.container, buttonsByLabel(app.container, 'Xem ảnh 1')[0], 'click')
+  await until(() => Boolean(dialogOf(app.container)), 'lightbox opens')
+  const close = buttonsByLabel(app.container, 'Đóng ảnh lớn')[0]
+  dispatch(app.container, close, 'keydown', { key: 'ArrowRight' })
+  await until(() => dialogOf(app.container)?.textContent.includes('2 / 3'), 'ArrowRight shows the next photo')
+  dispatch(app.container, close, 'keydown', { key: 'ArrowLeft' })
+  dispatch(app.container, close, 'keydown', { key: 'ArrowLeft' })
+  await until(() => dialogOf(app.container)?.textContent.includes('3 / 3'), 'ArrowLeft wraps to the last photo')
+  await app.stop()
+
+  const single = await renderRoom(baseRoom({ images: [{ id: 1, url: '/room-1.webp', sortOrder: 0 }] }))
+  dispatch(single.container, buttonsByLabel(single.container, 'Xem ảnh 1')[0], 'click')
+  await until(() => Boolean(dialogOf(single.container)), 'single lightbox opens')
+  assert.equal(buttonsByLabel(single.container, 'Ảnh trước').length, 0)
+  assert.equal(buttonsByLabel(single.container, 'Ảnh tiếp theo').length, 0)
+  const closeOnly = buttonsByLabel(single.container, 'Đóng ảnh lớn')[0]
+  dispatch(single.container, closeOnly, 'keydown', { key: 'Tab', shiftKey: false })
+  assert.equal(fakeDocument.activeElement, closeOnly, 'Tab stays on the only control')
+  await single.stop()
+})
+
 test('UI-23: Web Share success and clipboard fallback show the right status', async () => {
   window.location.href = 'http://localhost/phong/10'
   let shared

@@ -1,0 +1,99 @@
+/* UI-24: the room booking card keeps VIEW-01/08 behavior and follows the approved Stitch composition. */
+.rooms-theme .public-detail-grid.public-booking-layout { gap: clamp(28px, 4vw, 56px); }
+.rooms-theme .public-detail-aside.public-booking-card {
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--rooms-line);
+  border-top: 6px solid var(--rooms-ink);
+  background: var(--rooms-paper);
+  box-shadow: 0 22px 52px #153d3617;
+}
+.rooms-theme .public-booking-price { display: grid; gap: 14px; padding: 24px 24px 20px; }
+.rooms-theme .public-booking-price .rooms-eyebrow { margin: 0; }
+.rooms-theme .public-booking-price > p:not(.rooms-eyebrow) { display: flex; align-items: baseline; flex-wrap: wrap; gap: 5px 9px; margin: 0; }
+.rooms-theme .public-booking-price > p strong { color: var(--rooms-text); font: 500 clamp(34px, 4vw, 46px)/1.05 'Taviraj', Georgia, serif; }
+.rooms-theme .public-booking-price > p span { color: var(--rooms-muted); font-size: 13px; font-weight: 600; }
+.rooms-theme .public-booking-price dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; }
+.rooms-theme .public-booking-price dl > div { display: grid; gap: 3px; min-width: 0; padding: 12px; border-radius: 10px; background: var(--rooms-cream); }
+.rooms-theme .public-booking-price dt { color: var(--rooms-muted); font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.rooms-theme .public-booking-price dd { margin: 0; color: var(--rooms-accent-text); font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
+
+.rooms-theme .public-booking-card .public-viewing { gap: 20px; padding: 22px 24px 24px; border: 0; border-top: 1px solid var(--rooms-line); border-radius: 0; background: transparent; }
+.rooms-theme .public-booking-section { display: grid; gap: 10px; min-width: 0; }
+.rooms-theme .public-booking-section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.rooms-theme .public-booking-section-heading h3 { margin: 0; font-family: inherit; font-size: 13px; font-weight: 700; }
+.rooms-theme .public-booking-section-heading span { color: var(--rooms-gold-text); font-size: 12px; font-weight: 700; }
+.rooms-theme .public-date-shortcuts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.rooms-theme .public-date-shortcuts button {
+  min-height: 42px;
+  min-width: 0;
+  padding: 8px 7px;
+  border: 1px solid var(--rooms-line);
+  border-radius: 9px;
+  background: var(--rooms-cream);
+  color: var(--rooms-text);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.25;
+  cursor: pointer;
+}
+.rooms-theme .public-date-shortcuts button[aria-pressed="true"] { border-color: var(--rooms-ink); background: var(--rooms-ink); color: var(--rooms-paper); }
+.rooms-theme .public-date-shortcuts button:focus-visible { outline: 2px solid var(--rooms-ink); outline-offset: 2px; }
+.rooms-theme .public-booking-section .rooms-field { margin-top: 2px; }
+.rooms-theme .public-booking-section .rooms-field > label { font-size: 11px; }
+.rooms-theme .public-booking-section input[type="date"] { min-height: 43px; }
+
+.rooms-theme .public-booking-card .public-slots { gap: 10px; }
+.rooms-theme .public-booking-card .public-slots legend { margin: 0 0 10px; font-size: 13px; font-weight: 700; }
+.rooms-theme .public-slot-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.rooms-theme .public-booking-card .public-slot { position: relative; display: grid; min-width: 0; }
+.rooms-theme .public-booking-card .public-slot input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.rooms-theme .public-booking-card .public-slot span { display: grid; place-items: center; min-height: 50px; padding: 8px 5px; border: 1px solid var(--rooms-line); border-radius: 9px; background: var(--rooms-cream); color: var(--rooms-text); font-size: 10px; font-weight: 700; line-height: 1.35; text-align: center; cursor: pointer; }
+.rooms-theme .public-booking-card .public-slot input:checked + span { border-color: var(--rooms-ink); background: var(--rooms-ink); color: var(--rooms-paper); }
+.rooms-theme .public-booking-card .public-slot input:focus-visible + span { outline: 2px solid var(--rooms-ink); outline-offset: 2px; }
+.rooms-theme .public-booking-card .public-slot input:disabled + span { border-style: dashed; background: var(--rooms-sand); color: var(--rooms-muted); cursor: not-allowed; opacity: .7; }
+.rooms-theme .public-booking-card .public-slot small { position: absolute; right: 4px; bottom: 3px; left: 4px; color: var(--rooms-error); font-size: 8px; font-weight: 700; text-align: center; pointer-events: none; }
+.rooms-theme .public-booking-fields { display: grid; gap: 14px; }
+.rooms-theme .public-booking-card .rooms-button { width: 100%; min-height: 50px; white-space: normal; line-height: 1.35; }
+
+.rooms-theme .public-booking-promises { display: grid; gap: 9px; margin: 0 24px; padding: 18px 0; border-top: 1px solid var(--rooms-line); }
+.rooms-theme .public-booking-promises p { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; margin: 0; color: var(--rooms-muted); font-size: 11px; font-weight: 550; line-height: 1.55; }
+.rooms-theme .public-booking-promises span { color: #147a64; font-weight: 800; }
+.rooms-theme .public-booking-card .public-contact { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0 24px 24px; border: 0; }
+.rooms-theme .public-booking-card .public-contact h3 { grid-column: 1 / -1; margin-bottom: 2px; font: 600 12px/1.4 Manrope, sans-serif; }
+.rooms-theme .public-booking-card .public-contact p { margin: 0; }
+.rooms-theme .public-booking-card .public-contact a { display: grid; place-items: center; min-height: 42px; padding: 9px 10px; border: 1px solid var(--rooms-line); border-radius: 9px; background: var(--rooms-cream); color: var(--rooms-text); font-size: 11px; text-align: center; text-decoration: none; overflow-wrap: anywhere; }
+.rooms-theme .public-booking-card .public-contact a:hover { border-color: var(--rooms-ink); }
+.rooms-theme .public-viewing-success { justify-items: start; }
+.rooms-theme .public-viewing-success p { margin: 0; line-height: 1.6; }
+
+.rooms-theme .public-booking-jump { position: fixed; z-index: 20; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); left: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 8px 8px 18px; border-radius: var(--rooms-radius-card); background: var(--rooms-ink); color: var(--rooms-paper); box-shadow: 0 14px 34px #0f2b2633; }
+.rooms-theme .public-booking-jump[hidden] { display: none; }
+.rooms-theme .public-booking-jump p { display: grid; gap: 3px; min-width: 0; margin: 0; color: #fcf8eecc; font-size: 11px; font-weight: 500; }
+.rooms-theme .public-booking-jump strong { color: var(--rooms-paper); font: 500 19px/1.1 'Taviraj', Georgia, serif; }
+.rooms-theme .public-booking-jump button { flex: none; min-height: 44px; padding: 0 18px; border: 0; border-radius: var(--rooms-radius-button); background: var(--rooms-paper); color: var(--rooms-text); font-size: 13px; font-weight: 600; }
+@media (min-width: 980px) {
+  .rooms-theme .public-booking-jump { display: none; }
+  .rooms-theme .public-detail-grid.public-booking-layout { grid-template-columns: minmax(0, 1fr) minmax(360px, 430px); }
+  .rooms-theme .public-detail-aside.public-booking-card { position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+}
+@media (max-width: 979px) {
+  .rooms-theme .public-detail-aside.public-booking-card { position: static; width: 100%; max-width: 660px; justify-self: center; }
+}
+@media (max-width: 420px) {
+  .rooms-theme .public-booking-price,
+  .rooms-theme .public-booking-card .public-viewing { padding-inline: 16px; }
+  .rooms-theme .public-booking-promises { margin-inline: 16px; }
+  .rooms-theme .public-booking-card .public-contact { padding-inline: 16px; }
+  .rooms-theme .public-booking-price dl { grid-template-columns: 1fr; }
+  .rooms-theme .public-date-shortcuts,
+  .rooms-theme .public-slot-grid { gap: 5px; }
+  .rooms-theme .public-date-shortcuts button { padding-inline: 4px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rooms-theme .public-booking-card *,
+  .rooms-theme .public-booking-card *::before,
+  .rooms-theme .public-booking-card *::after { scroll-behavior: auto !important; transition-duration: .001ms !important; animation-duration: .001ms !important; }
+}

@@ -121,7 +121,10 @@ test('UI-03: while both requests are in flight, both lists show role="status" "�
     { prefix: '/public/featured-rooms', method: 'GET', handler: () => new Promise(() => {}) }, // never resolves, no timer
     { prefix: '/public/locations', method: 'GET', handler: () => new Promise(() => {}) },
   ])
-  assert.equal(find(app.container, n => n.attributes.role === 'status').length, 2, 'both ListStates pending')
+  // Count only the two ListStates: the contact block has its own role="status" while /public/contact is pending,
+  // and whether that request is still pending at this point depends on machine load (UI-40 flake fix).
+  const listStates = find(app.container, n => n.attributes.role === 'status' && n.textContent.includes('Đang tải danh sách phòng'))
+  assert.equal(listStates.length, 2, 'both ListStates pending')
   assert.ok(app.container.textContent.includes('Đang tải danh sách phòng'))
   assert.equal(roomCards(app.container).length, 0)
   await app.stop()
@@ -202,7 +205,7 @@ test('D-2: the home-page budget select has exactly the 5 ceilings plus "Tất c�
   await until(() => find(app.container, n => n.tagName === 'SELECT' && n.name === 'maxPrice').length === 1, 'budget select')
   const select = find(app.container, n => n.tagName === 'SELECT' && n.name === 'maxPrice')[0]
   const options = find(select, n => n.tagName === 'OPTION').map(o => o.textContent)
-  assert.deepEqual(options, ['Tất cả mức giá', 'Đến 2.000.000 đ', 'Đến 3.000.000 đ', 'Đến 4.000.000 đ', 'Đến 5.000.000 đ', 'Trên 5.000.000 đ'])
+  assert.deepEqual(options, ['Tất cả mức giá', 'Đến 2.000.000 đ', 'Đến 3.000.000 đ', 'Đến 4.000.000 đ', 'Đến 5.000.000 đ', 'Từ 5.000.000 đ'])
   await app.stop()
 })
 
@@ -217,7 +220,7 @@ test('D-2: submitting a district + "Đến 3.000.000 đ" navigates to /phong?dis
   await app.stop()
 })
 
-test('D-2/A-8: submitting "Trên 5.000.000 đ" navigates to /phong?minPrice=5000000, with no maxPrice param', async () => {
+test('D-2/A-8: submitting "Từ 5.000.000 đ" navigates to /phong?minPrice=5000000, with no maxPrice param', async () => {
   const app = await mountHome(emptyRules)
   await searchAndSubmit(app, { maxPrice: '5000000+' })
   await until(() => app.path() === '/phong?minPrice=5000000', `navigated (got ${app.path()})`)

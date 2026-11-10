@@ -5,7 +5,6 @@
   padding: 0;
   overflow: hidden;
   border: 1px solid var(--rooms-line);
-  border-top: 6px solid var(--rooms-ink);
   background: var(--rooms-paper);
   box-shadow: 0 22px 52px #153d3617;
 }
@@ -16,7 +15,7 @@
 .rooms-theme .public-booking-price > p span { color: var(--rooms-muted); font-size: 13px; font-weight: 600; }
 .rooms-theme .public-booking-price dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; }
 .rooms-theme .public-booking-price dl > div { display: grid; gap: 3px; min-width: 0; padding: 12px; border-radius: 10px; background: var(--rooms-cream); }
-.rooms-theme .public-booking-price dt { color: var(--rooms-muted); font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.rooms-theme .public-booking-price dt { color: var(--rooms-muted); font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
 .rooms-theme .public-booking-price dd { margin: 0; color: var(--rooms-accent-text); font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
 
 .rooms-theme .public-booking-card .public-viewing { gap: 20px; padding: 22px 24px 24px; border: 0; border-top: 1px solid var(--rooms-line); border-radius: 0; background: transparent; }
@@ -69,7 +68,13 @@
 .rooms-theme .public-viewing-success { justify-items: start; }
 .rooms-theme .public-viewing-success p { margin: 0; line-height: 1.6; }
 
+.rooms-theme .public-booking-jump { position: fixed; z-index: 20; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); left: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 8px 8px 18px; border-radius: var(--rooms-radius-card); background: var(--rooms-ink); color: var(--rooms-paper); box-shadow: 0 14px 34px #0f2b2633; }
+.rooms-theme .public-booking-jump[hidden] { display: none; }
+.rooms-theme .public-booking-jump p { display: grid; gap: 3px; min-width: 0; margin: 0; color: #fcf8eecc; font-size: 11px; font-weight: 500; }
+.rooms-theme .public-booking-jump strong { color: var(--rooms-paper); font: 500 19px/1.1 'Taviraj', Georgia, serif; }
+.rooms-theme .public-booking-jump button { flex: none; min-height: 44px; padding: 0 18px; border: 0; border-radius: var(--rooms-radius-button); background: var(--rooms-paper); color: var(--rooms-text); font-size: 13px; font-weight: 600; }
 @media (min-width: 980px) {
+  .rooms-theme .public-booking-jump { display: none; }
   .rooms-theme .public-detail-grid.public-booking-layout { grid-template-columns: minmax(0, 1fr) minmax(360px, 430px); }
   .rooms-theme .public-detail-aside.public-booking-card { position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 }

@@ -14,7 +14,8 @@ const budgets = [
   { value: '3000000', label: 'Đến 3.000.000 đ' },
   { value: '4000000', label: 'Đến 4.000.000 đ' },
   { value: '5000000', label: 'Đến 5.000.000 đ' },
-  { value: '5000000+', label: 'Trên 5.000.000 đ' },
+  // minPrice=5000000 includes 5.000.000 (A-8), so the label says "Từ", not "Trên".
+  { value: '5000000+', label: 'Từ 5.000.000 đ' },
 ]
 
 const reasons = [
