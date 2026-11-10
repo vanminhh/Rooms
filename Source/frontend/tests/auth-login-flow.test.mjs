@@ -153,9 +153,9 @@ function loadFresh() {
     if (!id.startsWith('.')) return nodeRequire(id)
     if (id.endsWith('.css')) return {}
     if (/(^|\/)components$/.test(id)) {
-      // The kit index also pulls in three.js / motion scenes; the form fields, button, heading, navigation and
-      // RoomSearch it re-exports (all PublicHomePage/PublicLayout need) run unmodified.
-      kit ??= Object.assign({}, ...['Button', 'FormFields', 'SectionHeading', 'Navigation', 'RoomSearch'].map(n => load(resolve(kitDir, `${n}.tsx`))))
+      // The kit index also pulls in three.js / motion scenes; load only the real modules used by these flows.
+      // SharedPrimitives provides IllustrationLabel for the UI-20 PublicHomePage.
+      kit ??= Object.assign({}, ...['Button', 'FormFields', 'SectionHeading', 'Navigation', 'RoomSearch', 'SharedPrimitives'].map(n => load(resolve(kitDir, `${n}.tsx`))))
       return kit
     }
     return load(resolveRelative(dir, id))
@@ -533,7 +533,7 @@ test('AUTH-T2/AUTH-06: refresh 401 means signed out with status ready: no error 
   const app = await mount('/')
   await until(() => navLinks(app).length > 0, 'header after boot')
   assert.deepEqual(navLinks(app).filter(([, href]) => href !== '/'), [['Tìm phòng', '/phong'], ['Đăng nhập', '/dang-nhap']])
-  assert.ok(app.text().includes('Chọn chỗ ở.'), app.text())
+  assert.ok(app.text().includes('Một nơi ở vừa vặn giữa phố.'), app.text())
   assert.equal(find(app.container, n => n.attributes.role === 'alert').length, 0)
   assert.equal(callsTo(app, 'GET', '/auth/me').length, 0, `me is not called after a 401 refresh; calls ${JSON.stringify(app.api.calls.map(c => [c.method, c.url, c.headers.Authorization]))}`)
   assert.equal(callsTo(app, 'POST', '/auth/refresh').length, 1)
@@ -605,7 +605,7 @@ test('Q6-A/A17: login from status error ends the error state: the guarded page s
 test('Q6-A/A17: with a failed start-up public pages stay usable: "/" shows the home page and header "Đăng nhập" and no error block', async () => {
   const app = await mount('/', { refreshStatus: 500 })
   await until(() => navLinks(app).some(([label]) => label === 'Đăng nhập'), 'header Đăng nhập')
-  assert.ok(app.text().includes('Chọn chỗ ở.'))
+  assert.ok(app.text().includes('Một nơi ở vừa vặn giữa phố.'))
   assert.equal(find(app.container, n => n.attributes.role === 'alert').length, 0)
   await app.stop()
 })
@@ -648,10 +648,10 @@ test('Q4-A: unknown paths show "Không tìm thấy trang" inside PublicLayout an
   }
 })
 
-test('Q4-A/D-4: "/" shows the real home page hero ("Chọn chỗ ở." + "Bắt đầu an yên."), "/phong" is the real search page (CP-3, empty state "Chưa có phòng phù hợp với bộ lọc" from the default empty mock, not the old "Đang làm" placeholder); the 404 link "Về trang chủ" goes to "/" without a second refresh', async () => {
+test('Q4-A/UI-20: "/" shows the approved hero title and introduction, "/phong" is the real search page (CP-3, empty state "Chưa có phòng phù hợp với bộ lọc" from the default empty mock, not the old "Đang làm" placeholder); the 404 link "Về trang chủ" goes to "/" without a second refresh', async () => {
   const home = await mount('/')
-  await until(() => home.text().includes('Chọn chỗ ở.'), '/')
-  assert.ok(home.text().includes('Bắt đầu an yên.'))
+  await until(() => home.text().includes('Một nơi ở vừa vặn giữa phố.'), '/')
+  assert.ok(home.text().includes('Khám phá phòng thuê tại Hà Nội với thông tin rõ ràng về giá, diện tích và tiện ích.'))
   await home.stop()
   const rooms = await mount('/phong')
   await until(() => rooms.text().includes('Tìm phòng') && rooms.text().includes('Chưa có phòng phù hợp với bộ lọc'), '/phong')
@@ -663,7 +663,7 @@ test('Q4-A/D-4: "/" shows the real home page hero ("Chọn chỗ ở." + "Bắt 
   assert.equal(link.attributes.href, '/')
   app.dispatch(link, 'click')
   await settle(app, '/', 'back home')
-  assert.ok(app.text().includes('Chọn chỗ ở.'))
+  assert.ok(app.text().includes('Một nơi ở vừa vặn giữa phố.'))
   assert.equal(callsTo(app, 'POST', '/auth/refresh').length, 1)
   await app.stop()
 })
@@ -742,7 +742,7 @@ test('Q3-A, AUTH-10: PublicLayout footer has the description and Boss contact (o
   const footer = find(full.container, n => n.tagName === 'FOOTER')
   assert.equal(footer.length, 1)
   assert.ok(footer[0].textContent.includes('Chung cư mini cho thuê tại Hà Nội.'))
-  assert.deepEqual(find(footer[0], n => n.tagName === 'A').map(a => a.textContent), ['Zalo'])
+  assert.deepEqual(find(footer[0], n => n.tagName === 'A').map(a => a.textContent), ['Xem phòng trống', 'Zalo'])
   assert.equal(callsTo(full, 'GET', '/public/contact').length, 1)
   await full.stop()
   for (const contact of ['error', null]) {
@@ -1184,7 +1184,17 @@ test('AUTH-07: an empty ?token= value is treated as no token (phone form)', asyn
 // ====================================================================================================
 const patchCalls = app => callsTo(app, 'PATCH', '/auth/me')
 const forms = app => find(app.container, n => n.tagName === 'FORM')
-const submitProfile = app => app.dispatch(forms(app)[1], 'submit') // forms()[0] = change password, [1] = profile
+// UI-33: each card is its own form. Tenant: email, change password. Staff: email, change password, public contact.
+const isStaffPage = app => app.path().startsWith('/ql')
+const formWith = (app, label) => {
+  const input = inputByLabel(app, label)
+  return forms(app).find(form => find(form, n => n === input).length > 0)
+}
+const submitEmail = app => app.dispatch(formWith(app, 'Email'), 'submit')
+const submitContact = app => app.dispatch(formWith(app, 'Zalo'), 'submit')
+const submitPassword = app => app.dispatch(formWith(app, 'Mật khẩu hiện tại'), 'submit')
+// The profile form a test is about: the contact card on the staff page, the email card on the tenant page.
+const submitProfile = app => (isStaffPage(app) ? submitContact(app) : submitEmail(app))
 const typeInto = async (app, label, value) => { app.type(inputByLabel(app, label), value); await wait(40) }
 const labelTexts = app => find(app.container, n => n.tagName === 'LABEL').map(n => n.textContent)
 const headingTexts = app => find(app.container, n => /^H[1-6]$/.test(n.tagName)).map(n => n.textContent.trim())
@@ -1194,7 +1204,7 @@ const FORBIDDEN_TEXT = 'Bạn không có quyền thực hiện thao tác này'
 const TAKEN = 'Email đã được sử dụng'
 const staffMe = (more = {}) => ({ ...ME.manager, ...more })
 const tenantMe = (more = {}) => ({ ...ME.tenant, ...more })
-const openForms = async app => { await until(() => forms(app).length === 2, 'both forms of the account page') }
+const openForms = async app => { await until(() => forms(app).length === (isStaffPage(app) ? 3 : 2), 'every form of the account page') }
 
 // Mock of PATCH /auth/me and POST /auth/change-password (outside edge). `patch` can override the answer of one PATCH.
 function accountExtra(me, { patch } = {}) {
@@ -1216,13 +1226,15 @@ function accountExtra(me, { patch } = {}) {
 }
 
 // ---------- tenant page ----------
-test('AUTH-09: /thue/tai-khoan shows the title, the blocks "Đổi mật khẩu" and "Email", the Email field and none of the staff contact fields or the preview', async () => {
+test('AUTH-09/UI-33: /thue/tai-khoan shows the title, the cards "Thông tin tài khoản" then "Đổi mật khẩu", the Email field and none of the staff contact fields or the preview', async () => {
   const app = await mount('/thue/tai-khoan', { session: 'tenant', extra: accountExtra(tenantMe()) })
   await openForms(app)
   assert.equal(app.path(), '/thue/tai-khoan')
   const headings = headingTexts(app)
-  for (const h of ['Tài khoản', 'Đổi mật khẩu', 'Email']) assert.ok(headings.includes(h), `heading "${h}" in ${JSON.stringify(headings)}`)
-  assert.ok(!headings.includes('Thông tin liên hệ'), 'tenant has no "Thông tin liên hệ" block')
+  for (const h of ['Tài khoản', 'Thông tin tài khoản', 'Đổi mật khẩu']) assert.ok(headings.includes(h), `heading "${h}" in ${JSON.stringify(headings)}`)
+  assert.ok(headings.indexOf('Thông tin tài khoản') < headings.indexOf('Đổi mật khẩu'), 'email card comes first (mockup 06)')
+  assert.ok(!headings.includes('Thông tin liên hệ công khai'), 'tenant has no public contact card')
+  assert.equal(forms(app).length, 2)
   const labels = labelTexts(app)
   for (const l of ['Mật khẩu hiện tại', 'Mật khẩu mới', 'Nhập lại mật khẩu mới', 'Email']) assert.ok(labels.includes(l), `label "${l}" in ${JSON.stringify(labels)}`)
   for (const l of ['Số điện thoại liên hệ', 'Zalo', 'Facebook']) assert.ok(!labels.includes(l), `tenant must not see "${l}"`)
@@ -1352,13 +1364,17 @@ test('AUTH-09: "Đã lưu." disappears when a later save fails', async () => {
 })
 
 // ---------- staff page ----------
-test('AUTH-09: /ql/tai-khoan shows Email, Số điện thoại liên hệ, Zalo, Facebook, the block "Thông tin liên hệ" and "Khách sẽ thấy:" with "Chưa có thông tin liên hệ" when all are empty', async () => {
+test('AUTH-09/UI-33: /ql/tai-khoan shows three cards (email, password, public contact), the fields, and "Khách sẽ thấy:" with "Chưa có thông tin liên hệ" when all are empty', async () => {
   const app = await mount('/ql/tai-khoan', { session: 'manager', extra: accountExtra(staffMe()) })
   await openForms(app)
   const labels = labelTexts(app)
   for (const l of ['Mật khẩu hiện tại', 'Email', 'Số điện thoại liên hệ', 'Zalo', 'Facebook']) assert.ok(labels.includes(l), `label "${l}" in ${JSON.stringify(labels)}`)
   const headings = headingTexts(app)
-  for (const h of ['Tài khoản', 'Đổi mật khẩu', 'Thông tin liên hệ']) assert.ok(headings.includes(h), `heading "${h}" in ${JSON.stringify(headings)}`)
+  for (const h of ['Tài khoản', 'Thông tin tài khoản', 'Đổi mật khẩu', 'Thông tin liên hệ công khai']) assert.ok(headings.includes(h), `heading "${h}" in ${JSON.stringify(headings)}`)
+  assert.equal(forms(app).length, 3)
+  assert.notEqual(formWith(app, 'Email'), formWith(app, 'Zalo'), 'email and public contact are separate forms')
+  assert.equal(formWith(app, 'Zalo'), formWith(app, 'Số điện thoại liên hệ'))
+  assert.equal(formWith(app, 'Zalo'), formWith(app, 'Facebook'))
   assert.ok(app.text().includes('Khách sẽ thấy:'))
   assert.ok(app.text().includes('Chưa có thông tin liên hệ'))
   assert.ok(!hasLink(app, 'Zalo') && !hasLink(app, 'Facebook'), 'no links when empty')
@@ -1400,36 +1416,52 @@ test('A11: a non-https value (http:, javascript:, no scheme) is hidden in the pr
   await app.stop()
 })
 
-test('AUTH-09/A8: staff save sends all four keys; filled values are trimmed, empty ones are null; the page stays open with "Đã lưu."', async () => {
+test('AUTH-09/A8/UI-33: "Lưu liên hệ" sends exactly the three contact keys (trimmed, empty = null), never the email; the page stays open with "Đã lưu."', async () => {
   const app = await mount('/ql/tai-khoan', { session: 'manager', extra: accountExtra(staffMe()) })
   await openForms(app)
+  await typeInto(app, 'Email', 'chua-luu@example.com') // typed in the other card, not saved by this button
   await typeInto(app, 'Số điện thoại liên hệ', '0900000002')
   await typeInto(app, 'Zalo', '  https://zalo.me/0900000002  ')
-  submitProfile(app)
+  submitContact(app)
   await until(() => statusBlocks(app).includes('Đã lưu.'), '"Đã lưu."')
-  assert.deepEqual(patchCalls(app).map(c => c.body), [{ email: null, contactPhone: '0900000002', zaloUrl: 'https://zalo.me/0900000002', facebookUrl: null }])
+  assert.deepEqual(patchCalls(app).map(c => c.body), [{ contactPhone: '0900000002', zaloUrl: 'https://zalo.me/0900000002', facebookUrl: null }])
   await wait(100)
   assert.equal(app.path(), '/ql/tai-khoan')
-  await typeInto(app, 'Email', 'ha@example.com')
   await typeInto(app, 'Facebook', 'https://facebook.com/ha')
   await typeInto(app, 'Zalo', '')
-  submitProfile(app)
+  submitContact(app)
   await until(() => patchCalls(app).length === 2, 'second PATCH')
-  assert.deepEqual(patchCalls(app)[1].body, { email: 'ha@example.com', contactPhone: '0900000002', zaloUrl: null, facebookUrl: 'https://facebook.com/ha' })
+  assert.deepEqual(patchCalls(app)[1].body, { contactPhone: '0900000002', zaloUrl: null, facebookUrl: 'https://facebook.com/ha' })
   await app.stop()
 })
 
-test('AUTH-09/A8: staff with every field cleared sends { email, contactPhone, zaloUrl, facebookUrl } all null (clears the public contact)', async () => {
+test('AUTH-09/UI-33: on the staff page "Lưu email" sends exactly { email }, never the contact fields', async () => {
+  const app = await mount('/ql/tai-khoan', { session: 'manager', extra: accountExtra(staffMe()) })
+  await openForms(app)
+  await typeInto(app, 'Số điện thoại liên hệ', '0900000002') // typed in the contact card, not saved by this button
+  await typeInto(app, 'Email', '  ha@example.com ')
+  submitEmail(app)
+  await until(() => statusBlocks(app).includes('Đã lưu.'), '"Đã lưu."')
+  assert.deepEqual(patchCalls(app).map(c => c.body), [{ email: 'ha@example.com' }])
+  await app.stop()
+})
+
+test('AUTH-09/A8: staff with every contact field cleared sends { contactPhone, zaloUrl, facebookUrl } all null; clearing the email sends { email: null }', async () => {
   const me = staffMe({ email: 'ha@example.com', contactPhone: '0900000002', zaloUrl: 'https://zalo.me/ha', facebookUrl: 'https://facebook.com/ha' })
   const app = await mount('/ql/tai-khoan', { session: 'manager', extra: accountExtra(me) })
   await openForms(app)
   assert.equal(inputByLabel(app, 'Số điện thoại liên hệ').value, '0900000002', 'pre-filled from the account')
+  assert.equal(inputByLabel(app, 'Email').value, 'ha@example.com', 'pre-filled from the account')
   assert.ok(app.text().includes('Điện thoại: 0900000002'), 'preview starts from the saved values')
-  for (const l of ['Email', 'Số điện thoại liên hệ', 'Zalo', 'Facebook']) await typeInto(app, l, '')
-  submitProfile(app)
+  for (const l of ['Số điện thoại liên hệ', 'Zalo', 'Facebook']) await typeInto(app, l, '')
+  submitContact(app)
   await until(() => statusBlocks(app).includes('Đã lưu.'), '"Đã lưu."')
-  assert.deepEqual(patchCalls(app).map(c => c.body), [{ email: null, contactPhone: null, zaloUrl: null, facebookUrl: null }])
+  assert.deepEqual(patchCalls(app).map(c => c.body), [{ contactPhone: null, zaloUrl: null, facebookUrl: null }])
   assert.ok(app.text().includes('Chưa có thông tin liên hệ'))
+  await typeInto(app, 'Email', '')
+  submitEmail(app)
+  await until(() => patchCalls(app).length === 2, 'email PATCH')
+  assert.deepEqual(patchCalls(app)[1].body, { email: null })
   await app.stop()
 })
 
@@ -1514,7 +1546,7 @@ test('AUTH-03: on the account page a successful change keeps the page, empties t
   await typeInto(app, 'Mật khẩu hiện tại', 'matkhau123')
   await typeInto(app, 'Mật khẩu mới', NEW_PW)
   await typeInto(app, 'Nhập lại mật khẩu mới', NEW_PW)
-  app.dispatch(forms(app)[0], 'submit')
+  submitPassword(app)
   await until(() => statusBlocks(app).includes('Đã đổi mật khẩu.'), 'success notice')
   assert.deepEqual(changeCalls(app).map(c => c.body), [{ currentPassword: 'matkhau123', newPassword: NEW_PW }])
   await wait(120)
@@ -1531,7 +1563,7 @@ test('AUTH-03: on the account page 7 characters are refused under "Mật khẩu 
   await typeInto(app, 'Mật khẩu hiện tại', 'matkhau123')
   await typeInto(app, 'Mật khẩu mới', '1234567')
   await typeInto(app, 'Nhập lại mật khẩu mới', '1234567')
-  app.dispatch(forms(app)[0], 'submit')
+  submitPassword(app)
   await until(() => fieldErrorOf(app, 'Mật khẩu mới'), 'field error')
   assert.equal(fieldErrorOf(app, 'Mật khẩu mới'), 'Mật khẩu tối thiểu 8 ký tự')
   await wait(80)
@@ -1539,28 +1571,32 @@ test('AUTH-03: on the account page 7 characters are refused under "Mật khẩu 
   await typeInto(app, 'Mật khẩu hiện tại', 'sai-roi-nha')
   await typeInto(app, 'Mật khẩu mới', '12345678')
   await typeInto(app, 'Nhập lại mật khẩu mới', '12345678')
-  app.dispatch(forms(app)[0], 'submit')
+  submitPassword(app)
   await until(() => fieldErrorOf(app, 'Mật khẩu hiện tại') === 'Mật khẩu hiện tại không đúng', 'API field error')
   assert.equal(changeCalls(app).length, 1)
   assert.ok(!statusBlocks(app).includes('Đã đổi mật khẩu.'))
   await app.stop()
 })
 
-// ---------- UI-09: two independent forms ----------
-test('UI-09: while the profile is saving its button is disabled with spinner "Đang lưu" and the password form stays enabled; one PATCH', async () => {
+// ---------- UI-09: independent forms ----------
+test('UI-09/UI-33: while "Lưu liên hệ" is saving its button is disabled with spinner "Đang lưu"; "Lưu email" and "Đổi mật khẩu" stay enabled; one PATCH', async () => {
   const app = await mount('/ql/tai-khoan', { session: 'manager', delay: 80, extra: accountExtra(staffMe()) })
   await openForms(app)
   await typeInto(app, 'Số điện thoại liên hệ', '0900000002')
-  submitProfile(app)
-  const [pwButton, profileButton] = find(app.container, n => n.tagName === 'BUTTON' && n.attributes.type === 'submit')
-  await until(() => profileButton.hasAttribute('disabled'), 'profile button disabled')
-  assert.ok(profileButton.textContent.includes('Lưu') && !profileButton.textContent.includes('Đổi mật khẩu'))
-  assert.ok(spinnerNamed(app, 'Đang lưu'), 'spinner "Đang lưu"')
+  submitContact(app)
+  const submitOf = form => find(form, n => n.tagName === 'BUTTON' && n.attributes.type === 'submit')[0]
+  const emailButton = submitOf(formWith(app, 'Email'))
+  const pwButton = submitOf(formWith(app, 'Mật khẩu hiện tại'))
+  const contactButton = submitOf(formWith(app, 'Zalo'))
+  assert.ok(emailButton.textContent.includes('Lưu email'))
   assert.ok(pwButton.textContent.includes('Đổi mật khẩu'))
-  assert.ok(!pwButton.hasAttribute('disabled'), 'the other form is not locked')
+  assert.ok(contactButton.textContent.includes('Lưu liên hệ'))
+  await until(() => contactButton.hasAttribute('disabled'), 'contact button disabled')
+  assert.ok(spinnerNamed(app, 'Đang lưu'), 'spinner "Đang lưu"')
+  assert.ok(!pwButton.hasAttribute('disabled') && !emailButton.hasAttribute('disabled'), 'the other forms are not locked')
   await until(() => statusBlocks(app).includes('Đã lưu.'), '"Đã lưu."')
   assert.equal(patchCalls(app).length, 1)
-  assert.ok(!profileButton.hasAttribute('disabled'))
+  assert.ok(!contactButton.hasAttribute('disabled'))
   await app.stop()
 })
 
@@ -1577,7 +1613,7 @@ test('AUTH-06: wrong role on the account routes goes to the own home: manager an
 test('AUTH-06: right role keeps its account URL (tenant /thue/tai-khoan, manager and boss /ql/tai-khoan)', async () => {
   for (const [session, path] of [['tenant', '/thue/tai-khoan'], ['manager', '/ql/tai-khoan'], ['boss', '/ql/tai-khoan']]) {
     const app = await mount(path, { session })
-    await until(() => forms(app).length === 2, `account page of ${session}`)
+    await until(() => forms(app).length === (session === 'tenant' ? 2 : 3), `account page of ${session}`)
     await settle(app, path, session)
     await app.stop()
   }

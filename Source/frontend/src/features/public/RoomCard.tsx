@@ -4,8 +4,13 @@ import { formatMoney } from '../../shared/formatters'
 import type { PublicRoomListItem } from './api'
 import './public.css'
 
+interface RoomCardProps {
+  room: PublicRoomListItem
+  ctaLabel?: string
+}
+
 // One room in a public list; the whole card links to the room detail (PUB-02).
-export function RoomCard({ room }: { room: PublicRoomListItem }): ReactElement {
+export function RoomCard({ room, ctaLabel }: RoomCardProps): ReactElement {
   return <Link className="public-room-card" to={`/phong/${room.id}`}>
     {room.imageUrl
       ? <img className="public-room-image" src={room.imageUrl} alt={`Phòng ${room.code} – ${room.buildingName}`} />
@@ -14,9 +19,10 @@ export function RoomCard({ room }: { room: PublicRoomListItem }): ReactElement {
     <p>{room.buildingName}</p>
     <p>{room.ward}, {room.district}</p>
     <dl className="public-room-facts">
+      <div><dt>Giá thuê</dt><dd>{formatMoney(room.price)}</dd></div>
       <div><dt>Diện tích</dt><dd>{room.areaM2.toLocaleString('vi-VN')} m²</dd></div>
-      <div><dt>Số người tối đa</dt><dd>{room.maxOccupants}</dd></div>
+      <div><dt>Tầng</dt><dd>{room.floor}</dd></div>
     </dl>
-    <strong className="public-room-price">{formatMoney(room.price)}</strong>
+    {ctaLabel && <span className="public-room-cta">{ctaLabel}<span aria-hidden="true">→</span></span>}
   </Link>
 }

@@ -15,6 +15,7 @@ import {
 } from './public-dom.mjs'
 
 const nodeRequire = createRequire(import.meta.url)
+const { flushSync } = nodeRequire('react-dom')
 
 // @tanstack/react-query keeps a gc timer alive (default gcTime 5 min) per QueryClient; one is created per
 // mountRooms() call below. End the process once the tests are done, same convention as fe-p2-14-home.test.mjs.
@@ -237,16 +238,27 @@ test('FE-P2-15 #6 (UI-05, API-02): garbage ?sort=abc&page=<bad> never blanks the
 // #6b
 // ======================================================================================
 test('FE-P2-15 #6b (A-7): default sort is not written to the URL; choosing "Mới nhất" adds sort=newest; choosing "Giá tăng dần" again removes it', async () => {
-  const app = await mountRooms('/phong', [roomsRule([]), locationsRule()])
-  await until(() => selectedOptionValue(byName(app.container, 'sort')) === 'price', 'loaded')
-  assert.ok(!app.path().includes('sort='), 'default sort absent from URL')
-  selectValue(app.container, byName(app.container, 'sort'), 'newest')
-  submit(app)
-  await until(() => app.path().includes('sort=newest'), `added (got ${app.path()})`)
-  selectValue(app.container, byName(app.container, 'sort'), 'price')
-  submit(app)
-  await until(() => !app.path().includes('sort='), `removed (got ${app.path()})`)
-  await app.stop()
+  {
+    const app = await mountRooms('/phong', [roomsRule([]), locationsRule()])
+    await until(() => selectedOptionValue(byName(app.container, 'sort')) === 'price', 'default sort loaded')
+    assert.ok(!app.path().includes('sort='), 'default sort absent from URL')
+    flushSync(() => { selectValue(app.container, byName(app.container, 'sort'), 'newest') })
+    await until(() => selectedOptionValue(byName(app.container, 'sort')) === 'newest', 'form selected newest')
+    flushSync(() => { submit(app) })
+    await until(() => app.path().includes('sort=newest'), `added (got ${app.path()})`)
+    await app.stop()
+  }
+
+  {
+    const app = await mountRooms('/phong?sort=newest', [roomsRule([]), locationsRule()])
+    await until(() => selectedOptionValue(byName(app.container, 'sort')) === 'newest', 'newest URL state loaded')
+    await until(() => lastRoomsCall(app.calls) && queryOf(lastRoomsCall(app.calls).url).get('sort') === 'newest', 'newest request completed')
+    flushSync(() => { selectValue(app.container, byName(app.container, 'sort'), 'price') })
+    await until(() => selectedOptionValue(byName(app.container, 'sort')) === 'price', 'form selected default sort')
+    flushSync(() => { submit(app) })
+    await until(() => !app.path().includes('sort='), `removed (got ${app.path()})`)
+    await app.stop()
+  }
 })
 
 // ======================================================================================
@@ -350,7 +362,7 @@ test('FE-P2-15 #9 (D-1): buildingId=3 sends buildingId to /public/rooms, calls /
 // ======================================================================================
 // #9b
 // ======================================================================================
-test('FE-P2-15 #9b (D-1, PUB-02): buildingId=3 while /public/buildings/3 is still loading or 404s shows no "Đang lọc theo tòa" line but keeps "Bỏ lọc tòa"; the room list still works', async () => {
+test('FE-P2-15 #9b (D-1, PUB-02, UI-03): buildingId=3 shows loading; a 404 shows its error + retry; "Bỏ lọc tòa" and the room list remain usable', async () => {
   // loading
   {
     const app = await mountRooms('/phong?buildingId=3', [
@@ -359,6 +371,7 @@ test('FE-P2-15 #9b (D-1, PUB-02): buildingId=3 while /public/buildings/3 is stil
     ])
     await until(() => app.container.textContent.includes('phòng phù hợp'), 'rooms still loaded')
     assert.ok(!app.container.textContent.includes('Đang lọc theo tòa'))
+    assert.ok(app.container.textContent.includes('Đang tải thông tin tòa'))
     assert.ok(buttonByText(app.container, 'Bỏ lọc tòa'))
     assert.equal(alerts(app.container).length, 0)
     await app.stop()
@@ -373,7 +386,8 @@ test('FE-P2-15 #9b (D-1, PUB-02): buildingId=3 while /public/buildings/3 is stil
     await wait(80)
     assert.ok(!app.container.textContent.includes('Đang lọc theo tòa'))
     assert.ok(buttonByText(app.container, 'Bỏ lọc tòa'))
-    assert.equal(alerts(app.container).length, 0)
+    assert.ok(buttonByText(app.container, 'Thử lại'))
+    assert.deepEqual(alerts(app.container), ['Không tìm thấyThử lại'])
     await app.stop()
   }
 })
@@ -496,3 +510,5 @@ test('FE-P2-15 #15: parseFilters/filtersToParams/filtersToQuery/validFilters pur
   assert.equal(validFilters({ district: '', ward: '', buildingId: '', minPrice: '2147483647', maxPrice: '', sort: 'price' }), true)
   assert.equal(validFilters({ district: '', ward: '', buildingId: '', minPrice: '', maxPrice: '', sort: 'price' }), true)
 })
+
+

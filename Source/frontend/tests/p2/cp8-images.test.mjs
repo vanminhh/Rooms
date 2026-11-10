@@ -211,8 +211,6 @@ async function waitFor(predicate, { timeout = 3000, interval = 20 } = {}) {
   }
   throw new Error('waitFor: condition not met within timeout')
 }
-const loaded = container => !container.textContent.includes('Đang tải')
-
 // gcTime short, not the default 5 minutes, so these tests exit promptly (same reasoning as cp7-rooms.test.mjs).
 function newClient() {
   return new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 1000 }, mutations: { retry: false, gcTime: 1000 } } })
@@ -390,7 +388,7 @@ test('ROOM-07: RoomImages renders images from getRoom(id) (mock, queryKey [\'roo
     { id: 2, roomId: 10, publicId: 'p2', url: '/img2.jpg', sortOrder: 1 },
   ] })))])
   const app = await mount(withQuery(React.createElement(RoomImages, { roomId: 10 })))
-  await waitFor(() => loaded(app.container))
+  await waitFor(() => find(app.container, n => n.tagName === 'IMG').length === 2)
   const imgs = find(app.container, n => n.tagName === 'IMG')
   assert.equal(imgs.length, 2)
   assert.equal(imgs[0].getAttribute('src'), '/img1.jpg')
@@ -403,7 +401,7 @@ test('ROOM-07: maxImages 10 locks the "Thêm ảnh" button once the room already
   const images = Array.from({ length: 10 }, (_, i) => ({ id: i + 1, roomId: 10, publicId: `p${i}`, url: `/img${i}.jpg`, sortOrder: i }))
   fakeFetch([apiRule('/rooms/10', 'GET', () => ok(baseRoomView({ images })))])
   const app = await mount(withQuery(React.createElement(RoomImages, { roomId: 10 })))
-  await waitFor(() => loaded(app.container))
+  await waitFor(() => app.container.textContent.includes('Đã đủ 10 ảnh') && isDisabled(buttonByText(app.container, 'Thêm ảnh')))
   assert.ok(isDisabled(buttonByText(app.container, 'Thêm ảnh')), '10/10 images must disable "Thêm ảnh"')
   assert.ok(app.container.textContent.includes('Đã đủ 10 ảnh'))
   await app.stop()
@@ -415,7 +413,7 @@ test('Q2 CP-3/ROOM-07: deleting an image runs the DELETE directly on "Xóa ảnh
     apiRule('/rooms/10/images/1', 'DELETE', () => ok(null)),
   ])
   const app = await mount(withQuery(React.createElement(RoomImages, { roomId: 10 })))
-  await waitFor(() => loaded(app.container))
+  await waitFor(() => Boolean(buttonByAriaLabel(app.container, 'Xóa ảnh 1')))
   assert.equal(find(app.container, n => n.getAttribute('role') === 'dialog').length, 0, 'no dialog before deleting')
   dispatch(app.container, buttonByAriaLabel(app.container, 'Xóa ảnh 1'), 'click')
   await waitFor(() => calls.some(c => c.method === 'DELETE'))
@@ -431,7 +429,7 @@ test('every change awaits invalidate([\'rooms\']): after a successful delete, th
     apiRule('/rooms/10/images/1', 'DELETE', () => ok(null)),
   ])
   const app = await mount(withQuery(React.createElement(RoomImages, { roomId: 10 })))
-  await waitFor(() => loaded(app.container))
+  await waitFor(() => Boolean(buttonByAriaLabel(app.container, 'Xóa ảnh 1')))
   assert.equal(getCount, 1, 'sanity: one GET on mount')
   dispatch(app.container, buttonByAriaLabel(app.container, 'Xóa ảnh 1'), 'click')
   await waitFor(() => getCount >= 2, { timeout: 5000 })
@@ -448,7 +446,7 @@ test('UI-10: reordering via "Xuống" PATCHes /rooms/:id/images/order with the s
     apiRule('/rooms/10/images/order', 'PATCH', () => ok([])),
   ])
   const app = await mount(withQuery(React.createElement(RoomImages, { roomId: 10 })))
-  await waitFor(() => loaded(app.container))
+  await waitFor(() => buttons(app.container).some(b => b.textContent.trim() === 'Xuống'))
   const down = buttons(app.container).filter(b => b.textContent.trim() === 'Xuống')[0]
   dispatch(app.container, down, 'click')
   await waitFor(() => calls.some(c => c.method === 'PATCH'))
@@ -465,7 +463,7 @@ test('FILE-01: a 5_000_000 byte file reaches signUpload; a 5_000_001 byte file i
     apiRule('/files/sign', 'POST', () => ok(SIGNED)),
   ])
   let app = await mount(withQuery(React.createElement(RoomImages, { roomId: 10 })))
-  await waitFor(() => loaded(app.container))
+  await waitFor(() => Boolean(fileInput(app.container)))
   const input1 = fileInput(app.container)
   input1.files = [imageFile(5_000_000)]
   dispatch(app.container, input1, 'change', { target: input1 })
@@ -474,7 +472,7 @@ test('FILE-01: a 5_000_000 byte file reaches signUpload; a 5_000_001 byte file i
 
   calls = fakeFetch([apiRule('/rooms/10', 'GET', () => ok(baseRoomView()))])
   app = await mount(withQuery(React.createElement(RoomImages, { roomId: 10 })))
-  await waitFor(() => loaded(app.container))
+  await waitFor(() => Boolean(fileInput(app.container)))
   const input2 = fileInput(app.container)
   input2.files = [imageFile(5_000_001)]
   dispatch(app.container, input2, 'change', { target: input2 })
@@ -486,7 +484,7 @@ test('FILE-01: a 5_000_000 byte file reaches signUpload; a 5_000_001 byte file i
 test('FILE-02: a disallowed MIME type is blocked before any fetch to /files/sign', async () => {
   const calls = fakeFetch([apiRule('/rooms/10', 'GET', () => ok(baseRoomView()))])
   const app = await mount(withQuery(React.createElement(RoomImages, { roomId: 10 })))
-  await waitFor(() => loaded(app.container))
+  await waitFor(() => Boolean(fileInput(app.container)))
   const input = fileInput(app.container)
   input.files = [imageFile(1000, 'application/pdf', 'a.pdf')]
   dispatch(app.container, input, 'change', { target: input })
@@ -504,7 +502,7 @@ test('FILE-01/02/UI-10: a full successful upload (sign → Cloudinary → attach
     apiRule('/rooms/10/images', 'POST', () => ok({ id: 9, roomId: 10, publicId: 'rooms/10/new', url: '/new.jpg', sortOrder: 0 })),
   ])
   const app = await mount(withQuery(React.createElement(RoomImages, { roomId: 10 })))
-  await waitFor(() => loaded(app.container))
+  await waitFor(() => Boolean(fileInput(app.container)))
   const input = fileInput(app.container)
   input.files = [imageFile(2_000_000, 'image/png', 'b.png')]
   dispatch(app.container, input, 'change', { target: input })
@@ -525,7 +523,7 @@ test('upload failure at the Cloudinary step shows exactly "Tải ảnh lên khô
     urlRule(SIGNED.uploadUrl, 'POST', () => json(400, {})),
   ])
   const app = await mount(withQuery(React.createElement(RoomImages, { roomId: 10 })))
-  await waitFor(() => loaded(app.container))
+  await waitFor(() => Boolean(fileInput(app.container)))
   const input = fileInput(app.container)
   input.files = [imageFile(1000)]
   dispatch(app.container, input, 'change', { target: input })
@@ -543,7 +541,7 @@ test('metadata sai 400 VALIDATION_FAILED from attach shows the real API message,
     apiRule('/rooms/10/images', 'POST', () => fail(400, 'VALIDATION_FAILED', 'Metadata ảnh không hợp lệ')),
   ])
   const app = await mount(withQuery(React.createElement(RoomImages, { roomId: 10 })))
-  await waitFor(() => loaded(app.container))
+  await waitFor(() => Boolean(fileInput(app.container)))
   const input = fileInput(app.container)
   input.files = [imageFile(1000)]
   dispatch(app.container, input, 'change', { target: input })
@@ -558,7 +556,7 @@ test('cấu hình thiếu: a 503 UPLOAD_NOT_CONFIGURED from /files/sign shows "C
     apiRule('/files/sign', 'POST', () => fail(503, 'UPLOAD_NOT_CONFIGURED', 'Chưa cấu hình tải ảnh')),
   ])
   const app = await mount(withQuery(React.createElement(RoomImages, { roomId: 10 })))
-  await waitFor(() => loaded(app.container))
+  await waitFor(() => Boolean(fileInput(app.container)))
   const input = fileInput(app.container)
   input.files = [imageFile(1000)]
   dispatch(app.container, input, 'change', { target: input })
@@ -574,7 +572,7 @@ test('scope khác tòa: a 403 OUT_OF_SCOPE from attach shows the API message', a
     apiRule('/rooms/10/images', 'POST', () => fail(403, 'OUT_OF_SCOPE', 'Phòng không thuộc phạm vi của bạn')),
   ])
   const app = await mount(withQuery(React.createElement(RoomImages, { roomId: 10 })))
-  await waitFor(() => loaded(app.container))
+  await waitFor(() => Boolean(fileInput(app.container)))
   const input = fileInput(app.container)
   input.files = [imageFile(1000)]
   dispatch(app.container, input, 'change', { target: input })

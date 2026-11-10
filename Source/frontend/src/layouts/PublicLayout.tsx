@@ -12,15 +12,21 @@ export function PublicLayout() {
   const { status, user } = useAuth()
   const navigate = useNavigate()
   const contact = usePublicContact()
-  // A failed startup (status 'error') counts as signed out (A17).
   const account = user
     ? { label: 'Trang của tôi', href: homeOf(user.role) }
     : { label: 'Đăng nhập', href: '/dang-nhap' }
   const links = status === 'loading' ? [] : [{ label: 'Tìm phòng', href: '/phong' }, account]
 
   return <div className="rooms-theme" onClick={event => handleInternalLinkClick(event, navigate)}>
-    <RoomsHeader homeHref="/" links={links} logoSrc="/images/rooms-logo.webp" />
+    <RoomsHeader
+      homeHref="/"
+      links={links}
+      supplementalLinks={[{ label: 'Khu vực', href: '/#khu-vuc' }, { label: 'Liên hệ', href: '/#lien-he' }]}
+      accountHref={status === 'loading' ? undefined : account.href}
+      action={<a className="rooms-header-cta" href="/phong">Lên lịch xem</a>}
+      logoSrc="/images/rooms-logo.webp"
+    />
     <main className="layout-main"><Outlet /></main>
-    <RoomsFooter description="Chung cư mini cho thuê tại Hà Nội." contact={<ContactInfo contact={contact.data ?? null} />} />
+    <RoomsFooter id="lien-he" description="Chung cư mini cho thuê tại Hà Nội." contact={<ContactInfo contact={contact.data ?? null} />} links={[{ label: 'Xem phòng trống', href: '/phong' }]} />
   </div>
 }

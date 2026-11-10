@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from 'react-router'
@@ -12,15 +12,19 @@ import type { ChangePasswordValues } from './schemas'
 import './auth.css'
 
 // Used by the forced change page (go-home) and the account pages (stay).
-export function ChangePasswordForm({ afterSuccess }: { afterSuccess: 'go-home' | 'stay' }) {
+// `layout="page"` is the /doi-mat-khau card (mockup 05): placeholders, the 8-character hint, stable error space
+// and a full-width submit. The account pages keep the plain layout until UI-33 restyles them.
+export function ChangePasswordForm({ afterSuccess, layout = 'plain' }: { afterSuccess: 'go-home' | 'stay'; layout?: 'page' | 'plain' }) {
   const { refreshMe } = useAuth()
   const navigate = useNavigate()
+  const hintId = useId()
   const [formError, setFormError] = useState('')
   const [saved, setSaved] = useState(false)
   const { register, handleSubmit, reset, setError, formState: { errors, isSubmitting } } = useForm<ChangePasswordValues>({
     resolver: zodResolver(changePasswordSchema),
     defaultValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
   })
+  const page = layout === 'page'
 
   async function onSubmit(values: ChangePasswordValues) {
     setFormError('')
@@ -42,28 +46,35 @@ export function ChangePasswordForm({ afterSuccess }: { afterSuccess: 'go-home' |
 
   return <>
     {saved && <p className="auth-notice" role="status">Đã đổi mật khẩu.</p>}
-    <form noValidate onSubmit={handleSubmit(onSubmit)}>
+    <form className={page ? 'auth-recovery-form' : undefined} noValidate onSubmit={handleSubmit(onSubmit)}>
       <PasswordField
         label="Mật khẩu hiện tại"
         autoComplete="current-password"
+        placeholder={page ? 'Nhập mật khẩu hiện tại' : undefined}
         error={errors.currentPassword?.message}
         {...register('currentPassword')}
       />
       <PasswordField
         label="Mật khẩu mới"
         autoComplete="new-password"
+        placeholder={page ? 'Nhập mật khẩu mới' : undefined}
+        aria-describedby={page ? hintId : undefined}
         error={errors.newPassword?.message}
         {...register('newPassword')}
       />
+      {page && <p className="auth-recovery-hint" id={hintId}>Tối thiểu 8 ký tự</p>}
       <PasswordField
         label="Nhập lại mật khẩu mới"
         autoComplete="new-password"
+        placeholder={page ? 'Nhập lại mật khẩu mới' : undefined}
         error={errors.confirmPassword?.message}
         {...register('confirmPassword')}
       />
-      <FormError>{formError}</FormError>
-      <RoomsButton type="submit" disabled={isSubmitting}>
-        Đổi mật khẩu{isSubmitting && <Spinner label="Đang lưu" />}
+      {page
+        ? <div className="auth-recovery-form-message" aria-live="polite"><FormError>{formError}</FormError></div>
+        : <FormError>{formError}</FormError>}
+      <RoomsButton className={page ? 'auth-recovery-submit' : undefined} type="submit" disabled={isSubmitting}>
+        Đổi mật khẩu{isSubmitting ? <Spinner label="Đang lưu" /> : page && <span aria-hidden="true">→</span>}
       </RoomsButton>
     </form>
   </>

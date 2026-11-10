@@ -90,3 +90,14 @@ body { margin: 0; }
   .preview-feedback { max-width: calc(100vw - 24px); width: calc(100vw - 24px); padding: 10px 14px; bottom: 10px; }
   .preview-feedback p { font-size: 9px; }
 }
+
+
+.preview-shared-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin-bottom: 22px; }
+.preview-shared-grid h3 { margin: 14px 0; font-size: 28px; }
+.preview-shared-grid p, .preview-illustration figcaption { color: var(--rooms-muted); font-size: 12px; font-weight: 500; }
+.preview-illustration { position: relative; overflow: hidden; border-radius: var(--rooms-radius-card); background: var(--rooms-paper); box-shadow: 0 14px 34px #153d3610; }
+.preview-illustration img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+.preview-illustration figcaption { padding: 16px 18px; }
+.preview-filter-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+@media (max-width: 620px) { .preview-shared-grid { grid-template-columns: 1fr; } }
+

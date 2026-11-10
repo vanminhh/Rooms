@@ -445,7 +445,7 @@ test('FE-P2-16 #14c (ROOM-08, D-6.6): CostBreakdown kit wording is present verba
 // ======================================================================================
 // #14d
 // ======================================================================================
-test('FE-P2-16 #14d (D-6.5): room/building description and building amenities render verbatim with no "Mô tả"/"Tiện ích" labels; null/empty renders no empty block, no literal "null"', async () => {
+test('FE-P2-16 #14d (D-6.5): room/building description and amenities render verbatim; null/empty renders no literal "null"', async () => {
   const room = roomDetail({
     description: 'Phòng góc, nhiều ánh sáng tự nhiên.',
     building: buildingSummary({ description: 'Tòa nhà mới xây, an ninh tốt.', amenities: ['Thang máy', 'Bảo vệ 24/7'] }),
@@ -456,7 +456,8 @@ test('FE-P2-16 #14d (D-6.5): room/building description and building amenities re
   assert.ok(text.includes('Tòa nhà mới xây, an ninh tốt.'))
   assert.ok(text.includes('Thang máy'))
   assert.ok(text.includes('Bảo vệ 24/7'))
-  assert.ok(!text.includes('Mô tả'), text)
+  const descriptionHeadings = find(app.container, node => node.tagName === 'H2' && node.textContent === 'Mô tả phòng')
+  assert.equal(descriptionHeadings.length, 1)
   assert.ok(!text.includes('Tiện ích'), text)
   await app.stop()
 
@@ -500,3 +501,4 @@ test('FE-P2-16 #15b (D-6): page contains no stray wording outside the CP-4 strin
   assert.ok(!text.includes('Trang đang được xây dựng'), text)
   await app.stop()
 })
+

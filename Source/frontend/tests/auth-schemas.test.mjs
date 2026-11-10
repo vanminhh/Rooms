@@ -79,11 +79,17 @@ test('AUTH-10: usePublicContact shares one query key, caches 5 minutes and calls
   assert.equal(options.queryFn, getPublicContact)
 })
 
-test('KIT-02: index.html loads Taviraj and Manrope with the same three font lines as components.html', () => {
+test('KIT-02/UI-10: both HTML entries load Manrope and Taviraj 500 + 500 italic from the same font URL', () => {
   const html = read('../index.html')
+  const componentsHtml = read('../components.html')
   assert.ok(html.includes('<link rel="preconnect" href="https://fonts.googleapis.com" />'))
   assert.ok(html.includes('<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />'))
-  assert.ok(html.includes('<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600&family=Taviraj:ital,wght@0,200;0,300;0,400;1,200;1,300&display=swap" rel="stylesheet" />'))
+  const fontUrl = html.match(/<link href="(https:\/\/fonts\.googleapis\.com\/css2\?[^"]+)" rel="stylesheet" \/>/)?.[1]
+  assert.ok(fontUrl, 'index.html must load Google Fonts')
+  assert.ok(componentsHtml.includes(`<link href="${fontUrl}" rel="stylesheet" />`))
+  assert.match(fontUrl, /family=Manrope:wght@300;400;500;600/)
+  assert.match(fontUrl, /family=Taviraj:ital,wght@[^&]*0,500/)
+  assert.match(fontUrl, /family=Taviraj:ital,wght@[^&]*1,500/)
 })
 
 test('KIT-01/KIT-07: layouts.css and auth.css add no hex colours, no new fonts, no rgb()', () => {
@@ -215,3 +221,4 @@ test('AUTH-T1: the draft source never stores the token in localStorage, sessionS
     assert.doesNotMatch(read(file), /localStorage|sessionStorage|document\.cookie/, file)
   }
 })
+

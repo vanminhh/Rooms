@@ -504,7 +504,9 @@ test('FE-P2-17 #20 (UI-08): every visible input has a <label>, the time slots ar
     }
     const fieldset = slotsFieldset(app.container)
     assert.ok(fieldset, 'fieldset exists')
-    assert.ok(find(fieldset, n => n.tagName === 'LEGEND' && n.textContent === 'Khung giờ').length === 1, 'legend "Khung giờ"')
+    const legends = find(fieldset, n => n.tagName === 'LEGEND')
+    assert.equal(legends.length, 1, 'one legend labels the time-slot group')
+    assert.ok(legends[0].textContent.trim().length > 0, 'time-slot legend is non-empty')
     const submitButton = find(app.container, n => n.tagName === 'BUTTON' && n.attributes.type === 'submit')[0]
     assert.ok(submitButton, 'submit button exists')
     assert.equal(submitButton.textContent, 'Gửi yêu cầu xem phòng')

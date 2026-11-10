@@ -384,3 +384,32 @@ test('KIT-09: checkbox label uses weight 500 (small text rule) and the spinner/v
   assert.match(css, /\.rooms-spinner-ring \{[^}]*animation:\s*rooms-spin/)
   assert.match(css, /\.rooms-visually-hidden \{[^}]*position:\s*absolute[^}]*clip-path:\s*inset\(50%\)/)
 })
+
+
+
+test('UI-10/KIT-11: radius tokens style cards, buttons, chips and inputs', () => {
+  assert.match(css, /--rooms-radius-card:\s*14px/)
+  assert.match(css, /--rooms-radius-button:\s*999px/)
+  assert.match(css, /--rooms-radius-chip:\s*999px/)
+  assert.match(css, /--rooms-radius-input:\s*10px/)
+  assert.match(css, /\.rooms-button\s*\{[^}]*border-radius:\s*var\(--rooms-radius-button\)/)
+  assert.match(css, /\.rooms-status\s*\{[^}]*border-radius:\s*var\(--rooms-radius-chip\)/)
+  assert.match(css, /\.rooms-field-input\s*\{[^}]*border-radius:\s*var\(--rooms-radius-input\)/)
+  for (const selector of ['rooms-search', 'rooms-room', 'rooms-cost', 'rooms-dialog']) {
+    assert.match(css, new RegExp(`\\.${selector}\\s*\\{[^}]*border-radius:\\s*var\\(--rooms-radius-card\\)`))
+  }
+})
+
+test('UI-10/KIT-11: h1-h3 use Taviraj 500 and linked buttons keep their variant color', () => {
+  assert.match(css, /\.rooms-theme :is\(h1, h2, h3\)\s*\{[^}]*font-weight:\s*500/)
+  assert.match(css, /\.rooms-theme \.rooms-button--primary\s*\{[^}]*color:\s*var\(--rooms-paper\)/)
+  assert.match(css, /\.rooms-theme \.rooms-button--sand\s*\{[^}]*color:\s*var\(--rooms-text\)/)
+})
+
+test('UI-10/KIT-02: both HTML entries request Taviraj 500 and 500 italic', () => {
+  for (const file of ['../index.html', '../components.html']) {
+    const html = read(file)
+    assert.match(html, /Taviraj:ital,wght@[^"']*0,500/)
+    assert.match(html, /Taviraj:ital,wght@[^"']*1,500/)
+  }
+})

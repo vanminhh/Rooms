@@ -44,7 +44,8 @@ const buttonByText = (container, label) => find(container, n => n.tagName === 'B
 // cutting retry policy, not the unit under test) and a tiny two-route memory router so Link/useNavigate to
 // /phong are real and observable.
 async function mountHome(rules) {
-  const calls = fakeFetch(rules)
+  const contactRule = { prefix: '/public/contact', method: 'GET', handler: () => ok(null) }
+  const calls = fakeFetch(rules.some(rule => rule.prefix === '/public/contact') ? rules : [...rules, contactRule])
   const React = nodeRequire('react')
   const { QueryClient, QueryClientProvider } = nodeRequire('@tanstack/react-query')
   const { createMemoryRouter, RouterProvider } = nodeRequire('react-router')
@@ -90,6 +91,25 @@ test('PUB-01/UI-01: 6 featured rooms render as 6 cards in API order; districts s
     assert.ok(app.container.textContent.includes(loc.district))
     assert.ok(app.container.textContent.includes(`${loc.roomCount} phòng trống`))
   }
+  await app.stop()
+})
+
+test('UI-20: hero totals rooms, districts and wards from /public/locations; filter uses approved labels', async () => {
+  const locations = [
+    location({ district: 'Cầu Giấy', roomCount: 5, wards: [{ ward: 'Dịch Vọng', roomCount: 3 }] }),
+    location({ district: 'Đống Đa', roomCount: 2, wards: [{ ward: 'Láng Hạ', roomCount: 1 }, { ward: 'Ô Chợ Dừa', roomCount: 1 }] }),
+  ]
+  const app = await mountHome([
+    { prefix: '/public/featured-rooms', method: 'GET', handler: () => ok([]) },
+    { prefix: '/public/locations', method: 'GET', handler: () => ok(locations) },
+  ])
+  await until(() => app.container.textContent.includes('Còn 7 phòng trống'), 'hero totals')
+  for (const needle of [
+    '7Phòng · Đang trống',
+    '2Quận · Đang có phòng cho thuê',
+    '3Phường · Đang có phòng cho thuê',
+    'Quận / Khu vực', 'Khoảng giá', 'Lọc phòng trống', 'Ảnh minh họa',
+  ]) assert.ok(app.container.textContent.includes(needle), `missing "${needle}"`)
   await app.stop()
 })
 
@@ -215,20 +235,20 @@ test('D-2: submitting with both fields empty navigates to /phong with no query',
 // ======================================================================================
 // #12/#13/#14 hero text + link + image
 // ======================================================================================
-test('D-4: hero contains the exact mockup strings', async () => {
+test('UI-20: hero contains the approved UI-02 strings', async () => {
   const app = await mountHome(emptyRules)
   await until(() => find(app.container, n => n.tagName === 'FORM').length === 1, 'loaded')
   for (const needle of [
-    'Một nhịp sống riêng · Hà Nội', 'Chọn chỗ ở.', 'Bắt đầu an yên.',
-    'Phòng thuê theo tháng, chi phí rõ ràng.', 'Tìm một không gian vừa với cuộc sống của bạn.',
-    'Khám phá phòng trống',
+    'Phòng thuê tại Hà Nội', 'Một nơi ở', 'vừa vặn', 'giữa phố.',
+    'Khám phá phòng thuê tại Hà Nội với thông tin rõ ràng về giá, diện tích và tiện ích.',
+    'Chọn phòng phù hợp và đặt lịch xem trực tiếp.', 'Tìm phòng trống',
   ]) assert.ok(app.container.textContent.includes(needle), `missing "${needle}"`)
   await app.stop()
 })
 
-test('D-4/FE-P2-15: "Khám phá phòng trống" is an <a href="/phong"> (react-router Link); clicking it navigates via the router', async () => {
+test('UI-20/FE-P2-15: "Tìm phòng trống" is an <a href="/phong">; clicking it navigates via the router', async () => {
   const app = await mountHome(emptyRules)
-  const link = find(app.container, n => n.tagName === 'A' && n.textContent.includes('Khám phá phòng trống'))[0]
+  const link = find(app.container, n => n.tagName === 'A' && n.textContent.includes('Tìm phòng trống'))[0]
   assert.ok(link, 'hero link not found')
   assert.equal(link.getAttribute('href'), '/phong')
   dispatch(app.container, link, 'click')
@@ -236,32 +256,35 @@ test('D-4/FE-P2-15: "Khám phá phòng trống" is an <a href="/phong"> (react-r
   await app.stop()
 })
 
-test('A-6/UI-08: exactly one hero <img> with alt="Ảnh minh họa"', async () => {
+test('UI-20/KIT-11: hero uses hero-building.webp, a meaningful alt and the visible illustration label', async () => {
   const app = await mountHome(emptyRules)
-  const heroImgs = find(app.container, n => n.tagName === 'IMG' && n.getAttribute('alt') === 'Ảnh minh họa')
+  const heroImgs = find(app.container, n => n.tagName === 'IMG' && n.getAttribute('src') === '/images/hero-building.webp')
   assert.equal(heroImgs.length, 1)
+  assert.ok((heroImgs[0].getAttribute('alt') ?? '').length > 0)
+  assert.ok(app.container.textContent.includes('Ảnh minh họa'))
   await app.stop()
 })
 
 // ======================================================================================
 // #15/#16 block strings + aria-label
 // ======================================================================================
-test('D-4 (Q-7/Q-8): featured-rooms block has "Những lựa chọn mới", the description, "Một nơi để thuộc về.", "Xem tất cả phòng trống", and aria-label="Phòng nổi bật"', async () => {
+test('UI-21: featured-rooms block has the approved heading, description, link and aria-label', async () => {
   const app = await mountHome(emptyRules)
   await until(() => sectionByLabel(app.container, 'Phòng nổi bật') !== undefined, 'featured section')
   const text = sectionByLabel(app.container, 'Phòng nổi bật').textContent
-  for (const needle of ['Những lựa chọn mới', 'Những phòng trống có giá vừa được duyệt gần đây.', 'Một nơi để thuộc về.', 'Xem tất cả phòng trống']) {
+  for (const needle of ['Phòng vừa cập nhật', 'Những phòng trống có giá vừa được duyệt gần đây.', 'Phòng nổi bật', 'Xem tất cả phòng trống']) {
     assert.ok(text.includes(needle), `missing "${needle}"`)
   }
   await app.stop()
 })
 
-test('D-4 (Q-7/Q-8): districts block has "Gần hơn với nhịp sống của bạn", "Bạn muốn ở khu vực nào?", and aria-label="Khu vực"', async () => {
+test('UI-21: districts block has the approved heading, description and aria-label', async () => {
   const app = await mountHome(emptyRules)
   await until(() => sectionByLabel(app.container, 'Khu vực') !== undefined, 'districts section')
   const text = sectionByLabel(app.container, 'Khu vực').textContent
-  assert.ok(text.includes('Gần hơn với nhịp sống của bạn'))
-  assert.ok(text.includes('Bạn muốn ở khu vực nào?'))
+  assert.ok(text.includes('Khu vực có phòng trống'))
+  assert.ok(text.includes('Chọn khu vực phù hợp'))
+  assert.ok(text.includes('Số phòng được cập nhật từ danh sách công khai.'))
   await app.stop()
 })
 
@@ -293,17 +316,22 @@ test('D-4: all required home-page strings are present and no leftover placeholde
   ])
   await until(() => app.container.textContent.includes('Cầu Giấy'), 'loaded')
   const text = app.container.textContent
-  // "Ảnh minh họa" is the hero <img>'s alt, not text content (textContent never includes attribute values).
   const required = [
-    'Một nhịp sống riêng · Hà Nội', 'Chọn chỗ ở.', 'Bắt đầu an yên.',
-    'Phòng thuê theo tháng, chi phí rõ ràng.', 'Tìm một không gian vừa với cuộc sống của bạn.',
-    'Khám phá phòng trống', 'Những lựa chọn mới',
-    'Những phòng trống có giá vừa được duyệt gần đây.', 'Một nơi để thuộc về.', 'Xem tất cả phòng trống',
-    'Gần hơn với nhịp sống của bạn', 'Bạn muốn ở khu vực nào?', '5 phòng trống',
+    'Phòng thuê tại Hà Nội', 'Một nơi ở', 'vừa vặn', 'giữa phố.',
+    'Khám phá phòng thuê tại Hà Nội với thông tin rõ ràng về giá, diện tích và tiện ích.',
+    'Chọn phòng phù hợp và đặt lịch xem trực tiếp.', 'Tìm phòng trống', 'Phòng vừa cập nhật',
+    'Những phòng trống có giá vừa được duyệt gần đây.', 'Phòng nổi bật', 'Xem tất cả phòng trống',
+    'Khu vực có phòng trống', 'Chọn khu vực phù hợp', '5 phòng trống',
+    'Vì sao chọn ROOMS?', 'Tìm và xem phòng trong 3 bước', 'Chọn phòng phù hợp với bạn',
   ]
   for (const needle of required) assert.ok(text.includes(needle), `missing "${needle}"`)
-  assert.equal(find(app.container, n => n.tagName === 'IMG' && n.getAttribute('alt') === 'Ảnh minh họa').length, 1)
+  assert.equal(find(app.container, n => n.tagName === 'IMG' && n.getAttribute('src') === '/images/hero-building.webp').length, 1)
+  assert.ok(text.includes('Ảnh minh họa'))
   assert.ok(!text.includes('Đang làm'))
   assert.ok(!text.includes('Trang đang được xây dựng'))
   await app.stop()
 })
+
+
+
+

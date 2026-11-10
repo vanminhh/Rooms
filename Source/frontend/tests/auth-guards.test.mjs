@@ -7,7 +7,7 @@ import { draftFirst } from './draft-root.mjs'
 // Restored FE-LOGIN-11 (StaffHomePage) test below reuses this fake DOM/fetch harness (its own two outside
 // edges: globalThis.fetch and the DOM, see tests/p2/cp7-rooms.test.mjs and tests/p2/fe12-dashboard.test.mjs for
 // the same shape); `find` is aliased, this file already declares its own `find` for the stub-JSX tree above.
-import { loadModule, mount, fakeFetch, find as domFind } from './p2/public-dom.mjs'
+import { loadModule, mount, fakeFetch, find as domFind, until } from './p2/public-dom.mjs'
 
 // Mirrored from the main copy (PLAN.md CP-6, the P2-8a lesson): `read` now resolves draft-first / main-fallback
 // via draft-root.mjs (replacing the old single-fixed-depth ENOENT fallback), so files this draft does touch
@@ -298,12 +298,12 @@ test('KIT-01/KIT-10: PublicLayout root is .rooms-theme, header uses the logo and
   assert.ok(find(main, n => n.type === fakes.Outlet))
 })
 
-test('Q3-A: PublicLayout footer carries the Hà Nội description and the Boss contact, and no links', () => {
+test('UI-11/Q3-A: PublicLayout footer carries the Hà Nội description, room link and Boss contact', () => {
   const data = { phone: '0900000001', zaloUrl: null, facebookUrl: null }
   const { exports, fakes } = loadLayout('../src/layouts/PublicLayout.tsx', { contact: { data } })
   const footer = find(exports.PublicLayout(), n => n.type === fakes.RoomsFooter)
   assert.equal(footer.props.description, 'Chung cư mini cho thuê tại Hà Nội.')
-  assert.equal('links' in footer.props, false)
+  assert.deepEqual(footer.props.links, [{ label: 'Xem phòng trống', href: '/phong' }])
   assert.equal(footer.props.contact.type, fakes.ContactInfo)
   assert.equal(footer.props.contact.props.contact, data)
 })
@@ -517,11 +517,14 @@ test('FE-LOGIN-11: StaffHomePage "Việc hôm nay" greets by full name; no greet
   }
 
   const withUser = await renderWith({ fullName: 'Nguyễn Thu Hà' })
+  await until(() => domFind(withUser.container, n => n.tagName === 'H2').some(n => n.textContent === 'Việc hôm nay'), 'staff heading with user')
+  await until(() => domFind(withUser.container, n => n.tagName === 'P').some(n => n.textContent === 'Xin chào, Nguyễn Thu Hà'), 'staff greeting with user')
   assert.deepEqual(domFind(withUser.container, n => n.tagName === 'H2').map(n => n.textContent), ['Việc hôm nay'])
   assert.deepEqual(domFind(withUser.container, n => n.tagName === 'P').map(n => n.textContent), ['Xin chào, Nguyễn Thu Hà'])
   await withUser.stop()
 
   const anon = await renderWith(null)
+  await until(() => domFind(anon.container, n => n.tagName === 'H2').some(n => n.textContent === 'Việc hôm nay'), 'staff heading without user')
   assert.deepEqual(domFind(anon.container, n => n.tagName === 'H2').map(n => n.textContent), ['Việc hôm nay'])
   assert.deepEqual(domFind(anon.container, n => n.tagName === 'P'), [])
   await anon.stop()

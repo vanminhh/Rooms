@@ -19,7 +19,8 @@ import ts from 'typescript'
 const here = dirname(fileURLToPath(import.meta.url))
 const draftRoot = resolve(here, '..', '..')
 const draftSrcRoot = resolve(draftRoot, 'src')
-const mainSrcRoot = draftSrcRoot // approved fix 2026-11-05-FE-P2-8a-test-path-fix: path-depth independent
+const mainSrcRoot = existsSync(draftSrcRoot) ? draftSrcRoot : resolve(draftRoot, '..', '..', 'src')
+const sourceRoot = existsSync(draftSrcRoot) ? draftSrcRoot : mainSrcRoot
 
 // ---------- minimal real DOM (same shape as cp7-rooms.test.mjs) ----------
 class FakeNode {
@@ -145,12 +146,17 @@ const { createRoot } = nodeRequire('react-dom/client')
 const { QueryClient, QueryClientProvider } = nodeRequire('@tanstack/react-query')
 const { MemoryRouter } = nodeRequire('react-router')
 
-const { StaffHomePage } = load(resolve(draftSrcRoot, 'pages/staff/StaffHomePage.tsx'))
-const { BuildingSelectionContext } = load(resolve(draftSrcRoot, 'features/buildings/building-selection.ts'))
-const { AuthContext } = load(resolve(draftSrcRoot, 'app/auth-context.ts'))
+const { StaffHomePage } = load(resolve(sourceRoot, 'pages/staff/StaffHomePage.tsx'))
+const { BuildingSelectionContext } = load(resolve(sourceRoot, 'features/buildings/building-selection.ts'))
+const { AuthContext } = load(resolve(sourceRoot, 'app/auth-context.ts'))
 
 // ---------- DOM query / event helpers (same style as the other cp*.test.mjs files) ----------
 const wait = ms => new Promise(r => setTimeout(r, ms))
+async function until(cond, what, ms = 3000) {
+  const start = Date.now()
+  while (Date.now() - start < ms) { if (cond()) return; await wait(5) }
+  throw new Error(`timeout waiting for ${what}`)
+}
 const walkTree = (node, out = []) => { out.push(node); node.childNodes.forEach(c => walkTree(c, out)); return out }
 const find = (root, pred) => walkTree(root).filter(n => n.nodeType === 1 && pred(n))
 const buttons = container => find(container, n => n.tagName === 'BUTTON')
@@ -239,7 +245,7 @@ function baseViewing(overrides = {}) {
 test('FE8B-6/NOTI-06: pendingPrices null (manager) hides "Giá chờ duyệt" but "Lịch hẹn mới" still renders', async () => {
   fakeFetch([{ prefix: '/dashboard', method: 'GET', handler: () => ok(baseDashboard({ pendingPrices: null })) }])
   const app = await mountHome({ user: MANAGER_USER, selection: 5 })
-  await wait(30)
+  await until(() => app.container.textContent.includes('Lịch hẹn mới'), 'manager dashboard data')
   assert.ok(app.container.textContent.includes('Lịch hẹn mới'), '"Lịch hẹn mới" card must still render')
   assert.ok(!app.container.textContent.includes('Giá chờ duyệt'), 'pendingPrices:null must hide the "Giá chờ duyệt" card entirely')
   await app.stop()
@@ -248,7 +254,7 @@ test('FE8B-6/NOTI-06: pendingPrices null (manager) hides "Giá chờ duyệt" bu
 test('NOTI-06/PRC-11: pendingPrices {count:3,rooms:2,ratePlans:1} (Boss) shows "3 đề xuất chờ duyệt (2 giá phòng, 1 đơn giá)" with the API\'s own numbers', async () => {
   fakeFetch([{ prefix: '/dashboard', method: 'GET', handler: () => ok(baseDashboard({ pendingPrices: { count: 3, rooms: 2, ratePlans: 1 } })) }])
   const app = await mountHome({ user: BOSS_USER, selection: 'all' })
-  await wait(30)
+  await until(() => app.container.textContent.includes('3 đề xuất chờ duyệt (2 giá phòng, 1 đơn giá)'), 'pending price summary')
   assert.ok(app.container.textContent.includes('Giá chờ duyệt'), '"Giá chờ duyệt" card must render for a non-null pendingPrices')
   assert.ok(app.container.textContent.includes('3 đề xuất chờ duyệt (2 giá phòng, 1 đơn giá)'), `exact count sentence missing; text: ${app.container.textContent}`)
   const link = links(app.container).find(a => a.textContent.trim() === 'Sang trang duyệt giá')
@@ -260,7 +266,7 @@ test('NOTI-06/PRC-11: pendingPrices {count:3,rooms:2,ratePlans:1} (Boss) shows "
 test('UI-06: pendingPrices numbers are shown exactly as the API sends them, even if rooms+ratePlans !== count (FE never re-derives them)', async () => {
   fakeFetch([{ prefix: '/dashboard', method: 'GET', handler: () => ok(baseDashboard({ pendingPrices: { count: 9, rooms: 1, ratePlans: 1 } })) }])
   const app = await mountHome({ user: BOSS_USER })
-  await wait(30)
+  await until(() => app.container.textContent.includes('9 đề xuất chờ duyệt (1 giá phòng, 1 đơn giá)'), 'API pending price count')
   assert.ok(app.container.textContent.includes('9 đề xuất chờ duyệt (1 giá phòng, 1 đơn giá)'), `FE must not recompute 9 as 1+1; text: ${app.container.textContent}`)
   await app.stop()
 })
@@ -273,7 +279,7 @@ test('VIEW-07/Q-P6-2: newViewings.count:12 with 5 items shows "12 lịch hẹn m
   const items = Array.from({ length: 5 }, (_, i) => baseViewing({ id: i + 1, guestName: `Khách ${i + 1}` }))
   fakeFetch([{ prefix: '/dashboard', method: 'GET', handler: () => ok(baseDashboard({ newViewings: { count: 12, items } })) }])
   const app = await mountHome({ user: BOSS_USER })
-  await wait(30)
+  await until(() => app.container.textContent.includes('12 lịch hẹn mới'), 'new viewing count')
   assert.ok(app.container.textContent.includes('12 lịch hẹn mới'), 'the count shown must be the API count (12), not the item-array length')
   const listItems = find(app.container, n => n.tagName === 'LI')
   assert.equal(listItems.length, 5, 'exactly the 5 items from the API must render, no more, no fewer')
@@ -284,7 +290,7 @@ test('VIEW-07/Q-P6-2: newViewings.count:12 with 5 items shows "12 lịch hẹn m
 test('VIEW-07: newViewings.count:0 with items:[] shows the empty state "Chưa có việc nào hôm nay", not an empty list or "0 lịch hẹn mới"', async () => {
   fakeFetch([{ prefix: '/dashboard', method: 'GET', handler: () => ok(baseDashboard({ newViewings: { count: 0, items: [] } })) }])
   const app = await mountHome({ user: BOSS_USER })
-  await wait(30)
+  await until(() => app.container.textContent.includes('Chưa có việc nào hôm nay'), 'empty dashboard state')
   assert.ok(app.container.textContent.includes('Chưa có việc nào hôm nay'), 'empty state copy must render')
   assert.ok(!app.container.textContent.includes('0 lịch hẹn mới'), 'must not show "0 lịch hẹn mới" literally')
   assert.equal(find(app.container, n => n.tagName === 'LI').length, 0, 'no <li> when there are no new viewings')
@@ -295,7 +301,7 @@ test('UI-02: an item\'s timeSlotLabel renders exactly as the API sends it (no FE
   const items = [baseViewing({ id: 1, timeSlot: 'EVENING', timeSlotLabel: 'Buổi lạ không giống chữ chuẩn' })]
   fakeFetch([{ prefix: '/dashboard', method: 'GET', handler: () => ok(baseDashboard({ newViewings: { count: 1, items } })) }])
   const app = await mountHome({ user: BOSS_USER })
-  await wait(30)
+  await until(() => app.container.textContent.includes('Buổi lạ không giống chữ chuẩn'), 'API time-slot label')
   assert.ok(app.container.textContent.includes('Buổi lạ không giống chữ chuẩn'), 'the FE must show the API\'s own timeSlotLabel text verbatim, not a label it computed itself')
   await app.stop()
 })
@@ -303,7 +309,7 @@ test('UI-02: an item\'s timeSlotLabel renders exactly as the API sends it (no FE
 test('"Xem tất cả lịch hẹn" always links to /ql/lich-hen', async () => {
   fakeFetch([{ prefix: '/dashboard', method: 'GET', handler: () => ok(baseDashboard()) }])
   const app = await mountHome({ user: BOSS_USER })
-  await wait(30)
+  await until(() => links(app.container).some(a => a.textContent.trim() === 'Xem tất cả lịch hẹn'), 'viewings link')
   const link = links(app.container).find(a => a.textContent.trim() === 'Xem tất cả lịch hẹn')
   assert.ok(link, '"Xem tất cả lịch hẹn" link must render')
   assert.equal(link.attributes.href, '/ql/lich-hen')
@@ -318,7 +324,7 @@ test('SCOPE-02: GET /dashboard carries buildingId=5 only for a specific building
   for (const selection of [5, 'all', null]) {
     const calls = fakeFetch([{ prefix: '/dashboard', method: 'GET', handler: () => ok(baseDashboard()) }])
     const app = await mountHome({ user: selection === null ? MANAGER_USER : BOSS_USER, selection })
-    await wait(30)
+    await until(() => calls.length === 1, `dashboard request for selection ${selection}`)
     assert.equal(calls.length, 1, `selection ${selection}: exactly one GET /dashboard`)
     const q = queryOf(calls[0].url)
     assert.equal(q.get('buildingId'), typeof selection === 'number' ? '5' : null, `selection ${selection}`)
@@ -335,7 +341,8 @@ test('SCOPE-02: GET /dashboard carries buildingId=5 only for a specific building
 test('UI-03: while GET /dashboard is pending, "Việc hôm nay" and "Xin chào, {fullName}" already render', async () => {
   fakeFetch([{ prefix: '/dashboard', method: 'GET', handler: async () => { await wait(200); return ok(baseDashboard()) } }])
   const app = await mountHome({ user: BOSS_USER })
-  await wait(30)
+  await until(() => app.container.textContent.includes('Việc hôm nay'), 'pending dashboard heading')
+  await until(() => app.container.textContent.includes('Xin chào, Phạm Minh Đức'), 'pending dashboard greeting')
   assert.ok(app.container.textContent.includes('Việc hôm nay'), 'heading must render immediately, before the dashboard query settles')
   assert.ok(app.container.textContent.includes('Xin chào, Phạm Minh Đức'), 'greeting must render immediately')
   await wait(200)
@@ -349,13 +356,14 @@ test('UI-03: a 500 from GET /dashboard shows error.message + "Thử lại", and 
     handler: () => { attempt += 1; return attempt === 1 ? fail(500, 'NETWORK_ERROR', 'Có lỗi xảy ra, vui lòng thử lại sau') : ok(baseDashboard({ newViewings: { count: 1, items: [baseViewing()] } })) },
   }])
   const app = await mountHome({ user: BOSS_USER })
-  await wait(30)
+  await until(() => app.container.textContent.includes('Có lỗi xảy ra, vui lòng thử lại sau'), 'dashboard error state')
   assert.ok(app.container.textContent.includes('Có lỗi xảy ra, vui lòng thử lại sau'), 'the API error message must render')
   assert.ok(buttonByText(app.container, 'Thử lại'), '"Thử lại" button must render on error')
   assert.ok(app.container.textContent.includes('Việc hôm nay'), 'heading must stay even on dashboard error')
   assert.ok(app.container.textContent.includes('Xin chào, Phạm Minh Đức'), 'greeting must stay even on dashboard error')
   dispatch(app.container, buttonByText(app.container, 'Thử lại'), 'click')
-  await wait(30)
+  await until(() => calls.length === 2, 'dashboard retry request')
+  await until(() => app.container.textContent.includes('Lịch hẹn mới'), 'dashboard retry data')
   assert.equal(calls.length, 2, '"Thử lại" must refetch')
   assert.ok(app.container.textContent.includes('Lịch hẹn mới'), 'after a successful retry the data must render')
   await app.stop()
@@ -364,7 +372,7 @@ test('UI-03: a 500 from GET /dashboard shows error.message + "Thử lại", and 
 test('no user (defensive — RequireAuth never lets this happen, but the greeting line is guarded): no "Xin chào" line, heading still renders', async () => {
   fakeFetch([{ prefix: '/dashboard', method: 'GET', handler: () => ok(baseDashboard()) }])
   const app = await mountHome({ user: null, selection: 'all' })
-  await wait(30)
+  await until(() => app.container.textContent.includes('Việc hôm nay'), 'dashboard heading without user')
   assert.ok(app.container.textContent.includes('Việc hôm nay'))
   assert.ok(!app.container.textContent.includes('Xin chào'))
   await app.stop()

@@ -1,4 +1,5 @@
 import './rooms.css'
+import './shared-primitives.css'
 
 export { RoomsButton } from './Button'
 export type { RoomsButtonProps } from './Button'
@@ -25,3 +26,8 @@ export { ConfirmDialog } from './ConfirmDialog'
 export type { ConfirmDialogProps } from './ConfirmDialog'
 export { ImageUploader } from './ImageUploader'
 export type { ImageUploaderProps } from './ImageUploader'
+
+
+export { FilterChip, ElevatedCard, IllustrationLabel } from './SharedPrimitives'
+export type { FilterChipProps, ElevatedCardProps, IllustrationLabelProps } from './SharedPrimitives'
+

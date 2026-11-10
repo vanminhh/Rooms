@@ -28,6 +28,7 @@ Mở đường dẫn `/components.html` trên địa chỉ Vite in ra. Trang `/`
 | `src/components/Navigation.tsx` | Header có menu di động và footer Rooms |
 | `src/components/SectionHeading.tsx` | Tiêu đề, nhãn và mô tả nhất quán |
 | `src/components/StatusBadge.tsx` | Nhãn trạng thái có màu và chữ rõ ràng |
+| `src/components/SharedPrimitives.tsx` | Chip lọc, thẻ nổi và nhãn “Ảnh minh họa” dùng chung |
 | `src/components/RoomSearch.tsx` | Form chọn quận và ngân sách, trả dữ liệu qua callback |
 | `src/components/RoomAccordion.tsx` | Danh sách thẻ phòng mở rộng theo lựa chọn |
 | `src/components/ImageJourney.tsx` · `depth-scene.ts` · `journey-frame.ts` | Ảnh 3D theo cuộn và ảnh tĩnh dự phòng · shader chiều sâu Three.js · chọn cặp ảnh chuyển cảnh |
@@ -75,6 +76,9 @@ Import từ `index.ts` tự tải `rooms.css`. CSS được giới hạn trong v
 | `RoomsButton` | Props button HTML, `variant: primary/sand/outline`, `magnetic?` | Nút hút theo chuột |
 | `SectionHeading` | `children`, `eyebrow?`, `description?` | Tiêu đề serif, chữ nghiêng |
 | `StatusBadge` | `children`, `tone: available/occupied/reserved/maintenance` | Trạng thái phòng bổ sung cho Rooms |
+| `FilterChip` | `selected`, `count` và props của `button` | Bộ lọc viên thuốc; trang cha quản lý trạng thái |
+| `ElevatedCard` | `children` và props của `div` | Mặt giấy bo góc, bóng nhẹ cho nội dung dùng lại |
+| `IllustrationLabel` | `children` tùy chọn, mặc định “Ảnh minh họa” | Nhãn nhìn thấy được trên ảnh AI; khung cha đặt `position: relative` |
 | `RoomSearch` | `districts`, `budgets: {value,label}[]`, `onSearch` | Thanh đặt phòng → lọc quận/ngân sách |
 | `RoomAccordion` | `rooms: RoomCardData[]`, `onSelect` | Thẻ villa mở rộng → thẻ phòng |
 | `ImageJourney` | `slides: JourneySlide[]` | Ảnh 3D theo chuột/cuộn, chuyển cảnh theo chiều sâu |
@@ -135,3 +139,5 @@ Ba dependency hiệu ứng `lenis`, `motion`, `three` dùng cùng phiên bản v
 Đợt rà soát 25/10/2026: 12 test, build và lint qua; kiểm tra trực tiếp menu Escape, tìm/chọn phòng, focus khi hover, mặt bằng bằng bàn phím, carousel, preloader, dữ liệu dài ở 360px, chuyển chế độ giảm chuyển động khi trang đang mở và ảnh dự phòng sau mất WebGL. `npm audit` và `npm audit --omit=dev` báo 0 lỗ hổng đã biết tại thời điểm kiểm tra.
 
 Chưa đo bộ nhớ GPU hoặc hiệu năng trên điện thoại thật. Gói Three.js tải riêng 529,78 kB trước gzip (132,66 kB nén); Vite còn cảnh báo kích thước gói này. Xem kết quả và đề xuất bước tiếp theo ở `../../../../Artifacts/reviews/2026-10-25-rooms-components-review.md`.
+
+
