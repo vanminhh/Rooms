@@ -114,7 +114,7 @@ test('FE-P2-16 #1 (ROOM-08): full room data shows price, "Tiền cọc · 1 thá
   assert.equal(ddByDt(app.container, 'Tiền cọc · 1 tháng')?.textContent, '2.300.000 đ')
   assert.equal(ddByDt(app.container, 'Tiền phòng')?.textContent, '2.300.000 đ')
   assert.equal(ddByDt(app.container, 'Phí quản lý')?.textContent, '100.000 đ')
-  assert.equal(ddByDt(app.container, 'Tổng chi phí')?.textContent, '3.119.000 đ', 'total must be the API monthlyEstimate, never items.reduce()')
+  assert.equal(ddByDt(app.container, 'Ước tính mỗi tháng')?.textContent, '3.119.000 đ', 'total must be the API monthlyEstimate, never items.reduce()')
   await app.stop()
 })
 
@@ -421,24 +421,23 @@ test('FE-P2-16 #14b (D-6.4): price has no "/ tháng"; that string appears only o
 // ======================================================================================
 // #14c
 // ======================================================================================
-test('FE-P2-16 #14c (ROOM-08, D-6.6): CostBreakdown kit wording is present verbatim; "Tổng chi phí" = formatMoney(monthlyEstimate), unaffected by what the items are', async () => {
+test('FE-P2-16 #14c (ROOM-08, D-6.6): CostBreakdown neutral wording (UI-02, owner 10/11/2026); "Ước tính mỗi tháng" = formatMoney(monthlyEstimate), unaffected by what the items are', async () => {
   const roomA = roomDetail({ estimate: { items: [{ label: 'Tiền phòng', amount: 1_000_000 }], missing: [], meteredNote: '' }, monthlyEstimate: 3_119_000 })
   const appA = await mountRoom('/phong/10', [roomRule(10, ok(roomA))])
-  await until(() => appA.container.textContent.includes('Chi phí minh bạch'), 'loaded')
+  await until(() => appA.container.textContent.includes('Chi phí mỗi tháng'), 'loaded')
   const text = appA.container.textContent
-  assert.ok(text.includes('Chi phí minh bạch'))
-  assert.ok(text.includes('Một tháng,'))
-  assert.ok(text.includes('an tâm ở lại.'))
-  assert.ok(text.includes('Tổng chi phí'))
+  assert.ok(text.includes('Chi phí mỗi tháng'))
+  assert.ok(!text.includes('Chi phí minh bạch') && !text.includes('an tâm ở lại'), 'slogan removed (UI-02, owner 10/11/2026)')
+  assert.ok(text.includes('Ước tính mỗi tháng'))
   assert.ok(text.includes('Ước tính chi phí / tháng'))
-  assert.equal(ddByDt(appA.container, 'Tổng chi phí')?.textContent, '3.119.000 đ')
+  assert.equal(ddByDt(appA.container, 'Ước tính mỗi tháng')?.textContent, '3.119.000 đ')
   await appA.stop()
 
   // Different items, same monthlyEstimate -> same total: proves the FE never adds items up itself.
   const roomB = roomDetail({ estimate: { items: [], missing: [], meteredNote: '' }, monthlyEstimate: 3_119_000 })
   const appB = await mountRoom('/phong/10', [roomRule(10, ok(roomB))])
-  await until(() => appB.container.textContent.includes('Tổng chi phí'), 'loaded')
-  assert.equal(ddByDt(appB.container, 'Tổng chi phí')?.textContent, '3.119.000 đ')
+  await until(() => appB.container.textContent.includes('Ước tính mỗi tháng'), 'loaded')
+  assert.equal(ddByDt(appB.container, 'Ước tính mỗi tháng')?.textContent, '3.119.000 đ')
   await appB.stop()
 })
 

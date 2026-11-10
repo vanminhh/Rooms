@@ -20,12 +20,12 @@ const budgets = [
 const reasons = [
   { number: '01', title: 'Thông tin giá rõ ràng', body: 'Xem giá thuê, chi phí ước tính và đơn giá công khai trước khi đặt lịch.', note: 'Xem chi phí trước khi đặt lịch' },
   { number: '02', title: 'Đặt lịch xem thuận tiện', body: 'Chọn ngày và buổi xem phù hợp; yêu cầu được gửi tới quản lý tòa nhà để xác nhận.', note: 'Chọn Sáng, Chiều hoặc Tối' },
-  { number: '03', title: 'Thông tin theo từng phòng', body: 'Xem hình ảnh thật, diện tích, sức chứa, nội thất và chi phí của từng phòng.', note: 'Dữ liệu riêng cho từng phòng' },
+  { number: '03', title: 'Thông tin theo từng phòng', body: 'Xem ảnh phòng, diện tích, sức chứa, nội thất và chi phí của từng phòng.', note: 'Dữ liệu riêng cho từng phòng' },
   { number: '04', title: 'Liên hệ thuận tiện', body: 'Xem địa chỉ tòa nhà và liên hệ trực tiếp với người quản lý phụ trách.', note: 'Gọi điện hoặc liên hệ Zalo' },
 ]
 
 const steps = [
-  { number: '01', title: 'Chọn phòng phù hợp', body: 'Xem ảnh thật, giá, diện tích, nội thất và chi phí ước tính của phòng.' },
+  { number: '01', title: 'Chọn phòng phù hợp', body: 'Xem ảnh, giá, diện tích, nội thất và chi phí ước tính của phòng.' },
   { number: '02', title: 'Đặt lịch xem trực tiếp', body: 'Chọn ngày, buổi xem và để lại thông tin liên hệ. Quản lý tòa nhà sẽ xác nhận lịch hẹn.' },
   { number: '03', title: 'Đến xem phòng theo lịch hẹn', body: 'Kiểm tra phòng thực tế và trao đổi trực tiếp với quản lý tòa nhà.' },
 ]

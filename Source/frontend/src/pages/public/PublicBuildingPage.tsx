@@ -67,7 +67,6 @@ export function BuildingDetail({ building }: { building: PublicBuildingDetail })
       {building.contact && <aside className="public-building-panel public-building-contact" aria-label="Liên hệ tòa nhà">
         <p className="rooms-eyebrow">Hẹn xem phòng</p>
         <ContactCard contact={building.contact} />
-        <p className="public-building-contact-note">Liên hệ được lấy từ quản lý phụ trách tòa; nếu chưa có sẽ dùng liên hệ mặc định của chủ nhà.</p>
       </aside>}
     </div>
 

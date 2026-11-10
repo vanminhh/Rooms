@@ -50,7 +50,7 @@ export function PublicRoomsPage() {
 
   return <>
     <section className="public-listing-intro" aria-labelledby="public-listing-title">
-      <SectionHeading eyebrow="Phòng đang sẵn sàng" description="Chọn khu vực và khoảng giá phù hợp. Bộ lọc được giữ trong đường dẫn để bạn có thể tải lại hoặc chia sẻ kết quả.">
+      <SectionHeading eyebrow="Phòng đang sẵn sàng" description="Chọn khu vực và khoảng giá phù hợp với bạn.">
         <span id="public-listing-title">Tìm phòng <em>vừa vặn</em> với bạn</span>
       </SectionHeading>
 

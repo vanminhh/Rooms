@@ -25,7 +25,6 @@
 .rooms-theme .public-building-contact .rooms-eyebrow,
 .rooms-theme .public-building-contact .public-contact a { color: var(--rooms-paper); }
 .rooms-theme .public-building-contact .public-contact { margin-top: 18px; }
-.rooms-theme .public-building-contact-note { margin: 18px 0 0; color: #fcf8eebd; font-size: 12px; font-weight: 500; line-height: 1.65; }
 .rooms-theme .public-building-rooms { display: grid; gap: 22px; min-width: 0; }
 .rooms-theme .public-building-section-heading { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 18px 28px; min-width: 0; }
 .rooms-theme .public-building-section-heading .rooms-section-heading { min-width: 0; }

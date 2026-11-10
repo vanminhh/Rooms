@@ -1,0 +1,55 @@
+/* UI-25: public building detail, composed from the existing kit and public room cards. */
+.rooms-theme .public-building { display: grid; gap: clamp(28px, 5vw, 56px); min-width: 0; margin-top: 24px; overflow-wrap: anywhere; }
+.rooms-theme .public-building-breadcrumb { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; color: var(--rooms-muted); font-size: 12px; font-weight: 500; }
+.rooms-theme .public-building-breadcrumb a { color: var(--rooms-accent-text); }
+.rooms-theme .public-building-breadcrumb a:focus-visible,
+.rooms-theme .public-building-all-rooms:focus-visible { outline: 2px solid var(--rooms-ink); outline-offset: 3px; }
+.rooms-theme .public-building-hero { display: grid; gap: 24px; min-width: 0; padding: clamp(24px, 5vw, 52px); border: 1px solid var(--rooms-line); border-radius: var(--rooms-radius-card); background: var(--rooms-paper); box-shadow: 0 22px 52px #153d3612; }
+.rooms-theme .public-building-intro { min-width: 0; }
+.rooms-theme .public-building-intro .rooms-section-heading h2 { max-width: 720px; font-size: clamp(38px, 6vw, 64px); letter-spacing: -.03em; }
+.rooms-theme .public-building-intro .rooms-section-heading > p:last-child { max-width: 720px; }
+.rooms-theme .public-building-address { max-width: 720px; margin: 18px 0 0; color: var(--rooms-muted); font-size: 14px; font-weight: 500; }
+.rooms-theme .public-building-facts { display: grid; gap: 0; min-width: 0; margin: 0; border-top: 1px solid var(--rooms-line); }
+.rooms-theme .public-building-facts > div { display: grid; gap: 5px; min-width: 0; padding: 18px 0; border-bottom: 1px solid var(--rooms-line); }
+.rooms-theme .public-building-facts dt { color: var(--rooms-muted); font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+.rooms-theme .public-building-facts dd { margin: 0; font: 500 20px/1.35 'Taviraj', Georgia, serif; color: var(--rooms-text); }
+.rooms-theme .public-building-amenities { display: grid; gap: 14px; min-width: 0; }
+.rooms-theme .public-building-amenities h2 { max-width: 680px; margin: 0; font-size: clamp(28px, 4vw, 40px); }
+.rooms-theme .public-building-amenities .public-tags li { padding: 9px 15px; border-radius: var(--rooms-radius-button); background: var(--rooms-paper); font-weight: 500; }
+.rooms-theme .public-building-panels { display: grid; gap: 18px; min-width: 0; }
+.rooms-theme .public-building-panel { min-width: 0; padding: clamp(20px, 4vw, 34px); border: 1px solid var(--rooms-line); border-radius: var(--rooms-radius-card); background: var(--rooms-paper); }
+.rooms-theme .public-building-rates .public-rates > h3,
+.rooms-theme .public-building-contact .public-contact > h3 { font-size: clamp(28px, 4vw, 38px); }
+.rooms-theme .public-building-rates .public-rate-list > div { align-items: baseline; padding-block: 14px; }
+.rooms-theme .public-building-contact { align-content: start; background: var(--rooms-ink); color: var(--rooms-paper); }
+.rooms-theme .public-building-contact .rooms-eyebrow,
+.rooms-theme .public-building-contact .public-contact a { color: var(--rooms-paper); }
+.rooms-theme .public-building-contact .public-contact { margin-top: 18px; }
+.rooms-theme .public-building-rooms { display: grid; gap: 22px; min-width: 0; }
+.rooms-theme .public-building-section-heading { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 18px 28px; min-width: 0; }
+.rooms-theme .public-building-section-heading .rooms-section-heading { min-width: 0; }
+.rooms-theme .public-building-section-heading .rooms-section-heading h2 { font-size: clamp(32px, 5vw, 48px); }
+.rooms-theme .public-building-all-rooms { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; color: var(--rooms-accent-text); font-size: 13px; font-weight: 600; }
+.rooms-theme .public-building-all-rooms::after { content: '→'; }
+
+@media (min-width: 720px) {
+  .rooms-theme .public-building-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .rooms-theme .public-building-facts > div { padding: 20px; border-bottom: 0; }
+  .rooms-theme .public-building-facts > div:first-child { padding-left: 0; }
+  .rooms-theme .public-building-facts > div + div { border-left: 1px solid var(--rooms-line); }
+}
+@media (min-width: 880px) {
+  .rooms-theme .public-building-panels { grid-template-columns: minmax(0, 1.45fr) minmax(260px, .55fr); }
+  .rooms-theme .public-building-panels--rates-only { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 480px) {
+  .rooms-theme .public-building { gap: 32px; }
+  .rooms-theme .public-building-hero,
+  .rooms-theme .public-building-panel { padding: 20px; }
+  .rooms-theme .public-building-intro .rooms-section-heading h2 { font-size: clamp(34px, 12vw, 46px); }
+  .rooms-theme .public-building-rates .public-rate-list > div { display: grid; gap: 5px; }
+  .rooms-theme .public-building-rates .public-rate-list dd { text-align: left; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rooms-theme .public-building a { scroll-behavior: auto; }
+}

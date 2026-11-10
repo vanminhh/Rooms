@@ -131,8 +131,8 @@ export function RoomDetailView({ room, statusBadge, estimatePanel, rateTable, co
         </div>
         {viewingForm}
         <div className="public-booking-promises" aria-label="Thông tin đặt lịch">
-          <p><span aria-hidden="true">✓</span> Quản lý tòa nhà trực tiếp đón tiếp, không qua trung gian.</p>
-          <p><span aria-hidden="true">✓</span> Xem phòng và tư vấn hoàn toàn miễn phí.</p>
+          <p><span aria-hidden="true">✓</span> Quản lý tòa nhà sẽ gọi lại để xác nhận lịch hẹn.</p>
+          <p><span aria-hidden="true">✓</span> Gửi yêu cầu chưa giữ chỗ phòng.</p>
         </div>
         {contactCard}
       </aside>

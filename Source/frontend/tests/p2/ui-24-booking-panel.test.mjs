@@ -132,8 +132,8 @@ test('UI-24 · VIEW-08: Chọn ngày khác focuses the date input when showPicke
 
 test('UI-24 · UI-02: approved promises and API contact actions remain in the booking card', async () => {
   const app = await renderPanel()
-  assert.ok(app.container.textContent.includes('Quản lý tòa nhà trực tiếp đón tiếp, không qua trung gian.'))
-  assert.ok(app.container.textContent.includes('Xem phòng và tư vấn hoàn toàn miễn phí.'))
+  assert.ok(app.container.textContent.includes('Quản lý tòa nhà sẽ gọi lại để xác nhận lịch hẹn.'))
+  assert.ok(app.container.textContent.includes('Gửi yêu cầu chưa giữ chỗ phòng.'))
   const links = find(app.container, node => node.tagName === 'A')
   assert.ok(links.some(link => link.getAttribute('href') === 'tel:0900000001'))
   assert.ok(links.some(link => link.textContent === 'Nhắn Zalo'))

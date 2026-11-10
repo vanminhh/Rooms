@@ -6,7 +6,7 @@ App: `Source/frontend` (React 19 + Vite + TS). Every page is built from the offi
 
 | App | Layout | Base route | Who |
 |---|---|---|---|
-| Công khai | `PublicLayout` – top menu with "Đăng nhập" (or "Trang của tôi" when logged in), footer with Boss contact | `/` | everyone |
+| Công khai | `PublicLayout` – top menu: "Tìm phòng" → `/phong`, "Khu vực" → `/#khu-vuc`, "Liên hệ" → footer `#lien-he`, button "Lên lịch xem" → `/phong`, "Đăng nhập" (or "Trang của tôi" when logged in); 4-column footer with Boss contact (owner, 08/11/2026) | `/` | everyone |
 | Người thuê | `TenantLayout` – mobile-first bottom nav, room switcher when the tenant has several contracts | `/thue` | TENANT |
 | Nhân sự | `StaffLayout` – side nav, building selector (Boss: all + "Tất cả tòa"; manager: own), Boss-only items | `/ql` | MANAGER, BOSS |
 
@@ -18,11 +18,11 @@ Route guard: not logged in → `/dang-nhap?next=...`; wrong role → own home (A
 
 | Route | Page | Spec |
 |---|---|---|
-| `/` | Trang chủ: featured public rooms, districts with counts | BLD, ROOM-05 |
+| `/` | Trang chủ (Stitch layout): hero with illustration photo and "Còn N phòng trống", 3 counts from `/public/locations`, search bar (district, price) → `/phong`; "Vì sao chọn ROOMS?"; featured public rooms; districts with counts (`#khu-vuc`, illustration photo per district when available); 3 steps; contact block leading to `/phong` (no separate quick-contact form). "Mô hình 3D" is hidden until after Phase 5 | BLD, ROOM-05, KIT-12, KIT-13 |
 | `/phong` | Tìm phòng: filters district, ward, building, price range; filters in URL query | ROOM-05 |
 | `/toa/:id` | Chi tiết tòa: info, rates (electric tiers, water, services), contact, public rooms | BLD-04, RATE |
-| `/phong/:id` | Chi tiết phòng: photos ("Chưa có ảnh" when none), price, furniture, min term 3 months, deposit (1 month), monthly estimate (ROOM-08), contact, viewing form with the 3 slots | VIEW-01, VIEW-08 |
-| `/dang-nhap` | Đăng nhập: phone, password, "Ghi nhớ đăng nhập", "Quên mật khẩu?", note "Chưa có tài khoản? Tài khoản được cấp khi ký hợp đồng" + Boss contact + link "Xem phòng trống" | AUTH-01, AUTH-10 |
+| `/phong/:id` | Chi tiết phòng: photos ("Chưa có ảnh" when none), price, furniture, min term 3 months, deposit (1 month), monthly estimate (ROOM-08), contact, viewing form with the 3 slots. Stitch layout: breadcrumb (Trang chủ › quận › tòa › phòng), room code + status, share button, gallery for 0 / 1 / 2–4 / ≥ 5 photos with a large-photo view, facts strip (area, max occupants, floor, furniture), booking panel (sticky on desktop): price, deposit, "Tối thiểu 3 tháng", date shortcuts "Hôm nay" / "Ngày mai" / "Chọn ngày khác", the 3 slots with started ones disabled | VIEW-01, VIEW-08, ROOM-07 |
+| `/dang-nhap` | Đăng nhập: phone, password, "Ghi nhớ đăng nhập", "Quên mật khẩu?", note "Chưa có tài khoản? Tài khoản được cấp khi ký hợp đồng" + Boss contact + link "Xem phòng trống". Layout of the owner's auth mockups (`Artifacts/layout_rooms/2026-10-26-stitch-mockups/2026-10-28-auth-layouts/ref/`): illustration photo + slogan on the left (hidden on narrow screens), form card on the right; the same frame for `/quen-mat-khau` and `/doi-mat-khau` | AUTH-01, AUTH-10 |
 | `/quen-mat-khau` | Quên mật khẩu; with `?token=` from the email link it shows the new-password form | AUTH-07 |
 | `/doi-mat-khau` | Đổi mật khẩu (forced on first login) | AUTH-05 |
 
