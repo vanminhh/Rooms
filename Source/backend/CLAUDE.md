@@ -12,8 +12,7 @@ src/
   common/          guards (auth, roles, building scope), error filter, crypto (argon2, AES-GCM), date utils (Asia/Ho_Chi_Minh, period math)
   modules/<name>/  <name>.module.ts, .controller.ts, .service.ts, dto/, <name>.spec.ts, feature_<feature>.md (task list)
   jobs/            cron jobs (idempotent)
-artifact_BE/       staging area: every new/changed backend file is drafted here and approved first (root CLAUDE.md);
-                   its *.spec.ts (not approved/) also run in `npm run test`, so drafts must keep tests green
+artifact_BE/       old staging area, history only (root CLAUDE.md, "Change workflow"); do not add drafts here
 ```
 
 Modules: auth, buildings, rooms, pricing, viewings, contracts, meters, billing, bank, requests, notifications, reports, settings, files, mailer, audit.

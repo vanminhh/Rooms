@@ -1,4 +1,6 @@
-# Artifacts – vùng nháp chờ duyệt
+# Artifacts – vùng nháp chờ duyệt (ngừng dùng từ 11/11/2026)
+
+> **Ngừng dùng từ 11/11/2026.** Chủ dự án đổi quy trình: sửa thẳng vào file chính, chủ dự án kiểm chứng rồi tự commit (xem "Change workflow" trong `CLAUDE.md`). Không tạo bản nháp mới ở đây. Phần dưới chỉ còn để đọc lịch sử trong `approved/`.
 
 Mọi thứ agent tạo mới hoặc sửa (asset, giao diện, code, cấu hình, tài liệu) **làm trước ở vùng nháp**, chủ dự án xem và duyệt, rồi mới được đưa vào file chính.
 

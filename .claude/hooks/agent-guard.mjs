@@ -1,7 +1,7 @@
 // PreToolUse guard for the pipeline agents (.claude/agents/*.md): keeps each role in its lane.
 // Runs from .claude/settings.json for every tool call and reads `agent_type`, so it also works when the
 // orchestrator nests the agents. Agent-frontmatter hooks need workspace trust and did not fire in a test.
-// shortcut: file rules only see Edit/Write, not files written through Bash; main-files.mjs check covers main files.
+// shortcut: file rules only see Edit/Write, not files written through Bash; the owner's `git diff` before each commit covers those.
 import { relative, resolve, sep } from 'node:path'
 
 const LANES = { planner: 'plan-only', coder: 'no-tests', tester: 'tests-only', reviewer: 'read-only' }

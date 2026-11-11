@@ -1,4 +1,6 @@
-# artifact_FE – bản nháp frontend chờ duyệt
+# artifact_FE – bản nháp frontend (ngừng dùng từ 11/11/2026)
+
+> **Ngừng dùng từ 11/11/2026**: sửa thẳng vào `Source/frontend/` (xem "Change workflow" trong `CLAUDE.md` gốc). Thư mục này chỉ còn là lịch sử.
 
 Quy trình, mẫu `REVIEW.md` và cách chạy thử: [../../../Artifacts/README.md](../../../Artifacts/README.md).
 

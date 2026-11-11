@@ -17,7 +17,7 @@ src/
   assets/     images/icons imported by code (create when first needed)
 component-preview.tsx, pages/ComponentPreview.tsx, ../components.html   preview gallery of the kit
 tests/        Node tests of the kit (npm run test:components)
-artifact_FE/  staging area: every new/changed frontend file is drafted here and approved first (root CLAUDE.md)
+artifact_FE/  old staging area, history only (root CLAUDE.md, "Change workflow"); do not add drafts here
 ```
 
 Raw source assets (logos, fonts, mockups) live in the repo-root `assets/` folder; copy into `src/assets/` or `public/` only what the app uses.

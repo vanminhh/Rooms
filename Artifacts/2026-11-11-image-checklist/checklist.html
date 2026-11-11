@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ROOMS · Checklist ảnh</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Taviraj:wght@500&display=swap" rel="stylesheet" />
+<style>
+  :root { --sand:#f8f2e6; --paper:#fcf8ee; --cream:#efe8d4; --line:#ddd5c0; --text:#0f2b26; --muted:#3d4440; --ink:#153d36; --gold:#775830; --good:#2f6b4f; --warn:#8a5a14; --error:#9b2c1f; --r:14px; --ri:10px; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--sand); color: var(--text); font: 15px/1.6 'Manrope', system-ui, sans-serif; }
+  h1, h2 { font-family: 'Taviraj', Georgia, serif; font-weight: 500; line-height: 1.15; margin: 0; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 32px 16px 80px; }
+  .top { display: grid; gap: 10px; margin-bottom: 18px; }
+  .top h1 { font-size: clamp(30px, 5vw, 44px); }
+  .top p { margin: 0; color: var(--muted); }
+  .bar { height: 10px; border-radius: 999px; background: var(--cream); overflow: hidden; }
+  .bar span { display: block; height: 100%; width: 0; background: var(--good); transition: width .3s; }
+  .tools { position: sticky; top: 0; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 0; background: var(--sand); border-bottom: 1px solid var(--line); }
+  .tools label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
+  .tools .count { margin-left: auto; font-size: 13px; font-weight: 700; }
+  button.small { min-height: 36px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); color: var(--text); font: 600 12px 'Manrope', sans-serif; cursor: pointer; }
+  button.small:hover { border-color: var(--ink); }
+  section.group { margin-top: 26px; }
+  section.group > header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px; margin-bottom: 10px; }
+  section.group h2 { font-size: 26px; }
+  section.group header span { font-size: 13px; font-weight: 700; color: var(--muted); }
+  .note { margin: -4px 0 10px; font-size: 13px; color: var(--muted); }
+  .item { margin-bottom: 8px; border: 1px solid var(--line); border-radius: var(--r); background: var(--paper); }
+  .item.done { border-color: #b9d2c3; background: #f3f8f2; }
+  .item > summary { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 12px 14px; cursor: pointer; list-style: none; }
+  .item > summary::-webkit-details-marker { display: none; }
+  .item > summary::after { content: '+'; grid-column: 3; font-size: 18px; color: var(--muted); }
+  .item[open] > summary::after { content: '−'; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); }
+  .item.done .dot { border-color: var(--good); background: var(--good); }
+  .title { display: grid; gap: 2px; min-width: 0; }
+  .title strong { font-size: 15px; }
+  .title small { font-size: 12px; color: var(--muted); }
+  .pill { display: inline-block; margin-right: 6px; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+  .pill.now { background: #f3dcd6; color: #7a2418; } .pill.swap { background: #f1e6cf; color: #5f4520; } .pill.later { background: #e4e8e6; color: #3d4440; }
+  .body { display: grid; gap: 12px; padding: 0 14px 14px 36px; }
+  .req { display: grid; gap: 4px; margin: 0; padding: 12px 14px; border-radius: var(--ri); background: var(--sand); font-size: 13px; }
+  .req div { display: grid; grid-template-columns: 110px 1fr; gap: 8px; }
+  .req dt { font-weight: 700; color: var(--gold); }
+  .req dd { margin: 0; }
+  .fields { display: grid; gap: 8px; }
+  .fields label.check { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .fields input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--good); }
+  .fields .link { display: grid; gap: 4px; font-size: 13px; font-weight: 600; }
+  .fields input[type=url] { width: 100%; min-height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: var(--ri); background: #fff; font: 14px 'Manrope', sans-serif; color: var(--text); }
+  .fields input[type=url]:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
+  .fields .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .fields a { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .bad { font-size: 12px; color: var(--error); }
+  .sub { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+  .sub li { display: grid; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--ri); background: #fff; }
+  .sub li.done { border-color: #b9d2c3; background: #f3f8f2; }
+  .sub li > p { margin: 0; font-size: 13px; color: var(--muted); }
+  .hidden { display: none !important; }
+  .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); padding: 10px 16px; border-radius: 999px; background: var(--ink); color: var(--paper); font-size: 13px; font-weight: 600; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  @media (max-width: 560px) { .body { padding-left: 14px; } .req div { grid-template-columns: 1fr; gap: 0; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>Checklist ảnh cho ROOMS</h1>
+    <p>Bấm vào từng mục để xem cần ảnh gì và yêu cầu ra sao. Khi đã đủ số lượng và đạt chất lượng thì tích <strong>Đã có</strong> và dán link Google Drive. Trang tự lưu trên trình duyệt này.</p>
+    <div class="bar" aria-hidden="true"><span id="totalBar"></span></div>
+  </div>
+
+  <div class="tools">
+    <label><input type="checkbox" id="onlyTodo"> Chỉ hiện mục chưa có</label>
+    <button class="small" type="button" id="expandAll">Mở hết</button>
+    <button class="small" type="button" id="collapseAll">Thu gọn</button>
+    <button class="small" type="button" id="copy">Sao chép kết quả</button>
+    <span class="count" id="totalCount" aria-live="polite"></span>
+  </div>
+
+  <div id="groups"></div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const ROOM_SHOTS = [
+  ['Toàn cảnh phòng', 'Đứng ở cửa nhìn vào, thấy được cả phòng. Ảnh này hiện to nhất trên trang phòng.'],
+  ['Giường / góc ngủ', 'Giường đã trải gọn, có gối; thấy được kích thước giường.'],
+  ['Bếp / góc nấu', 'Bếp, bồn rửa, tủ; dọn gọn đồ cá nhân.'],
+  ['Nhà vệ sinh', 'Bồn cầu, vòi sen, lavabo; sạch, khô, bật đèn.'],
+  ['Cửa sổ / ban công / view', 'Ánh sáng tự nhiên, cửa sổ hoặc ban công và cảnh nhìn ra ngoài.'],
+]
+const ROOM_REQ = {
+  'Số lượng': '5 ảnh (tối đa 10 ảnh mỗi phòng)',
+  'Hướng ảnh': 'Ảnh NGANG, tỉ lệ 4:3. Để vật chính ở giữa vì app cắt bớt mép',
+  'Kích thước': 'Cạnh dài ≥ 1600 px (hệ thống tự thu về 1920 px)',
+  'Định dạng': 'JPG, PNG hoặc WebP · mỗi ảnh ≤ 5 MB',
+  'Chất lượng': 'Ban ngày, bật đèn, không mờ, không nghiêng; dọn đồ cá nhân; không có mặt người',
+  'Cách đưa lên': 'Quản lý tải trong /ql/phong (không cần gửi file)',
+}
+const rooms = [['CG01', 'Tòa Cầu Giấy', '1 Xuân Thủy', ['203', '204', '301']], ['DD01', 'Tòa Đống Đa', '2 Tây Sơn', ['101', '102']], ['HM01', 'Tòa Hoàng Mai', '3 Giải Phóng', ['101', '201']]]
+
+const GROUPS = [
+  {
+    id: 'rooms', title: 'Ảnh phòng', note: '7 phòng × 5 ảnh = 35 ảnh. Quan trọng nhất: khách chọn phòng nhờ ảnh này.',
+    items: rooms.flatMap(([code, name, addr, list]) => list.map(r => ({
+      id: `room-${code}-${r}`, priority: 'now', title: `${code} · Phòng ${r}`, subtitle: `${name} · ${addr} · 5 ảnh${code === 'CG01' && r === '301' ? ' · phòng chưa có giá, vẫn nên chụp trước' : ''}`,
+      req: ROOM_REQ, shots: ROOM_SHOTS,
+    }))),
+  },
+  {
+    id: 'areas', title: 'Ảnh khu vực (quận)', note: 'Mỗi quận có phòng trống cần 1 ảnh cho thẻ "Chọn khu vực phù hợp" trên trang chủ.',
+    items: [
+      ['hoang-mai', 'Hoàng Mai', 'now', 'Chưa có, trang đang hiện "Chưa có ảnh minh họa"'],
+      ['dong-da', 'Đống Đa', 'swap', 'Đang dùng ảnh AI (Láng Hạ)'],
+      ['cau-giay', 'Cầu Giấy', 'swap', 'Đang dùng ảnh AI'],
+    ].map(([slug, q, p, now]) => ({
+      id: `area-${slug}`, priority: p, title: `Quận ${q}`, subtitle: now,
+      req: { 'Số lượng': '1 ảnh', 'Nội dung': `Phố hoặc ngõ gần tòa ở ${q}, không khí khu vực`, 'Hướng ảnh': 'Ảnh NGANG 4:3, vật chính ở giữa', 'Kích thước': 'Rộng 900 px', 'Định dạng': 'WebP ≤ 300 KB', 'Tránh': 'Biển số xe, mặt người rõ nét', 'Tên file': `area-${slug}.webp` },
+    })),
+  },
+  {
+    id: 'pages', title: 'Trang chủ & đăng nhập', note: 'Đang dùng ảnh AI có nhãn "Ảnh minh họa"; thay ảnh thật khi có.',
+    items: [
+      { id: 'hero', priority: 'swap', title: 'Ảnh lớn trang chủ (hero)', subtitle: 'Mặt tiền tòa đẹp nhất', req: { 'Số lượng': '1 ảnh', 'Nội dung': 'Mặt tiền một tòa, chụp ban ngày, trời sáng, thấy rõ ban công/cây xanh', 'Hướng ảnh': 'Ảnh DỌC 4:5', 'Kích thước': 'Cao ≥ 1400 px', 'Định dạng': 'WebP ≤ 300 KB', 'Tên file': 'hero-building.webp' } },
+      { id: 'auth', priority: 'swap', title: 'Ảnh màn đăng nhập', subtitle: 'Một phòng đẹp, nhiều ánh sáng', req: { 'Số lượng': '1 ảnh', 'Nội dung': 'Phòng đẹp nhất, gọn, sáng; có thể dùng lại ảnh toàn cảnh của một phòng', 'Hướng ảnh': 'Ảnh DỌC', 'Kích thước': 'Cao ≥ 1200 px', 'Định dạng': 'WebP ≤ 300 KB', 'Tên file': 'auth-room.webp' } },
+    ],
+  },
+  {
+    id: 'brand', title: 'Logo, biểu tượng, ảnh chia sẻ', note: 'Có thể dựng từ logo hiện có (rooms-logo.webp) nếu không có file gốc.',
+    items: [
+      { id: 'logo-svg', priority: 'now', title: 'Logo SVG', subtitle: 'Cửa vòm + chìa khóa ROOMS', req: { 'Số lượng': '1 file', 'Định dạng': 'SVG, nền trong suốt', 'Ghi chú': 'Logo hiện tại là ảnh raster nên hơi mờ ở cỡ nhỏ' } },
+      { id: 'favicon', priority: 'now', title: 'Favicon (biểu tượng tab)', subtitle: 'Hiện đang là logo mặc định của Vite', req: { 'Số lượng': '1 file', 'Nội dung': 'Biểu tượng cửa vòm, rút gọn để đọc được ở 16 px', 'Định dạng': 'SVG vuông' } },
+      { id: 'touch-icon', priority: 'now', title: 'Icon điện thoại', subtitle: 'Khi khách lưu trang ra màn hình chính', req: { 'Số lượng': '1 file', 'Nội dung': 'Như favicon, có nền màu cát #f8f2e6', 'Kích thước': '180 × 180 px', 'Định dạng': 'PNG' } },
+      { id: 'og', priority: 'now', title: 'Ảnh chia sẻ link (Zalo, Facebook)', subtitle: 'Hiện khi gửi link phòng vào nhóm', req: { 'Số lượng': '1 ảnh', 'Nội dung': 'Logo ROOMS + câu "Phòng thuê tại Hà Nội" + một ảnh tòa', 'Kích thước': '1200 × 630 px', 'Định dạng': 'JPG ≤ 300 KB' } },
+    ],
+  },
+  {
+    id: 'buildings', title: 'Ảnh tòa (đợt 4, chưa cần ngay)', note: 'Database chưa có chỗ lưu ảnh tòa; có thể chụp trước.',
+    items: rooms.map(([code, name, addr]) => ({
+      id: `building-${code}`, priority: 'later', title: `${code} · ${name}`, subtitle: `${addr} · 4 ảnh`,
+      req: { 'Số lượng': '4 ảnh', 'Hướng ảnh': 'Ảnh NGANG 4:3', 'Kích thước': 'Cạnh dài ≥ 1600 px', 'Định dạng': 'JPG/WebP ≤ 5 MB' },
+      shots: [['Mặt tiền', 'Toàn bộ mặt tiền, ban ngày'], ['Sảnh / lối vào', 'Cửa chính, hộp thư, sảnh'], ['Cầu thang / thang máy', 'Sạch, đủ sáng'], ['Chỗ để xe', 'Khu để xe máy, xe điện']],
+    })),
+  },
+]
+const PRIORITY = { now: ['now', 'Cần ngay'], swap: ['swap', 'Nên thay'], later: ['later', 'Đợt 4'] }
+
+// Saved per browser only (a convenience for one person); everything still works if storage is blocked.
+const KEY = 'rooms-image-checklist-v1'
+let state = {}
+try { state = JSON.parse(localStorage.getItem(KEY) || '{}') } catch { state = {} }
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)) } catch { /* storage blocked: keep in memory */ } }
+const get = id => state[id] ?? (state[id] = { done: false, link: '' })
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+const isUrl = v => /^https?:\/\/\S+$/i.test(v)
+
+function fieldsHtml(id, label) {
+  const s = get(id)
+  return `<div class="fields" data-id="${id}">
+    <label class="check"><input type="checkbox" data-role="done" ${s.done ? 'checked' : ''}> Đã có${label ? ` · ${esc(label)}` : ''} (đủ số lượng, đạt chất lượng)</label>
+    <label class="link">Link Google Drive
+      <input type="url" data-role="link" inputmode="url" placeholder="https://drive.google.com/..." value="${esc(s.link)}"></label>
+    <div class="row"><a data-role="open" href="${isUrl(s.link) ? esc(s.link) : '#'}" target="_blank" rel="noopener noreferrer" ${isUrl(s.link) ? '' : 'hidden'}>Mở link</a><span class="bad" data-role="bad" hidden>Link phải bắt đầu bằng https://</span></div>
+  </div>`
+}
+
+function itemHtml(item) {
+  const [cls, label] = PRIORITY[item.priority]
+  const req = Object.entries(item.req).map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')
+  const body = item.shots
+    ? `<ol class="sub">${item.shots.map(([t, d], i) => { const sid = `${item.id}-${i + 1}`; return `<li data-sub="${sid}"><strong>${i + 1}. ${esc(t)}</strong><p>${esc(d)}</p>${fieldsHtml(sid, '')}</li>` }).join('')}</ol>`
+    : fieldsHtml(item.id, '')
+  return `<details class="item" data-item="${item.id}"><summary><span class="dot" aria-hidden="true"></span><span class="title"><strong><span class="pill ${cls}">${label}</span>${esc(item.title)}</strong><small>${esc(item.subtitle)}</small></span></summary>
+    <div class="body"><dl class="req">${req}</dl>${body}</div></details>`
+}
+
+// An item with sub-shots is done only when every shot is done.
+const leafIds = item => item.shots ? item.shots.map((_, i) => `${item.id}-${i + 1}`) : [item.id]
+const allLeaves = () => GROUPS.flatMap(g => g.items.flatMap(leafIds))
+
+function render() {
+  document.getElementById('groups').innerHTML = GROUPS.map(g => `<section class="group" data-group="${g.id}"><header><h2>${esc(g.title)}</h2><span data-role="gcount"></span></header><p class="note">${esc(g.note)}</p>${g.items.map(itemHtml).join('')}</section>`).join('')
+  refresh()
+}
+
+function refresh() {
+  const onlyTodo = document.getElementById('onlyTodo').checked
+  for (const g of GROUPS) {
+    const leaves = g.items.flatMap(leafIds), done = leaves.filter(id => get(id).done).length
+    document.querySelector(`[data-group="${g.id}"] [data-role="gcount"]`).textContent = `${done}/${leaves.length} ảnh`
+    for (const item of g.items) {
+      const el = document.querySelector(`[data-item="${item.id}"]`), complete = leafIds(item).every(id => get(id).done)
+      el.classList.toggle('done', complete)
+      el.classList.toggle('hidden', onlyTodo && complete)
+      if (item.shots) leafIds(item).forEach(id => document.querySelector(`[data-sub="${id}"]`).classList.toggle('done', get(id).done))
+    }
+  }
+  const all = allLeaves(), done = all.filter(id => get(id).done).length
+  document.getElementById('totalCount').textContent = `Đã có ${done}/${all.length} ảnh`
+  document.getElementById('totalBar').style.width = `${Math.round(done / all.length * 100)}%`
+}
+
+document.addEventListener('change', e => {
+  const box = e.target.closest('[data-role="done"]'); if (!box) return
+  get(box.closest('.fields').dataset.id).done = box.checked; save(); refresh()
+})
+document.addEventListener('input', e => {
+  const input = e.target.closest('[data-role="link"]'); if (!input) return
+  const f = input.closest('.fields'), v = input.value.trim(), ok = isUrl(v)
+  get(f.dataset.id).link = v; save()
+  const a = f.querySelector('[data-role="open"]'); a.hidden = !ok; a.href = ok ? v : '#'
+  f.querySelector('[data-role="bad"]').hidden = v === '' || ok
+})
+document.getElementById('onlyTodo').addEventListener('change', refresh)
+document.getElementById('expandAll').addEventListener('click', () => document.querySelectorAll('details.item:not(.hidden)').forEach(d => { d.open = true }))
+document.getElementById('collapseAll').addEventListener('click', () => document.querySelectorAll('details.item').forEach(d => { d.open = false }))
+
+const toast = msg => { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1800) }
+document.getElementById('copy').addEventListener('click', async () => {
+  const lines = []
+  for (const g of GROUPS) {
+    lines.push(`## ${g.title}`)
+    for (const item of g.items) {
+      if (item.shots) item.shots.forEach(([t], i) => { const s = get(`${item.id}-${i + 1}`); lines.push(`- [${s.done ? 'x' : ' '}] ${item.title} · ${i + 1}. ${t}${s.link ? ` · ${s.link}` : ''}`) })
+      else { const s = get(item.id); lines.push(`- [${s.done ? 'x' : ' '}] ${item.title}${s.link ? ` · ${s.link}` : ''}`) }
+    }
+  }
+  const text = lines.join('\n')
+  try { await navigator.clipboard.writeText(text); toast('Đã sao chép, dán vào chat để gửi') }
+  catch { prompt('Sao chép đoạn này:', text) }
+})
+
+render()
+</script>
+</body>
+</html>

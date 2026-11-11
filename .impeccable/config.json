@@ -29,6 +29,15 @@
         ],
         "createdAt": "2026-11-10T18:02:05.665Z",
         "reason": "Claude: demo page deliberately reproduces the pre-fix 'Trước' states (6–9 px text, thick accent borders) for side-by-side comparison"
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          "Artifacts/2026-11-11-image-checklist/checklist.html"
+        ],
+        "createdAt": "2026-11-11T03:59:38.427Z",
+        "reason": "Claude: sand #f8f2e6 is the official kit page color decided by the owner on 26/10/2026 (docs/spec/31-ui-kit.md KIT-09)"
       }
     ]
   }

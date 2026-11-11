@@ -23,14 +23,14 @@
 ```
 Rooms/                       one git repo
 ├─ CLAUDE.md                 agent context (root)
-├─ .claude/                  settings.json + hooks/staging-guard.mjs (edits outside staging ask the owner)
-├─ Artifacts/                shared staging area for drafts awaiting approval (+ approved/, reviews/)
+├─ .claude/                  settings.json, agents/ (planner, reviewer), hooks/agent-guard.mjs
+├─ Artifacts/                old shared staging area, history only (approved/, reviews/)
 ├─ assets/                   raw source assets: logos, fonts, mockup PDFs, design images (not served)
 ├─ docs/
 │  └─ spec/                  this specification
 └─ Source/
-   ├─ frontend/              CLAUDE.md, artifact_FE/ (staging), src/{app,layouts,pages,features,components,shared,assets}
-   └─ backend/               CLAUDE.md, artifact_BE/ (staging), prisma/ (schema, constraints, DB check, migrations, seed), src/{common,modules,jobs}
+   ├─ frontend/              CLAUDE.md, artifact_FE/ (old staging, history), src/{app,layouts,pages,features,components,shared,assets}
+   └─ backend/               CLAUDE.md, artifact_BE/ (old staging, history), prisma/ (schema, constraints, DB check, migrations, seed), src/{common,modules,jobs}
 ```
 
 Each feature has a task file `feature_<name>.md` in `Source/backend/src/modules/<module>/` and `Source/frontend/src/features/<module>/` (workflow in root `CLAUDE.md`).

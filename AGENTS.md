@@ -2,20 +2,19 @@
 
 Management system for a chain of mini apartment buildings for rent in Hà Nội: one Boss, managers (≤ 2 buildings each), tenants, guests. Postpaid monthly rent via VietQR, confirmed by a bank webhook.
 
-## Review before changing main files (highest priority)
+## Change workflow (highest priority)
 
-The owner approves every change before it reaches the main files: assets, UI, code, config, docs.
+Since 11/11/2026 there are no draft folders. Edit the main files directly; git is the safety net. The owner verifies and commits.
 
-1. Create or change things first in a draft folder `<YYYY-MM-DD>-<task-id>/` inside a staging area, with a `REVIEW.md` (template and rules: `Artifacts/README.md`):
-   - `Artifacts/` – shared drafts (assets, sample data, schema/spec drafts); paths inside mirror the repo root
-   - `Source/frontend/artifact_FE/` – frontend drafts; paths mirror `Source/frontend/`
-   - `Source/backend/artifact_BE/` – backend drafts; paths mirror `Source/backend/`
-2. Test the draft there, tell the owner its path, and **stop until the owner explicitly approves in chat**.
-3. After approval: set `REVIEW.md` to "ĐÃ DUYỆT <date>", then run `node .claude/scripts/apply-draft.mjs <draft folder>`. It copies every draft file to its target (except `REVIEW.md`, `PLAN.md`, `ref/`, `preview.html`) and moves the folder into that area's `approved/`; the owner confirms once. Then re-run the app's checks. Delete main files marked "Xóa" by hand, with the owner's OK.
-4. Only exception: status marks, "Issues log" and "Questions for the owner" in `feature_*.md` may be edited directly.
-5. Never write main files with shell commands (`cp`, `mv`, `sed -i`, redirects); use the file tools or `apply-draft.mjs`, so the guard below sees them.
+1. Before a task, run `git status`. If there are uncommitted changes that do not belong to this task, tell the owner and wait, so "back to the last commit" stays a clean rollback.
+2. Before coding, read the spec and collect every open question (`[OPEN]`, spec silent, business choice). Ask them all in one batch, with concrete options. After that, do not stop for things the spec answers.
+3. Edit the main files and run the lint and tests of the app you touched.
+4. Stop at each checkpoint and report: files changed, check results (real output), how to verify by hand, `[ASSUMPTION]`s used, and a suggested commit message with task and spec IDs. Checkpoints are the end of each task (or of the task group the owner named) and every step in rule 7.
+5. The owner verifies, commits and says so; then continue. **Never run `git commit` yourself.** Push only when the owner approves that push in chat.
+6. If the owner finds an error: fix it, or, only when the owner says so, go back to the last commit. Going back discards work, so never do it on your own.
+7. Ask first, every time, because git cannot undo these: a schema change or a migration applied to a database; deleting files; installing a new dependency. `.env*` is filled by the owner only.
 
-Guard: `.codex/hooks.json` runs `.codex/hooks/staging-guard.mjs` before every file edit and shell command; any edit outside the staging areas (and outside `feature_*.md`) and every `apply-draft.mjs` run makes Codex ask the owner first. Subagents may not run `apply-draft.mjs`.
+`Artifacts/`, `Source/frontend/artifact_FE/` and `Source/backend/artifact_BE/` are the old staging areas. They are history (`approved/`, `REVIEW.md`); do not create new drafts there.
 
 ## Source of truth
 
@@ -27,16 +26,16 @@ Guard: `.codex/hooks.json` runs `.codex/hooks/staging-guard.mjs` before every fi
 ## Repo map
 
 ```
-Artifacts/         shared staging area for drafts awaiting approval; approved/ = history; reviews/ = UI kit reviews
+Artifacts/         old shared staging area, history only (approved/); reviews/ = UI kit reviews
 assets/            raw source assets (logos, fonts, mockup PDFs, design images) – not served
 docs/spec/         specification (English, Vietnamese domain terms and UI text)
 docs/database/     schema.prisma, constraints.sql, check-constraints.mjs
 Source/backend/    NestJS 12 + Prisma 6 API – see Source/backend/AGENTS.md
   src/modules/<module>/feature_<name>.md     backend task list of a feature
-  artifact_BE/                               backend staging area (drafts, approved/)
+  artifact_BE/                               old backend staging area, history only
 Source/frontend/   React 19 + Vite SPA – see Source/frontend/AGENTS.md
   src/features/<module>/feature_<name>.md    frontend task list of a feature
-  artifact_FE/                               frontend staging area (drafts, approved/)
+  artifact_FE/                               old frontend staging area, history only
   src/components/                            official UI kit (An Lâm style) – rules in docs/spec/31-ui-kit.md
 ```
 
@@ -46,25 +45,19 @@ Each feature has a task file `feature_<name>.md` in its backend module folder an
 
 1. Open the feature file you were asked to work on. Read every file in its "Before you start" list first (this file, the app `AGENTS.md`, the listed spec files).
 2. Work task by task in order. Status marks: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` error/blocked.
-3. Set `[~]` when you start a task. Build it as a draft in the staging area (section above), get the owner's approval, apply it, then set `[x]` only after its "Done when" is verified on the main files (command output or manual check).
+3. Set `[~]` when you start a task. Build it on the main files as in "Change workflow", and set `[x]` only after its "Done when" is verified (command output or manual check).
 4. If a task fails or the spec does not answer something: set `[!]`, write the reason on the next line and in the file's "Issues log", add the question under "Questions for the owner", and ask the owner. Do not guess.
 5. Keep task IDs stable (e.g. `BE-LOGIN-11`); use them with spec IDs in commit messages.
 
-## Agent pipeline (features, modules, UI screens)
+## Agents (by task size)
 
-The agents live in `.codex/agents/`. `.codex/hooks/agent-guard.mjs` (run from `.codex/hooks.json`, keyed by the calling agent's name) keeps each one in its lane, also when nested. The main session does not run them one by one: it creates the draft folder with `REVIEW.md`, sets the tasks `[~]`, runs `node .claude/scripts/main-files.mjs save`, and hands the request and folder path to **orchestrator** (Sonnet), which runs the chain in its own context and passes only paths, so every agent starts clean:
+- **Default** (one task or a few tasks in one module): the main session writes the code and its tests. No subagents.
+- **New module, or a change across backend and frontend**: run **planner** (Opus 5, effort medium) first. It writes only `PLAN.md`, at the path you give it (`docs/phase-<n>-<name>/plans/<task-ids>/PLAN.md`): architecture, open questions, checkpoints. Ask the owner its open questions in one batch, then build the checkpoints yourself.
+- **Before the stop of a large or risky task** (new module, money, authorization, schema): run **reviewer** (Sonnet 5, effort medium) once on the uncommitted changes and put its full report in the checkpoint report. `DUYỆT` / `CHẶN` is its recommendation; the owner decides. Fix its blocking findings before you stop, or list the ones you did not fix and why.
 
-1. **planner** (Opus) writes `PLAN.md`: architecture, open questions, checkpoints.
-2. Per checkpoint, **coder** (Sonnet) builds it in the draft folder (no tests), then **tester** (Sonnet) writes and runs tests from the spec and `PLAN.md`. On `FAIL` the coder fixes and the tester re-runs, at most 2 rounds.
-3. **reviewer** (Opus) reviews the whole draft folder, given only its path.
+Tests: expected values come from the spec, never from the code under test; no `.skip` / `.only`; do not mock the unit under test.
 
-After every orchestrator reply, run `node .claude/scripts/main-files.mjs check` first. It lists main files changed during the run, including shell writes the hooks cannot see. Report every listed file to the owner, and neither keep nor revert it without the owner's word. Run `save` again before each resume.
-
-The orchestrator returns only one of two messages:
-- `DỪNG …` (open questions, coder blocked, or tests still failing after 2 rounds): set the task `[!]` as in "How to work on a module", ask the owner, then resume the orchestrator (`SendMessage`) with the answers.
-- `XONG …` with the reviewer's report: put the test and review results in `REVIEW.md` under "Đã kiểm tra" and present the draft with the full report. `DUYỆT` / `CHẶN` is the reviewer's recommendation; the owner decides to approve or to ask for more fixes, which go back to the orchestrator. After approval, continue with step 3 of "Review before changing main files".
-
-Small fixes (a typo, a one-line change) may skip the pipeline, never the approval.
+The agents live in `.codex/agents/`. `.codex/hooks/agent-guard.mjs` (run from `.codex/hooks.json`) keeps the planner to `PLAN.md` and the reviewer read-only. Models are pinned by full ID and effort is set in each agent's frontmatter; change both there and here together.
 
 One git repo at the root. The frontend UI is built only from the kit in `Source/frontend/src/components/` (official design, preview at `/components.html`); do not add another component folder or design system.
 
