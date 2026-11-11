@@ -25,6 +25,7 @@ Status labels: PENDING "Chờ xử lý", IN_PROGRESS "Đang xử lý", RESOLVED 
 - **REQ-06** `INCIDENT`: staff moves it IN_PROGRESS → RESOLVED, recording `cost` (owner pays, D-15). Tenant confirms → CLOSED, or "Chưa ổn" → IN_PROGRESS. RESOLVED for 3 days → CLOSED by cron.
 - **REQ-07** `PAYMENT_ISSUE`: manager may resolve directly (e.g. records a manual payment, BIL-11) or reject with reason; otherwise escalates (`escalated_at`) → Boss resolves via [17-bank.md](17-bank.md) BANK-05 and sets RESOLVED.
 - **REQ-08** Every status change notifies the tenant (`REQUEST_UPDATED`). REJECTED needs `decision_note`.
+- **REQ-09** Repair review (owner 12/11/2026, D-33; Phase 5; details to confirm: Q-13). After an `INCIDENT` is `CLOSED`, the tenant who created it may rate the repair [ASSUMPTION A-17]: 1–5 stars and an optional comment, once per incident, editable for 7 days after the first rating. Only staff in scope read reviews; nothing is shown publicly. Staff may hide a comment with a reason; the review and the hide are kept and audited. A review is separate from "Đã sửa xong" (REQ-06): a low rating does not reopen the incident, change its `cost` (D-15) or cause any refund. Incidents closed by the 3-day cron can be reviewed too. No other thing is reviewed (not viewings, rooms, buildings or staff).
 
 ## API
 
@@ -32,6 +33,8 @@ Status labels: PENDING "Chờ xử lý", IN_PROGRESS "Đang xử lý", RESOLVED 
 |---|---|---|
 | GET/POST | `/me/requests` | tenant |
 | POST | `/me/requests/:id/confirm` · `/reopen` · `/cancel` | tenant |
+| PUT | `/me/requests/:id/review` `{ rating, comment? }` | tenant – REQ-09 |
+| POST | `/requests/:id/review/hide` `{ reason }` | staff – REQ-09 |
 | GET | `/requests?buildingId&type&status` | staff |
 | PATCH | `/requests/:id` (incident status, cost) | staff |
 | POST | `/requests/:id/approve` · `/reject` · `/escalate` | staff |
@@ -41,3 +44,5 @@ Status labels: PENDING "Chờ xử lý", IN_PROGRESS "Đang xử lý", RESOLVED 
 - [ ] Second MOVE_OUT while one is pending → `PENDING_REQUEST_EXISTS`.
 - [ ] Approving a VEHICLE_CHANGE adding a plate already active elsewhere fails and leaves the request PENDING.
 - [ ] Incident RESOLVED on day 1 is CLOSED by cron on day 4.
+- [ ] A review on an incident that is not CLOSED, a second review, an edit on day 8, and a review by another tenant are all refused (REQ-09).
+- [ ] A 1-star review leaves the incident CLOSED and its `cost` unchanged (REQ-09).

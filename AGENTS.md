@@ -63,12 +63,12 @@ One git repo at the root. The frontend UI is built only from the kit in `Source/
 
 ## Status
 
-Nothing implemented yet. Current phase: **1 · Foundation** (`docs/spec/01-architecture.md#roadmap`).
+Phase 1 · Foundation and Phase 2 · Rooms are done; details in `docs/spec/README.md` (Status) and the root `CLAUDE.md`. On 12/11/2026 the owner changed the spec after the Home101 brief (`docs/home101-adoption-brief.md`, decisions D-23..D-34): the Phase 1 and 2 code is fixed in **Phase Extra** (`docs/phase-extra-home101/README.md`, plan waiting for the owner, nothing built). Next: Phase Extra (its part EX-1 comes before Phase 3), then **3 · Contracts** (`docs/spec/01-architecture.md#roadmap`).
 
 ## Rules that apply everywhere
 
 - Money is integer đồng. No floats. Dates: `date` for business dates, timezone `Asia/Ho_Chi_Minh`.
-- All UI text is Vietnamese. Code, identifiers, commits and comments are English.
+- UI text is Vietnamese; public, auth, guest and tenant pages also have English, the staff app does not (LOC-01). Code, identifiers, commits and comments are English.
 - Authorization and money math live only in the BE. The DB constraints are a safety net, not a replacement for BE validation.
 - Never hard-delete rows with history; use `is_active`.
 - Never commit secrets. `.env*` is ignored (except `.env.example`). Secrets: `DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`, `CCCD_KEY`, `BANK_WEBHOOK_SECRET`, `CLOUDINARY_URL`, `MAIL_*`.

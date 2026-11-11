@@ -33,8 +33,9 @@ stateDiagram-v2
 
 - **CON-06** `POST /contracts/:id/sign` with the uploaded scan URL. Requires HOLD and not yet signed.
 - **CON-07** Tenant account (`contracts.tenant_id` is required, so this starts at create):
-  - At **create** (CON-01): find `users` by signer phone. None → insert TENANT with `is_active = false` and an unusable password hash. Exists as TENANT → reuse. Exists as MANAGER/BOSS → `PHONE_TAKEN` (staff cannot rent with their staff phone).
-  - At **sign**: if the user was created for this contract (never logged in, no other contract) → set a random 10-character temporary password, `must_change_password = true`, `is_active = true`. If the user already had an account → just set `is_active = true`; do not touch the password.
+  - At **create** (CON-01): find `users` by signer phone. None → insert TENANT with `is_active = false` and an unusable password hash. Exists as TENANT → reuse. Exists as GUEST with a verified phone (owner 12/11/2026, D-26) → reuse it and set its role to `TENANT` in the same transaction; password, viewings, notifications and `locale` are untouched. Exists as GUEST never verified (AUTH-11) → it proves nothing: treat it as "none" by replacing that row's name and giving it an unusable password hash. Exists as MANAGER/BOSS → `PHONE_TAKEN` (staff cannot rent with their staff phone). An existing account that staff locked (`is_active = false` after it had been used) is **not** reused silently: the response says "Tài khoản của số này đang bị khóa" and staff unlock it on purpose first.
+  - At **sign**: if the user was created for this contract (never logged in, no other contract) → set a random 10-character temporary password, `must_change_password = true`, `is_active = true`. If the user already had an account (tenant or former guest) → do not touch the password and do not set a temporary one; the response has no password (CON-09).
+  - The account is always found by the signer's phone. When the contract comes from a viewing that has an owner account (VIEW-05), the form shows that account's name and phone so staff confirm it is the same person.
 - **CON-08** Create the `DEPOSIT` invoice: one line `DEPOSIT` = deposit, `issue_date` = today, `due_date` = max(today, startDate) [ASSUMPTION A-02], status UNPAID. Skip when deposit = 0 or when this is a renewal (deposit carried).
 - **CON-09** Response returns the temporary password **once** (only when a new password was set) so the manager can hand it over. It is never stored in clear or logged.
 
@@ -45,7 +46,7 @@ stateDiagram-v2
 
 ## Cancel (before move-in)
 
-- **CON-12** `POST /contracts/:id/cancel` `{ reason, depositKept? }` on HOLD only. If the deposit invoice is UNPAID → cancel it (reason). If PAID → create a settlement with `deposit` = paid amount, `deposit_forfeit` = `depositKept` (manager decides, 0..deposit), other parts 0, `net` = refund. Status CANCELLED, room becomes "Trống". Deactivate the tenant account if they have no other HOLD/ACTIVE contract.
+- **CON-12** `POST /contracts/:id/cancel` `{ reason, depositKept? }` on HOLD only. If the deposit invoice is UNPAID → cancel it (reason). If PAID → create a settlement with `deposit` = paid amount, `deposit_forfeit` = `depositKept` (manager decides, 0..deposit), other parts 0, `net` = refund. Status CANCELLED, room becomes "Trống". Deactivate the account only if it was created for this contract and was never activated (CON-07, still `is_active = false` with an unusable password). An account that existed before, or that has logged in, stays active and keeps its guest area; the same holds when a contract ends by settlement (owner 12/11/2026, D-26, A-16).
 
 ## Occupants and vehicles
 
@@ -85,5 +86,8 @@ stateDiagram-v2
 - [ ] Move-in before deposit paid → `DEPOSIT_NOT_PAID`.
 - [ ] Same phone renting a second room reuses the account and its password.
 - [ ] A manager's phone used as signer → `PHONE_TAKEN`.
+- [ ] A guest with a verified phone signs: the same account becomes TENANT, keeps its password and its viewings, and no temporary password is returned (CON-07, D-26).
+- [ ] Cancelling that guest's HOLD contract leaves the account active with its viewings; cancelling the contract of an account created for it and never activated deactivates it (CON-12).
+- [ ] A never-verified self-registered account with the signer's phone gives no access to the contract: its password no longer works after the contract is created (CON-07).
 - [ ] Cancel after deposit paid with 1.000.000 kept from 2.500.000 → settlement net 1.500.000, room public again.
 - [ ] Renewal switches on `start_date` without a new deposit invoice; tenant keeps one account and sees both contracts.

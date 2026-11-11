@@ -43,6 +43,23 @@ Source files (verified): [schema.prisma](../../Source/backend/prisma/schema.pris
 | System | `settings` | Key/value config (no secrets) | |
 | | `audit_logs` | Who did what | |
 
+## Planned changes
+
+Not in `schema.prisma` yet. They follow the decisions of 12/11/2026 (D-25..D-33). Each one is a schema change, so the owner is asked before each migration (root `CLAUDE.md`, rule 7); exact column names are fixed in the part's `PLAN.md`. Every change adds its scenarios to `check-constraints.mjs`.
+
+| Part | Table | Change | Rule |
+|---|---|---|---|
+| EX-1 | `users` | enum `Role` gets `GUEST`; `phone_verified_at timestamptz null`; `locale` (`vi` / `en`, default `vi`) | AUTH-11..15 |
+| EX-1 | `phone_otps` (new) | phone, purpose (`REGISTER` / `RESET_PASSWORD` / `VERIFY_PHONE`), code hash, tries, expiry, used time | AUTH-13 |
+| EX-5 | `rooms` | `room_type`, `has_balcony`, `has_window`, `pets_allowed`; null = not entered yet | ROOM-10 |
+| EX-5 | `buildings` | `amenities` holds codes of a fixed list instead of free text; old values are kept until staff enter them again | BLD-08 |
+| EX-6 | `viewings` | `user_id null` (owner account); `visit_at timestamptz null` (exact start); statuses `DONE`, `NO_SHOW`; who cancelled; `visit_date` + `time_slot` stay for old rows; CHECK: `visit_at`, or `visit_date` and `time_slot` | VIEW-01, VIEW-04, VIEW-08 |
+| EX-6 | `viewing_proposals` (new) | viewing, side (`GUEST` / `STAFF`), user, proposed time, status (`PENDING` / `ACCEPTED` / `REJECTED` / `WITHDRAWN` / `EXPIRED`), source, note; at most 1 PENDING per viewing | VIEW-14..17 |
+| EX-6 | `viewing_events` (new) | history of a viewing: actor, type, old → new, source, note, time | VIEW-22 |
+| EX-8 | `notifications` | rows for viewing events; one reminder per (viewing, kind, time in effect) | NOTI-08, NOTI-09 |
+| Phase 3 | `contracts` | trigger "tenant is TENANT" stays; the BE switches a `GUEST` to `TENANT` in the same transaction before the insert | CON-07 |
+| Phase 5 | `requests` | repair review: rating 1–5, comment, time, hidden reason; only on `INCIDENT` in `CLOSED` | REQ-09 |
+
 ## Enforced by DB (the BE still validates first and returns a friendly code)
 
 All 50 scenarios in `check-constraints.mjs` pass: second Boss; bad/duplicate phone; 3rd building for a manager; tenant as manager; delete building with rooms; duplicate room code; 2 pending price proposals; service rate without service; cross-building service rate; contract < 3 months; 2 open contracts per room; room/building mismatch; manager as signer; ACTIVE without move-in; re-rent after end (allowed); tenant with 2 rooms (allowed); 2 renewals from 1 contract; cross-building contract service; 2 signers; cross-building vehicle; duplicate active plate; re-register removed plate (allowed); 2 readings same day; meter replacement without old value; 2 invoices same period; cancel + reissue (allowed); cancel without reason; issue without due date; wrong line amount; negative unit price; underpayment; exact payment sets PAID; second payment; webhook payment without transaction; valid webhook (allowed); duplicate webhook; matched transaction without invoice; wrong settlement math; negative net without final invoice; positive net (allowed); 2 pending move-out/renew; incident APPROVED; cost on non-incident; announcement to other building's room; duplicate notification.

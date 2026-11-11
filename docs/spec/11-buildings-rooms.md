@@ -10,6 +10,7 @@ Modules: `buildings`, `rooms`. Tables: `buildings`, `rooms`, `room_images`, `ser
 - **BLD-04** Public contact of a building = its active manager's `contact_phone`/`zalo_url`/`facebook_url`; if none, Boss's (`settings.default_contact`). "None" also covers: no manager, an inactive manager (AUTH-08), and an active manager without `contact_phone` (owner 01/11/2026). The manager's login phone is never shown. Computed at read time, never copied.
 - **BLD-05** A building is public iff it is active and has at least one public room (ROOM-05). Because ROOM-05 requires the building's ELECTRIC and WATER rates, a new building is not public until both are approved and in effect.
 - **BLD-06** `code` is 2–6 characters `A-Z0-9` (DB `buildings_code_format`); the BE upper-cases input. Only Boss locks (`is_active = false`) or unlocks a building, and only when no room has a HOLD/ACTIVE contract (same as ROOM-04). Locking also sets `manager_id = null` (audit `building.manager_change`) so the manager can take another building; after unlocking, Boss assigns a manager again (owner 01/11/2026). NEW/CONFIRMED viewings are kept (VIEW-13).
+- **BLD-08** (owner 12/11/2026, D-32; Phase Extra EX-5) `amenities` is chosen from one fixed list shared by all buildings, so guests can filter by it (owner 12/11/2026, Q-11): `ELEVATOR` "Thang máy", `PARKING` "Chỗ để xe", `SECURITY` "Bảo vệ", `CAMERA` "Camera", `SHARED_WASHER` "Máy giặt chung", `DRYING_AREA` "Sân phơi", `FINGERPRINT_LOCK` "Khóa vân tay", `FREE_HOURS` "Giờ giấc tự do". Each item also has an English label (LOC-04). Free text typed before the change is kept and shown to staff as "Tiện ích cũ (chưa chọn lại)" until they choose from the list; it is never converted automatically and never used by the filter.
 - **BLD-07** Staff lists hide locked buildings and locked rooms by default; `?includeInactive=true` shows them: "Hiện tòa đã khóa" (Boss; managers never see locked buildings, SCOPE-02) and "Hiện phòng đã khóa" (staff in scope).
 
 ## Rooms
@@ -23,6 +24,7 @@ Modules: `buildings`, `rooms`. Tables: `buildings`, `rooms`, `room_images`, `ser
 - **ROOM-07** Images: at most 10 per room, JPG/PNG/WebP, uploaded directly to Cloudinary with a signature from `POST /files/sign` (FILE-01, FILE-02). The FE rejects files over 5 MB before upload (Cloudinary cannot sign a size limit). Each attached image stores a unique, verified Cloudinary `asset_id` (FILE-02). Deleting an image deletes the `room_images` row (no history) and then requests Cloudinary destroy by that immutable `asset_id`; a Cloudinary failure is logged and does not block. A late destroy must not remove a new asset that reuses the old `publicId`. Order by `sort_order`. Owner decision Q-P24-9, 03/11/2026.
 - **ROOM-08** Public room detail shows the deposit = 1 month of the current price, and `monthlyEstimate` (A-05, owner 01/11/2026) = `price` + every active ROOM service + every active PERSON service × 1 + water × 1 person when `water_mode = PER_PERSON`, all at today's rates (RATE-06). Electricity and per-m³ water are not added; their unit prices are listed with "chưa gồm điện, nước – tính theo đồng hồ của phòng". An active service without a rate in effect is not added and is listed as "chưa gồm: <tên> (chưa có giá)". Locked services are left out entirely. Computed by the BE only (UI-06).
 - **ROOM-09** Turning on maintenance (ROOM-03) or locking (ROOM-04) a room that has NEW/CONFIRMED viewings is allowed; the response gives their count so the FE confirm dialog says "Còn N lịch hẹn chưa xử lý" (VIEW-13).
+- **ROOM-10** (owner 12/11/2026, D-32; Phase Extra EX-5) The room form also has: "Loại phòng" `room_type` (owner 12/11/2026, Q-10: `STUDIO` "Studio", `LOFT` "Có gác xép", `ONE_BEDROOM` "1 phòng ngủ", `TWO_BEDROOM` "2 phòng ngủ"), "Ban công" `has_balcony`, "Cửa sổ" `has_window`, "Cho nuôi thú cưng" `pets_allowed` (set per room, Q-09). Each is optional; "chưa nhập" (null) is different from "không". Rooms created before the change stay "chưa nhập" until staff fill them in; nothing is guessed from `description` or `furniture`.
 
 ### Public listing
 
@@ -30,7 +32,9 @@ Modules: `buildings`, `rooms`. Tables: `buildings`, `rooms`, `room_images`, `ser
 - **PUB-02** `/public/rooms/:id` and `/public/buildings/:id` for a room or building that is not public return 404 `NOT_FOUND` (no hint that it exists).
 - **PUB-03** Rates shown publicly = today's rates (RATE-06). Rates approved for a later date are shown as an extra line "Từ dd/mm/yyyy: …".
 - **PUB-04** Public responses never include internal fields (user ids, phone of login, review notes, proposal data).
-- **PUB-05** Successful `GET /public/*` responses carry `Cache-Control: public, max-age=0, s-maxage=60`: the CDN (DEP-06) may serve them for 60 s, browsers always ask again. Error responses and every non-GET (e.g. `POST /public/viewings`) carry `Cache-Control: no-store`. So a new price, a locked room or a newly listed room may show publicly up to 60 s late, including PUB-02's 404 (owner 04/11/2026). Staff and tenant routes are never cached.
+- **PUB-05** Successful `GET /public/*` responses carry `Cache-Control: public, max-age=0, s-maxage=60`: the CDN (DEP-06) may serve them for 60 s, browsers always ask again. Error responses and every non-GET carry `Cache-Control: no-store`. Nothing about one person (own viewings, account, notifications) is ever served under `/public/*`; it lives under `/me/*`, which is never cached (owner 12/11/2026). So a new price, a locked room or a newly listed room may show publicly up to 60 s late, including PUB-02's 404 (owner 04/11/2026). Staff and tenant routes are never cached.
+
+- **PUB-06** (owner 12/11/2026, D-32; Phase Extra EX-5) Extra filters on `/public/rooms`, all optional and combined with AND: `minArea`, `maxArea` (m²), `minOccupants` (`max_occupants` ≥ value), `floor`, `amenities` (building has every listed code, BLD-08), `balcony`, `window`, `pets` (`true` only), `roomType`. They run in the query before paging, on top of ROOM-05. A room whose value is "chưa nhập" does not match a filter on that field. Unknown codes → `VALIDATION_FAILED`. The filter options come from `GET /public/filters` (amenity and room-type lists with labels), not from sample data.
 
 ### Room status
 
@@ -56,7 +60,8 @@ Derived, never stored. Priority top to bottom:
 | Method | Path | Who |
 |---|---|---|
 | GET | `/public/locations` | public – districts/wards that have public rooms, with counts |
-| GET | `/public/rooms?district&ward&buildingId&minPrice&maxPrice&sort&page` | public – only public rooms (ROOM-05, PUB-01) |
+| GET | `/public/rooms?district&ward&buildingId&minPrice&maxPrice&sort&page` + `minArea&maxArea&minOccupants&floor&amenities&balcony&window&pets&roomType` | public – only public rooms (ROOM-05, PUB-01); extra filters PUB-06 |
+| GET | `/public/filters` | public – amenity and room-type lists with labels (PUB-06) |
 | GET | `/public/rooms/:id` | public – room, images, building, contact (BLD-04), current and upcoming rates (PUB-03), deposit, `monthlyEstimate` (ROOM-08) |
 | GET | `/public/buildings/:id` | public – building, rates, public rooms |
 | GET | `/public/featured-rooms` | public – PUB-01 |
@@ -78,3 +83,6 @@ Public controllers live in the module that owns the data (`buildings`, `rooms`);
 - [ ] Locking a building sets `manager_id = null`; that manager can then be assigned another building (BLD-06).
 - [ ] A manager cannot get an upload signature for a room in another building (FILE-01); a `publicId` outside the room's folder is rejected (FILE-02).
 - [ ] `monthlyEstimate` for a PER_M3 and a PER_PERSON building matches ROOM-08 by hand.
+- [ ] `/public/rooms?balcony=true&minArea=25` returns only public rooms with a balcony and ≥ 25 m²; a room with "chưa nhập" balcony is not returned; `meta.total` counts after filtering (PUB-06).
+- [ ] A filter never returns a non-public room, and an unknown amenity code returns `VALIDATION_FAILED` (PUB-06, ROOM-05).
+- [ ] A building's old free-text amenities are still shown to staff and are not used by the filter (BLD-08).

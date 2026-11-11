@@ -63,12 +63,12 @@ One git repo at the root. The frontend UI is built only from the kit in `Source/
 
 ## Status
 
-Phase 1 · Foundation is done (30/10/2026): the 3 roles log in and land in their layout, scope guard, first migration and seed, UI kit with form pieces; task lists and QA in `docs/phase-1-foundation/`. Phase 2 · Rooms is done (06/11/2026): buildings, services, managers, rooms and images, pricing with Boss approval and the 01:00 price job, public pages, viewings, "Việc hôm nay"; task lists, QA checklist and production notes in `docs/phase-2-rooms/`. Current phase: **3 · Contracts** (`docs/spec/01-architecture.md#roadmap`).
+Phase 1 · Foundation is done (30/10/2026): the 3 roles log in and land in their layout, scope guard, first migration and seed, UI kit with form pieces; task lists and QA in `docs/phase-1-foundation/`. Phase 2 · Rooms is done (06/11/2026): buildings, services, managers, rooms and images, pricing with Boss approval and the 01:00 price job, public pages, viewings, "Việc hôm nay"; task lists, QA checklist and production notes in `docs/phase-2-rooms/`. On 12/11/2026 the owner changed the spec after the Home101 brief (`docs/home101-adoption-brief.md`, decisions D-23..D-34): the Phase 1 and 2 code is fixed in **Phase Extra** (`docs/phase-extra-home101/README.md`, plan waiting for the owner, nothing built), and Phase 3 and 5 rules were amended in the spec. Next: Phase Extra (its part EX-1 comes before Phase 3), then **3 · Contracts** (`docs/spec/01-architecture.md#roadmap`).
 
 ## Rules that apply everywhere
 
 - Money is integer đồng. No floats. Dates: `date` for business dates, timezone `Asia/Ho_Chi_Minh`.
-- All UI text is Vietnamese. Code, identifiers, commits and comments are English.
+- UI text is Vietnamese; public, auth, guest and tenant pages also have English, the staff app does not (LOC-01). Code, identifiers, commits and comments are English.
 - Authorization and money math live only in the BE. The DB constraints are a safety net, not a replacement for BE validation.
 - Never hard-delete rows with history; use `is_active`.
 - Never commit secrets. `.env*` is ignored (except `.env.example`). Secrets: `DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`, `CCCD_KEY`, `BANK_WEBHOOK_SECRET`, `CLOUDINARY_URL`, `MAIL_*`.
