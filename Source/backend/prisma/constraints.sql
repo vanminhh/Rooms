@@ -5,6 +5,12 @@
 CREATE UNIQUE INDEX users_one_boss ON users (role) WHERE role = 'BOSS';
 ALTER TABLE users ADD CONSTRAINT users_phone_vn CHECK (phone ~ '^0[0-9]{9}$');
 ALTER TABLE users ADD CONSTRAINT users_contact_phone_vn CHECK (contact_phone IS NULL OR contact_phone ~ '^0[0-9]{9}$');
+ALTER TABLE users ADD CONSTRAINT users_locale CHECK (locale IN ('vi', 'en')); -- AUTH-15 (EX-1)
+
+-- Mã SMS (AUTH-13, EX-1): tối đa 5 lượt sai, mỗi (số, mục đích) chỉ một mã chưa dùng
+ALTER TABLE phone_otps ADD CONSTRAINT phone_otps_phone_vn CHECK (phone ~ '^0[0-9]{9}$');
+ALTER TABLE phone_otps ADD CONSTRAINT phone_otps_tries CHECK (tries BETWEEN 0 AND 5);
+CREATE UNIQUE INDEX phone_otps_one_active ON phone_otps (phone, purpose) WHERE used_at IS NULL;
 
 -- ── Tòa, phòng ──
 ALTER TABLE buildings ADD CONSTRAINT buildings_code_format CHECK (code ~ '^[A-Z0-9]{2,6}$');

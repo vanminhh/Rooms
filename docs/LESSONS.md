@@ -34,6 +34,8 @@ Read this before the first task of any part. Each line is a mistake that really 
 - Re-running the dev seed resets the passwords of the seeded accounts; say so before running it during a manual test [P1-QA, 30/10/2026].
 - `import.meta.main` does not compile with the installed `@types/node`; use another entry-point check [BE-LOGIN-06, 29/10/2026].
 - Temporary output goes to the session's scratch folder, never to a file in the repo written by a shell redirect [BE-P2-09, 02/11/2026].
+- `python` is not installed (Windows store stub); script file edits with `node`, and in JS `replace` pass a function, because a SQL `$'` in a string replacement is expanded as a pattern [BE-EX-01, 12/11/2026].
+- Do not run `prisma format` on the whole schema: it re-aligns unrelated models; check a migration offline with `migrate diff --from-schema-datamodel <old> --to-schema-datamodel <new>`, never with the dev DB as shadow [BE-EX-01, 12/11/2026].
 - The shell keeps the last `cd`; use absolute paths or `cd` back, or the next command runs in the wrong app [12/11/2026].
 
 ## Manual checks in the browser

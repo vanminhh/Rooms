@@ -19,7 +19,8 @@ INSERT INTO users (id, role, phone, full_name, password_hash, updated_at) VALUES
   (2, 'MANAGER', '0900000002', 'Quản lý 1', 'x', now()),
   (3, 'MANAGER', '0900000003', 'Quản lý 2', 'x', now()),
   (4, 'TENANT',  '0900000004', 'Người thuê 1', 'x', now()),
-  (5, 'TENANT',  '0900000005', 'Người thuê 2', 'x', now());
+  (5, 'TENANT',  '0900000005', 'Người thuê 2', 'x', now()),
+  (6, 'GUEST',   '0900000006', 'Khách 1',   'x', now());
 INSERT INTO buildings (id, code, name, address, district, ward, manager_id, water_mode, updated_at) VALUES
   (1, 'CG01', 'Tòa Cầu Giấy',  '1 Xuân Thủy', 'Cầu Giấy', 'Dịch Vọng Hậu', 2, 'PER_M3', now()),
   (2, 'DD01', 'Tòa Đống Đa',   '2 Tây Sơn',   'Đống Đa',  'Quang Trung',   2, 'PER_PERSON', now()),
@@ -42,6 +43,7 @@ SELECT setval(pg_get_serial_sequence(t, 'id'), 100)
 `);
 
 const C = `INSERT INTO contracts (code, building_id, room_id, tenant_id, start_date, term_months, end_date, billing_day, rent, deposit, status, created_by_id, updated_at) VALUES`;
+const OTP = `INSERT INTO phone_otps (phone, purpose, code_hash, expires_at)`;
 const IDEM = `INSERT INTO pricing_idempotency_keys (actor_id, key, route, request_hash, status_code, response_json, expires_at)`;
 
 // [nhóm, tình huống, SQL, kết quả mong đợi: 'ok' hoặc tên ràng buộc/mã lỗi phải xuất hiện]
@@ -49,6 +51,14 @@ const cases = [
   ['Tài khoản', 'Thêm Boss thứ hai', `INSERT INTO users (role, phone, full_name, password_hash, updated_at) VALUES ('BOSS','0900000009','B2','x',now())`, 'users_one_boss'],
   ['Tài khoản', 'SĐT sai định dạng', `INSERT INTO users (role, phone, full_name, password_hash, updated_at) VALUES ('TENANT','12345','X','x',now())`, 'users_phone_vn'],
   ['Tài khoản', 'SĐT trùng người khác', `INSERT INTO users (role, phone, full_name, password_hash, updated_at) VALUES ('TENANT','0900000004','X','x',now())`, 'users_phone_key'],
+  ['Tài khoản', 'Ngôn ngữ ngoài vi/en (AUTH-15)', `UPDATE users SET locale = 'fr' WHERE id = 6`, 'users_locale'],
+  ['Tài khoản', 'Ngôn ngữ mặc định là vi (AUTH-15)', `INSERT INTO users (id, role, phone, full_name, password_hash, updated_at) VALUES (50,'GUEST','0900000050','K','x',now()); DO $$ BEGIN IF (SELECT locale FROM users WHERE id=50) <> 'vi' THEN RAISE EXCEPTION 'locale khác vi'; END IF; END $$`, 'ok'],
+  ['Tòa', 'Gán khách có tài khoản làm quản lý tòa (SCOPE-05)', `UPDATE buildings SET manager_id = 6 WHERE id = 3`, 'BUILDING_MANAGER_ROLE'],
+  ['Hợp đồng', 'Khách có tài khoản đứng tên hợp đồng (CON-07: BE đổi sang TENANT trước)', `${C} ('HD9',1,2,6,'2026-11-01',3,'2027-01-31',1,2400000,0,'HOLD',2,now())`, 'CONTRACT_TENANT_ROLE'],
+  ['Mã SMS', 'Hai mã chưa dùng cho cùng số và mục đích (AUTH-13)', `${OTP} VALUES ('0900000006','REGISTER','h1',now()+interval '5 minutes'),('0900000006','REGISTER','h2',now()+interval '5 minutes')`, 'phone_otps_one_active'],
+  ['Mã SMS', 'Mã cũ đã bị thay, mã mới chưa dùng', `${OTP.replace(', expires_at', ', expires_at, used_at')} VALUES ('0900000006','REGISTER','h1',now(),now()),('0900000006','REGISTER','h2',now()+interval '5 minutes',NULL)`, 'ok'],
+  ['Mã SMS', 'Số điện thoại sai định dạng (G-04)', `${OTP} VALUES ('12345','REGISTER','h1',now())`, 'phone_otps_phone_vn'],
+  ['Mã SMS', 'Lượt nhập sai thứ 6 (AUTH-13: tối đa 5)', `${OTP} VALUES ('0900000006','REGISTER','h1',now()); UPDATE phone_otps SET tries = 6`, 'phone_otps_tries'],
   ['Tòa', 'Giao tòa thứ 3 cho cùng một quản lý', `UPDATE buildings SET manager_id = 2 WHERE id = 3`, 'MANAGER_MAX_2_BUILDINGS'],
   ['Tòa', 'Gán người thuê làm quản lý tòa', `UPDATE buildings SET manager_id = 4 WHERE id = 3`, 'BUILDING_MANAGER_ROLE'],
   ['Tòa', 'Gán quản lý thứ hai cho tòa trống', `UPDATE buildings SET manager_id = 3 WHERE id = 3`, 'ok'],

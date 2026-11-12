@@ -27,7 +27,7 @@ Out: the English texts of error messages (EX-3), viewings (EX-6), turning a gues
 
 ## Tasks
 
-- [ ] **BE-EX-01** ⏸ Migration `guest_accounts` (ask the owner before creating and before applying): enum `Role` + `GUEST`; `users.phone_verified_at timestamptz null`; `users.locale` (`vi` / `en`, default `vi`, CHECK); table `phone_otps` (phone, purpose `REGISTER` / `RESET_PASSWORD` / `VERIFY_PHONE`, code hash, tries, expires, used). Keep every rule of `constraints.sql` (DB-07). New scenarios in `check-constraints.mjs`: a GUEST as building manager is refused, a GUEST as contract tenant is refused, a bad `locale` is refused.
+- [x] **BE-EX-01** ⏸ Migration `guest_accounts` (ask the owner before creating and before applying): enum `Role` + `GUEST`; `users.phone_verified_at timestamptz null`; `users.locale` (`vi` / `en`, default `vi`, CHECK); table `phone_otps` (phone, purpose `REGISTER` / `RESET_PASSWORD` / `VERIFY_PHONE`, code hash, tries, expires, used). Keep every rule of `constraints.sql` (DB-07). New scenarios in `check-constraints.mjs`: a GUEST as building manager is refused, a GUEST as contract tenant is refused, a bad `locale` is refused.
   Done when: `prisma migrate diff` shows only these changes; `node prisma/check-constraints.mjs . prisma` passes all old and new scenarios; `seed.spec.ts` passes. Report the new scenario count.
 - [ ] **BE-EX-02** `sms` module: abstract `SmsService` + `ConsoleSmsService` that writes the code to the server log (dev and test), same pattern as `MailerService`. In production without a provider, sending throws `SMS_UNAVAILABLE` (503). `SMS_*` env vars are optional in `env.ts`; the app starts without them. No provider SDK is installed in this part (Q-07).
   Done when: unit tests for both cases; the app boots with no `SMS_*` set.
@@ -51,6 +51,19 @@ Out: the English texts of error messages (EX-3), viewings (EX-6), turning a gues
 - Q-EX1-1 (BE-EX-08): thêm một tài khoản khách mẫu vào seed dev (ví dụ `0900000006`, đã xác minh) để thử tay? Nếu có, danh sách tài khoản dev ở mục "Go-live checklist" của `01-architecture.md` (DEP-08) phải ghi thêm tài khoản này.
   Đề xuất: có.
 - Q-07 (spec): nhà gửi SMS. Không chặn phần này; chặn chạy thật trên production.
+
+Đã trả lời 12/11/2026 (chủ dự án chọn theo đề xuất):
+
+- Q-EX1-1: có, seed dev thêm GUEST `0900000006` đã xác minh; ghi vào danh sách DEP-08.
+- Migration `guest_accounts`: được tạo file; chạy vào DB thì hỏi riêng.
+- Q-EX1-2: `/auth/forgot-password` và `/auth/resend-code` luôn 200, lỗi SMS chỉ ghi log; chỉ `register` và `/auth/phone/send-code` trả `SMS_UNAVAILABLE`.
+- Q-EX1-3: "5 SMS mỗi số mỗi ngày" = ngày lịch giờ Việt Nam, đếm từ bảng `phone_otps`; "10 mỗi IP mỗi giờ" giữ trong bộ nhớ.
+- Q-EX1-4: gửi mã mới cho cùng số + mục đích thì mã cũ chưa dùng hết hiệu lực.
+- Q-EX1-5: GUEST chưa xác minh đăng nhập: kiểm mật khẩu trước, chỉ khi đúng mới trả `PHONE_NOT_VERIFIED`; không tự gửi mã.
+- Q-EX1-6: `/auth/phone/*` cho mọi tài khoản đã đăng nhập mà số chưa xác minh (TENANT, MANAGER, BOSS).
+- Q-EX1-7: tài khoản bị khóa không nhận mã SMS khi quên mật khẩu (như nhánh email).
+- Q-EX1-8 (từ planner): `users.locale` lúc đăng ký lấy từ header `Accept-Language`.
+- Q-EX1-9 (từ planner): đăng ký bằng số của GUEST chưa xác minh nhưng đã bị khóa → `PHONE_TAKEN`, không hồi sinh.
 
 ## Issues log
 
