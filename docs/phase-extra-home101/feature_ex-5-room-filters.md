@@ -28,7 +28,7 @@ Out: a furniture filter (D-32 says no), guessing values from descriptions, filli
 
 ## Tasks
 
-- [ ] **BE-EX-12** ⏸ Migration `room_attributes` (ask the owner before creating and before applying): `rooms.room_type` (enum `STUDIO`, `LOFT`, `ONE_BEDROOM`, `TWO_BEDROOM`, null), `has_balcony`, `has_window`, `pets_allowed` (boolean, null = "chưa nhập"). `buildings.amenities` needs no new column if the plan keeps one JSON array where a known code is an amenity and anything else is old free text (BLD-08); the plan states which way and why.
+- [x] **BE-EX-12** ⏸ Migration `room_attributes` (ask the owner before creating and before applying): `rooms.room_type` (enum `STUDIO`, `LOFT`, `ONE_BEDROOM`, `TWO_BEDROOM`, null), `has_balcony`, `has_window`, `pets_allowed` (boolean, null = "chưa nhập"). `buildings.amenities` needs no new column if the plan keeps one JSON array where a known code is an amenity and anything else is old free text (BLD-08); the plan states which way and why.
   Done when: `prisma migrate diff` shows only these changes; DB check passes all scenarios; existing rooms have null in the four fields.
 - [ ] **BE-EX-13** The two fixed lists in one place (`src/common/catalog/`): amenity codes and room types with their Vietnamese and English labels exactly as in BLD-08 and ROOM-10. `GET /public/filters` returns both lists (PUB-06), cached like other public GETs (PUB-05).
   Done when: a test compares the lists with the spec text; the response has no building or room data.
@@ -50,6 +50,14 @@ Out: a furniture filter (D-32 says no), guessing values from descriptions, filli
 ## Questions for the owner
 
 <!-- Q-09, Q-10, Q-11 were answered on 12/11/2026 (see README.md section 2) -->
+
+Đã trả lời 13/11/2026 (chủ dự án chọn theo đề xuất của planner, `plans/EX-5/PLAN.md` mục 6):
+
+- OQ-1 tiện ích cũ: nút "Xóa tiện ích cũ" gửi `legacyAmenities: []`; lưu mã mới không làm mất chữ cũ.
+- OQ-2 ban công / cửa sổ / thú cưng: bộ lọc chỉ có trạng thái "có"; phòng "chưa nhập" không khớp.
+- OQ-4 seed dev: ghi đè thuộc tính của phòng và tòa mẫu của seed.
+- Tạo file migration `room_attributes`: đồng ý. Áp vào DB dev: xin riêng.
+- OQ-3 nhãn tiếng Anh và OQ-5 thẻ phòng: chưa hỏi, dùng đề xuất của planner `[ASSUMPTION]` (bảng nhãn mục 2.4; thẻ phòng giữ nguyên, chữ tiện ích cũ chỉ nhân sự thấy).
 
 ## Issues log
 

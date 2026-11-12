@@ -15,7 +15,7 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 | EX-2 Tài khoản khách (FE) | chờ duyệt | ⏸ FE-EX-07 (đăng nhập, GuestLayout, /toi, /toi/tai-khoan) | FE-EX-04 đã commit | – | xem tay luồng đăng ký → /toi với backend thật còn chờ chủ dự án; plan: không có (không cần planner) |
 | EX-3 Việt + Anh | chưa làm | – | – | FE-EX-08 | cần EX-2 |
 | EX-4 Màn chào | chưa làm | – | – | FE-EX-14 | cần EX-3 |
-| EX-5 Bộ lọc phòng | chưa làm | – | – | BE-EX-12 | độc lập |
+| EX-5 Bộ lọc phòng | đang làm | ⏸ BE-EX-12 (migration đã áp) | – | BE-EX-13 | plan: `plans/EX-5/PLAN.md` |
 | EX-6 Lịch xem (BE) | chưa làm | – | – | BE-EX-17 | cần EX-1 |
 | EX-7 Lịch xem (FE) | chưa làm | – | – | FE-EX-22 | cần EX-2, EX-6; lên production cùng EX-6 |
 | EX-8 Gửi email thật | chưa làm | – | – | BE-EX-28 | cần EX-6; BE-EX-30 cần khóa Resend của chủ dự án |
@@ -24,6 +24,8 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 ## Nhật ký điểm dừng
 
 Mới nhất ở trên. Mỗi dòng: `ngày · phần · task vừa xong · kết quả kiểm tra (số thật) · việc còn treo`.
+
+- 13/11/2026 · EX-5 · BE-EX-12 (file migration `20261113000000_room_attributes`, schema `RoomType` + 4 cột null, 3 kịch bản mới) · `migrate diff` cũ→mới chỉ có 1 CREATE TYPE + 4 cột; DB check 66/66 (PGlite); unit 1576/1576, lint 0 lỗi, build OK · migration ĐÃ áp vào DB dev (13/11/2026): 73 phòng, cả 4 cột null; migrate status up to date; seed.spec 36/36
 
 - 13/11/2026 · EX-2 · FE-EX-05..07 (`/dang-nhap`: "Chưa có tài khoản? Đăng ký" + EMAIL_NOT_VERIFIED → `/xac-minh-email`; `GuestLayout`, `/toi`, `/toi/tai-khoan`; link "Lịch hẹn xem phòng" ở TenantLayout) · lint 0 lỗi, build OK, test:components 769/769 (31 test mới trong `tests/ex/`) · chưa xem tay `/toi` với backend thật (cần đăng nhập) · chờ chủ dự án duyệt
 

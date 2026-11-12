@@ -22,6 +22,13 @@ enum Role {
   GUEST
 }
 
+enum RoomType {
+  STUDIO
+  LOFT
+  ONE_BEDROOM
+  TWO_BEDROOM
+}
+
 enum WaterMode {
   PER_M3
   PER_PERSON
@@ -291,6 +298,10 @@ model Room {
   maxOccupants     Int      @default(2) @map("max_occupants")
   furniture        Json     @default("[]")
   description      String?
+  roomType         RoomType? @map("room_type") // null = chưa nhập (ROOM-10)
+  hasBalcony       Boolean?  @map("has_balcony") // null = chưa nhập, khác false
+  hasWindow        Boolean?  @map("has_window")
+  petsAllowed      Boolean?  @map("pets_allowed")
   underMaintenance Boolean  @default(false) @map("under_maintenance")
   isActive         Boolean  @default(true) @map("is_active")
   createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
