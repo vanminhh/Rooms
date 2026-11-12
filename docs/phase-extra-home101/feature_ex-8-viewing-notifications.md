@@ -8,7 +8,7 @@ Rewritten 12/11/2026 after the owner's final decisions (D-25, D-34): the guest i
 | | |
 |---|---|
 | Fixes | Phase 1 (the mailer only logs), Phase 2 (viewings sent no email) |
-| Needs first | EX-6 committed; the owner's answer to Q-14 (provider chosen, account created, sending domain verified) |
+| Needs first | EX-6 committed. BE-EX-28 and 29 need nothing from the owner; BE-EX-30 needs the owner's Resend account with a verified sending domain and the keys in `.env` |
 | Unblocks | EX-9; going live (without this nobody can sign up and managers get no email) |
 | How | main session builds (one module); planner not needed |
 | Part done when | BE-EX-30 verified |
@@ -29,7 +29,7 @@ Out: any new kind of email, announcements and tenant emails (Phase 5), SMS and Z
 
 ## Tasks
 
-- [ ] **BE-EX-28** ⏸ Provider adapter: a `MailerService` implementation for the provider the owner chose (Q-14), used when its `MAIL_*` keys are set; otherwise the console mailer in development and test, and in production a send fails (the sign-up answers `MAIL_UNAVAILABLE`, AUTH-13). If the provider needs an SDK package, stop and ask the owner before installing; prefer a plain HTTPS call when the provider's API allows it. Add the key names to `.env.example` with empty values; the owner fills `.env`.
+- [ ] **BE-EX-28** ⏸ Provider adapter: a `MailerService` implementation for Resend (owner 12/11/2026, Q-14), used when its `MAIL_*` keys are set (suggested names: `MAIL_PROVIDER=resend`, `MAIL_API_KEY`, `MAIL_FROM`; check the names `env.ts` already uses). Read Resend's current API documentation first and take the request shape and error codes from it, not from memory; otherwise the console mailer in development and test, and in production a send fails (the sign-up answers `MAIL_UNAVAILABLE`, AUTH-13). If the provider needs an SDK package, stop and ask the owner before installing; prefer a plain HTTPS call when the provider's API allows it. Add the key names to `.env.example` with empty values; the owner fills `.env`.
   Done when: unit tests with the provider's HTTP call faked (success, provider error, timeout); the app boots with and without the keys; no key is logged.
 - [ ] **BE-EX-29** Templates (NOTI-08, LOC-06): `emailCode` (`vi`, `en`), `passwordReset` (existing; add `en`), `viewingNew` (to staff, `vi`), `viewingConfirmed` (to the guest, `vi`, `en`) in `settings.email_templates`, with defaults in code when a key is missing. Times in Hà Nội time, dates `dd/mm/yyyy`, no internal ids, and the building's public contact in the guest emails.
   Done when: template tests in both languages with the values of the spec; a missing template key falls back to the default.
@@ -38,7 +38,7 @@ Out: any new kind of email, announcements and tenant emails (Phase 5), SMS and Z
 
 ## Questions for the owner
 
-- Q-14 (spec): dịch vụ gửi email nào. Đề xuất: Resend. Chủ dự án tạo tài khoản, xác thực tên miền gửi và điền `MAIL_*`.
+- Q-14 (spec): đã trả lời 12/11/2026 – dùng Resend. Chủ dự án tạo tài khoản, xác thực tên miền gửi và điền `MAIL_*` trước BE-EX-30.
 - Q-EX8-2 (BE-EX-29): địa chỉ người gửi và tên hiển thị của thư (ví dụ "ROOMS <no-reply@…>")?
 
 ## Issues log

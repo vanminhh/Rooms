@@ -10,7 +10,7 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 
 | Phần | Trạng thái | Điểm dừng gần nhất đã xong | Commit | Việc tiếp theo | Ghi chú |
 |---|---|---|---|---|---|
-| EX-0 Chủ dự án chuẩn bị | đang làm | Q-09..Q-12 đã trả lời; quyết định cuối 12/11/2026 (email thay SMS) | – | Q-14 dịch vụ gửi email, Q-08 video, Q-13, Q-EX4-1, Q-EX6-1, Q-EX6-2, Q-EX8-2 | không chặn EX-1 |
+| EX-0 Chủ dự án chuẩn bị | đang làm | Q-09..Q-12 đã trả lời; quyết định cuối 12/11/2026 (email thay SMS) | – | tạo tài khoản Resend + xác thực tên miền (Q-14 đã chọn Resend), Q-08 video, Q-13, Q-EX4-1, Q-EX6-1, Q-EX6-2, Q-EX8-2 | không chặn EX-1 |
 | EX-1 Tài khoản khách (BE) | chờ commit | ⏸ BE-EX-06 (sms, mã SMS, đăng ký, xác minh) | BE-EX-01: 1040f7d | BE-EX-33 (chuyển mã SMS sang mã email), rồi BE-EX-34, 35, 07 | spec đổi sau ⏸ BE-EX-06: đọc lại `10-auth.md` và cập nhật plan trước khi làm tiếp; migration đã chạy vào DB dev; plan: `plans/EX-1/PLAN.md` |
 | EX-2 Tài khoản khách (FE) | chưa làm | – | – | FE-EX-01 | cần EX-1 |
 | EX-3 Việt + Anh | chưa làm | – | – | FE-EX-08 | cần EX-2 |
@@ -18,7 +18,7 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 | EX-5 Bộ lọc phòng | chưa làm | – | – | BE-EX-12 | độc lập |
 | EX-6 Lịch xem (BE) | chưa làm | – | – | BE-EX-17 | cần EX-1 |
 | EX-7 Lịch xem (FE) | chưa làm | – | – | FE-EX-22 | cần EX-2, EX-6; lên production cùng EX-6 |
-| EX-8 Gửi email thật | chưa làm | – | – | BE-EX-28 | cần EX-6 và Q-14 |
+| EX-8 Gửi email thật | chưa làm | – | – | BE-EX-28 | cần EX-6; BE-EX-30 cần khóa Resend của chủ dự án |
 | EX-9 QA | chưa làm | – | – | QA-EX-01 | cần tất cả |
 
 ## Nhật ký điểm dừng

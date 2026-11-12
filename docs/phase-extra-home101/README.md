@@ -27,11 +27,10 @@ Nguồn: [home101-adoption-brief.md](../home101-adoption-brief.md) (`BRIEF-H101-
 
 ## 2. Câu hỏi còn mở (chặn phần ghi ở cột cuối)
 
-Còn mở: `Q-08`, `Q-13`, `Q-14` trong [00-overview.md](../spec/00-overview.md#open-questions-do-not-implement-until-answered).
+Còn mở: `Q-08`, `Q-13` trong [00-overview.md](../spec/00-overview.md#open-questions-do-not-implement-until-answered).
 
 | Mã | Cần chủ dự án trả lời | Đề xuất | Chặn |
 |---|---|---|---|
-| Q-14 | Dịch vụ gửi email cho production | Resend; chủ dự án tạo tài khoản, xác thực tên miền gửi và điền `MAIL_*` | EX-8, và mọi thứ chạy thật: không có nó thì không ai đăng ký được, quản lý không nhận được email (ở dev thư được ghi ra log) |
 | Q-08 | File video nền của màn chào | Chủ dự án cung cấp; chưa có thì dùng ảnh tĩnh | Chỉ phần video của EX-4 |
 | Q-13 | Xác nhận: chỉ đánh giá sửa chữa sự cố, theo giá trị ở A-17 | Đồng ý như A-17 | Phase 5 (không chặn Phase Extra) |
 
@@ -40,6 +39,7 @@ Còn mở: `Q-08`, `Q-13`, `Q-14` trong [00-overview.md](../spec/00-overview.md#
 | Mã | Câu trả lời | Luật |
 |---|---|---|
 | Q-07 | Đóng: không dùng mã SMS hay Zalo nên không cần nhà gửi SMS | D-25 |
+| Q-14 | Dịch vụ gửi email cho production: Resend. Chủ dự án tạo tài khoản, xác thực tên miền gửi và điền `MAIL_*`; trước đó thư chỉ được ghi ra log | D-25, D-34 |
 | Q-09 | "Cho nuôi thú cưng" đặt theo phòng | ROOM-10 |
 | Q-10 | Loại phòng: Studio · Có gác xép · 1 phòng ngủ · 2 phòng ngủ | ROOM-10 |
 | Q-11 | Tiện ích tòa: Thang máy · Chỗ để xe · Bảo vệ · Camera · Máy giặt chung · Sân phơi · Khóa vân tay · Giờ giấc tự do | BLD-08 |
@@ -91,7 +91,7 @@ Mỗi phần có các điểm dừng ⏸: làm tới đó thì dừng, báo cáo
 
 | Phần | Việc | Sửa của | Cần xong trước | Đổi schema / gói |
 |---|---|---|---|---|
-| EX-0 | Chủ dự án: chọn dịch vụ gửi email và điền `MAIL_*` (Q-14), đưa file video (Q-08) | – | – | – |
+| EX-0 | Chủ dự án: tạo tài khoản Resend, xác thực tên miền gửi, điền `MAIL_*` (Q-14); đưa file video (Q-08) | – | – | – |
 | EX-1 | BE tài khoản khách: role `GUEST`, đăng ký có email, mã xác minh qua email, quên mật khẩu qua link email, `users.locale`, quyền `/me/*` | Phase 1 | – | thêm một migration cho xác minh email (migration `guest_accounts` đã chạy vào DB dev); xóa module `sms` |
 | EX-2 | FE tài khoản khách: `/dang-ky`, `/xac-minh-email`, sửa `/dang-nhap`, `GuestLayout` + `/toi/tai-khoan`, route guard 4 vai trò | Phase 1 | EX-1 | – |
 | EX-3 | Đa ngôn ngữ: từ điển Việt / Anh cho trang công khai, auth, khu khách; nút đổi ngôn ngữ trong kit; BE trả lỗi theo `Accept-Language` | Phase 1, 2, UI | EX-2 | có thể cần một gói i18n (planner đánh giá) |
@@ -99,7 +99,7 @@ Mỗi phần có các điểm dừng ⏸: làm tới đó thì dừng, báo cáo
 | EX-5 | Bộ lọc phòng: thuộc tính phòng, danh mục tiện ích, form nhân sự, `/public/rooms` + `/public/filters`, giao diện lọc ở `/phong` | Phase 2 | – | migration `rooms` |
 | EX-6 | BE lịch xem: đặt theo tài khoản, giờ theo từng giờ, giữ chỗ theo quản lý, giờ còn trống, xác nhận bằng gọi điện hoặc email, hủy, `DONE` / `NO_SHOW`, email báo lịch mới; bỏ `POST /public/viewings` | Phase 2 | EX-1 | migration `viewings` |
 | EX-7 | FE lịch xem: lịch chọn ngày giờ ở `/phong/:id`, màn hình đặt thành công, `/toi`, `/toi/lich-hen/:id`, trang `/ql/lich-hen` mới, thẻ "Việc hôm nay" | Phase 2 | EX-2, EX-6 | – |
-| EX-8 | Gửi email thật: nối dịch vụ gửi email, mẫu thư (mã xác minh, lịch mới, xác nhận lịch) | Phase 1, 2 | EX-6, Q-14 | một gói SDK của dịch vụ email nếu cần |
+| EX-8 | Gửi email thật: nối dịch vụ gửi email, mẫu thư (mã xác minh, lịch mới, xác nhận lịch) | Phase 1, 2 | EX-6, tài khoản Resend của chủ dự án | không cần gói mới nếu gọi thẳng API HTTPS của Resend |
 | EX-9 | QA: kiểm tay, hồi quy Phase 1–2, kiểm DB, chốt Phase Extra | – | tất cả | – |
 
 ```
@@ -189,8 +189,8 @@ Mỗi migration: hỏi chủ dự án trước, chỉ thêm cột / bảng / gi�
 
 ## 9. Phần chủ dự án phải làm
 
-- Trả lời Q-08, Q-13, Q-14 và ba câu Q-EX (mục 2).
-- Chọn và đăng ký dịch vụ gửi email, xác thực tên miền gửi, điền `MAIL_*` vào `.env` (không ai khác điền file này).
+- Trả lời Q-08, Q-13 và bốn câu Q-EX (mục 2).
+- Tạo tài khoản Resend, xác thực tên miền gửi (thêm các bản ghi DNS Resend yêu cầu), tạo khóa API và điền `MAIL_*` vào `.env` (không ai khác điền file này). Gói miễn phí có giới hạn số thư mỗi ngày: mỗi lượt đăng ký và mỗi lượt đặt lịch đều tốn một thư, nên xem giới hạn hiện hành trên trang giá của Resend trước khi lên production.
 - Bảo các quản lý điền email trong trang tài khoản của họ; quản lý chưa có email thì thư báo lịch mới sẽ về Boss.
 - Cung cấp video nền của Rooms (và ảnh tĩnh nếu muốn khác ảnh trang chủ hiện tại).
 - Duyệt chữ tiếng Anh của trang công khai trước khi lên production (KIT-13 áp dụng cho cả bản dịch khẩu hiệu).
