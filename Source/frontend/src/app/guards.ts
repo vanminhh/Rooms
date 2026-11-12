@@ -1,13 +1,14 @@
 import type { Me, Role } from '../features/auth/api'
 
-export function homeOf(role: Role): '/thue' | '/ql' {
+export function homeOf(role: Role): '/toi' | '/thue' | '/ql' {
+  if (role === 'GUEST') return '/toi'
   return role === 'TENANT' ? '/thue' : '/ql'
 }
 
 // Only in-app paths: no protocol-relative or absolute URLs, and never back to the login page (A7).
 export function safeNext(raw: string | null): string | null {
   if (!raw || !raw.startsWith('/') || raw.startsWith('//') || raw.startsWith('/\\')) return null
-  if (raw.includes('://') || raw.startsWith('/dang-nhap')) return null
+  if (raw.includes('://') || /^\/(dang-nhap|dang-ky|xac-minh-email)/.test(raw)) return null
   return raw
 }
 

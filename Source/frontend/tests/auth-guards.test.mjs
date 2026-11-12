@@ -580,11 +580,13 @@ test('AUTH-06 / T3 / FE-P2-01: routes wire guards and layouts (tenant area TENAN
     '../pages/public/LoginPage': stub('LoginPage'),
     '../pages/public/ChangePasswordPage': stub('ChangePasswordPage'),
     '../pages/public/ForgotPasswordPage': stub('ForgotPasswordPage'),
+    '../pages/public/RegisterPage': stub('RegisterPage'),
+    '../pages/public/VerifyEmailPage': stub('VerifyEmailPage'),
     './RequireAuth': { ...stub('RequireAuth'), ...stub('GuestOnly') },
   }
   const { routes } = compile('../src/app/routes.tsx', id => { if (id in mods) return mods[id]; throw new Error(`unexpected import ${id}`) })
   const [pub, tenantArea, staffArea] = routes
-  assert.equal(routes.length, 3)
+  assert.equal(routes.length, 4) // public, tenant, staff, then /toi (EX-2)
   assert.equal(pub.element.type, mods['../layouts/PublicLayout'].PublicLayout)
   const byPath = Object.fromEntries(pub.children.filter(r => r.path).map(r => [r.path, r.element.type]))
   assert.equal(byPath['/'], mods['../pages/public/PlaceholderPage'].PlaceholderPage)
@@ -595,7 +597,7 @@ test('AUTH-06 / T3 / FE-P2-01: routes wire guards and layouts (tenant area TENAN
   const RequireAuth = mods['./RequireAuth'].RequireAuth
   // T1 (CP-4): /dang-nhap sits under GuestOnly inside the public layout
   const guest = pub.children.find(r => r.element.type === mods['./RequireAuth'].GuestOnly)
-  assert.equal(guest.children.length, 1)
+  assert.equal(guest.children.length, 3) // /dang-nhap, /dang-ky, /xac-minh-email (EX-2)
   assert.equal(guest.children[0].path, '/dang-nhap')
   assert.equal(guest.children[0].element.type, mods['../pages/public/LoginPage'].LoginPage)
   // CP-5: /quen-mat-khau is public (no guard, A10); /doi-mat-khau needs a session of any role (AUTH-05)

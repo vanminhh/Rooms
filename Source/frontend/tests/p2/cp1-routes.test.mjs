@@ -79,6 +79,8 @@ function compileRoutes() {
     '../pages/public/LoginPage': stub('LoginPage'),
     '../pages/public/ChangePasswordPage': stub('ChangePasswordPage'),
     '../pages/public/ForgotPasswordPage': stub('ForgotPasswordPage'),
+    '../pages/public/RegisterPage': stub('RegisterPage'),
+    '../pages/public/VerifyEmailPage': stub('VerifyEmailPage'),
     './RequireAuth': { ...stub('RequireAuth'), ...stub('GuestOnly') },
   }
   const { routes } = compile('../../src/app/routes.tsx', id => { if (id in mods) return mods[id]; throw new Error(`unexpected import ${id}`) })

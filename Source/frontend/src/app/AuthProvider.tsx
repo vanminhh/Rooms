@@ -23,6 +23,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return data.user
   }, [])
 
+  const acceptSession: AuthContextValue['acceptSession'] = useCallback(data => {
+    setAccessToken(data.accessToken)
+    setUser(data.user)
+    setStatus('ready')
+    return data.user
+  }, [])
+
   const logout = useCallback(async () => {
     await logoutRequest().catch(() => null) // the local sign-out must happen even if the call fails
     setAccessToken(null)
@@ -80,8 +87,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [attempt])
 
   const value = useMemo<AuthContextValue>(
-    () => ({ status, user, login, logout, refreshMe, retry }),
-    [status, user, login, logout, refreshMe, retry],
+    () => ({ status, user, login, acceptSession, logout, refreshMe, retry }),
+    [status, user, login, acceptSession, logout, refreshMe, retry],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

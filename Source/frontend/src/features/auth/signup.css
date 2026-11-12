@@ -1,0 +1,33 @@
+/* /dang-ky and /xac-minh-email: small additions on top of the /dang-nhap frame (auth.css). */
+.rooms-theme .auth-signup-switch {
+  margin: 0;
+  color: var(--rooms-muted);
+}
+
+.rooms-theme .auth-signup-switch a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--rooms-text);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.rooms-theme .auth-code-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.rooms-theme .auth-code-actions > a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--rooms-text);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}

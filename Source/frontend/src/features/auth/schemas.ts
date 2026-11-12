@@ -26,6 +26,22 @@ export const resetPasswordSchema = z.object({
   confirmPassword: z.string(),
 }).refine(values => values.newPassword === values.confirmPassword, confirmError)
 
+// AUTH-11: the same words as the BE DTOs. The name is trimmed like the API does (1..100 characters).
+const EMAIL_REQUIRED = 'Email không hợp lệ'
+export const registerSchema = z.object({
+  fullName: z.string().trim().min(1, 'Vui lòng nhập họ tên').max(100, 'Họ tên tối đa 100 ký tự'),
+  phone: phoneRule,
+  email: z.string().trim().max(255, EMAIL_REQUIRED).refine(value => z.email().safeParse(value).success, EMAIL_REQUIRED),
+  password: newPasswordRule,
+})
+
+// AUTH-12, AUTH-13: exactly 6 digits.
+export const verifyEmailSchema = z.object({
+  code: z.string().regex(/^[0-9]{6}$/, 'Mã gồm 6 chữ số'),
+})
+
+export type RegisterValues = z.infer<typeof registerSchema>
+export type VerifyEmailValues = z.infer<typeof verifyEmailSchema>
 export type LoginValues = z.infer<typeof loginSchema>
 export type ForgotValues = z.infer<typeof forgotSchema>
 export type ChangePasswordValues = z.infer<typeof changePasswordSchema>

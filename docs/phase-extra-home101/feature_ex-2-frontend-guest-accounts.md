@@ -28,13 +28,13 @@ Out: English texts and the language switch (EX-3; write the Vietnamese texts so 
 
 ## Tasks
 
-- [ ] **FE-EX-01** Roles and guard (AUTH-06, AUTH-12): `Role` gets `GUEST`; `homeOf` returns `/toi`, `/thue`, `/ql`; routes `/dang-ky`, `/xac-minh-email`, `/toi`, `/toi/tai-khoan` (allowed: GUEST, TENANT). New tests go in `tests/ex/*.test.mjs`; add that glob to `test:components` in `package.json`.
+- [x] **FE-EX-01** Roles and guard (AUTH-06, AUTH-12): `Role` gets `GUEST`; `homeOf` returns `/toi`, `/thue`, `/ql`; routes `/dang-ky`, `/xac-minh-email`, `/toi`, `/toi/tai-khoan` (allowed: GUEST, TENANT). New tests go in `tests/ex/*.test.mjs`; add that glob to `test:components` in `package.json`.
   Done when: `tests/auth-guards.test.mjs` covers the 4 roles, `?next=` still wins, a GUEST opening `/thue` or `/ql` lands on `/toi`.
-- [ ] **FE-EX-02** `features/auth/api.ts` + `schemas.ts`: register, verify email, resend code. Phone `^0[0-9]{9}$` (G-04), email required and well-formed, password ≥ 8 (AUTH-03), code 6 digits.
+- [x] **FE-EX-02** `features/auth/api.ts` + `schemas.ts`: register, verify email, resend code. Phone `^0[0-9]{9}$` (G-04), email required and well-formed, password ≥ 8 (AUTH-03), code 6 digits.
   Done when: schema tests with the spec values; API tests against the EX-1 contract.
-- [ ] **FE-EX-03** `/dang-ky`: full name, phone, email, password, in the auth frame of `/dang-nhap`; link "Đã có tài khoản? Đăng nhập"; `PHONE_TAKEN` and `EMAIL_TAKEN` show the API message on their field with a link to login; `MAIL_UNAVAILABLE` shows the API message; on success → `/xac-minh-email` keeping `?next=`.
+- [x] **FE-EX-03** `/dang-ky`: full name, phone, email, password, in the auth frame of `/dang-nhap`; link "Đã có tài khoản? Đăng nhập"; `PHONE_TAKEN` and `EMAIL_TAKEN` show the API message on their field with a link to login; `MAIL_UNAVAILABLE` shows the API message; on success → `/xac-minh-email` keeping `?next=`.
   Done when: page test; field errors from `error.fields` appear on the fields (UI-05).
-- [ ] **FE-EX-04** ⏸ `/xac-minh-email`: shows the address the code was sent to, 6-digit code, "Gửi lại mã" disabled with a 60 s countdown, `OTP_INVALID` and 429 messages; success logs in and goes to `?next=` or the role home.
+- [x] **FE-EX-04** ⏸ `/xac-minh-email`: shows the address the code was sent to, 6-digit code, "Gửi lại mã" disabled with a 60 s countdown, `OTP_INVALID` and 429 messages; success logs in and goes to `?next=` or the role home.
   Done when: page test with fake timers for the countdown; manual check against the dev server (code read from the BE log). Stop and report FE-EX-01..04.
 - [ ] **FE-EX-05** `/dang-nhap`: the note becomes "Chưa có tài khoản? Đăng ký" → `/dang-ky` (AUTH-10); a login answered with `EMAIL_NOT_VERIFIED` opens `/xac-minh-email` for that phone.
   Done when: `tests/p2/ui-30-login.test.mjs` updated to the new text and still green; `ui-31-forgot-password.test.mjs` untouched and green.
@@ -45,7 +45,10 @@ Out: English texts and the language switch (EX-3; write the Vietnamese texts so 
 
 ## Questions for the owner
 
-<!-- none yet -->
+Đã trả lời 13/11/2026:
+
+- Q-EX2-1: khách đăng nhập EMAIL_NOT_VERIFIED chưa có mã nào được gửi; chủ dự án mô tả luồng đăng ký (BE gửi mã OTP qua email, khách nhập mã) nhưng không chọn cho trường hợp đăng nhập. Làm theo đề xuất: trang mở ra với nút "Gửi mã xác minh", gửi xong mới đếm ngược 60 giây `[ASSUMPTION]`.
+- Q-EX2-2: giữ số điện thoại, email và giờ gửi trong `sessionStorage` (chủ dự án chọn theo đề xuất).
 
 ## Issues log
 

@@ -7,6 +7,7 @@ export interface AuthContextValue {
   status: AuthStatus
   user: Me | null
   login(input: { phone: string; password: string; remember: boolean }): Promise<Me>
+  acceptSession(data: { accessToken: string; user: Me }): Me // a session the API opened outside login (AUTH-12: verify-email)
   logout(): Promise<void>
   refreshMe(): Promise<Me | null>
   retry(): void

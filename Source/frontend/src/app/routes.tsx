@@ -10,6 +10,8 @@ import { NotFoundPage } from '../pages/public/NotFoundPage'
 import { LoginPage } from '../pages/public/LoginPage'
 import { ChangePasswordPage } from '../pages/public/ChangePasswordPage'
 import { ForgotPasswordPage } from '../pages/public/ForgotPasswordPage'
+import { RegisterPage } from '../pages/public/RegisterPage'
+import { VerifyEmailPage } from '../pages/public/VerifyEmailPage'
 import { TenantHomePage } from '../pages/tenant/TenantHomePage'
 import { TenantAccountPage } from '../pages/tenant/TenantAccountPage'
 import { StaffHomePage } from '../pages/staff/StaffHomePage'
@@ -31,7 +33,11 @@ export const routes: RouteObject[] = [
       { path: '/phong', element: <PublicRoomsPage /> },
       { path: '/toa/:id', element: <PublicBuildingPage /> },
       { path: '/phong/:id', element: <PublicRoomPage /> },
-      { element: <GuestOnly />, children: [{ path: '/dang-nhap', element: <LoginPage /> }] },
+      { element: <GuestOnly />, children: [
+        { path: '/dang-nhap', element: <LoginPage /> },
+        { path: '/dang-ky', element: <RegisterPage /> },
+        { path: '/xac-minh-email', element: <VerifyEmailPage /> },
+      ] },
       { path: '/quen-mat-khau', element: <ForgotPasswordPage /> },
       { element: <RequireAuth allow="any" />, children: [{ path: '/doi-mat-khau', element: <ChangePasswordPage /> }] },
       { path: '*', element: <NotFoundPage /> },
@@ -68,5 +74,14 @@ export const routes: RouteObject[] = [
         ] },
       ],
     }],
+  },
+  {
+    // FE-EX-06 replaces these two placeholders with GuestLayout, the viewing list (EX-7) and the account page.
+    path: '/toi',
+    element: <RequireAuth allow={['GUEST', 'TENANT']} />,
+    children: [
+      { index: true, element: <PlaceholderPage /> },
+      { path: 'tai-khoan', element: <PlaceholderPage /> },
+    ],
   },
 ]

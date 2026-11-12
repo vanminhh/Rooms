@@ -9,6 +9,7 @@ Read this before the first task of any part. Each line is a mistake that really 
 - Never invent an expected value. Take it from the spec or the provider's documentation and name the source in the test. A planner once wrote a Cloudinary signature hash that was partly made up [BE-P2-07, 01/11/2026].
 - Adding an error code breaks the count test in `Source/backend/src/app.setup.spec.ts`; update it in the same change [BE-P2-02, 01/11/2026].
 - Adding a key to `DB_ERROR_MAP` breaks the exact-key test in `db-errors.spec.ts`, and a new field in `Me` breaks `ME_KEYS` in `auth.me.spec.ts` and `auth.account.spec.ts` (keep that list in alphabetical order); update them in the same change [BE-EX-34, 12/11/2026].
+- Frontend route tests (`auth-guards.test.mjs`, `p2/cp1-routes.test.mjs`) read `routes[0..2]`, stub every page import by path, and count the `GuestOnly` children: a new route block goes at the end of the array and each new page needs a stub there [FE-EX-03, 13/11/2026].
 - A mutation check can pass silently when the in-memory fake returns the same answer on both paths (a GUEST fell into the manager query and still got `[]`); assert the call itself (`findMany` not called) so the mutant turns red [BE-EX-08, 13/11/2026].
 - Adding a module to `AppModule` breaks the module-list test `prisma.service.spec.ts` (BE-LOGIN-19); update it in the same change [BE-P2-10, 02/11/2026].
 - Moving code into `prisma.$transaction` breaks HTTP specs whose Prisma mock has no `$transaction`; extend the mock (`test/fixtures/fake-prisma.ts` or the spec's own) [BE-P2-17, 03/11/2026].
