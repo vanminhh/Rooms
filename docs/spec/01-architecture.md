@@ -35,7 +35,7 @@ Rooms/                       one git repo
 
 Each feature has a task file `feature_<name>.md` in `Source/backend/src/modules/<module>/` and `Source/frontend/src/features/<module>/` (workflow in root `CLAUDE.md`).
 
-Backend module list (one Nest module per folder in `src/modules/`): `auth`, `buildings`, `rooms`, `pricing`, `viewings`, `contracts`, `meters`, `billing`, `bank`, `requests`, `notifications`, `reports`, `settings`, `files`, `mailer`, `sms` (Phase Extra, one provider adapter, Q-07), `audit`. Cross-cutting code in `src/common/` (guards, error filter, crypto, date utils). Cron in `src/jobs/`.
+Backend module list (one Nest module per folder in `src/modules/`): `auth`, `buildings`, `rooms`, `pricing`, `viewings`, `contracts`, `meters`, `billing`, `bank`, `requests`, `notifications`, `reports`, `settings`, `files`, `mailer`, `audit`. Cross-cutting code in `src/common/` (guards, error filter, crypto, date utils). Cron in `src/jobs/`.
 
 ## API conventions
 
@@ -57,7 +57,7 @@ Owner 12/11/2026 (D-27). Built in Phase Extra part EX-3.
 - **LOC-03** The choice is kept in the browser and, when logged in, in `users.locale` (AUTH-15). The language switch sits in the header of the public, guest and tenant layouts. Routes are the same in both languages (no `/en` prefix).
 - **LOC-04** Fixed lists are translated (statuses, amenities, room types, notification texts). Text typed by people is shown as typed [ASSUMPTION A-12]. A missing English text falls back to the Vietnamese one; a raw key is never shown.
 - **LOC-05** Language changes nothing else: money stays integer đồng shown as `2.984.000 đ` (G-01, no currency choice), times stay `Asia/Ho_Chi_Minh` (G-02), dates `dd/mm/yyyy`, phones Vietnamese format (G-04).
-- **LOC-06** In-app notifications and emails use the recipient's `users.locale`.
+- **LOC-06** Emails to a guest or tenant use the recipient's `users.locale`; emails to staff are Vietnamese.
 
 ## Error codes
 
@@ -74,11 +74,11 @@ BE maps DB constraint/trigger errors to these codes. Module specs add their own.
 | `CONFLICT_STATE` | 409 | Action not allowed in current status (generic) |
 | `TOO_MANY_REQUESTS` | 429 | Rate limit |
 | `PHONE_TAKEN` | 409 | `users_phone_key` |
-| `PHONE_NOT_VERIFIED` | 403 | login or booking with a phone that has not passed the SMS code (AUTH-12, VIEW-01) |
-| `OTP_INVALID` | 400 | SMS code wrong, expired, used, or out of tries (AUTH-13) |
-| `SMS_UNAVAILABLE` | 503 | no SMS provider configured or the provider failed (AUTH-13); the app still starts without one |
-| `VIEWING_TIME_TAKEN` | 409 | the person responsible already has a confirmed viewing in that time (VIEW-16) |
-| `PROPOSAL_EXPIRED` | 409 | answering a time proposal that has expired (VIEW-17) |
+| `EMAIL_TAKEN` | 409 | `users_email_key`, at sign-up (AUTH-11) |
+| `EMAIL_NOT_VERIFIED` | 403 | login of a self-registered account whose email has not passed the code (AUTH-12) |
+| `OTP_INVALID` | 400 | email code wrong, expired, used, or out of tries (AUTH-13) |
+| `MAIL_UNAVAILABLE` | 503 | no mail provider configured or the provider failed while sending a sign-up code (AUTH-13); the app still starts without one |
+| `VIEWING_TIME_TAKEN` | 409 | the person responsible already has an open viewing at that hour (VIEW-16) |
 | `MANAGER_MAX_2_BUILDINGS` | 409 | trigger |
 | `ROOM_NOT_AVAILABLE` | 409 | `contracts_one_open_per_room` or room not listable |
 | `CONTRACT_TERM_TOO_SHORT` | 400 | `contracts_term_min_3` |
@@ -112,7 +112,6 @@ BE maps DB constraint/trigger errors to these codes. Module specs add their own.
 | 00:05 daily **and at app start** | Create `DRAFT` monthly invoices for billing dates in the last 7 days that have none; switch signed renewals whose start date has come (catch-up of missed runs, D-21) | [16-billing.md](16-billing.md#cron) |
 | 01:00 daily **and at app start** | Sync `rooms.price` with the current approved room price (PRC-06; the start-up run fixes days missed while the server was off); auto-close incidents `RESOLVED` > 3 days | [12-pricing.md](12-pricing.md), [18-requests.md](18-requests.md) |
 | 08:00 daily | Invoice reminders; contract expiry notices (30 and 7 days); stale drafts > 2 days; expired unresolved contracts | [19-notifications.md](19-notifications.md) |
-| every 10 minutes **and at app start** | Viewing reminders 24 h and 2 h before a confirmed viewing (NOTI-09, Phase Extra) | [19-notifications.md](19-notifications.md) |
 
 Every job MUST be idempotent (safe to run twice the same day) and log a summary line.
 
@@ -146,7 +145,7 @@ The dev seed (`prisma/seed.ts`) creates 5 accounts with fixed, public passwords 
 |---|---|---|
 | 1 · Foundation | Move `docs/database/*` to `Source/backend/prisma/`; first migration = generated SQL + `constraints.sql`; seed (1 Boss, 2 managers, 3 buildings, rooms, services, rate plans, 1 tenant with active contract); `auth` module; scope guard; error filter; FE skeleton with 3 layouts and login | 3 roles log in and land in the right layout; `check-constraints.mjs` still 50/50; unit tests for scope guard |
 | 2 · Rooms | buildings, rooms, services, pricing + approval, public pages, viewings | Guest finds a room and books a viewing; price changes only after Boss approval |
-| Extra · Home101 | Fixes to what Phase 1, Phase 2 and the UI work already built, after the Home101 brief (D-23..D-34): guest accounts with SMS code, entry screen, Vietnamese + English, room filters, viewings with exact time and two-way time proposals, viewing notifications. Parts and order: `docs/phase-extra-home101/README.md` | A visitor signs up, books a time, agrees a new time with the manager and gets reminded; old logins and public pages still work |
+| Extra · Home101 | Fixes to what Phase 1, Phase 2 and the UI work already built, after the Home101 brief (D-23..D-34): guest accounts verified by email, entry screen, Vietnamese + English, room filters, viewings booked by hour with an account and confirmed by the manager, the new-booking email. Parts and order: `docs/phase-extra-home101/README.md` | A visitor signs up, books a free hour, the manager gets the email and confirms by phone or email; old logins and public pages still work |
 | 3 · Contracts | contracts (create, PDF, sign, move-in, cancel), tenant account (reusing the guest account, D-26), occupants, vehicles. Needs part EX-1 of Phase Extra first | From viewing to tenant logged in |
 | 4 · Money | meters, billing, bank webhook, manual payment, reissue, settlement, reminders | Example invoice 3.119.000 đ passes as a unit test; webhook matched and unmatched cases pass; a missed 00:05 run is caught up (BIL-05, BIL-06) |
-| 5 · Operations | requests (with the repair review, REQ-09), notifications inbox (the rest of it; viewing notifications come in Phase Extra), renewal, reports, audit, settings | Boss compares buildings in reports |
+| 5 · Operations | requests (with the repair review, REQ-09), notifications inbox, renewal, reports, audit, settings | Boss compares buildings in reports |

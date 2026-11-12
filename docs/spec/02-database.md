@@ -49,14 +49,11 @@ Not in `schema.prisma` yet. They follow the decisions of 12/11/2026 (D-25..D-33)
 
 | Part | Table | Change | Rule |
 |---|---|---|---|
-| EX-1 | `users` | enum `Role` gets `GUEST`; `phone_verified_at timestamptz null`; `locale` (`vi` / `en`, default `vi`) | AUTH-11..15 |
-| EX-1 | `phone_otps` (new) | phone, purpose (`REGISTER` / `RESET_PASSWORD` / `VERIFY_PHONE`), code hash, tries, expiry, used time | AUTH-13 |
+| EX-1 | `users` | enum `Role` gets `GUEST`; `email_verified_at timestamptz null`; `locale` (`vi` / `en`, default `vi`). The first EX-1 migration (`guest_accounts`, applied to the dev database on 12/11/2026) added `phone_verified_at`, which is no longer used; a second migration adds `email_verified_at` | AUTH-11..15 |
+| EX-1 | email codes (the table the first EX-1 migration created as `phone_otps`) | email, code hash, tries, expiry, used time | AUTH-13 |
 | EX-5 | `rooms` | `room_type`, `has_balcony`, `has_window`, `pets_allowed`; null = not entered yet | ROOM-10 |
 | EX-5 | `buildings` | `amenities` holds codes of a fixed list instead of free text; old values are kept until staff enter them again | BLD-08 |
-| EX-6 | `viewings` | `user_id null` (owner account); `visit_at timestamptz null` (exact start); statuses `DONE`, `NO_SHOW`; who cancelled; `visit_date` + `time_slot` stay for old rows; CHECK: `visit_at`, or `visit_date` and `time_slot` | VIEW-01, VIEW-04, VIEW-08 |
-| EX-6 | `viewing_proposals` (new) | viewing, side (`GUEST` / `STAFF`), user, proposed time, status (`PENDING` / `ACCEPTED` / `REJECTED` / `WITHDRAWN` / `EXPIRED`), source, note; at most 1 PENDING per viewing | VIEW-14..17 |
-| EX-6 | `viewing_events` (new) | history of a viewing: actor, type, old → new, source, note, time | VIEW-22 |
-| EX-8 | `notifications` | rows for viewing events; one reminder per (viewing, kind, time in effect) | NOTI-08, NOTI-09 |
+| EX-6 | `viewings` | `user_id null` (owner account); `visit_at timestamptz null` (exact hour); statuses `DONE`, `NO_SHOW`; how it was confirmed (`PHONE` / `EMAIL`) and when; who cancelled; `visit_date` + `time_slot` stay for old rows; CHECK: `visit_at`, or `visit_date` and `time_slot` | VIEW-01, VIEW-04, VIEW-08, VIEW-15, VIEW-18 |
 | Phase 3 | `contracts` | trigger "tenant is TENANT" stays; the BE switches a `GUEST` to `TENANT` in the same transaction before the insert | CON-07 |
 | Phase 5 | `requests` | repair review: rating 1–5, comment, time, hidden reason; only on `INCIDENT` in `CLOSED` | REQ-09 |
 

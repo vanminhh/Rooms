@@ -1,6 +1,7 @@
 import {
   IsBoolean,
   IsEmail,
+  IsIn,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -43,6 +44,49 @@ export class ChangePasswordDto {
   @IsString({ message: `Mật khẩu tối thiểu ${PASSWORD_MIN_LENGTH} ký tự` })
   @MinLength(PASSWORD_MIN_LENGTH, { message: `Mật khẩu tối thiểu ${PASSWORD_MIN_LENGTH} ký tự` })
   newPassword: string;
+}
+
+const PASSWORD_MSG = `Mật khẩu tối thiểu ${PASSWORD_MIN_LENGTH} ký tự`;
+const NAME_MSG = 'Vui lòng nhập họ và tên';
+const CODE_RE = /^[0-9]{6}$/;
+const CODE_MSG = 'Mã xác minh gồm 6 chữ số';
+
+// AUTH-11. Phone G-04, password AUTH-03.
+export class RegisterDto {
+  @IsString({ message: NAME_MSG })
+  @Matches(/\S/, { message: NAME_MSG })
+  @MaxLength(100, { message: 'Họ và tên tối đa 100 ký tự' })
+  fullName: string;
+
+  @Matches(PHONE_RE, { message: PHONE_MSG })
+  phone: string;
+
+  @IsString({ message: PASSWORD_MSG })
+  @MinLength(PASSWORD_MIN_LENGTH, { message: PASSWORD_MSG })
+  password: string;
+}
+
+// AUTH-12, AUTH-13.
+export class VerifyPhoneDto {
+  @Matches(PHONE_RE, { message: PHONE_MSG })
+  phone: string;
+
+  @Matches(CODE_RE, { message: CODE_MSG })
+  code: string;
+}
+
+export class ResendCodeDto {
+  @Matches(PHONE_RE, { message: PHONE_MSG })
+  phone: string;
+
+  @IsIn(['REGISTER', 'RESET_PASSWORD'], { message: 'Loại mã không hợp lệ' })
+  purpose: 'REGISTER' | 'RESET_PASSWORD';
+}
+
+// Logged in: the phone is the account's own (AUTH-12).
+export class PhoneCodeDto {
+  @Matches(CODE_RE, { message: CODE_MSG })
+  code: string;
 }
 
 export class ForgotPasswordDto {

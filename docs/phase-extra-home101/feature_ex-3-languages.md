@@ -33,11 +33,11 @@ Out: the staff app `/ql` (stays Vietnamese, LOC-01), contract documents, the ten
   Done when: tests: switching changes the page without reload and keeps typed form input (UI-12); the header is sent; `StaffLayout` has no switch.
 - [ ] **FE-EX-10** Public pages into the dictionary: home, `/phong`, `/toa/:id`, `/phong/:id`, header, footer, list states, status labels (`status-labels.ts` becomes bilingual). Money and dates do not change with the language (LOC-05).
   Done when: no Vietnamese literal left in these pages and components (a test scans the files); `2.984.000 đ` and `dd/mm/yyyy` are the same in both languages.
-- [ ] **FE-EX-11** ⏸ Auth pages and guest area into the dictionary: `/dang-nhap`, `/dang-ky`, `/xac-minh-so`, `/quen-mat-khau`, `/doi-mat-khau`, `/toi`, `/toi/tai-khoan`, zod messages.
+- [ ] **FE-EX-11** ⏸ Auth pages and guest area into the dictionary: `/dang-nhap`, `/dang-ky`, `/xac-minh-email`, `/quen-mat-khau`, `/doi-mat-khau`, `/toi`, `/toi/tai-khoan`, zod messages.
   Done when: same scan test for these files. Stop and report FE-EX-08..11.
 - [ ] **BE-EX-10** Request language: read `Accept-Language` (`vi` / `en`, anything else → `vi`), use `en` only on `/public/*`, `/auth/*`, `/me/*` (LOC-02). One catalog of messages per error code and language used by the exception filter and by validation messages; error `code`s unchanged.
   Done when: tests `LOC-02: …`: `/auth/login` wrong password in English with `en`; a staff route in Vietnamese with `en`; `fr` → Vietnamese.
-- [ ] **BE-EX-11** English texts for every message the `auth`, public `rooms` / `buildings` and `viewings` endpoints can return, including `fields` messages. Emails and SMS texts use `users.locale` (LOC-06).
+- [ ] **BE-EX-11** English texts for every message the `auth`, public `rooms` / `buildings` and `viewings` endpoints can return, including `fields` messages. Emails to guests use `users.locale` (LOC-06).
   Done when: a test walks the catalog and fails on a code without an English text; BE `lint`, `test`, `build` pass.
 - [ ] **FE-EX-12** ⏸ English copy for approval: write every English sentence of the home page and other marketing copy (slogans, promises) in `docs/phase-extra-home101/en-copy.md`, Vietnamese beside English. The owner approves or edits it (KIT-13); until then the English site is not shown on production.
   Done when: the owner's answer is recorded in that file.

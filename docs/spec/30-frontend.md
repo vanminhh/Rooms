@@ -7,17 +7,17 @@ App: `Source/frontend` (React 19 + Vite + TS). Every page is built from the offi
 | App | Layout | Base route | Who |
 |---|---|---|---|
 | Công khai | `PublicLayout` – top menu: "Tìm phòng" → `/phong`, "Khu vực" → `/#khu-vuc`, "Liên hệ" → footer `#lien-he`, button "Lên lịch xem" → `/phong`, "Đăng nhập" (or "Trang của tôi" when logged in); 4-column footer with Boss contact (owner, 08/11/2026) | `/` | everyone |
-| Khách có tài khoản | `GuestLayout` – mobile-first bottom nav: "Lịch hẹn", "Thông báo", "Tài khoản"; link "Tìm phòng" back to `/phong` (owner 12/11/2026, Phase Extra EX-2) | `/toi` | GUEST, TENANT |
+| Khách có tài khoản | `GuestLayout` – mobile-first bottom nav: "Lịch hẹn", "Tài khoản"; link "Tìm phòng" back to `/phong` (owner 12/11/2026, Phase Extra EX-2) | `/toi` | GUEST, TENANT |
 | Người thuê | `TenantLayout` – mobile-first bottom nav, room switcher when the tenant has several contracts; link "Lịch hẹn xem phòng" to `/toi` | `/thue` | TENANT |
 | Nhân sự | `StaffLayout` – side nav, building selector (Boss: all + "Tất cả tòa"; manager: own), Boss-only items | `/ql` | MANAGER, BOSS |
 
-Route guard: not logged in → `/dang-nhap?next=...`; wrong role → own home (AUTH-06); `must_change_password` → `/doi-mat-khau`; phone not verified after sign-up → `/xac-minh-so` (AUTH-12).
+Route guard: not logged in → `/dang-nhap?next=...`; wrong role → own home (AUTH-06); `must_change_password` → `/doi-mat-khau`; email not verified after sign-up → `/xac-minh-email` (AUTH-12).
 
 The public, guest and tenant layouts have the language switch "Tiếng Việt / English" (LOC-03, UI-12).
 
 > Changed 12/11/2026 (owner, D-23..D-34): the entry screen, sign-up, the guest area, the room filters, the booking panel and the staff viewing page below are built in Phase Extra; until then the pages work as Phase 1 and 2 left them.
 
-## Pages (37)
+## Pages (36)
 
 ### Public (9)
 
@@ -26,21 +26,20 @@ The public, guest and tenant layouts have the language switch "Tiếng Việt / 
 | `/` | Trang chủ (Stitch layout): hero with illustration photo and "Còn N phòng trống", 3 counts from `/public/locations`, search bar (district, price) → `/phong`; "Vì sao chọn ROOMS?"; featured public rooms; districts with counts (`#khu-vuc`, illustration photo per district when available); 3 steps; contact block leading to `/phong` (no separate quick-contact form). "Mô hình 3D" is hidden until after Phase 5. On the first visit the entry screen covers it (UI-11) | BLD, ROOM-05, KIT-12, KIT-13, UI-11 |
 | `/phong` | Tìm phòng: filters district, ward, building, price range, and (D-32) area, max occupants, floor, building amenities, balcony, window, pets allowed, room type; options from `/public/filters`; every filter in the URL query so the link can be shared; "Xóa bộ lọc"; empty state "Không có phòng phù hợp" with the button to clear | ROOM-05, PUB-06 |
 | `/toa/:id` | Chi tiết tòa: info, rates (electric tiers, water, services), contact, public rooms | BLD-04, RATE |
-| `/phong/:id` | Chi tiết phòng: photos ("Chưa có ảnh" when none), price, furniture, min term 3 months, deposit (1 month), monthly estimate (ROOM-08), contact, viewing form with the 3 slots. Stitch layout: breadcrumb (Trang chủ › quận › tòa › phòng), room code + status, share button, gallery for 0 / 1 / 2–4 / ≥ 5 photos with a large-photo view, facts strip (area, max occupants, floor, furniture), booking panel (sticky on desktop): price, deposit, "Tối thiểu 3 tháng", date shortcuts "Hôm nay" / "Ngày mai" / "Chọn ngày khác", then the start times of that day from `/public/rooms/:id/viewing-times` (D-29; before: the 3 slots). Not logged in: the panel shows "Đăng nhập để đặt lịch" and comes back to this room after login or sign-up; phone not verified: "Xác minh số điện thoại để đặt lịch". After booking: link to `/toi/lich-hen/:id` | VIEW-01, VIEW-08, ROOM-07 |
+| `/phong/:id` | Chi tiết phòng: photos ("Chưa có ảnh" when none), price, furniture, min term 3 months, deposit (1 month), monthly estimate (ROOM-08), contact, viewing form with the 3 slots. Stitch layout: breadcrumb (Trang chủ › quận › tòa › phòng), room code + status, share button, gallery for 0 / 1 / 2–4 / ≥ 5 photos with a large-photo view, facts strip (area, max occupants, floor, furniture), booking panel (sticky on desktop): price, deposit, "Tối thiểu 3 tháng", a month calendar where days that cannot be booked are disabled (legend "Còn chỗ" / "Không đặt được" / "Đã chọn"), then the free hours of the chosen day from `/public/rooms/:id/viewing-times`, an optional note and "Gửi yêu cầu" (D-29; before: the 3 slots). Not logged in: the panel shows "Đăng nhập để đặt lịch" and comes back to this room after login or sign-up. After booking: "Đặt lịch thành công. Vui lòng đợi Rooms xác nhận." with the phones of the manager and of Boss and a link to `/toi/lich-hen/:id` (VIEW-14); `VIEWING_TIME_TAKEN` reloads the hours | VIEW-01, VIEW-08, VIEW-14, VIEW-21, ROOM-07 |
 | `/dang-nhap` | Đăng nhập: phone, password, "Ghi nhớ đăng nhập", "Quên mật khẩu?", note "Chưa có tài khoản? Đăng ký" → `/dang-ky` + Boss contact + link "Xem phòng trống". Layout of the owner's auth mockups (`Artifacts/layout_rooms/2026-10-26-stitch-mockups/2026-10-28-auth-layouts/ref/`): illustration photo + slogan on the left (hidden on narrow screens), form card on the right; the same frame for `/quen-mat-khau` and `/doi-mat-khau` | AUTH-01, AUTH-10 |
-| `/dang-ky` | Đăng ký: full name, phone, password; then the code step. Same frame as `/dang-nhap`; link "Đã có tài khoản? Đăng nhập" | AUTH-11 |
-| `/xac-minh-so` | Xác minh số điện thoại: 6-digit code, "Gửi lại mã" with a 60 s countdown, errors of AUTH-13; used after sign-up and from the account page | AUTH-12, AUTH-13 |
-| `/quen-mat-khau` | Quên mật khẩu; with `?token=` from the email link it shows the new-password form; for a verified phone it asks for the SMS code and the new password | AUTH-07 |
+| `/dang-ky` | Đăng ký: full name, phone, email, password; then the code step. Same frame as `/dang-nhap`; link "Đã có tài khoản? Đăng nhập" | AUTH-11 |
+| `/xac-minh-email` | Xác minh email: 6-digit code sent to the address, "Gửi lại mã" with a 60 s countdown, errors of AUTH-13; used after sign-up and when an unverified account tries to log in | AUTH-12, AUTH-13 |
+| `/quen-mat-khau` | Quên mật khẩu; with `?token=` from the email link it shows the new-password form | AUTH-07 |
 | `/doi-mat-khau` | Đổi mật khẩu (forced on first login) | AUTH-05 |
 
-### Guest (4, GUEST + TENANT)
+### Guest (3, GUEST + TENANT)
 
 | Route | Page | Spec |
 |---|---|---|
-| `/toi` | Lịch hẹn của tôi: viewings that wait for the guest's answer first, then upcoming, then past; each with room, time in effect, status, "Chờ bạn phản hồi" / "Chờ quản lý phản hồi"; card "Bạn có N lịch hẹn cũ theo số điện thoại này" → confirm to claim; empty state with "Tìm phòng" | VIEW-20, VIEW-21 |
-| `/toi/lich-hen/:id` | Chi tiết lịch hẹn: room and building, time in effect, pending proposal with "Đồng ý" / "Từ chối" / "Đề xuất giờ khác", "Hủy lịch" (confirm dialog; hidden after the start time), contact of the person responsible, history | VIEW-14..20, VIEW-22 |
-| `/toi/thong-bao` | Thông báo: inbox, unread dot, mark all read | NOTI-01, NOTI-08 |
-| `/toi/tai-khoan` | Tài khoản: name (read only), email, language, change password, verify phone (accounts created by staff) | AUTH-09, AUTH-12, AUTH-15 |
+| `/toi` | Lịch hẹn của tôi: upcoming viewings first (waiting for confirmation, then confirmed), then past; each with room, time and status; empty state with "Tìm phòng" | VIEW-20 |
+| `/toi/lich-hen/:id` | Chi tiết lịch hẹn: room and building with address, time, status ("Chờ xác nhận" / "Đã xác nhận" with how it was confirmed), contact of the person responsible, "Hủy lịch" with a confirm dialog (hidden after the start time), note "Muốn đổi giờ? Gọi quản lý" | VIEW-18, VIEW-20 |
+| `/toi/tai-khoan` | Tài khoản: name (read only), phone (read only), email, language, change password | AUTH-09, AUTH-15 |
 
 ### Tenant (6)
 
@@ -60,7 +59,7 @@ The public, guest and tenant layouts have the language switch "Tiếng Việt / 
 | `/ql` | Việc hôm nay: task groups with counts (NOTI-06), occupancy ring, collected vs outstanding bar; red card "Kỳ chưa có hóa đơn" lists each missed period (room, tenant, period dates) with the button "Tạo hóa đơn kỳ này" (confirm dialog, then opens "Chốt chỉ số"). Phase 2: only the cards "Lịch hẹn mới" and (Boss) "Giá chờ duyệt" | NOTI-06, BIL-21, RPT |
 | `/ql/toa-nha`, `/ql/toa-nha/:id` | Tòa nhà: manager edits amenities/description; Boss creates, assigns manager, services, locks (confirm dialog: manager will be unassigned, N open viewings) | BLD, SVC |
 | `/ql/phong` | Phòng: floor grid colored by derived status, "Hiện phòng đã khóa"; create/edit, photos; "Đề xuất giá", "Quá hạn" + "Đề xuất lại" | ROOM, PRC-01, PRC-07 |
-| `/ql/lich-hen` | Lịch hẹn: by date and time; add manual; call/Zalo buttons; "Xác nhận" or "Đề xuất giờ khác" on a request; answer to the guest's proposal; "Ghi nhận qua điện thoại" (note required); "Đã xem" / "Khách không đến" after the start time; marks "Quá giờ, chưa xác nhận" and "Trùng giờ"; history; other status changes per VIEW-04; "Chốt" → contract form (from Phase 3) | VIEW |
+| `/ql/lich-hen` | Lịch hẹn: by date and hour; add manual; call/Zalo buttons; on a viewing waiting for confirmation: "Xác nhận" (after the call) and "Gửi email xác nhận" (guest not reached; only when the guest has an email); edit the time after agreeing by phone; "Đã xem" / "Khách không đến" after the start time; marks "Quá giờ, chưa xác nhận" and "Trùng giờ"; other status changes per VIEW-04; "Chốt" → contract form (from Phase 3) | VIEW |
 | `/ql/hop-dong`, `/ql/hop-dong/:id` | Hợp đồng (also the tenant list): wizard create → PDF → upload scan → show temp password once → move-in readings; occupants with CCCD photos; vehicles; services; reset password; renew; cancel; settlement with dry-run preview | CON, BIL-13..19 |
 | `/ql/chi-so` | Chốt chỉ số: mobile-first list of due drafts, number inputs, camera upload, abnormal warning | MTR |
 | `/ql/hoa-don`, `/ql/hoa-don/:id` | Hóa đơn: filters; record manual payment (method picker, confirm dialog with amount); reissue; remind; escalate payment issue | BIL-11, BIL-12 |

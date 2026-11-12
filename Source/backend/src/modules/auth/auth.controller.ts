@@ -7,7 +7,17 @@ import {
   Public,
   Roles,
 } from '../../common/guards/auth.decorators.js';
-import { ChangePasswordDto, ForgotPasswordDto, LoginDto, ResetPasswordDto, UpdateMeDto } from './dto/auth.dto.js';
+import {
+  ChangePasswordDto,
+  ForgotPasswordDto,
+  LoginDto,
+  PhoneCodeDto,
+  RegisterDto,
+  ResendCodeDto,
+  ResetPasswordDto,
+  UpdateMeDto,
+  VerifyPhoneDto,
+} from './dto/auth.dto.js';
 import { AuthService, type IssuedSession, type Me } from './auth.service.js';
 
 export const REFRESH_COOKIE = 'rt';
@@ -70,20 +80,69 @@ export class AuthController {
     return null;
   }
 
-  @Roles('BOSS', 'MANAGER', 'TENANT')
+  // AUTH-11. Locale from Accept-Language (owner 12/11/2026, LOC-02): "en" -> en, anything else -> vi.
+  @Public()
+  @Post('register')
+  async register(
+    @Body() dto: RegisterDto,
+    @Headers('accept-language') acceptLanguage: string | undefined,
+    @Ip() ip: string,
+  ): Promise<null> {
+    await this.auth.register(dto, /^en\b/i.test(acceptLanguage ?? '') ? 'en' : 'vi', ip);
+    return null;
+  }
+
+  // AUTH-12: verified and logged in, same reply and cookie as login.
+  @Public()
+  @HttpCode(200)
+  @Post('verify-phone')
+  async verifyPhone(
+    @Body() dto: VerifyPhoneDto,
+    @Headers('user-agent') userAgent: string | undefined,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<{ accessToken: string; user: Me }> {
+    const { accessToken, user, session } = await this.auth.verifyPhone(dto, userAgent);
+    setRefreshCookie(res, session);
+    return { accessToken, user };
+  }
+
+  @Public()
+  @HttpCode(200)
+  @Post('resend-code')
+  resendCode(@Body() dto: ResendCodeDto, @Ip() ip: string): null {
+    this.auth.resendCode(dto, ip);
+    return null;
+  }
+
+  @Roles('BOSS', 'MANAGER', 'TENANT', 'GUEST')
+  @HttpCode(200)
+  @Post('phone/send-code')
+  async sendPhoneCode(@CurrentUser() user: AuthUser, @Ip() ip: string): Promise<null> {
+    await this.auth.sendPhoneCode(user, ip);
+    return null;
+  }
+
+  @Roles('BOSS', 'MANAGER', 'TENANT', 'GUEST')
+  @HttpCode(200)
+  @Post('phone/verify')
+  verifyMyPhone(@CurrentUser() user: AuthUser, @Body() dto: PhoneCodeDto): Promise<Me> {
+    return this.auth.verifyMyPhone(user, dto);
+  }
+
+  @Roles('BOSS', 'MANAGER', 'TENANT', 'GUEST')
   @AllowPasswordChangeRequired()
   @Get('me')
   me(@CurrentUser() user: AuthUser): Promise<Me> {
     return this.auth.getMe(user.id);
   }
 
-  @Roles('BOSS', 'MANAGER', 'TENANT')
+  @Roles('BOSS', 'MANAGER', 'TENANT', 'GUEST')
   @Patch('me')
   updateMe(@CurrentUser() user: AuthUser, @Body() dto: UpdateMeDto): Promise<Me> {
     return this.auth.updateMe(user, dto);
   }
 
-  @Roles('BOSS', 'MANAGER', 'TENANT')
+  @Roles('BOSS', 'MANAGER', 'TENANT', 'GUEST')
   @AllowPasswordChangeRequired()
   @HttpCode(200)
   @Post('change-password')

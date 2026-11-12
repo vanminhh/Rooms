@@ -753,6 +753,7 @@ describe('API-03 / API-04: error body and HTTP status', () => {
 });
 
 // Expected values come from docs/spec/01-architecture.md#error-codes, AUTH-01, AUTH-02
+// (PHONE_NOT_VERIFIED, OTP_INVALID, SMS_UNAVAILABLE: status from the spec table, wording [ASSUMPTION] BE-EX-03)
 // and decision D4 (INTERNAL_ERROR), not from the code under test.
 const EXPECTED: [string, number, string][] = [
   ['VALIDATION_FAILED', 400, 'Dữ liệu không hợp lệ'],
@@ -764,6 +765,9 @@ const EXPECTED: [string, number, string][] = [
   ['CONFLICT_STATE', 409, 'Thao tác không hợp lệ ở trạng thái hiện tại'],
   ['TOO_MANY_REQUESTS', 429, 'Bạn thao tác quá nhiều lần, vui lòng thử lại sau'],
   ['PHONE_TAKEN', 409, 'Số điện thoại đã được sử dụng'],
+  ['PHONE_NOT_VERIFIED', 403, 'Số điện thoại chưa được xác minh'],
+  ['OTP_INVALID', 400, 'Mã xác minh không đúng hoặc đã hết hạn'],
+  ['SMS_UNAVAILABLE', 503, 'Chưa gửi được tin nhắn, vui lòng thử lại sau'],
   ['MANAGER_MAX_2_BUILDINGS', 409, 'Mỗi quản lý chỉ phụ trách tối đa 2 tòa'],
   ['ROOM_NOT_AVAILABLE', 409, 'Phòng không còn trống'],
   ['CONTRACT_TERM_TOO_SHORT', 400, 'Thời hạn hợp đồng tối thiểu 3 tháng'],
@@ -783,9 +787,9 @@ const EXPECTED: [string, number, string][] = [
 ];
 
 describe('01-architecture#error-codes: ErrorCode and ERRORS table', () => {
-  it('01-architecture: ErrorCode has exactly 25 members (22 spec codes + INVALID_CREDENTIALS + ACCOUNT_LOCKED + INTERNAL_ERROR), value = name', () => {
+  it('01-architecture: ErrorCode has exactly 28 members (25 spec codes + INVALID_CREDENTIALS + ACCOUNT_LOCKED + INTERNAL_ERROR), value = name', () => {
     const members = Object.entries(ErrorCode);
-    expect(members).toHaveLength(25);
+    expect(members).toHaveLength(28);
     expect(members.every(([k, v]) => k === v)).toBe(true);
     expect(Object.keys(ErrorCode).sort()).toEqual(EXPECTED.map((e) => e[0]).sort());
   });

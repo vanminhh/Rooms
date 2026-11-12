@@ -16,10 +16,10 @@ This folder is the **single source of truth** for what the system must do. Code,
 | [00-overview.md](00-overview.md) | Product, roles, hierarchy, glossary VI↔EN, global rules, decisions, assumptions, open questions |
 | [01-architecture.md](01-architecture.md) | FE/BE/DB responsibilities, folder layout, API conventions, languages, error codes, auth tokens, cron |
 | [02-database.md](02-database.md) | Schema conventions, 26 tables, rules enforced by DB vs BE, how to run the DB check |
-| [10-auth.md](10-auth.md) | Login, sign-up with SMS code, sessions, passwords, roles, building scope |
+| [10-auth.md](10-auth.md) | Login, sign-up with an email code, sessions, passwords, roles, building scope |
 | [11-buildings-rooms.md](11-buildings-rooms.md) | Buildings, managers, rooms, services, public listing |
 | [12-pricing.md](12-pricing.md) | Room prices, rate plans (electric tiers, water, services), approval |
-| [13-viewings.md](13-viewings.md) | Viewing appointments (lịch hẹn xem phòng): booking with an account, time proposals, history |
+| [13-viewings.md](13-viewings.md) | Viewing appointments (lịch hẹn xem phòng): booking an hour with an account, confirmation by the manager |
 | [14-contracts.md](14-contracts.md) | Contract lifecycle, tenant account, occupants, vehicles, renewal, cancel |
 | [15-meters.md](15-meters.md) | Meter readings (chốt chỉ số) |
 | [16-billing.md](16-billing.md) | Billing periods, invoice calculation, manual payment, reissue, settlement |
@@ -27,7 +27,7 @@ This folder is the **single source of truth** for what the system must do. Code,
 | [18-requests.md](18-requests.md) | Incidents and tenant requests |
 | [19-notifications.md](19-notifications.md) | Announcements, in-app inbox, email reminders |
 | [20-reports-audit-settings.md](20-reports-audit-settings.md) | Reports, audit log, settings |
-| [30-frontend.md](30-frontend.md) | 4 areas, 37 pages with routes, UI rules, labels, entry screen, languages |
+| [30-frontend.md](30-frontend.md) | 4 areas, 36 pages with routes, UI rules, labels, entry screen, languages |
 | [31-ui-kit.md](31-ui-kit.md) | Official UI kit in `Source/frontend/src/components/` (An Lâm style), usage rules, preview, tests |
 
 Schema files: [Source/backend/prisma/schema.prisma](../../Source/backend/prisma/schema.prisma) · [constraints.sql](../../Source/backend/prisma/constraints.sql) · [check-constraints.mjs](../../Source/backend/prisma/check-constraints.mjs).
@@ -44,4 +44,4 @@ Schema files: [Source/backend/prisma/schema.prisma](../../Source/backend/prisma/
 
 ## Status
 
-Phase 1 (Foundation) is done: the UI kit (`Source/frontend/src/components/`, `npm run test:components` 234 tests, including the auth tests), login for the 3 roles (`auth` module in `Source/backend`; `/dang-nhap`, password pages and account pages in `Source/frontend`), the first migration and the Phase 1 seed (DB check 50/50). Phase 2 (Rooms) is done: buildings, services, managers, rooms and images, pricing with Boss approval, public pages, viewings and "Việc hôm nay" (DB check 54/54, backend 1502 unit and 43 e2e tests, frontend `npm run test:components` 645 tests). No contract, billing or tenant feature exists yet. On 12/11/2026 the owner changed the spec after the Home101 brief (guest accounts, entry screen, English, room filters, viewings with exact time and proposals, viewing notifications): the Phase 1 and 2 code does not follow those rules yet and is fixed in **Phase Extra** (`docs/phase-extra-home101/README.md`, nothing built yet); Phase 3 and 5 rules were amended in place. Next: Phase Extra, whose part EX-1 must be done before Phase 3 · Contracts. Phase 2 task lists, QA checklist and production notes: `docs/phase-2-rooms/`. Task lists per feature: `Source/backend/src/modules/<module>/feature_<name>.md` and `Source/frontend/src/features/<module>/feature_<name>.md`; Phase 1 task lists and QA: `docs/phase-1-foundation/`. Roadmap: [01-architecture.md#roadmap](01-architecture.md#roadmap).
+Phase 1 (Foundation) is done: the UI kit (`Source/frontend/src/components/`, `npm run test:components` 234 tests, including the auth tests), login for the 3 roles (`auth` module in `Source/backend`; `/dang-nhap`, password pages and account pages in `Source/frontend`), the first migration and the Phase 1 seed (DB check 50/50). Phase 2 (Rooms) is done: buildings, services, managers, rooms and images, pricing with Boss approval, public pages, viewings and "Việc hôm nay" (DB check 54/54, backend 1502 unit and 43 e2e tests, frontend `npm run test:components` 645 tests). No contract, billing or tenant feature exists yet. On 12/11/2026 the owner changed the spec after the Home101 brief (guest accounts verified by email, entry screen, English, room filters, viewings booked by hour and confirmed by the manager, the new-booking email): the Phase 1 and 2 code does not follow those rules yet and is fixed in **Phase Extra** (`docs/phase-extra-home101/README.md`, nothing built yet); Phase 3 and 5 rules were amended in place. Next: Phase Extra, whose part EX-1 must be done before Phase 3 · Contracts. Phase 2 task lists, QA checklist and production notes: `docs/phase-2-rooms/`. Task lists per feature: `Source/backend/src/modules/<module>/feature_<name>.md` and `Source/frontend/src/features/<module>/feature_<name>.md`; Phase 1 task lists and QA: `docs/phase-1-foundation/`. Roadmap: [01-architecture.md#roadmap](01-architecture.md#roadmap).

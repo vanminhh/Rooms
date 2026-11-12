@@ -6,6 +6,8 @@ import { MustChangePasswordGuard } from '../../common/guards/must-change-passwor
 import { RolesGuard } from '../../common/guards/roles.guard.js';
 import { AuditModule } from '../audit/audit.module.js';
 import { MailerModule } from '../mailer/mailer.module.js';
+import { SmsModule } from '../sms/sms.module.js';
+import { OtpService } from './otp.service.js';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { ManagersController } from './managers.controller.js';
@@ -13,10 +15,11 @@ import { ManagersService } from './managers.service.js';
 import { TokenService } from './token.service.js';
 
 @Module({
-  imports: [JwtModule.register({}), AuditModule, MailerModule],
+  imports: [JwtModule.register({}), AuditModule, MailerModule, SmsModule],
   controllers: [AuthController, ManagersController],
   providers: [
     TokenService,
+    OtpService,
     AuthService,
     ManagersService,
     // Order matters: authenticate, then password-change check, then role check.

@@ -37,8 +37,8 @@ const validation = (fields: Record<string, string>) => ({
 const PCR_BODY = { error: { code: 'PASSWORD_CHANGE_REQUIRED', message: 'Bạn cần đổi mật khẩu trước khi tiếp tục' } };
 const FORBIDDEN_BODY = { error: { code: 'FORBIDDEN', message: 'Bạn không có quyền thực hiện thao tác này' } };
 const ME_KEYS = [
-  'contactPhone', 'email', 'facebookUrl', 'fullName', 'id', 'mustChangePassword', 'phone', 'role', 'zaloUrl',
-];
+  'contactPhone', 'email', 'facebookUrl', 'fullName', 'id', 'locale', 'mustChangePassword', 'phone', 'phoneVerified', 'role', 'zaloUrl',
+]; // phoneVerified AUTH-12, locale AUTH-15
 
 let app: INestApplication;
 let fake: FakePrisma;
