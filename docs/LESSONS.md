@@ -8,6 +8,7 @@ Read this before the first task of any part. Each line is a mistake that really 
 
 - Never invent an expected value. Take it from the spec or the provider's documentation and name the source in the test. A planner once wrote a Cloudinary signature hash that was partly made up [BE-P2-07, 01/11/2026].
 - Adding an error code breaks the count test in `Source/backend/src/app.setup.spec.ts`; update it in the same change [BE-P2-02, 01/11/2026].
+- Adding a key to `DB_ERROR_MAP` breaks the exact-key test in `db-errors.spec.ts`, and a new field in `Me` breaks `ME_KEYS` in `auth.me.spec.ts` and `auth.account.spec.ts` (keep that list in alphabetical order); update them in the same change [BE-EX-34, 12/11/2026].
 - Adding a module to `AppModule` breaks the module-list test `prisma.service.spec.ts` (BE-LOGIN-19); update it in the same change [BE-P2-10, 02/11/2026].
 - Moving code into `prisma.$transaction` breaks HTTP specs whose Prisma mock has no `$transaction`; extend the mock (`test/fixtures/fake-prisma.ts` or the spec's own) [BE-P2-17, 03/11/2026].
 - A Nest exception's `getResponse()` is an object (`{ code, message, fields }`), not a string; assert on its fields [BE-P2-11, 02/11/2026].

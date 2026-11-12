@@ -11,7 +11,7 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 | Phần | Trạng thái | Điểm dừng gần nhất đã xong | Commit | Việc tiếp theo | Ghi chú |
 |---|---|---|---|---|---|
 | EX-0 Chủ dự án chuẩn bị | đang làm | Q-09..Q-12 đã trả lời; quyết định cuối 12/11/2026 (email thay SMS) | – | tạo tài khoản Resend + xác thực tên miền (Q-14 đã chọn Resend), Q-08 video, Q-13, Q-EX4-1, Q-EX6-1, Q-EX6-2, Q-EX8-2 | không chặn EX-1 |
-| EX-1 Tài khoản khách (BE) | chờ commit | ⏸ BE-EX-33 (file migration `email_verification`, chưa áp vào DB dev) | BE-EX-02..06 (SMS): 6e81249 | BE-EX-34, BE-EX-35 | DB dev còn schema SMS; plan: `plans/EX-1/PLAN.md` |
+| EX-1 Tài khoản khách (BE) | chờ commit | ⏸ BE-EX-35 (mã email, đăng ký + xác minh email, bỏ SMS) | BE-EX-33: xem git log | BE-EX-07 | migration `email_verification` ĐÃ áp vào DB dev (13/11/2026), e2e 43/43 (chưa có e2e cho đăng ký → BE-EX-09); plan: `plans/EX-1/PLAN.md` |
 | EX-2 Tài khoản khách (FE) | chưa làm | – | – | FE-EX-01 | cần EX-1 |
 | EX-3 Việt + Anh | chưa làm | – | – | FE-EX-08 | cần EX-2 |
 | EX-4 Màn chào | chưa làm | – | – | FE-EX-14 | cần EX-3 |
@@ -24,6 +24,8 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 ## Nhật ký điểm dừng
 
 Mới nhất ở trên. Mỗi dòng: `ngày · phần · task vừa xong · kết quả kiểm tra (số thật) · việc còn treo`.
+
+- 12/11/2026 · EX-1 · BE-EX-34, BE-EX-35 (OtpService gửi qua MailerService; production chưa có nhà gửi thư thì `MAIL_UNAVAILABLE`; `register` có email, `verify-email`, `resend-code {phone}`, bỏ `/auth/phone/*`, xóa module `sms`; mã lỗi 28 → 29) · unit 1548/1548 (79 file), lint 0 lỗi, build OK · migration `email_verification` đã áp vào DB dev, e2e hiện có 43/43; e2e đăng ký + mã email viết ở BE-EX-09
 
 - 12/11/2026 · EX-1 · BE-EX-33 (spec đổi sang mã email; schema.prisma, migration `20261112010000_email_verification`, constraints.sql, check-constraints.mjs) · DB check 63/63, seed.spec 35/35, migration áp được lên DB đã có `guest_accounts` (PGlite) và cho ra cấu trúc giống hệt DB tạo mới · chưa áp vào DB dev; code còn dùng `phoneOtp` nên chưa biên dịch được với Prisma client mới
 

@@ -139,7 +139,7 @@ export async function createFakePrisma() {
 
   const user = new Table(['phone', 'email'], {
     email: null, contactPhone: null, zaloUrl: null, facebookUrl: null, lastLoginAt: null,
-    mustChangePassword: false, isActive: true, phoneVerifiedAt: null, locale: 'vi',
+    mustChangePassword: false, isActive: true, emailVerifiedAt: null, locale: 'vi',
   });
   const building = new Table(['code']);
   const contract = new Table(['code']);
@@ -147,7 +147,7 @@ export async function createFakePrisma() {
   const session = new Table(['tokenHash'], { remember: false, revokedAt: null, userAgent: null });
   const passwordResetToken = new Table(['tokenHash'], { usedAt: null });
   const auditLog = new Table();
-  const phoneOtp = new Table([], { tries: 0, usedAt: null });
+  const emailOtp = new Table([], { tries: 0, usedAt: null });
 
   function reset(): void {
     user.load(
@@ -158,7 +158,7 @@ export async function createFakePrisma() {
         zaloUrl: a.role === 'BOSS' ? 'https://zalo.me/0900000001' : null,
         facebookUrl: a.role === 'BOSS' ? 'https://facebook.com/tro.thong.minh' : null,
         mustChangePassword: a.mustChangePassword, isActive: a.isActive, lastLoginAt: null,
-        phoneVerifiedAt: null, locale: 'vi',
+        emailVerifiedAt: null, locale: 'vi',
       })),
     );
     building.load([
@@ -179,13 +179,13 @@ export async function createFakePrisma() {
     session.load([]);
     passwordResetToken.load([]);
     auditLog.load([]);
-    phoneOtp.load([]);
+    emailOtp.load([]);
   }
   reset();
 
   const fake = {
-    user, building, contract, setting, session, passwordResetToken, auditLog, phoneOtp,
-    db: { user: user.rows, building: building.rows, contract: contract.rows, setting: setting.rows, session: session.rows, passwordResetToken: passwordResetToken.rows, auditLog: auditLog.rows, phoneOtp: phoneOtp.rows },
+    user, building, contract, setting, session, passwordResetToken, auditLog, emailOtp,
+    db: { user: user.rows, building: building.rows, contract: contract.rows, setting: setting.rows, session: session.rows, passwordResetToken: passwordResetToken.rows, auditLog: auditLog.rows, emailOtp: emailOtp.rows },
     /** Raw SQL is only the advisory lock (OtpService.lock); the fake runs one request at a time, so it is a no-op. */
     async $queryRaw(): Promise<unknown[]> {
       return [];

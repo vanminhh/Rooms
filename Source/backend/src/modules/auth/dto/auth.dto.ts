@@ -1,7 +1,6 @@
 import {
   IsBoolean,
   IsEmail,
-  IsIn,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -51,7 +50,7 @@ const NAME_MSG = 'Vui lòng nhập họ và tên';
 const CODE_RE = /^[0-9]{6}$/;
 const CODE_MSG = 'Mã xác minh gồm 6 chữ số';
 
-// AUTH-11. Phone G-04, password AUTH-03.
+// AUTH-11. Phone G-04, email required, password AUTH-03.
 export class RegisterDto {
   @IsString({ message: NAME_MSG })
   @Matches(/\S/, { message: NAME_MSG })
@@ -61,13 +60,17 @@ export class RegisterDto {
   @Matches(PHONE_RE, { message: PHONE_MSG })
   phone: string;
 
+  @IsEmail({}, { message: EMAIL_MSG })
+  @MaxLength(255, { message: EMAIL_MSG })
+  email: string;
+
   @IsString({ message: PASSWORD_MSG })
   @MinLength(PASSWORD_MIN_LENGTH, { message: PASSWORD_MSG })
   password: string;
 }
 
-// AUTH-12, AUTH-13.
-export class VerifyPhoneDto {
+// AUTH-12, AUTH-13: the account is found by its phone; the code was mailed to its email.
+export class VerifyEmailDto {
   @Matches(PHONE_RE, { message: PHONE_MSG })
   phone: string;
 
@@ -78,15 +81,6 @@ export class VerifyPhoneDto {
 export class ResendCodeDto {
   @Matches(PHONE_RE, { message: PHONE_MSG })
   phone: string;
-
-  @IsIn(['REGISTER', 'RESET_PASSWORD'], { message: 'Loại mã không hợp lệ' })
-  purpose: 'REGISTER' | 'RESET_PASSWORD';
-}
-
-// Logged in: the phone is the account's own (AUTH-12).
-export class PhoneCodeDto {
-  @Matches(CODE_RE, { message: CODE_MSG })
-  code: string;
 }
 
 export class ForgotPasswordDto {

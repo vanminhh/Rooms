@@ -21,20 +21,20 @@ import {
   type ChangePasswordDto,
   type ForgotPasswordDto,
   type LoginDto,
-  type PhoneCodeDto,
   type RegisterDto,
   type ResendCodeDto,
   type ResetPasswordDto,
   type UpdateMeDto,
-  type VerifyPhoneDto,
+  type VerifyEmailDto,
 } from './dto/auth.dto.js';
 import { OtpService } from './otp.service.js';
 import { RateLimiter } from './rate-limiter.js';
 import { TokenService } from './token.service.js';
 
 const RESET_TOKEN_TTL_MS = 30 * 60 * 1000;
-// AUTH-11 wording, carried in fields.phone: the PHONE_TAKEN message itself is shared with manager creation.
+// AUTH-11 wording, carried in fields: the PHONE_TAKEN message itself is shared with manager creation.
 export const PHONE_TAKEN_SIGNUP_MSG = 'Số điện thoại đã có tài khoản. Hãy đăng nhập hoặc dùng Quên mật khẩu';
+export const EMAIL_TAKEN_SIGNUP_MSG = 'Email đã được dùng cho tài khoản khác';
 
 export type Locale = 'vi' | 'en';
 
@@ -51,7 +51,7 @@ export interface Me {
   fullName: string;
   email: string | null;
   mustChangePassword: boolean;
-  phoneVerified: boolean; // AUTH-12
+  emailVerified: boolean; // AUTH-12
   locale: string; // AUTH-15
   contactPhone: string | null;
   zaloUrl: string | null;
@@ -108,7 +108,7 @@ export class AuthService {
     // AUTH-12: checked only after the right password, so it reveals nothing to a guesser (owner 12/11/2026). No code is sent.
     if (isUnverifiedGuest(user)) {
       this.loginLimiter.remove(phone, attemptAt);
-      throw new ForbiddenException(ErrorCode.PHONE_NOT_VERIFIED);
+      throw new ForbiddenException(ErrorCode.EMAIL_NOT_VERIFIED);
     }
 
     this.loginLimiter.reset(phone);
@@ -138,48 +138,51 @@ export class AuthService {
     return { token, expiresAt, remember };
   }
 
-  // AUTH-11. A self-registered account that never passed the code is replaced, so nobody can block a number they do not own.
+  // AUTH-11. A self-registered account that never passed the code is replaced (by phone or by email), so nobody can
+  // block a number or an address they do not own. A phone and an email that belong to two different accounts are
+  // never merged: the email is refused (owner 12/11/2026).
   async register(dto: RegisterDto, locale: Locale, ip?: string): Promise<void> {
     const { phone } = dto;
+    const email = dto.email.trim().toLowerCase();
     this.otp.takeIp(ip);
     const passwordHash = await hashPassword(dto.password);
     const fullName = dto.fullName.trim();
     const issued = await this.prisma.$transaction(async (tx) => {
-      await this.otp.lock(tx, phone); // two sign-ups of one phone run one after the other
-      const existing = await tx.user.findUnique({ where: { phone } });
-      if (existing) {
-        // Verified, created by staff, or locked by staff (owner 12/11/2026: never revived) -> taken.
-        if (!isUnverifiedGuest(existing) || !existing.isActive) {
-          throw new ConflictException({ code: ErrorCode.PHONE_TAKEN, fields: { phone: PHONE_TAKEN_SIGNUP_MSG } });
-        }
-        await tx.user.update({
-          where: { id: existing.id },
-          data: { fullName, passwordHash, mustChangePassword: false, locale },
-        });
-      } else {
-        await tx.user.create({
-          data: { role: 'GUEST', phone, fullName, passwordHash, mustChangePassword: false, locale },
-        });
+      // Phone lock first, then email lock (OtpService.issue takes the email lock again, which is harmless).
+      await this.otp.lock(tx, `phone:${phone}`);
+      await this.otp.lock(tx, `email:${email}`);
+      const byPhone = await tx.user.findUnique({ where: { phone } });
+      const byEmail = await tx.user.findUnique({ where: { email } });
+      // Verified, created by staff, or locked by staff (owner 12/11/2026: never revived) -> taken.
+      if (byPhone && !isReplaceable(byPhone)) {
+        throw new ConflictException({ code: ErrorCode.PHONE_TAKEN, fields: { phone: PHONE_TAKEN_SIGNUP_MSG } });
       }
-      return this.otp.issue(tx, phone, 'REGISTER');
+      if (byEmail && (!isReplaceable(byEmail) || (byPhone && byPhone.id !== byEmail.id))) {
+        throw new ConflictException({ code: ErrorCode.EMAIL_TAKEN, fields: { email: EMAIL_TAKEN_SIGNUP_MSG } });
+      }
+      const data = { fullName, phone, email, passwordHash, mustChangePassword: false, locale };
+      const target = byPhone ?? byEmail;
+      if (target) await tx.user.update({ where: { id: target.id }, data });
+      else await tx.user.create({ data: { role: 'GUEST', ...data } });
+      return this.otp.issue(tx, email);
     });
-    await this.otp.deliver(phone, issued);
+    await this.otp.deliver(email, issued);
   }
 
-  // AUTH-12: the code proves the phone; the account is verified and logged in, like login (AUTH-T1, AUTH-T2).
-  async verifyPhone(
-    dto: VerifyPhoneDto,
+  // AUTH-12: the code proves the email; the account is verified and logged in, like login (AUTH-T1, AUTH-T2).
+  // The code is looked up through the account's current email, so a replaced account cannot be verified with an old code.
+  async verifyEmail(
+    dto: VerifyEmailDto,
     userAgent?: string,
   ): Promise<{ accessToken: string; user: Me; session: IssuedSession }> {
-    const { phone } = dto;
-    const codeId = await this.otp.check(phone, 'REGISTER', dto.code);
-    const user = await this.prisma.user.findUnique({ where: { phone } });
-    if (!user) throw new BadRequestException(ErrorCode.OTP_INVALID);
+    const user = await this.prisma.user.findUnique({ where: { phone: dto.phone } });
+    if (!user || !isUnverifiedGuest(user) || !user.email) throw new BadRequestException(ErrorCode.OTP_INVALID);
+    const codeId = await this.otp.check(user.email, dto.code);
     if (!user.isActive) throw new ForbiddenException(ErrorCode.ACCOUNT_LOCKED);
     const now = new Date();
     const session = await this.prisma.$transaction(async (tx) => {
       await this.otp.markUsed(tx, codeId, now);
-      await tx.user.update({ where: { id: user.id }, data: { phoneVerifiedAt: now } });
+      await tx.user.update({ where: { id: user.id }, data: { emailVerifiedAt: now } });
       return this.startSession(tx, user.id, false, userAgent, now);
     });
     return {
@@ -190,45 +193,18 @@ export class AuthService {
   }
 
   // AUTH-13. Always the same empty reply (owner 12/11/2026): the work runs after it, so neither the body nor the time
-  // tells whether the phone has an account; limits and SMS failures are only logged.
+  // tells whether the phone has an account; limits and mail failures are only logged.
   resendCode(dto: ResendCodeDto, ip?: string): void {
     void this.resendInBackground(dto, ip).catch((e: unknown) =>
       this.logger.warn(`Resend code not sent (${e instanceof HttpException ? JSON.stringify(e.getResponse()) : 'error'})`),
     );
   }
 
-  private async resendInBackground({ phone, purpose }: ResendCodeDto, ip?: string): Promise<void> {
+  // Only an account still waiting for its code gets one.
+  private async resendInBackground({ phone }: ResendCodeDto, ip?: string): Promise<void> {
     const user = await this.prisma.user.findUnique({ where: { phone } });
-    if (!user?.isActive) return;
-    // REGISTER: only an account still waiting for its code. RESET_PASSWORD: only a verified phone (AUTH-07).
-    const eligible = purpose === 'REGISTER' ? isUnverifiedGuest(user) : user.phoneVerifiedAt !== null;
-    if (!eligible) return;
-    await this.otp.send(phone, purpose, ip);
-  }
-
-  // AUTH-12: a logged-in account (any role, owner 12/11/2026) whose phone is not verified asks for a code.
-  async sendPhoneCode(me: AuthUser, ip?: string): Promise<void> {
-    const user = await this.unverifiedSelf(me);
-    await this.otp.send(user.phone, 'VERIFY_PHONE', ip);
-  }
-
-  // AUTH-14: sets phone_verified_at only; links and merges nothing.
-  async verifyMyPhone(me: AuthUser, dto: PhoneCodeDto): Promise<Me> {
-    const user = await this.unverifiedSelf(me);
-    const codeId = await this.otp.check(user.phone, 'VERIFY_PHONE', dto.code);
-    const now = new Date();
-    await this.prisma.$transaction(async (tx) => {
-      await this.otp.markUsed(tx, codeId, now);
-      await tx.user.update({ where: { id: user.id }, data: { phoneVerifiedAt: now } });
-    });
-    return this.getMe(user.id);
-  }
-
-  private async unverifiedSelf(me: AuthUser): Promise<User> {
-    const user = await this.prisma.user.findUnique({ where: { id: me.id } });
-    if (!user) throw new UnauthorizedException(ErrorCode.UNAUTHENTICATED);
-    if (user.phoneVerifiedAt !== null) throw new ConflictException(ErrorCode.CONFLICT_STATE);
-    return user;
+    if (!user || !isReplaceable(user) || !user.email) return;
+    await this.otp.send(user.email, ip);
   }
 
   // AUTH-T2 rotation. The new session keeps the old expiresAt: the 12 h / 30 d cap counts from login (Q1).
@@ -435,7 +411,7 @@ export class AuthService {
       fullName: u.fullName,
       email: u.email,
       mustChangePassword: u.mustChangePassword,
-      phoneVerified: u.phoneVerifiedAt !== null,
+      emailVerified: u.emailVerifiedAt !== null,
       locale: u.locale,
       contactPhone: u.contactPhone,
       zaloUrl: u.zaloUrl,
@@ -453,5 +429,9 @@ export class AuthService {
 }
 
 // AUTH-11, AUTH-12: staff never create a GUEST, so "self-registered and never verified" is exactly this.
-const isUnverifiedGuest = (u: Pick<User, 'role' | 'phoneVerifiedAt'>): boolean =>
-  u.role === 'GUEST' && u.phoneVerifiedAt === null;
+const isUnverifiedGuest = (u: Pick<User, 'role' | 'emailVerifiedAt'>): boolean =>
+  u.role === 'GUEST' && u.emailVerifiedAt === null;
+
+// Such an account may be replaced by a new sign-up and may get a new code; a locked one never (D-26).
+const isReplaceable = (u: Pick<User, 'role' | 'emailVerifiedAt' | 'isActive'>): boolean =>
+  isUnverifiedGuest(u) && u.isActive;

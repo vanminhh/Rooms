@@ -9,6 +9,7 @@ export interface DbErrorMapping {
 // Trigger messages start with the key ("MANAGER_MAX_2_BUILDINGS: ..."). The [ASSUMPTION] wordings are from the plan.
 export const DB_ERROR_MAP: Record<string, DbErrorMapping> = {
   users_phone_key: { code: ErrorCode.PHONE_TAKEN },
+  users_email_key: { code: ErrorCode.EMAIL_TAKEN },
   rooms_building_id_code_key: {
     code: ErrorCode.VALIDATION_FAILED,
     fields: { code: 'Mã phòng đã có trong tòa (kể cả phòng đã khóa)' },

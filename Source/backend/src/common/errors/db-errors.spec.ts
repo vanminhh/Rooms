@@ -77,10 +77,15 @@ describe('BE-P2-01 / BE-P2-02: mapDbError, one test per row of PLAN 2.2', () => 
     expect(mapDbError(undefined)).toBeNull();
   });
 
-  it('API-03: DB_ERROR_MAP has exactly the 8 keys listed in PLAN 2.2, no more no less', () => {
+  it('AUTH-11: P2002 meta.target = "users_email_key" -> EMAIL_TAKEN (01-architecture#error-codes)', () => {
+    expect(mapDbError(p2002('users_email_key'))).toEqual({ code: ErrorCode.EMAIL_TAKEN });
+  });
+
+  it('API-03: DB_ERROR_MAP has exactly the 8 keys listed in PLAN 2.2 plus users_email_key (EX-1), no more no less', () => {
     expect(Object.keys(DB_ERROR_MAP).sort()).toEqual(
       [
         'users_phone_key',
+        'users_email_key',
         'rooms_building_id_code_key',
         'room_prices_one_pending',
         'rate_plans_one_pending',

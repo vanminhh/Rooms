@@ -27,8 +27,8 @@ const me = (token?: string) => {
 };
 
 const ME_KEYS = [
-  'contactPhone', 'email', 'facebookUrl', 'fullName', 'id', 'locale', 'mustChangePassword', 'phone', 'phoneVerified', 'role', 'zaloUrl',
-]; // phoneVerified AUTH-12, locale AUTH-15
+  'contactPhone', 'email', 'emailVerified', 'facebookUrl', 'fullName', 'id', 'locale', 'mustChangePassword', 'phone', 'role', 'zaloUrl',
+]; // emailVerified AUTH-12, locale AUTH-15
 const CG01 = { id: IDS.buildings.CG01, code: 'CG01', name: 'Tòa Cầu Giấy' };
 const DD01 = { id: IDS.buildings.DD01, code: 'DD01', name: 'Tòa Đống Đa' };
 const HM01 = { id: IDS.buildings.HM01, code: 'HM01', name: 'Tòa Hoàng Mai' };
@@ -73,7 +73,7 @@ describe('BE-LOGIN-15: GET /auth/me', () => {
         fullName: 'Phạm Minh Đức',
         email: null,
         mustChangePassword: false,
-        phoneVerified: false, // AUTH-12: staff-created, not verified yet
+        emailVerified: false, // AUTH-12: staff-created, not verified yet
         locale: 'vi', // AUTH-15 default
         contactPhone: '0900000001',
         zaloUrl: 'https://zalo.me/0900000001',
@@ -105,7 +105,7 @@ describe('BE-LOGIN-15: GET /auth/me', () => {
         fullName: 'Nguyễn Thu Hà',
         email: null,
         mustChangePassword: false,
-        phoneVerified: false, // AUTH-12: staff-created, not verified yet
+        emailVerified: false, // AUTH-12: staff-created, not verified yet
         locale: 'vi', // AUTH-15 default
         contactPhone: '0900000002',
         zaloUrl: null,

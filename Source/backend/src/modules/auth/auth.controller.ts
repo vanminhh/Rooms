@@ -11,12 +11,11 @@ import {
   ChangePasswordDto,
   ForgotPasswordDto,
   LoginDto,
-  PhoneCodeDto,
   RegisterDto,
   ResendCodeDto,
   ResetPasswordDto,
   UpdateMeDto,
-  VerifyPhoneDto,
+  VerifyEmailDto,
 } from './dto/auth.dto.js';
 import { AuthService, type IssuedSession, type Me } from './auth.service.js';
 
@@ -95,13 +94,13 @@ export class AuthController {
   // AUTH-12: verified and logged in, same reply and cookie as login.
   @Public()
   @HttpCode(200)
-  @Post('verify-phone')
-  async verifyPhone(
-    @Body() dto: VerifyPhoneDto,
+  @Post('verify-email')
+  async verifyEmail(
+    @Body() dto: VerifyEmailDto,
     @Headers('user-agent') userAgent: string | undefined,
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ accessToken: string; user: Me }> {
-    const { accessToken, user, session } = await this.auth.verifyPhone(dto, userAgent);
+    const { accessToken, user, session } = await this.auth.verifyEmail(dto, userAgent);
     setRefreshCookie(res, session);
     return { accessToken, user };
   }
@@ -112,21 +111,6 @@ export class AuthController {
   resendCode(@Body() dto: ResendCodeDto, @Ip() ip: string): null {
     this.auth.resendCode(dto, ip);
     return null;
-  }
-
-  @Roles('BOSS', 'MANAGER', 'TENANT', 'GUEST')
-  @HttpCode(200)
-  @Post('phone/send-code')
-  async sendPhoneCode(@CurrentUser() user: AuthUser, @Ip() ip: string): Promise<null> {
-    await this.auth.sendPhoneCode(user, ip);
-    return null;
-  }
-
-  @Roles('BOSS', 'MANAGER', 'TENANT', 'GUEST')
-  @HttpCode(200)
-  @Post('phone/verify')
-  verifyMyPhone(@CurrentUser() user: AuthUser, @Body() dto: PhoneCodeDto): Promise<Me> {
-    return this.auth.verifyMyPhone(user, dto);
   }
 
   @Roles('BOSS', 'MANAGER', 'TENANT', 'GUEST')
