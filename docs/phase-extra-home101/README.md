@@ -4,7 +4,7 @@ Nguồn: [home101-adoption-brief.md](../home101-adoption-brief.md) (`BRIEF-H101-
 
 **Phạm vi.** Phase Extra chỉ sửa những gì Phase 1, Phase 2 và đợt UI đã xây theo luật cũ. Phase 3 trở đi chưa làm nên chỉ sửa spec tại chỗ (mục "Không thuộc Phase Extra" bên dưới).
 
-**Trạng thái:** kế hoạch chờ chủ dự án duyệt. Chưa có dòng code, schema hay dependency nào thay đổi.
+**Trạng thái:** đã chia thành 9 phần, mỗi phần một file task `feature_ex-*.md` (mục 5) để giao cho agent. Chưa có dòng code, schema hay dependency nào thay đổi.
 
 ## 1. Câu trả lời đã chốt
 
@@ -43,6 +43,15 @@ Còn mở: `Q-07`, `Q-08`, `Q-13` trong [00-overview.md](../spec/00-overview.md#
 | Q-12 | Giờ bắt đầu từ 8:00 đến 19:30 mỗi ngày, bước 30 phút (buổi cuối kết thúc 20:00); không nhập ngày nghỉ, quản lý bận thì đề xuất giờ khác | VIEW-08 |
 
 Giả định mới đã ghi trong spec, cần bạn xem: `A-03` (sửa), `A-11..A-17`.
+
+Câu hỏi nhỏ phát sinh khi chia task (ghi trong file task của phần đó; trả lời trước khi agent tới task ghi trong ngoặc):
+
+| Mã | Câu hỏi | Đề xuất |
+|---|---|---|
+| Q-EX1-1 (BE-EX-08) | Thêm một tài khoản khách mẫu vào seed dev để thử tay? | Có |
+| Q-EX4-1 (FE-EX-16) | Ảnh tĩnh của màn chào dùng ảnh nào? | Ảnh hero trang chủ hiện tại |
+| Q-EX6-1 (BE-EX-19) | Một tài khoản có được giữ nhiều lịch đang mở cho cùng một phòng? | Không, mỗi phòng một lịch đang mở |
+| Q-EX8-1 (BE-EX-30) | Quản lý nhận email cho mọi thao tác của khách? | Giữ như spec: có, khi quản lý có email |
 
 ## 3. Ma trận yêu cầu
 
@@ -98,7 +107,40 @@ EX-0 ─┬─► EX-1 ─► EX-2 ─► EX-3 ─► EX-4 ───────
 ```
 
 - **Phase 3 (Hợp đồng) chỉ cần EX-1 xong trước**, vì `CON-07` tìm và tái dùng tài khoản khách. Các phần còn lại của Phase Extra có thể làm trước hoặc xen kẽ với Phase 3; chủ dự án quyết định thứ tự.
-- Khi bắt đầu một phần: planner viết `plans/EX-n/PLAN.md` trong thư mục này (kiến trúc, hợp đồng API, tên cột chính xác, checkpoint nhỏ, kịch bản test), sau đó mới tạo file task `feature_ex-n-*.md`. Hai loại file này chưa được tạo.
+
+### File task của từng phần
+
+| Phần | File task | Mã task | Số điểm dừng ⏸ | Planner | Reviewer |
+|---|---|---|---|---|---|
+| EX-1 | [feature_ex-1-backend-guest-accounts.md](feature_ex-1-backend-guest-accounts.md) | BE-EX-01..09 | 3 | có | có |
+| EX-2 | [feature_ex-2-frontend-guest-accounts.md](feature_ex-2-frontend-guest-accounts.md) | FE-EX-01..07 | 2 | không | không |
+| EX-3 | [feature_ex-3-languages.md](feature_ex-3-languages.md) | FE-EX-08..13, BE-EX-10..11 | 4 | có | không |
+| EX-4 | [feature_ex-4-entry-screen.md](feature_ex-4-entry-screen.md) | FE-EX-14..17 | 2 | không | không |
+| EX-5 | [feature_ex-5-room-filters.md](feature_ex-5-room-filters.md) | BE-EX-12..16, FE-EX-18..21 | 3 | có | có |
+| EX-6 | [feature_ex-6-backend-viewings.md](feature_ex-6-backend-viewings.md) | BE-EX-17..27 | 4 | có | có |
+| EX-7 | [feature_ex-7-frontend-viewings.md](feature_ex-7-frontend-viewings.md) | FE-EX-22..28 | 2 | có | không |
+| EX-8 | [feature_ex-8-viewing-notifications.md](feature_ex-8-viewing-notifications.md) | BE-EX-28..32, FE-EX-29..30 | 3 | có | không |
+| EX-9 | [feature_ex-9-qa.md](feature_ex-9-qa.md) | QA-EX-01..06 | làm cùng chủ dự án | – | – |
+
+Mỗi file tự đủ để một agent bắt đầu: danh sách phải đọc trước, phạm vi trong / ngoài, task theo thứ tự kèm "Done when", các điểm dừng ⏸ (dừng, báo cáo, chờ chủ dự án kiểm chứng và commit), câu hỏi cho chủ dự án, nhật ký lỗi. Khi phần ghi "Planner: có", agent chạy planner viết `plans/EX-n/PLAN.md` trong thư mục này trước khi code (tên cột chính xác, hợp đồng API, kịch bản test); các file `PLAN.md` chưa được tạo.
+
+### Tiến trình và bài học
+
+- [PROGRESS.md](PROGRESS.md): bảng tổng 10 phần và nhật ký theo điểm dừng ⏸. Agent cập nhật trước mỗi lần báo cáo; người hoặc agent mới đọc file này để biết đang ở đâu.
+- [../LESSONS.md](../LESSONS.md): lỗi đã từng mắc trong dự án (gom từ nhật ký Phase 1, 2), mỗi lỗi một dòng kèm quy tắc tránh. Agent đọc trước task đầu tiên và thêm dòng mới khi một lỗi làm tốn một vòng sửa.
+
+### Cách giao cho agent
+
+Câu lệnh mẫu, thay `EX-n` và tên file:
+
+> Làm phần EX-1 của Phase Extra theo `docs/phase-extra-home101/feature_ex-1-backend-guest-accounts.md`. Đọc hết mục "Before you start" trước, làm task theo thứ tự, dừng ở mỗi điểm ⏸ để báo cáo và chờ tôi commit.
+
+Quy tắc chạy:
+
+- **Thứ tự an toàn nhất, một agent một lúc:** EX-1 → EX-2 → EX-5 → EX-3 → EX-4 → EX-6 → EX-7 → EX-8 → EX-9.
+- **Chạy hai agent cùng lúc** chỉ khi hai phần không sửa chung file và không cùng có migration. Cặp được phép: EX-6 (backend) cùng lúc với EX-3 rồi EX-4 (frontend), sau khi EX-2 đã commit. Hai agent dùng chung một thư mục làm việc thì mỗi agent chỉ báo cáo file của phần mình, và bạn commit riêng từng phần.
+- **Không chạy cùng lúc:** hai phần có migration (EX-1, EX-5, EX-6, EX-8 – migration phải nối tiếp nhau); EX-3 với EX-5 hoặc EX-7 (cùng sửa các trang công khai); EX-5 với bất kỳ phần nào khác (nó sửa cả backend lẫn frontend).
+- Mỗi agent bắt đầu bằng `git status` sạch (quy trình trong `CLAUDE.md` gốc); nếu còn thay đổi của phần khác chưa commit thì agent dừng và hỏi.
 
 ## 6. Dữ liệu cũ và chuyển đổi
 

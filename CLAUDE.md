@@ -16,6 +16,8 @@ Since 11/11/2026 there are no draft folders. Edit the main files directly; git i
 
 `Artifacts/`, `Source/frontend/artifact_FE/` and `Source/backend/artifact_BE/` are the old staging areas. They are history (`approved/`, `REVIEW.md`); do not create new drafts there.
 
+Lessons: read `docs/LESSONS.md` (mistakes already made here, one line each) before the first task. At a checkpoint, add one line for any mistake that cost a retry. Phase progress is kept per checkpoint in the phase folder's `PROGRESS.md` (e.g. `docs/phase-extra-home101/PROGRESS.md`); update it before each checkpoint report.
+
 ## Source of truth
 
 - `docs/spec/` is the specification. Start at `docs/spec/README.md`, always read `00-overview.md`, then only the module files your task needs.
