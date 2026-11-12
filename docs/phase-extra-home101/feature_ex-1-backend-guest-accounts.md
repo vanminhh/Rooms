@@ -49,9 +49,9 @@ Out: the English texts of error messages (EX-3), viewings (EX-6), turning a gues
   Done when: the three sign-up acceptance lines of spec 10 pass; `npm run lint`, `test`, `build` pass. Stop and report BE-EX-33..35.
 - [x] **BE-EX-07** Forgot password for guests (AUTH-07): the Phase 1 email-link flow also serves GUEST accounts; an account whose email is not verified gets no link; the response is identical for every case. No SMS branch.
   Done when: tests for a verified GUEST (link sent), an unverified GUEST and an unknown phone (no link), and "same response body" across the three.
-- [ ] **BE-EX-08** Roles and scope: `GUEST` accepted by `@Roles`; one helper for "`/me/*` = GUEST or TENANT, own data" (API-07, SCOPE-03); a GUEST on a tenant-only `/me` route → `FORBIDDEN`; a GUEST on any staff route → `FORBIDDEN`; `GET /auth/me` returns the role and `locale`; `PATCH /auth/me` accepts `locale` (AUTH-15). Dev seed gets one verified GUEST (see Q-EX1-1).
+- [x] **BE-EX-08** Roles and scope: `GUEST` accepted by `@Roles`; one helper for "`/me/*` = GUEST or TENANT, own data" (API-07, SCOPE-03); a GUEST on a tenant-only `/me` route → `FORBIDDEN`; a GUEST on any staff route → `FORBIDDEN`; `GET /auth/me` returns the role and `locale`; `PATCH /auth/me` accepts `locale` (AUTH-15). Dev seed gets one verified GUEST (see Q-EX1-1).
   Done when: tests `SCOPE-03`, `SCOPE-05`, `AUTH-15`; `guards.spec.ts` covers the 4 roles.
-- [ ] **BE-EX-09** ⏸ `npm run lint`, `test`, `build`, `test:e2e` (extend `test/auth.e2e-spec.ts` with sign-up → email code → login → forgot password by link). Run the reviewer on the uncommitted changes and put its full report in the checkpoint report.
+- [x] **BE-EX-09** ⏸ `npm run lint`, `test`, `build`, `test:e2e` (extend `test/auth.e2e-spec.ts` with sign-up → email code → login → forgot password by link). Run the reviewer on the uncommitted changes and put its full report in the checkpoint report.
   Done when: all pass with real output quoted; list the `[ASSUMPTION]`s used (A-11).
 
 ## Questions for the owner

@@ -11,7 +11,7 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 | Phần | Trạng thái | Điểm dừng gần nhất đã xong | Commit | Việc tiếp theo | Ghi chú |
 |---|---|---|---|---|---|
 | EX-0 Chủ dự án chuẩn bị | đang làm | Q-09..Q-12 đã trả lời; quyết định cuối 12/11/2026 (email thay SMS) | – | tạo tài khoản Resend + xác thực tên miền (Q-14 đã chọn Resend), Q-08 video, Q-13, Q-EX4-1, Q-EX6-1, Q-EX6-2, Q-EX8-2 | không chặn EX-1 |
-| EX-1 Tài khoản khách (BE) | chờ commit | BE-EX-07 (quên mật khẩu cho khách) | BE-EX-35 đã commit | BE-EX-08 | migration `email_verification` đã áp vào DB dev; e2e đăng ký → BE-EX-09; plan: `plans/EX-1/PLAN.md` |
+| EX-1 Tài khoản khách (BE) | chờ duyệt | ⏸ BE-EX-09 (kiểm tra cuối) | BE-EX-07 đã commit; BE-EX-08 chờ commit | – | seed khách `0900000006` đã chạy trên DB dev qua e2e cũ; plan: `plans/EX-1/PLAN.md` |
 | EX-2 Tài khoản khách (FE) | chưa làm | – | – | FE-EX-01 | cần EX-1 |
 | EX-3 Việt + Anh | chưa làm | – | – | FE-EX-08 | cần EX-2 |
 | EX-4 Màn chào | chưa làm | – | – | FE-EX-14 | cần EX-3 |
@@ -24,6 +24,10 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 ## Nhật ký điểm dừng
 
 Mới nhất ở trên. Mỗi dòng: `ngày · phần · task vừa xong · kết quả kiểm tra (số thật) · việc còn treo`.
+
+- 13/11/2026 · EX-1 · BE-EX-09 (e2e mới `test/guest-signup.e2e-spec.ts`: đăng ký → mã email → login → quên mật khẩu bằng link, 2 đăng ký song song cùng email) · unit 1576/1576, lint 0 lỗi, build OK, e2e 50/50 (6 file) trên DB dev · reviewer chạy, báo cáo trong checkpoint · chờ chủ dự án duyệt
+
+- 13/11/2026 · EX-1 · BE-EX-08 (`MeRoles`/`TenantMeRoles`, scope `[]` cho mọi vai trò khác MANAGER, `PATCH /auth/me { locale }`, seed khách `0900000006`, DEP-08) · unit 1576/1576 (79 file), lint 0 lỗi, build OK; đổi scope về cũ thì test đỏ · seed khách CHƯA chạy trên DB dev (cần chủ dự án)
 
 - 13/11/2026 · EX-1 · BE-EX-07 (`forgotPassword`: GUEST chưa xác minh email không nhận link; tài khoản nhân sự tạo giữ link) · unit 1552/1552 (79 file), lint 0 lỗi, build OK; bỏ guard thì 2 test đỏ · e2e đăng ký + quên mật khẩu ở BE-EX-09
 

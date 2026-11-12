@@ -14,8 +14,9 @@ import { PrismaClient } from '@prisma/client';
 import argon2 from 'argon2';
 
 export interface DevAccount {
-  key: 'boss' | 'manager1' | 'manager2' | 'tenant' | 'lockedTenant';
-  role: 'BOSS' | 'MANAGER' | 'TENANT';
+  key: 'boss' | 'manager1' | 'manager2' | 'tenant' | 'lockedTenant' | 'guest';
+  role: 'BOSS' | 'MANAGER' | 'TENANT' | 'GUEST';
+  email?: string; // set only for the GUEST: created already verified (AUTH-11)
   phone: string;
   fullName: string;
   password: string;
@@ -29,6 +30,7 @@ export const DEV_ACCOUNTS: readonly DevAccount[] = [
   { key: 'manager2', role: 'MANAGER', phone: '0900000003', fullName: 'Lê Quang Huy', password: 'QuanLy2@2026', mustChangePassword: false, isActive: true },
   { key: 'tenant', role: 'TENANT', phone: '0900000004', fullName: 'Nguyễn Văn An', password: 'NguoiThue@2026', mustChangePassword: true, isActive: true },
   { key: 'lockedTenant', role: 'TENANT', phone: '0900000005', fullName: 'Trần Văn Bình', password: 'TamKhoa@2026', mustChangePassword: false, isActive: false },
+  { key: 'guest', role: 'GUEST', phone: '0900000006', fullName: 'Đỗ Thị Khách', email: 'guest@example.com', password: 'Khach@2026', mustChangePassword: false, isActive: true },
 ];
 
 const BOSS_CONTACT = {
@@ -122,6 +124,7 @@ export async function seed(prisma: PrismaClient): Promise<void> {
       create: {
         role: a.role, phone: a.phone, fullName: a.fullName, passwordHash,
         mustChangePassword: a.mustChangePassword, isActive: a.isActive, ...contact,
+        ...(a.role === 'GUEST' ? { email: a.email, emailVerifiedAt: new Date() } : {}),
       },
     });
     userId[a.key] = user.id;

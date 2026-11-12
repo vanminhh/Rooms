@@ -140,6 +140,40 @@ describe('AUTH-09: PATCH /auth/me', () => {
     expect(res.body).toEqual(PCR_BODY);
   });
 
+  // BE-EX-08, AUTH-15
+  for (const who of ['guest', 'tenant', 'manager1'] as const) {
+    it(`AUTH-15: ${who} sets locale "en" -> 200, GET /auth/me returns "en"`, async () => {
+      fake.account('tenant').mustChangePassword = false;
+      const token = await tokenFor(who);
+      const res = await patchMe(token, { locale: 'en' });
+      expect(res.status).toBe(200);
+      expect(res.body.data.locale).toBe('en');
+      expect(fake.account(who).locale).toBe('en');
+      const me = await bearer(http().get('/api/v1/auth/me'), token);
+      expect(me.body.data.locale).toBe('en');
+    });
+  }
+
+  it.each([['fr'], [null], ['EN'], [''], [1]])('AUTH-15: locale %j -> 400 fields.locale, DB unchanged', async (bad) => {
+    const before = snapshot('guest');
+    const res = await patchMe(await tokenFor('guest'), { locale: bad });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('VALIDATION_FAILED');
+    expect(res.body.error.fields.locale).toBe('Ngôn ngữ không hợp lệ');
+    expect(fake.account('guest')).toEqual(before);
+  });
+
+  it.each([['contactPhone', '0912345678'], ['zaloUrl', 'https://zalo.me/0912345678'], ['facebookUrl', 'https://facebook.com/an']])(
+    'SCOPE-05, AUTH-09: guest sending %s -> 403 FORBIDDEN, DB unchanged',
+    async (key, value) => {
+      const before = snapshot('guest');
+      const res = await patchMe(await tokenFor('guest'), { [key]: value, locale: 'en' });
+      expect(res.status).toBe(403);
+      expect(res.body).toEqual(FORBIDDEN_BODY);
+      expect(fake.account('guest')).toEqual(before);
+    },
+  );
+
   const STAFF_ONLY = [
     ['contactPhone', '0912345678'],
     ['zaloUrl', 'https://zalo.me/0912345678'],

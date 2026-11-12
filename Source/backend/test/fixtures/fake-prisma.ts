@@ -1,6 +1,6 @@
 // In-memory stand-in for PrismaService, used by the draft specs (outside edge: the DB).
 // It supports only the Prisma surface listed in PLAN.md 2.4, plus contract.findMany for scope tests.
-// Seed-shaped data: the 5 DEV_ACCOUNTS (real argon2id hashes), buildings CG01/DD01/HM01/TL01, HD000001.
+// Seed-shaped data: the 6 DEV_ACCOUNTS (real argon2id hashes), buildings CG01/DD01/HM01/TL01, HD000001.
 import { Prisma } from '@prisma/client';
 import argon2 from 'argon2';
 import { DEV_ACCOUNTS } from '../../prisma/seed.js';
@@ -129,7 +129,7 @@ const devHashes = () =>
   (hashes ??= Promise.all(DEV_ACCOUNTS.map((a) => argon2.hash(a.password, { type: argon2.argon2id }))));
 
 export const IDS = {
-  users: { boss: 1, manager1: 2, manager2: 3, tenant: 4, lockedTenant: 5 },
+  users: { boss: 1, manager1: 2, manager2: 3, tenant: 4, lockedTenant: 5, guest: 6 },
   buildings: { CG01: 101, DD01: 102, HM01: 103, TL01: 104 },
   contracts: { HD000001: 201 },
 } as const;
@@ -153,12 +153,12 @@ export async function createFakePrisma() {
     user.load(
       DEV_ACCOUNTS.map((a, i) => ({
         id: i + 1, role: a.role, phone: a.phone, fullName: a.fullName, passwordHash: passwordHashes[i],
-        email: null,
-        contactPhone: a.role === 'TENANT' ? null : a.phone,
+        email: a.email ?? null,
+        contactPhone: a.role === 'TENANT' || a.role === 'GUEST' ? null : a.phone,
         zaloUrl: a.role === 'BOSS' ? 'https://zalo.me/0900000001' : null,
         facebookUrl: a.role === 'BOSS' ? 'https://facebook.com/tro.thong.minh' : null,
         mustChangePassword: a.mustChangePassword, isActive: a.isActive, lastLoginAt: null,
-        emailVerifiedAt: null, locale: 'vi',
+        emailVerifiedAt: a.role === 'GUEST' ? new Date('2026-11-01T00:00:00Z') : null, locale: 'vi',
       })),
     );
     building.load([

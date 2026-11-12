@@ -243,7 +243,7 @@ describe('AUTH-11: POST /auth/register', () => {
     expect(res.body.error.fields.password).toBe('Mật khẩu tối thiểu 8 ký tự');
     expect(res.body.error.fields.phone).toBe('Số điện thoại không hợp lệ');
     expect(res.body.error.fields.email).toBe('Email không hợp lệ');
-    expect(fake.db.user).toHaveLength(5);
+    expect(fake.db.user).toHaveLength(6);
   });
 
   it('AUTH-11: the email is required', async () => {
@@ -291,7 +291,7 @@ describe('AUTH-12: login gate and POST /auth/verify-email', () => {
     const before = { ...userBy(NEW_PHONE) };
     await verify(NEW_PHONE, codeOf());
     expect(userBy(NEW_PHONE)).toEqual({ ...before, emailVerifiedAt: new Date(T0), lastLoginAt: new Date(T0) });
-    expect(fake.db.user).toHaveLength(6);
+    expect(fake.db.user).toHaveLength(7);
     expect(fake.db.contract).toHaveLength(1);
   });
 

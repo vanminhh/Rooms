@@ -256,7 +256,7 @@ export class AuthService {
 
   // AUTH-09 (Q5). undefined = leave as is, null = clear. Staff-only contact fields are refused for a tenant.
   async updateMe(user: AuthUser, dto: UpdateMeDto): Promise<Me> {
-    const { email, contactPhone, zaloUrl, facebookUrl } = dto;
+    const { email, contactPhone, zaloUrl, facebookUrl, locale } = dto;
     if (
       (user.role === 'TENANT' || user.role === 'GUEST') &&
       (contactPhone !== undefined || zaloUrl !== undefined || facebookUrl !== undefined)
@@ -268,6 +268,7 @@ export class AuthService {
     if (contactPhone !== undefined) data.contactPhone = contactPhone;
     if (zaloUrl !== undefined) data.zaloUrl = zaloUrl;
     if (facebookUrl !== undefined) data.facebookUrl = facebookUrl;
+    if (locale !== undefined) data.locale = locale;
     try {
       await this.prisma.user.update({ where: { id: user.id }, data });
     } catch (e) {

@@ -15,6 +15,9 @@ export const ALLOW_PCR_KEY = 'auth:allowPasswordChangeRequired';
 
 export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
 export const Roles = (...roles: Role[]) => SetMetadata(ROLES_KEY, roles);
+// SCOPE-03, API-07: /me/* routes. MeRoles = own data for a guest or a tenant; TenantMeRoles = tenant only (contracts, invoices, requests).
+export const MeRoles = () => Roles('GUEST', 'TENANT');
+export const TenantMeRoles = () => Roles('TENANT');
 export const AllowPasswordChangeRequired = () => SetMetadata(ALLOW_PCR_KEY, true);
 
 export const CurrentUser = createParamDecorator(

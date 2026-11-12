@@ -18,8 +18,8 @@ import { AuthModule } from '../../modules/auth/auth.module.js';
 import { TokenService } from '../../modules/auth/token.service.js';
 import { createFakePrisma, type FakePrisma, IDS } from '../../../test/fixtures/fake-prisma.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { tenantOwns } from '../scope/scope.js';
-import { AllowPasswordChangeRequired, type AuthUser, CurrentUser, Public, Roles } from './auth.decorators.js';
+import { allowedBuildingIds, tenantOwns } from '../scope/scope.js';
+import { AllowPasswordChangeRequired, type AuthUser, CurrentUser, MeRoles, Public, Roles, TenantMeRoles } from './auth.decorators.js';
 import { JwtAuthGuard } from './jwt-auth.guard.js';
 import { MustChangePasswordGuard } from './must-change-password.guard.js';
 import { RolesGuard } from './roles.guard.js';
@@ -37,8 +37,10 @@ class ProbeController {
   @Roles('BOSS') @Get('boss') boss() { return { ok: true }; }
   @Roles('BOSS', 'MANAGER') @Get('staff') staff() { return { ok: true }; }
   @Roles('TENANT') @Get('tenant') tenant() { return { ok: true }; }
+  @MeRoles() @Get('me-any') meAny() { return { ok: true }; }
+  @TenantMeRoles() @Get('me-tenant') meTenant() { return { ok: true }; }
   @Roles('TENANT') @AllowPasswordChangeRequired() @Get('tenant-pcr') tenantPcr() { return { ok: true }; }
-  @Roles('BOSS', 'MANAGER', 'TENANT') @AllowPasswordChangeRequired() @Get('whoami')
+  @Roles('BOSS', 'MANAGER', 'TENANT', 'GUEST') @AllowPasswordChangeRequired() @Get('whoami')
   whoami(@CurrentUser() user: AuthUser) { return user; }
 
   @Roles('TENANT') @Get('contracts/:id')
@@ -137,6 +139,16 @@ describe('SCOPE-01: deny by default', () => {
     ['tenant', '/t/tenant', 200],
     ['boss', '/t/tenant', 403],
     ['manager1', '/t/tenant', 403],
+    ['guest', '/t/boss', 403],
+    ['guest', '/t/staff', 403],
+    ['guest', '/t/tenant', 403],
+    ['guest', '/t/bare', 403],
+    ['guest', '/t/me-any', 200],
+    ['guest', '/t/me-tenant', 403],
+    ['tenant', '/t/me-any', 200],
+    ['tenant', '/t/me-tenant', 200],
+    ['boss', '/t/me-any', 403],
+    ['manager1', '/t/me-any', 403],
   ] as const)('SCOPE-01: %s on %s -> %i', async (who, path, status) => {
     fake.account('tenant').mustChangePassword = false; // isolate the role check from AUTH-05
     const res = await get(path, await tokenFor(who));
@@ -319,6 +331,17 @@ describe('SCOPE-02: buildingIds attached by the guard', () => {
   it('SCOPE-02: Boss -> null (every building), tenant -> []', async () => {
     expect((await ids('boss')).buildingIds).toBeNull();
     expect((await ids('tenant')).buildingIds).toEqual([]);
+  });
+
+  it('SCOPE-02: TENANT and GUEST get [] without any buildings query', async () => {
+    const db = { building: { findMany: vi.fn() } } as never;
+    expect(await allowedBuildingIds(db, { id: 1, role: 'GUEST' })).toEqual([]);
+    expect(await allowedBuildingIds(db, { id: 2, role: 'TENANT' })).toEqual([]);
+    expect((db as { building: { findMany: ReturnType<typeof vi.fn> } }).building.findMany).not.toHaveBeenCalled();
+  });
+
+  it('SCOPE-02: guest -> [] (every role other than MANAGER and BOSS sees no building)', async () => {
+    expect((await ids('guest')).buildingIds).toEqual([]);
   });
 
   it('SCOPE-02: deactivating a building removes it from the manager on the next request', async () => {

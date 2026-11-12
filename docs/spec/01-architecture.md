@@ -128,7 +128,7 @@ Scale: one chain of mini apartment buildings, hundreds of rooms. One server is e
 
 ### Go-live checklist (owner 08/11/2026)
 
-The dev seed (`prisma/seed.ts`) creates 5 accounts with fixed, public passwords (`0900000001` Boss, `0900000002`–`0900000003` managers, `0900000004`–`0900000005` tenants) and sample data (3 buildings, rooms, contract HD000001). The seed has no production guard by decision: it is dev only, and the steps below make the production database safe instead.
+The dev seed (`prisma/seed.ts`) creates 6 accounts with fixed, public passwords (`0900000001` Boss, `0900000002`–`0900000003` managers, `0900000004`–`0900000005` tenants, `0900000006` a guest with the verified email `guest@example.com`) and sample data (3 buildings, rooms, contract HD000001). The seed has no production guard by decision: it is dev only, and the steps below make the production database safe instead.
 
 - **DEP-07** Never run `prisma db seed` on the production database: it resets the password of the 5 accounts above to the public ones, even after they were changed.
 - **DEP-08** Before the domain points at the production site, in this order:

@@ -1,10 +1,12 @@
 import {
   IsBoolean,
   IsEmail,
+  IsIn,
   IsNotEmpty,
   IsOptional,
   IsString,
   IsUrl,
+  ValidateIf,
   MaxLength,
   MinLength,
   Matches,
@@ -16,6 +18,7 @@ const PHONE_RE = /^0[0-9]{9}$/;
 const PHONE_MSG = 'Số điện thoại không hợp lệ';
 const EMAIL_MSG = 'Email không hợp lệ';
 const URL_MSG = 'Đường dẫn không hợp lệ';
+const LOCALE_MSG = 'Ngôn ngữ không hợp lệ';
 // Shared with AuthService (wrong / used / expired token) so both paths show the same text.
 export const RESET_LINK_MSG = 'Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn';
 const URL_OPTIONS = { protocols: ['https'], require_protocol: true };
@@ -116,4 +119,9 @@ export class UpdateMeDto {
   @IsOptional()
   @IsUrl(URL_OPTIONS, { message: URL_MSG })
   facebookUrl?: string | null;
+
+  // AUTH-15. Not nullable: ValidateIf skips only undefined, so null and 'EN' are rejected.
+  @ValidateIf((_o, v) => v !== undefined)
+  @IsIn(['vi', 'en'], { message: LOCALE_MSG })
+  locale?: 'vi' | 'en';
 }

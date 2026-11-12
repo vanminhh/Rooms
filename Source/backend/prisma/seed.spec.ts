@@ -63,10 +63,11 @@ const MODELS: Record<string, Model> = {
       zaloUrl: null,
       facebookUrl: null,
       lastLoginAt: null,
+      emailVerifiedAt: null,
     },
     unique: [['phone'], ['email']],
     check: (r, _db, others) => {
-      oneOf(r.role, ['BOSS', 'MANAGER', 'TENANT'], 'role');
+      oneOf(r.role, ['BOSS', 'MANAGER', 'TENANT', 'GUEST'], 'role');
       ensure(PHONE_VN.test(r.phone), `users_phone_vn: ${r.phone}`);
       ensure(
         r.contactPhone === null || PHONE_VN.test(r.contactPhone),
@@ -480,7 +481,7 @@ class FakeDb {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const EXPECTED_COUNTS = {
-  user: 5,
+  user: 6,
   setting: 2,
   building: 3,
   room: 7,
@@ -633,7 +634,7 @@ describe('BE-LOGIN-06: seed (in-memory Prisma)', { timeout: 120_000 }, () => {
       expect(tenant.mustChangePassword).toBe(true);
       expect(await argon2.verify(tenant.passwordHash, 'NguoiThue@2026')).toBe(true);
       expect(locked.isActive).toBe(false);
-      expect(local.t.user).toHaveLength(5);
+      expect(local.t.user).toHaveLength(6);
     });
 
     it('D5: every other seeded row keeps the value changed by hand and no row is added', async () => {
@@ -655,7 +656,7 @@ describe('BE-LOGIN-06: seed (in-memory Prisma)', { timeout: 120_000 }, () => {
 
     it('D5: every user.upsert update contains exactly passwordHash, mustChangePassword, isActive', () => {
       const upserts = db.calls.filter((c) => c.model === 'user' && c.method === 'upsert');
-      expect(upserts).toHaveLength(10); // 5 accounts x 2 runs
+      expect(upserts).toHaveLength(12); // 6 accounts x 2 runs
       for (const c of upserts)
         expect(sorted(Object.keys(c.args.update))).toEqual([
           'isActive',
@@ -673,11 +674,11 @@ describe('BE-LOGIN-06: seed (in-memory Prisma)', { timeout: 120_000 }, () => {
   });
 
   describe('accounts', () => {
-    it('G-04 + AUTH-03: 1 BOSS, 2 MANAGER, 2 TENANT; phones valid and unique; argon2id hashes verify', async () => {
+    it('G-04 + AUTH-03: 1 BOSS, 2 MANAGER, 2 TENANT, 1 GUEST; phones valid and unique; argon2id hashes verify', async () => {
       const roles = sorted(db.t.user.map((u) => u.role));
-      expect(roles).toEqual(['BOSS', 'MANAGER', 'MANAGER', 'TENANT', 'TENANT']);
+      expect(roles).toEqual(['BOSS', 'GUEST', 'MANAGER', 'MANAGER', 'TENANT', 'TENANT']);
       const phones = db.t.user.map((u) => u.phone);
-      expect(new Set(phones).size).toBe(5);
+      expect(new Set(phones).size).toBe(6);
       for (const p of phones) expect(p).toMatch(/^0[0-9]{9}$/);
       expect(sorted(phones)).toEqual([
         '0900000001',
@@ -685,8 +686,9 @@ describe('BE-LOGIN-06: seed (in-memory Prisma)', { timeout: 120_000 }, () => {
         '0900000003',
         '0900000004',
         '0900000005',
+        '0900000006',
       ]);
-      expect(DEV_ACCOUNTS).toHaveLength(5);
+      expect(DEV_ACCOUNTS).toHaveLength(6);
       for (const a of DEV_ACCOUNTS) {
         const row = user(a.phone);
         expect(row.role).toBe(a.role);
@@ -705,6 +707,7 @@ describe('BE-LOGIN-06: seed (in-memory Prisma)', { timeout: 120_000 }, () => {
         'QuanLy2@2026',
         'NguoiThue@2026',
         'TamKhoa@2026',
+        'Khach@2026',
       ])
         expect(dump).not.toContain(pw);
     });
@@ -719,6 +722,13 @@ describe('BE-LOGIN-06: seed (in-memory Prisma)', { timeout: 120_000 }, () => {
 
     it('AUTH-02: tenant 0900000005 is locked (isActive false)', () => {
       expect(user('0900000005')).toMatchObject({ role: 'TENANT', isActive: false });
+    });
+
+    it('DEP-08, AUTH-11: guest 0900000006 is active, email guest@example.com already verified, locale vi, no staff contact', () => {
+      const g = user('0900000006');
+      expect(g).toMatchObject({ role: 'GUEST', email: 'guest@example.com', isActive: true, mustChangePassword: false });
+      expect(g.emailVerifiedAt).toBeInstanceOf(Date);
+      expect(g.contactPhone ?? null).toBeNull();
     });
 
     it('AUTH-01: boss and both managers are active and do not need a password change', () => {
@@ -1163,7 +1173,7 @@ describe('BE-LOGIN-06: run-guard (import.meta.main)', { timeout: 30_000 }, () =>
     try {
       const mod = await import('./seed.js');
       // the module really loaded fresh (exports present), it just did not run
-      expect(mod.DEV_ACCOUNTS).toHaveLength(5);
+      expect(mod.DEV_ACCOUNTS).toHaveLength(6);
       expect(typeof mod.seed).toBe('function');
       expect(constructed).toBe(0);
       expect(disconnected).toBe(0);

@@ -8,7 +8,7 @@ export async function allowedBuildingIds(
   user: { id: number; role: Role },
 ): Promise<number[] | null> {
   if (user.role === 'BOSS') return null;
-  if (user.role === 'TENANT') return [];
+  if (user.role !== 'MANAGER') return []; // TENANT and GUEST see no building through scope
   const rows = await db.building.findMany({
     where: { managerId: user.id, isActive: true },
     select: { id: true },
