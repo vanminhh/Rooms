@@ -265,6 +265,56 @@ describe('AUTH-07: POST /auth/forgot-password', () => {
       expect(fake.db.passwordResetToken).toHaveLength(0);
     });
 
+    // BE-EX-07: a guest is the tenant row turned into a self-registered GUEST (same phone, email, password).
+    const makeGuest = (verified: boolean) => {
+      const row = fake.account('tenant');
+      row.role = 'GUEST';
+      row.email = 'guest@example.com';
+      row.emailVerifiedAt = verified ? new Date(T0 - MIN) : null;
+    };
+
+    it('AUTH-07, BE-EX-07: a verified GUEST gets the reset link, and the link sets a new password', async () => {
+      makeGuest(true);
+      const res = await forgot(PHONE.tenant);
+      expect(res.status).toBe(200);
+      await sent(1);
+      expect(mailer.send.mock.calls[0][0].to).toBe('guest@example.com');
+      const token = sentToken(0);
+      expect((await reset({ token, newPassword: NEW_PASSWORD })).status).toBe(200);
+      expect((await login(PHONE.tenant, NEW_PASSWORD)).status).toBe(200);
+    });
+
+    it('AUTH-07, BE-EX-07: an unverified GUEST gets no link and no token row', async () => {
+      makeGuest(false);
+      const res = await forgot(PHONE.tenant);
+      expect(res.status).toBe(200);
+      await drain();
+      expect(mailer.send).not.toHaveBeenCalled();
+      expect(fake.db.passwordResetToken).toHaveLength(0);
+    });
+
+    it('AUTH-07, BE-EX-07: verified GUEST, unverified GUEST and unknown phone answer with the same 200 body', async () => {
+      makeGuest(true);
+      const verified = await forgot(PHONE.tenant);
+      await sent(1);
+      makeGuest(false);
+      const unverified = await forgot(PHONE.tenant);
+      const unknown = await forgot(UNKNOWN_PHONE);
+      await drain();
+      expect(mailer.send).toHaveBeenCalledTimes(1);
+      for (const res of [unverified, unknown]) {
+        expect(res.status).toBe(verified.status);
+        expect(res.text).toBe(verified.text);
+      }
+    });
+
+    it('AUTH-07, BE-EX-07: a staff-created account (never verified, not a GUEST) keeps its link (ASSUMPTION)', async () => {
+      fake.account('tenant').email = 'tenant@example.com';
+      fake.account('tenant').emailVerifiedAt = null;
+      await forgot(PHONE.tenant);
+      await sent(1);
+    });
+
     it('AUTH-07: a malformed phone -> 400 fields.phone "Số điện thoại không hợp lệ" (only the format is revealed)', async () => {
       for (const bad of ['123', '', '090000000', '09000000011', '1900000001', ' 0900000001', '0900000001 ', '09O0000001', 900000001, null, undefined]) {
         const res = await forgot(bad);

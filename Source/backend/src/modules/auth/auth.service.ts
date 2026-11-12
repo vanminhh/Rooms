@@ -8,7 +8,7 @@ import {
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Prisma, type Role, type User } from '@prisma/client';
+import { Prisma, Role, type User } from '@prisma/client';
 import { hashPassword, verifyPassword } from '../../common/crypto/password.js';
 import { randomToken, sha256Hex } from '../../common/crypto/token.js';
 import { ErrorCode } from '../../common/errors/error-code.js';
@@ -330,6 +330,8 @@ export class AuthService {
     this.forgotLimiter.record(phone); // counts unknown phones too
     const user = await this.prisma.user.findUnique({ where: { phone } });
     if (!user || !user.isActive || !user.email) return;
+    // AUTH-07: a self-registered guest whose email is not verified gets no link; staff-created accounts never verify, so they keep theirs.
+    if (user.role === Role.GUEST && !user.emailVerifiedAt) return;
 
     // Not awaited: the reply time must not depend on the token write or the mail send (AUTH-07).
     void this.sendResetLink({ id: user.id, email: user.email }).catch((e) =>
