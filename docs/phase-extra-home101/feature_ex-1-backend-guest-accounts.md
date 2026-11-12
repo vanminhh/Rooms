@@ -41,7 +41,7 @@ Out: the English texts of error messages (EX-3), viewings (EX-6), turning a gues
   Done when: acceptance of spec 10 "A visitor signs up, cannot log in before the SMS code, and is logged in right after it"; accounts created by staff still log in with `phone_verified_at` null.
 - [x] **BE-EX-06** ⏸ `POST /auth/phone/send-code`, `POST /auth/phone/verify` for a logged-in account created by staff (AUTH-12, AUTH-14). Verifying links nothing and merges nothing.
   Done when: tests; `/auth/me` shows `phoneVerified`. Stop and report BE-EX-02..06.
-- [ ] **BE-EX-33** ⏸ Schema for email verification (ask the owner before creating and before applying). The migration `guest_accounts` is already applied to the dev database, so this is a **new** migration: add `users.email_verified_at`; the code table gets an email target. Whether the now unused `users.phone_verified_at` and the phone columns of the code table are dropped or left is decided in the plan and asked of the owner (dropping a column cannot be undone by git). `constraints.sql` and the DB-check scenarios follow.
+- [~] **BE-EX-33** ⏸ Schema for email verification (ask the owner before creating and before applying). The migration `guest_accounts` is already applied to the dev database, so this is a **new** migration: add `users.email_verified_at`; the code table gets an email target. Whether the now unused `users.phone_verified_at` and the phone columns of the code table are dropped or left is decided in the plan and asked of the owner (dropping a column cannot be undone by git). `constraints.sql` and the DB-check scenarios follow.
   Done when: `prisma migrate diff` shows only the intended changes; the migration runs on a database that already has `guest_accounts`; DB check passes all scenarios (report the count); `seed.spec.ts` passes.
 - [ ] **BE-EX-34** Code channel from SMS to email (AUTH-13, A-11): the code service sends through `MailerService` with the limits per email address (5 a day, 10 per IP per hour, resend after 60 s); error codes become `EMAIL_NOT_VERIFIED`, `MAIL_UNAVAILABLE`, `EMAIL_TAKEN`, and `PHONE_NOT_VERIFIED`, `SMS_UNAVAILABLE` are removed (`OTP_INVALID` stays). The `sms` module is no longer used: ask the owner, then delete it and its `SMS_*` env entries.
   Done when: the `AUTH-13: …` tests pass with email as the target; no `sms` import is left; the app boots without any `SMS_*`.
@@ -83,6 +83,10 @@ Sửa đổi 12/11/2026 (chủ dự án, sau khi BE-EX-01..06 đã làm): bỏ m
 - Q-EX1-6: bỏ, không còn `/auth/phone/*`.
 - Q-EX1-7: không còn mã SMS khi quên mật khẩu; tài khoản bị khóa không nhận link như cũ.
 - Q-EX1-4, Q-EX1-8, Q-EX1-9: giữ nguyên.
+- Q-EX1-10 (planner): số thuộc một khách chưa xác minh, email thuộc một khách chưa xác minh khác → `EMAIL_TAKEN`, không gộp.
+- Q-EX1-11 (planner): không thêm hạn mức theo số điện thoại hay IP mỗi ngày; giữ 5 mã/email/ngày và 10 mã/IP/giờ.
+- Q-EX1-12 (planner): quy tắc "email chưa xác minh không nhận link quên mật khẩu" chỉ áp cho khách tự đăng ký; quản lý và người thuê do nhân sự tạo vẫn nhận link như Phase 1 (chủ dự án trả lời bằng lời, [ASSUMPTION] cách hiểu này).
+- BE-EX-33: được xóa cột `users.phone_verified_at` và đổi `phone_otps` thành bảng mã email; được xóa module `sms`; được tạo file migration (áp vào DB dev thì hỏi riêng).
 
 ## Issues log
 

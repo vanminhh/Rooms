@@ -11,7 +11,7 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 | Phần | Trạng thái | Điểm dừng gần nhất đã xong | Commit | Việc tiếp theo | Ghi chú |
 |---|---|---|---|---|---|
 | EX-0 Chủ dự án chuẩn bị | đang làm | Q-09..Q-12 đã trả lời; quyết định cuối 12/11/2026 (email thay SMS) | – | tạo tài khoản Resend + xác thực tên miền (Q-14 đã chọn Resend), Q-08 video, Q-13, Q-EX4-1, Q-EX6-1, Q-EX6-2, Q-EX8-2 | không chặn EX-1 |
-| EX-1 Tài khoản khách (BE) | chờ commit | ⏸ BE-EX-06 (sms, mã SMS, đăng ký, xác minh) | BE-EX-01: 1040f7d | BE-EX-33 (chuyển mã SMS sang mã email), rồi BE-EX-34, 35, 07 | spec đổi sau ⏸ BE-EX-06: đọc lại `10-auth.md` và cập nhật plan trước khi làm tiếp; migration đã chạy vào DB dev; plan: `plans/EX-1/PLAN.md` |
+| EX-1 Tài khoản khách (BE) | chờ commit | ⏸ BE-EX-33 (file migration `email_verification`, chưa áp vào DB dev) | BE-EX-02..06 (SMS): 6e81249 | BE-EX-34, BE-EX-35 | DB dev còn schema SMS; plan: `plans/EX-1/PLAN.md` |
 | EX-2 Tài khoản khách (FE) | chưa làm | – | – | FE-EX-01 | cần EX-1 |
 | EX-3 Việt + Anh | chưa làm | – | – | FE-EX-08 | cần EX-2 |
 | EX-4 Màn chào | chưa làm | – | – | FE-EX-14 | cần EX-3 |
@@ -24,6 +24,8 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 ## Nhật ký điểm dừng
 
 Mới nhất ở trên. Mỗi dòng: `ngày · phần · task vừa xong · kết quả kiểm tra (số thật) · việc còn treo`.
+
+- 12/11/2026 · EX-1 · BE-EX-33 (spec đổi sang mã email; schema.prisma, migration `20261112010000_email_verification`, constraints.sql, check-constraints.mjs) · DB check 63/63, seed.spec 35/35, migration áp được lên DB đã có `guest_accounts` (PGlite) và cho ra cấu trúc giống hệt DB tạo mới · chưa áp vào DB dev; code còn dùng `phoneOtp` nên chưa biên dịch được với Prisma client mới
 
 - 12/11/2026 · kế hoạch · chủ dự án đổi quyết định cuối: tài khoản xác minh bằng email (bỏ SMS), đặt theo từng giờ và giữ chỗ theo quản lý, quản lý xác nhận bằng gọi điện hoặc email, bỏ đề xuất giờ / hộp thư / nhắc lịch · spec và file task EX-1, 2, 6, 7, 8 đã sửa; chỉ sửa tài liệu, không sửa code · EX-1 thêm BE-EX-33..35; mã BE-EX-25..27, 31..32 và FE-EX-28..30 không còn dùng
 - 12/11/2026 · EX-1 · BE-EX-02..06 (module sms, OtpService, register, verify-phone, resend-code, phone/send-code, phone/verify, chặn đăng nhập GUEST chưa xác minh) · unit 1546/1546 (79 file), lint 0 lỗi, build OK · migration `guest_accounts` đã chạy vào DB dev (chủ dự án đồng ý 12/11/2026), e2e 43/43 (5 file)

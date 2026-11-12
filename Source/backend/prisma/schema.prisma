@@ -22,12 +22,6 @@ enum Role {
   GUEST
 }
 
-enum OtpPurpose {
-  REGISTER
-  VERIFY_PHONE
-  RESET_PASSWORD
-}
-
 enum WaterMode {
   PER_M3
   PER_PERSON
@@ -182,7 +176,7 @@ model User {
   zaloUrl            String?   @map("zalo_url")
   facebookUrl        String?   @map("facebook_url")
   lastLoginAt        DateTime? @map("last_login_at") @db.Timestamptz
-  phoneVerifiedAt    DateTime? @map("phone_verified_at") @db.Timestamptz // AUTH-12
+  emailVerifiedAt    DateTime? @map("email_verified_at") @db.Timestamptz // AUTH-12
   locale             String    @default("vi") @db.VarChar(2) // 'vi' | 'en', CHECK users_locale (AUTH-15)
   createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz
@@ -243,20 +237,18 @@ model PasswordResetToken {
   @@map("password_reset_tokens")
 }
 
-// SMS code (AUTH-13). No FK to users: codes for unknown phones are counted too.
-model PhoneOtp {
-  id        Int        @id @default(autoincrement())
-  phone     String     @db.VarChar(10)
-  purpose   OtpPurpose
-  codeHash  String     @map("code_hash")
-  tries     Int        @default(0)
-  expiresAt DateTime   @map("expires_at") @db.Timestamptz
-  usedAt    DateTime?  @map("used_at") @db.Timestamptz // used, or replaced by a newer code
-  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz
+// Email code (AUTH-13). No FK to users: codes for unknown addresses are counted too.
+model EmailOtp {
+  id        Int       @id @default(autoincrement())
+  email     String    @db.VarChar(255) // always lowercase, CHECK email_otps_email_format
+  codeHash  String    @map("code_hash")
+  tries     Int       @default(0)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz
+  usedAt    DateTime? @map("used_at") @db.Timestamptz // used, or replaced by a newer code
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
 
-  @@index([phone, purpose, createdAt])
-  @@index([phone, createdAt])
-  @@map("phone_otps")
+  @@index([email, createdAt])
+  @@map("email_otps")
 }
 
 // ───────────── 2. Tòa và phòng ─────────────
