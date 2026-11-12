@@ -13,7 +13,7 @@ export function TenantLayout() {
     <RoomsHeader
       homeHref="/thue"
       logoSrc="/images/rooms-logo.webp"
-      links={[{ label: 'Tổng quan', href: '/thue' }, { label: 'Tài khoản', href: '/thue/tai-khoan' }]}
+      links={[{ label: 'Tổng quan', href: '/thue' }, { label: 'Tài khoản', href: '/thue/tai-khoan' }, { label: 'Lịch hẹn xem phòng', href: '/toi' }]}
       action={<RoomsButton variant="outline" type="button" disabled={signingOut} onClick={() => void signOut()}>Đăng xuất</RoomsButton>}
     />
     <main className="layout-main"><Outlet /></main>

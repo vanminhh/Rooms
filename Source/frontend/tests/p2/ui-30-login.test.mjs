@@ -27,7 +27,7 @@ test('UI-30 · AUTH-10/UI-02: approved image copy and account actions are presen
     'Phòng thuê tại Hà Nội',
     'Một nơi ở <em>vừa vặn</em> giữa phố.',
     'Chào mừng bạn trở lại ROOMS.',
-    'Chưa có tài khoản? Tài khoản được cấp khi ký hợp đồng',
+    'Chưa có tài khoản? <Link to={signUpHref}>Đăng ký</Link>',
     'Liên hệ quản lý',
     'Xem phòng trống',
   ]) assert.ok(page.includes(needle), `missing ${needle}`)

@@ -1,6 +1,7 @@
 import type { RouteObject } from 'react-router'
 import { PublicLayout } from '../layouts/PublicLayout'
 import { TenantLayout } from '../layouts/TenantLayout'
+import { GuestLayout } from '../layouts/GuestLayout'
 import { StaffLayout } from '../layouts/StaffLayout'
 import { PlaceholderPage } from '../pages/public/PlaceholderPage'
 import { PublicRoomsPage } from '../pages/public/PublicRoomsPage'
@@ -12,6 +13,8 @@ import { ChangePasswordPage } from '../pages/public/ChangePasswordPage'
 import { ForgotPasswordPage } from '../pages/public/ForgotPasswordPage'
 import { RegisterPage } from '../pages/public/RegisterPage'
 import { VerifyEmailPage } from '../pages/public/VerifyEmailPage'
+import { GuestHomePage } from '../pages/guest/GuestHomePage'
+import { GuestAccountPage } from '../pages/guest/GuestAccountPage'
 import { TenantHomePage } from '../pages/tenant/TenantHomePage'
 import { TenantAccountPage } from '../pages/tenant/TenantAccountPage'
 import { StaffHomePage } from '../pages/staff/StaffHomePage'
@@ -76,12 +79,14 @@ export const routes: RouteObject[] = [
     }],
   },
   {
-    // FE-EX-06 replaces these two placeholders with GuestLayout, the viewing list (EX-7) and the account page.
     path: '/toi',
     element: <RequireAuth allow={['GUEST', 'TENANT']} />,
-    children: [
-      { index: true, element: <PlaceholderPage /> },
-      { path: 'tai-khoan', element: <PlaceholderPage /> },
-    ],
+    children: [{
+      element: <GuestLayout />,
+      children: [
+        { index: true, element: <GuestHomePage /> },
+        { path: 'tai-khoan', element: <GuestAccountPage /> },
+      ],
+    }],
   },
 ]

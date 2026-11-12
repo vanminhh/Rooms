@@ -4,11 +4,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router'
 import { Checkbox, FormError, IllustrationLabel, PasswordField, RoomsButton, Spinner, TextField } from '../../components'
 import { useAuth } from '../../app/auth-context'
-import { postLoginPath } from '../../app/guards'
+import { postLoginPath, safeNext } from '../../app/guards'
 import { ContactInfo } from '../../features/auth/ContactInfo'
+import { writePending } from '../../features/auth/pendingVerification'
 import { loginSchema } from '../../features/auth/schemas'
 import type { LoginValues } from '../../features/auth/schemas'
 import { usePublicContact } from '../../features/auth/usePublicContact'
+import { ApiError } from '../../shared/api'
 import { applyApiError } from '../../shared/form-errors'
 import '../../features/auth/auth.css'
 
@@ -23,6 +25,8 @@ export function LoginPage() {
     resolver: zodResolver(loginSchema),
     defaultValues: { phone: '', password: '', remember: false },
   })
+  const next = safeNext(params.get('next'))
+  const signUpHref = next ? `/dang-ky?next=${encodeURIComponent(next)}` : '/dang-ky'
   const passwordReset = (location.state as { notice?: string } | null)?.notice === 'password-reset'
   const managementHref = contact.data?.phone
     ? `tel:${contact.data.phone.replace(/[^\d+]/g, '')}`
@@ -38,6 +42,13 @@ export function LoginPage() {
       const user = await login(values)
       navigate(postLoginPath(user.role, params.get('next')), { replace: true })
     } catch (error) {
+      if (error instanceof ApiError && error.code === 'EMAIL_NOT_VERIFIED') {
+        // AUTH-12: right password, email not verified. No code was sent, so the next page offers to send one.
+        writePending({ phone: values.phone, email: null, sentAt: null })
+        const next = safeNext(params.get('next'))
+        navigate(next ? `/xac-minh-email?next=${encodeURIComponent(next)}` : '/xac-minh-email', { replace: true })
+        return
+      }
       setFormError(applyApiError(error, setError, ['phone', 'password']))
     }
   }
@@ -94,7 +105,7 @@ export function LoginPage() {
         </form>
 
         <div className="auth-login-account-note">
-          <p>Chưa có tài khoản? Tài khoản được cấp khi ký hợp đồng</p>
+          <p>Chưa có tài khoản? <Link to={signUpHref}>Đăng ký</Link></p>
           {contact.isLoading && <p className="auth-contact-status" role="status">Đang tải thông tin liên hệ…</p>}
           {!contact.isLoading && !contact.isError && <ContactInfo contact={contact.data ?? null} />}
           <div className="auth-login-account-actions">

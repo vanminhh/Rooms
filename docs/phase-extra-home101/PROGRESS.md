@@ -12,7 +12,7 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 |---|---|---|---|---|---|
 | EX-0 Chủ dự án chuẩn bị | đang làm | Q-09..Q-12 đã trả lời; quyết định cuối 12/11/2026 (email thay SMS) | – | tạo tài khoản Resend + xác thực tên miền (Q-14 đã chọn Resend), Q-08 video, Q-13, Q-EX4-1, Q-EX6-1, Q-EX6-2, Q-EX8-2 | không chặn EX-1 |
 | EX-1 Tài khoản khách (BE) | chờ duyệt | ⏸ BE-EX-09 (kiểm tra cuối) | BE-EX-07 đã commit; BE-EX-08 chờ commit | – | seed khách `0900000006` đã chạy trên DB dev qua e2e cũ; plan: `plans/EX-1/PLAN.md` |
-| EX-2 Tài khoản khách (FE) | chờ commit | ⏸ FE-EX-04 (guard 4 vai trò, đăng ký, xác minh email) | EX-1 đã commit | FE-EX-05 | `/toi` mới là PlaceholderPage; GuestLayout ở FE-EX-06 |
+| EX-2 Tài khoản khách (FE) | chờ duyệt | ⏸ FE-EX-07 (đăng nhập, GuestLayout, /toi, /toi/tai-khoan) | FE-EX-04 đã commit | – | xem tay luồng đăng ký → /toi với backend thật còn chờ chủ dự án; plan: không có (không cần planner) |
 | EX-3 Việt + Anh | chưa làm | – | – | FE-EX-08 | cần EX-2 |
 | EX-4 Màn chào | chưa làm | – | – | FE-EX-14 | cần EX-3 |
 | EX-5 Bộ lọc phòng | chưa làm | – | – | BE-EX-12 | độc lập |
@@ -24,6 +24,8 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 ## Nhật ký điểm dừng
 
 Mới nhất ở trên. Mỗi dòng: `ngày · phần · task vừa xong · kết quả kiểm tra (số thật) · việc còn treo`.
+
+- 13/11/2026 · EX-2 · FE-EX-05..07 (`/dang-nhap`: "Chưa có tài khoản? Đăng ký" + EMAIL_NOT_VERIFIED → `/xac-minh-email`; `GuestLayout`, `/toi`, `/toi/tai-khoan`; link "Lịch hẹn xem phòng" ở TenantLayout) · lint 0 lỗi, build OK, test:components 769/769 (31 test mới trong `tests/ex/`) · chưa xem tay `/toi` với backend thật (cần đăng nhập) · chờ chủ dự án duyệt
 
 - 13/11/2026 · EX-2 · FE-EX-01..04 (4 vai trò trong guard, `/dang-ky`, `/xac-minh-email`, api + schema, `acceptSession`, route `/toi` tạm) · lint 0 lỗi, build OK, test:components 762/762 (24 test mới trong `tests/ex/`); xem tay `/dang-ky` và `/xac-minh-email` trên Vite ở 375 px không tràn ngang · chưa thử luồng thật với BE (cần ghi user vào DB dev) · tiếp: FE-EX-05..07
 

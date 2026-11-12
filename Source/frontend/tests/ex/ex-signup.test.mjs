@@ -343,7 +343,7 @@ test('AUTH-06, SCOPE-03: routes.tsx opens /toi to GUEST and TENANT only and puts
   const { routes } = mod('app/routes.tsx')
   const toi = routes.find(r => r.path === '/toi')
   assert.deepEqual(toi.element.props.allow, ['GUEST', 'TENANT'])
-  assert.deepEqual(toi.children.map(r => r.path ?? 'index'), ['index', 'tai-khoan'])
+  assert.deepEqual(toi.children[0].children.map(r => r.path ?? 'index'), ['index', 'tai-khoan']) // inside GuestLayout
   const pub = routes.find(r => r.element?.type?.name === 'PublicLayout')
   const guestOnly = pub.children.find(r => r.element?.type?.name === 'GuestOnly')
   assert.deepEqual(guestOnly.children.map(r => r.path), ['/dang-nhap', '/dang-ky', '/xac-minh-email'])

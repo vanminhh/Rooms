@@ -36,11 +36,11 @@ Out: English texts and the language switch (EX-3; write the Vietnamese texts so 
   Done when: page test; field errors from `error.fields` appear on the fields (UI-05).
 - [x] **FE-EX-04** ⏸ `/xac-minh-email`: shows the address the code was sent to, 6-digit code, "Gửi lại mã" disabled with a 60 s countdown, `OTP_INVALID` and 429 messages; success logs in and goes to `?next=` or the role home.
   Done when: page test with fake timers for the countdown; manual check against the dev server (code read from the BE log). Stop and report FE-EX-01..04.
-- [ ] **FE-EX-05** `/dang-nhap`: the note becomes "Chưa có tài khoản? Đăng ký" → `/dang-ky` (AUTH-10); a login answered with `EMAIL_NOT_VERIFIED` opens `/xac-minh-email` for that phone.
+- [x] **FE-EX-05** `/dang-nhap`: the note becomes "Chưa có tài khoản? Đăng ký" → `/dang-ky` (AUTH-10); a login answered with `EMAIL_NOT_VERIFIED` opens `/xac-minh-email` for that phone.
   Done when: `tests/p2/ui-30-login.test.mjs` updated to the new text and still green; `ui-31-forgot-password.test.mjs` untouched and green.
-- [ ] **FE-EX-06** `GuestLayout` (bottom nav "Lịch hẹn", "Tài khoản", link "Tìm phòng"), `/toi` with an empty state and the button "Tìm phòng" (the list comes in EX-7), `/toi/tai-khoan`: name and phone (read only), email, change password (AUTH-09). `TenantLayout` gets the link "Lịch hẹn xem phòng" → `/toi`. "Trang của tôi" in `PublicLayout` goes to the role home.
+- [x] **FE-EX-06** `GuestLayout` (bottom nav "Lịch hẹn", "Tài khoản", link "Tìm phòng"), `/toi` with an empty state and the button "Tìm phòng" (the list comes in EX-7), `/toi/tai-khoan`: name and phone (read only), email, change password (AUTH-09). `TenantLayout` gets the link "Lịch hẹn xem phòng" → `/toi`. "Trang của tôi" in `PublicLayout` goes to the role home.
   Done when: layout tests at 360 px (no horizontal overflow, UI-07); a TENANT can open `/toi`.
-- [ ] **FE-EX-07** ⏸ `npm run lint`, `npm run build`, `npm run test:components`.
+- [x] **FE-EX-07** ⏸ `npm run lint`, `npm run build`, `npm run test:components`.
   Done when: all pass with real output quoted; manual walk: sign up → code from the BE log → `/toi` → log out → log in → forgot password by email link.
 
 ## Questions for the owner

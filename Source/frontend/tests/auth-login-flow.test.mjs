@@ -413,8 +413,9 @@ test('A16/AUTH-10: login page shows the title, the "no account" sentence, Boss c
   const app = await mount('/dang-nhap')
   await until(() => app.text().includes('Điện thoại: 0900000001'), 'contact block')
   assert.ok(app.text().includes('Đăng nhập'))
-  assert.ok(app.text().includes('Chưa có tài khoản? Tài khoản được cấp khi ký hợp đồng'))
+  assert.ok(app.text().includes('Chưa có tài khoản? Đăng ký')) // AUTH-10, D-25
   const hrefs = find(app.container, n => n.tagName === 'A').map(a => a.attributes.href ?? a.href)
+  assert.ok(hrefs.includes('/dang-ky'))
   assert.ok(hrefs.includes('/quen-mat-khau'))
   assert.ok(hrefs.includes('/phong'))
   assert.equal(app.api.calls.filter(c => c.url === '/api/v1/public/contact').length, 1, 'page and footer must share one contact request')
@@ -701,10 +702,10 @@ test('D-5: clicking "Tìm phòng" in the header changes the route to /phong with
   await app.stop()
 })
 
-test('FE-LOGIN-10, Q2-A: TenantLayout menu is exactly "Tổng quan" /thue and "Tài khoản" /thue/tai-khoan; no building line; no footer; inside .rooms-theme with the kit logo', async () => {
+test('FE-LOGIN-10, Q2-A: TenantLayout menu is "Tổng quan", "Tài khoản" and "Lịch hẹn xem phòng"; no building line; no footer; inside .rooms-theme with the kit logo', async () => {
   const app = await mount('/thue', { session: 'tenant' })
   await until(() => app.text().includes('Xin chào'), 'tenant home')
-  assert.deepEqual(navLinks(app), [['Tổng quan', '/thue'], ['Tài khoản', '/thue/tai-khoan']])
+  assert.deepEqual(navLinks(app), [['Tổng quan', '/thue'], ['Tài khoản', '/thue/tai-khoan'], ['Lịch hẹn xem phòng', '/toi']]) // EX-2 adds the link to the guest area
   assert.ok(!app.text().includes('Tòa đang quản lý'))
   assert.ok(!app.text().includes('Chưa được giao tòa nào'))
   assert.equal(find(app.container, n => n.tagName === 'FOOTER').length, 0)

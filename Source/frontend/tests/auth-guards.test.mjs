@@ -333,7 +333,7 @@ test('A2: PublicLayout root onClick turns an in-app link click into navigate, le
   assert.equal(prevented, 1)
 })
 
-test('Q3-A, Q2-A: TenantLayout has exactly the 2 menu items, the sign-out button and no footer', () => {
+test('Q3-A, Q2-A: TenantLayout has exactly the 3 menu items (EX-2 adds the guest area link), the sign-out button and no footer', () => {
   const calls = []
   const { exports, fakes } = loadLayout('../src/layouts/TenantLayout.tsx', { signOutState: { signOut: () => calls.push('out'), signingOut: false } })
   const root = exports.TenantLayout()
@@ -341,7 +341,7 @@ test('Q3-A, Q2-A: TenantLayout has exactly the 2 menu items, the sign-out button
   const header = headerOf(root, fakes)
   assert.equal(header.props.homeHref, '/thue')
   assert.equal(header.props.logoSrc, '/images/rooms-logo.webp')
-  assert.deepEqual(header.props.links, [{ label: 'Tổng quan', href: '/thue' }, { label: 'Tài khoản', href: '/thue/tai-khoan' }])
+  assert.deepEqual(header.props.links, [{ label: 'Tổng quan', href: '/thue' }, { label: 'Tài khoản', href: '/thue/tai-khoan' }, { label: 'Lịch hẹn xem phòng', href: '/toi' }])
   assert.equal(find(root, n => n.type === fakes.RoomsFooter), undefined)
   assert.equal(find(root, n => n.props?.className === 'layout-buildings'), undefined)
   const button = header.props.action
@@ -580,6 +580,9 @@ test('AUTH-06 / T3 / FE-P2-01: routes wire guards and layouts (tenant area TENAN
     '../pages/public/LoginPage': stub('LoginPage'),
     '../pages/public/ChangePasswordPage': stub('ChangePasswordPage'),
     '../pages/public/ForgotPasswordPage': stub('ForgotPasswordPage'),
+    '../layouts/GuestLayout': stub('GuestLayout'),
+    '../pages/guest/GuestHomePage': stub('GuestHomePage'),
+    '../pages/guest/GuestAccountPage': stub('GuestAccountPage'),
     '../pages/public/RegisterPage': stub('RegisterPage'),
     '../pages/public/VerifyEmailPage': stub('VerifyEmailPage'),
     './RequireAuth': { ...stub('RequireAuth'), ...stub('GuestOnly') },
