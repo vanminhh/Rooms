@@ -23,7 +23,7 @@ Rules: mark `[~]` when you start a task, `[x]` only after its "Done when" is ver
 ## Scope
 
 In: the dictionary mechanism, the language switch, English for the public pages, the auth pages and the guest area that exist after EX-2; BE error texts in English on `/public/*`, `/auth/*`, `/me/*`.
-Out: the staff app `/ql` (stays Vietnamese, LOC-01), contract documents, the tenant pages that do not exist yet (they are written with the dictionary when Phase 3–5 build them), translating text typed by people (A-12), any currency choice (LOC-05).
+Out: the old public viewing form (owner 13/11/2026: EX-6 and EX-7 replace it, so it stays Vietnamese until then), the staff app `/ql` (stays Vietnamese, LOC-01), contract documents, the tenant pages that do not exist yet (they are written with the dictionary when Phase 3–5 build them), translating text typed by people (A-12), any currency choice (LOC-05).
 
 ## Tasks
 
@@ -31,7 +31,7 @@ Out: the staff app `/ql` (stays Vietnamese, LOC-01), contract documents, the ten
   Done when: tests `LOC-04: …` for fallback and for "no raw key"; a test that fails when a key exists in `vi` but not in `en` lists the missing keys (allowed list empty at the end of the part).
 - [ ] **FE-EX-09** Language switch "Tiếng Việt / English" in the header of `PublicLayout`, `GuestLayout`, `TenantLayout` (kit component takes its texts through props, KIT-04). `shared/api.ts` sends `Accept-Language` on every request (LOC-02). When logged in, the choice is saved with `PATCH /auth/me` (`locale`) and read from `/auth/me` at login.
   Done when: tests: switching changes the page without reload and keeps typed form input (UI-12); the header is sent; `StaffLayout` has no switch.
-- [ ] **FE-EX-10** Public pages into the dictionary: home, `/phong`, `/toa/:id`, `/phong/:id`, header, footer, list states, status labels (`status-labels.ts` becomes bilingual). Money and dates do not change with the language (LOC-05).
+- [ ] **FE-EX-10** Public pages into the dictionary: home, `/phong`, `/toa/:id`, `/phong/:id`, header, footer, list states. `shared/status-labels.ts` stays Vietnamese: only the staff app uses it (checked by the planner, 13/11/2026). Money and dates do not change with the language (LOC-05).
   Done when: no Vietnamese literal left in these pages and components (a test scans the files); `2.984.000 đ` and `dd/mm/yyyy` are the same in both languages.
 - [ ] **FE-EX-11** ⏸ Auth pages and guest area into the dictionary: `/dang-nhap`, `/dang-ky`, `/xac-minh-email`, `/quen-mat-khau`, `/doi-mat-khau`, `/toi`, `/toi/tai-khoan`, zod messages.
   Done when: same scan test for these files. Stop and report FE-EX-08..11.
@@ -46,7 +46,11 @@ Out: the staff app `/ql` (stays Vietnamese, LOC-01), contract documents, the ten
 
 ## Questions for the owner
 
-<!-- none yet -->
+Đã trả lời 13/11/2026 (câu hỏi của planner, chi tiết trong `plans/EX-3/PLAN.md`):
+
+- OQ-1: không thêm cơ chế bật / tắt tiếng Anh. Chủ dự án duyệt `en-copy.md` ở điểm dừng FE-EX-12 rồi mới commit phần chữ tiếng Anh.
+- OQ-2: EX-3 **không** dịch form đặt lịch công khai cũ (`ViewingForm.tsx`, `viewing-schema.ts`, thông điệp `CreateViewingDto`); EX-6 xóa route, EX-7 viết giao diện đặt lịch mới bằng từ điển hai ngôn ngữ. Cho tới lúc đó bản tiếng Anh còn một form chữ Việt.
+- OQ-3: chủ dự án chỉ duyệt chữ marketing; nhãn và thông điệp lỗi tiếng Anh do agent viết và liệt kê trong báo cáo cuối.
 
 ## Issues log
 

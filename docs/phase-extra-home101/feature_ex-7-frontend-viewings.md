@@ -8,7 +8,7 @@ Rewritten 12/11/2026 after the owner's final decisions (D-28..D-30, D-34): no pr
 | | |
 |---|---|
 | Fixes | Phase 2 (booking form, staff viewing page, "Việc hôm nay") and the UI work (booking panel) |
-| Needs first | EX-2 and EX-6 committed; EX-3 committed if English is wanted from the start (else write Vietnamese texts ready for the dictionary) |
+| Needs first | EX-2, EX-3 and EX-6 committed. Every new text of the public and guest pages goes into the EX-3 dictionary in Vietnamese and English (EX-3 left the old viewing form untranslated on purpose, owner 13/11/2026) |
 | Unblocks | EX-8, EX-9. Goes to production together with EX-6 |
 | How | planner writes `plans/EX-7/PLAN.md` (three areas: public, guest, staff) → main session builds |
 | Part done when | FE-EX-27 verified |
@@ -31,8 +31,8 @@ Out: "Chốt" → contract form (Phase 3), anything on the backend, the final em
 
 - [ ] **FE-EX-22** API and labels: `features/viewings/api.ts` and a guest API for `/me/viewings*` and `viewing-times` following the spec 13 table; labels NEW "Chờ xác nhận", DONE "Đã xem", NO_SHOW "Khách không đến" in `status-labels.ts` (VIEW-10); old viewings show their slot label (VIEW-08).
   Done when: label tests with the spec texts; API tests for every route used.
-- [ ] **FE-EX-23** Calendar booking on `/phong/:id` (VIEW-01, VIEW-08, VIEW-21): a month calendar (today to 30 days ahead; days without a free hour and days out of range disabled; legend "Còn chỗ" / "Không đặt được" / "Đã chọn"), the free hours of the chosen day as buttons, an optional note, "Gửi yêu cầu". Not logged in → "Đăng nhập để đặt lịch", returning to this room after login or sign-up. `VIEWING_TIME_TAKEN` shows the API message and reloads the hours; 429 and `ROOM_NOT_AVAILABLE` show their messages. Works by keyboard and touch, at 360 px, and with reduced-motion (KIT-05). Remove the old 3-slot form and its honeypot field.
-  Done when: tests for the calendar states, the login gate and the three errors; `ui-24-booking-panel.test.mjs` rewritten to the new panel; nothing posts to `/public/viewings`.
+- [ ] **FE-EX-23** Calendar booking on `/phong/:id` (VIEW-01, VIEW-08, VIEW-21): a month calendar (today to 30 days ahead; days without a free hour and days out of range disabled; legend "Còn chỗ" / "Không đặt được" / "Đã chọn"), the free hours of the chosen day as buttons, an optional note, "Gửi yêu cầu". Not logged in → "Đăng nhập để đặt lịch", returning to this room after login or sign-up. `VIEWING_TIME_TAKEN` shows the API message and reloads the hours; 429 and `ROOM_NOT_AVAILABLE` show their messages. Works by keyboard and touch, at 360 px, and with reduced-motion (KIT-05). Remove the old 3-slot form and its honeypot field, and remove their entries from the allow-list of the EX-3 "no Vietnamese literal" scan test.
+  Done when: the scan test passes with no viewing file on its allow-list; tests for the calendar states, the login gate and the three errors; `ui-24-booking-panel.test.mjs` rewritten to the new panel; nothing posts to `/public/viewings`.
 - [ ] **FE-EX-24** ⏸ Booked screen (VIEW-14): after a successful booking the panel shows "Đặt lịch thành công. Vui lòng đợi Rooms xác nhận.", the room and time, the phone of the building's manager and of Boss (Boss only when the building has no manager), and a link to `/toi/lich-hen/:id`.
   Done when: tests for a building with and without a manager; manual check on the dev server with the BE log showing the manager email. Stop and report FE-EX-22..24.
 - [ ] **FE-EX-25** Guest pages (VIEW-18, VIEW-20): `/toi` – upcoming viewings first (waiting for confirmation, then confirmed), then past, with loading, empty and error states (UI-03); `/toi/lich-hen/:id` – room and building with address, time, status and how it was confirmed, contact of the person responsible, "Hủy lịch" with a confirm dialog (hidden after the start time), the note "Muốn đổi giờ? Gọi quản lý".
