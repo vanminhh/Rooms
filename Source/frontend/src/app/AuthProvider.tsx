@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { getMe, loginRequest, logoutRequest } from '../features/auth/api'
+import { getMe, loginRequest, logoutRequest, updateMe } from '../features/auth/api'
 import type { Me } from '../features/auth/api'
 import { ApiError, refreshAccessToken, setAccessToken, setAuthHandlers } from '../shared/api'
+import { savedLang, useI18n } from '../shared/i18n'
 import { AuthContext } from './auth-context'
 import type { AuthContextValue, AuthStatus } from './auth-context'
 
@@ -14,6 +15,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Me | null>(null)
   const [status, setStatus] = useState<AuthStatus>('loading')
   const [attempt, setAttempt] = useState(0)
+  const { lang, setLang } = useI18n()
+  const lastLocaleSync = useRef('')
+
+  useEffect(() => {
+    if (!user) {
+      lastLocaleSync.current = ''
+      return
+    }
+    const browserChoice = savedLang()
+    if (!browserChoice) {
+      const accountChoice = user.locale === 'en' ? 'en' : 'vi'
+      if (lang !== accountChoice) setLang(accountChoice)
+      return
+    }
+    if (browserChoice === user.locale) {
+      lastLocaleSync.current = ''
+      return
+    }
+    const syncKey = `${user.id}:${user.locale}:${browserChoice}`
+    if (lastLocaleSync.current === syncKey) return
+    lastLocaleSync.current = syncKey
+    void updateMe({ locale: browserChoice })
+      .then(me => setUser(current => current?.id === me.id ? { ...current, locale: me.locale } : current))
+      .catch(error => console.error('Unable to save language preference', error))
+  }, [user, lang, setLang])
 
   const login: AuthContextValue['login'] = useCallback(async input => {
     const data = await loginRequest(input)

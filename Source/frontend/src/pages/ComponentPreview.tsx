@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
-import { RoomsButton, RoomsHeader, RoomsFooter, SectionHeading, StatusBadge, FilterChip, ElevatedCard, IllustrationLabel, RoomSearch, RoomAccordion, ImageJourney, FeatureList, FloorPlan, QuoteCarousel, CostBreakdown, Reveal, SmoothScroll, Preloader, TextField, PasswordField, Checkbox, FormError, Spinner, ConfirmDialog, ImageUploader } from '../components'
+import { RoomsButton, RoomsHeader, RoomsFooter, LanguageSwitch, SectionHeading, StatusBadge, FilterChip, ElevatedCard, IllustrationLabel, RoomSearch, RoomAccordion, ImageJourney, FeatureList, FloorPlan, QuoteCarousel, CostBreakdown, Reveal, SmoothScroll, Preloader, TextField, PasswordField, Checkbox, FormError, Spinner, ConfirmDialog, ImageUploader } from '../components'
 import type { JourneySlide, RoomCardData, RoomFeature, PlanArea } from '../components'
 import { formatMoney } from '../shared/formatters'
 
@@ -51,6 +51,7 @@ function Sample({ id, number, name, hint, code, children }: { id: string; number
 export default function ComponentPreview() {
   const [feedback, setFeedback] = useState('Thử chọn khu vực, thẻ phòng hoặc các nút bên dưới.')
   const [previewDistrict, setPreviewDistrict] = useState('Tất cả')
+  const [previewLang, setPreviewLang] = useState<'vi' | 'en'>('vi')
   const [loading, setLoading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [signingIn, setSigningIn] = useState(false)
@@ -100,7 +101,7 @@ export default function ComponentPreview() {
     <SmoothScroll>
       <RoomsHeader homeHref="#top" logoSrc={logo} links={[{ label: 'Thư viện', href: '#library' }, { label: 'Không gian', href: '#journey' }, { label: 'Cách dùng', href: '#usage' }]} action={<RoomsButton variant="outline" onClick={showPreloader}>Thử mở Rooms <span aria-hidden="true">↗</span></RoomsButton>} />
       <div className="preview-intro">
-        <div><span className="rooms-eyebrow">Rooms / Component collection / 02</span><h1>Những mảnh ghép<br />của <em>một nơi ở.</em></h1><p>Tinh thần An Lâm, trong hình hài Rooms. Một bộ component để bạn ghép nên giao diện Trọ Thông Minh.</p><div className="preview-intro-meta"><span>23 component</span><i /><span>React + TypeScript</span><i /><span>Chuột · Cảm ứng · Bàn phím</span></div></div>
+        <div><span className="rooms-eyebrow">Rooms / Component collection / 02</span><h1>Những mảnh ghép<br />của <em>một nơi ở.</em></h1><p>Tinh thần An Lâm, trong hình hài Rooms. Một bộ component để bạn ghép nên giao diện Trọ Thông Minh.</p><div className="preview-intro-meta"><span>24 component</span><i /><span>React + TypeScript</span><i /><span>Chuột · Cảm ứng · Bàn phím</span></div></div>
         <figure><img src={exterior} alt="Tòa nhà với ban công xanh trong bộ ảnh Rooms" /><figcaption><span>Chất liệu có sẵn, câu chuyện mới.</span><span>Hà Nội / 01</span></figcaption></figure>
       </div>
       <div className="preview-shell" id="library">
@@ -120,6 +121,7 @@ export default function ComponentPreview() {
             </div>
             <div className="preview-filter-chips" aria-label="Lọc theo quận">{[['Tất cả', 18], ['Ba Đình', 5], ['Cầu Giấy', 8], ['Đống Đa', 5]].map(([label, count]) => <FilterChip key={label} selected={previewDistrict === label} count={Number(count)} onClick={() => setPreviewDistrict(String(label))}>{label}</FilterChip>)}<FilterChip disabled count={0}>Tây Hồ</FilterChip></div>
             <div className="preview-badges"><StatusBadge>Còn trống</StatusBadge><StatusBadge tone="occupied">Đang thuê</StatusBadge><StatusBadge tone="reserved">Đã cọc</StatusBadge><StatusBadge tone="maintenance">Bảo trì</StatusBadge></div>
+            <LanguageSwitch value={previewLang} onChange={setPreviewLang} viLabel="Tiếng Việt" enLabel="English" groupLabel="Ngôn ngữ" />
           </Sample>
           <Sample id="search" number="03" name="Tìm phòng" hint="RoomSearch · Chọn quận và ngân sách, gửi dữ liệu qua onSearch." code={'<RoomSearch\n  districts={["Ba Đình", "Cầu Giấy"]}\n  budgets={[{ value: "5000000", label: "Đến 5 triệu" }]}\n  onSearch={({ district, maxPrice }) => searchRooms({ district, maxPrice })}\n/>'}>
             <SectionHeading eyebrow="Một nơi phù hợp">Bắt đầu từ điều bạn cần.</SectionHeading>

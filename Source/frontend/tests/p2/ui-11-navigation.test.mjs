@@ -37,10 +37,10 @@ test('UI-11/UI-08: compact menu exposes expanded state, controlled panel and Esc
 
 test('UI-11/UI-01: public header maps every approved item and separates the account action', () => {
   for (const expected of [
-    /Tìm phòng[^\n]*\/phong/,
-    /Khu vực[^\n]*\/#khu-vuc/,
-    /Liên hệ[^\n]*\/#lien-he/,
-    /Lên lịch xem<\/a>/,
+    /t\('nav.findRoom'\)[^\n]*\/phong/,
+    /t\('nav.area'\)[^\n]*\/#khu-vuc/,
+    /t\('nav.contact'\)[^\n]*\/#lien-he/,
+    /t\('nav.bookViewing'\)\}<\/a>/,
     /accountHref=/,
   ]) assert.match(publicLayout, expected)
 })

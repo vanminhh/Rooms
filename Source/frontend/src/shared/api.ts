@@ -59,6 +59,11 @@ export function listPath(path: string, query: Record<string, QueryValue>): strin
 let accessToken: string | null = null
 let handlers: AuthHandlers = {}
 let refreshing: Promise<string> | null = null
+let language: 'vi' | 'en' = 'vi'
+
+export function setLanguage(next: 'vi' | 'en') {
+  language = next
+}
 
 export function setAccessToken(token: string | null) {
   accessToken = token
@@ -69,7 +74,7 @@ export function setAuthHandlers(next: AuthHandlers) {
 }
 
 async function send<T>(path: string, method: Method, body: unknown, token: string | null, idempotencyKey?: string): Promise<Envelope<T>> {
-  const headers: Record<string, string> = { Accept: 'application/json' }
+  const headers: Record<string, string> = { Accept: 'application/json', 'Accept-Language': language }
   if (body !== undefined) headers['Content-Type'] = 'application/json'
   if (token) headers.Authorization = `Bearer ${token}`
   if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey

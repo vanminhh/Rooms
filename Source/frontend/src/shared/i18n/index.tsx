@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 import type { ReactElement, ReactNode } from 'react'
+import { setLanguage } from '../api'
 import { currentLang, I18nContext, setStoredLang, t } from './core'
 import type { Lang } from './core'
 
@@ -9,8 +10,13 @@ export function I18nProvider({ children, locale }: { children: ReactNode; locale
   const setLang = useCallback((next: Lang) => {
     if (locale) return
     setStoredLang(next)
+    setLanguage(next)
     setSelected(next)
   }, [locale])
+
+  useLayoutEffect(() => {
+    if (!locale) setLanguage(lang)
+  }, [lang, locale])
 
   useEffect(() => {
     try {

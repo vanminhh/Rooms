@@ -19,6 +19,16 @@ function storedLang(): Lang | null {
   }
 }
 
+export function savedLang(): Lang | null {
+  try {
+    if (typeof localStorage === 'undefined') return null
+    const saved = localStorage.getItem(STORAGE_KEY)
+    return saved === 'vi' || saved === 'en' ? saved : null
+  } catch {
+    return null
+  }
+}
+
 export function currentLang(): Lang {
   return storedLang() ?? memoryLang
 }

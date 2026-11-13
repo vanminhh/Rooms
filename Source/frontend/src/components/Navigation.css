@@ -317,3 +317,42 @@
     transition: none !important;
   }
 }
+/* The language control shares the header's quiet outline style and stays usable inside the mobile menu. */
+.rooms-language-switch {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px;
+  border: 1px solid var(--rooms-line);
+  border-radius: var(--rooms-radius-button);
+  gap: 2px;
+}
+
+.rooms-language-switch button {
+  min-height: 44px;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: var(--rooms-radius-button);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  white-space: nowrap;
+}
+
+.rooms-language-switch button[aria-pressed="true"] {
+  background: var(--rooms-ink);
+  color: var(--rooms-paper);
+}
+
+.rooms-language-switch button:focus-visible {
+  outline: 2px solid var(--rooms-gold);
+  outline-offset: 2px;
+}
+
+.rooms-header-action > .rooms-language-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}

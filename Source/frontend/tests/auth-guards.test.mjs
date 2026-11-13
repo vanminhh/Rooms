@@ -239,6 +239,7 @@ function loadLayout(file, { auth = { status: 'ready', user: null }, contact = {}
     RoomsHeader: () => null,
     RoomsFooter: () => null,
     RoomsButton: () => null,
+    LanguageSwitch: () => null,
     ContactInfo: () => null,
     // CP-2: StaffLayout now delegates the building pick to these two (tested on their own in tests/p2/),
     // so here they are outside edges just like the kit and useAuth.
@@ -250,6 +251,7 @@ function loadLayout(file, { auth = { status: 'ready', user: null }, contact = {}
     'react-router': { Outlet: fakes.Outlet, useNavigate: () => to => navigations.push(to) },
     '../components': fakes,
     '../app/auth-context': { useAuth: () => auth },
+    '../shared/i18n': { I18nProvider: () => null, useI18n: () => ({ lang: 'vi', setLang() {}, t: key => loadModule(draftFirst('src/shared/i18n/index.ts')).t(key, undefined, 'vi') }) },
     '../app/guards': guards,
     '../features/auth/ContactInfo': { ContactInfo: fakes.ContactInfo },
     '../features/auth/usePublicContact': { usePublicContact: () => contact },
@@ -344,7 +346,7 @@ test('Q3-A, Q2-A: TenantLayout has exactly the 3 menu items (EX-2 adds the guest
   assert.deepEqual(header.props.links, [{ label: 'Tổng quan', href: '/thue' }, { label: 'Tài khoản', href: '/thue/tai-khoan' }, { label: 'Lịch hẹn xem phòng', href: '/toi' }])
   assert.equal(find(root, n => n.type === fakes.RoomsFooter), undefined)
   assert.equal(find(root, n => n.props?.className === 'layout-buildings'), undefined)
-  const button = header.props.action
+  const button = find(header.props.action, n => n.type === fakes.RoomsButton)
   assert.equal(button.type, fakes.RoomsButton)
   assert.equal(button.props.variant, 'outline')
   assert.equal(button.props.type, 'button')

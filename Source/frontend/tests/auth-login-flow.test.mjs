@@ -155,7 +155,7 @@ function loadFresh() {
     if (/(^|\/)components$/.test(id)) {
       // The kit index also pulls in three.js / motion scenes; load only the real modules used by these flows.
       // SharedPrimitives provides IllustrationLabel for the UI-20 PublicHomePage.
-      kit ??= Object.assign({}, ...['Button', 'FormFields', 'SectionHeading', 'Navigation', 'RoomSearch', 'SharedPrimitives'].map(n => load(resolve(kitDir, `${n}.tsx`))))
+      kit ??= Object.assign({}, ...['Button', 'FormFields', 'SectionHeading', 'Navigation', 'LanguageSwitch', 'RoomSearch', 'SharedPrimitives'].map(n => load(resolve(kitDir, `${n}.tsx`))))
       return kit
     }
     return load(resolveRelative(dir, id))

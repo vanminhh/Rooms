@@ -29,7 +29,7 @@ export interface PublicContact {
   facebookUrl: string | null
 }
 
-export type UpdateMeInput = Partial<Record<'email' | 'contactPhone' | 'zaloUrl' | 'facebookUrl', string | null>>
+export type UpdateMeInput = Partial<Record<'email' | 'contactPhone' | 'zaloUrl' | 'facebookUrl', string | null>> & { locale?: 'vi' | 'en' }
 
 // Bodies are built field by field so extra form values (e.g. confirmPassword) are never sent.
 export function loginRequest(input: { phone: string; password: string; remember: boolean }) {

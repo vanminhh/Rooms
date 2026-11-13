@@ -6,6 +6,7 @@ Read this before the first task of any part. Each line is a mistake that really 
 
 ## Tests and expected values
 
+- The custom kit loader in `auth-login-flow.test.mjs` must include every new component used by a layout; omitting `LanguageSwitch` made unrelated auth flows fail with an invalid React element [FE-EX-09, 13/11/2026].
 - Never invent an expected value. Take it from the spec or the provider's documentation and name the source in the test. A planner once wrote a Cloudinary signature hash that was partly made up [BE-P2-07, 01/11/2026].
 - Adding an error code breaks the count test in `Source/backend/src/app.setup.spec.ts`; update it in the same change [BE-P2-02, 01/11/2026].
 - Adding a key to `DB_ERROR_MAP` breaks the exact-key test in `db-errors.spec.ts`, and a new field in `Me` breaks `ME_KEYS` in `auth.me.spec.ts` and `auth.account.spec.ts` (keep that list in alphabetical order); update them in the same change [BE-EX-34, 12/11/2026].

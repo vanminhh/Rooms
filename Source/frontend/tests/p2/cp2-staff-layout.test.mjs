@@ -69,6 +69,7 @@ function loadStaffLayout(user) {
     'react-router': { Outlet: fakes.Outlet, useNavigate: () => to => navigations.push(to) },
     '../components': fakes,
     '../app/auth-context': { useAuth: () => ({ user }) },
+    '../shared/i18n': { I18nProvider: () => null },
     '../features/buildings/BuildingSelector': { BuildingSelector: fakes.BuildingSelector },
     '../features/buildings/BuildingSelectionProvider': { BuildingSelectionProvider: fakes.BuildingSelectionProvider },
     '../features/auth/useSignOut': { useSignOut: () => ({ signOut() {}, signingOut: false }) },

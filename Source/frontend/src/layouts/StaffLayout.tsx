@@ -6,6 +6,7 @@ import { useAuth } from '../app/auth-context'
 import { BuildingSelector } from '../features/buildings/BuildingSelector'
 import { BuildingSelectionProvider } from '../features/buildings/BuildingSelectionProvider'
 import { useSignOut } from '../features/auth/useSignOut'
+import { I18nProvider } from '../shared/i18n'
 import { handleInternalLinkClick } from './internal-links'
 import './layouts.css'
 
@@ -26,7 +27,7 @@ export function StaffLayout() {
     { label: 'Tài khoản', href: '/ql/tai-khoan' },
   ]
 
-  return <div className="rooms-theme" onClick={event => handleInternalLinkClick(event, navigate)}>
+  return <div className="rooms-theme" lang="vi" onClick={event => handleInternalLinkClick(event, navigate)}>
     <RoomsHeader
       homeHref="/ql"
       logoSrc="/images/rooms-logo.webp"
@@ -36,7 +37,7 @@ export function StaffLayout() {
     <main className="layout-main">
       <BuildingSelectionProvider>
         <BuildingSelector />
-        <Outlet />
+        <I18nProvider locale="vi"><Outlet /></I18nProvider>
       </BuildingSelectionProvider>
     </main>
   </div>
