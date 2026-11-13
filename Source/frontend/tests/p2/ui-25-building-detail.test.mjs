@@ -88,6 +88,8 @@ after(() => { setTimeout(() => process.exit(process.exitCode ?? 0), 200).unref()
 test('UI-25 · BLD-04/PUB-03: trang tòa dùng dữ liệu API cho thông tin, đơn giá, liên hệ và phòng', async () => {
   const app = await mountPage(ok(baseBuilding()))
   await until(() => app.container.textContent.includes('An Lâm 1'), 'tòa tải xong')
+  // EX-5: the amenity list waits for the labels (GET /public/filters) so a raw code never flashes
+  await until(() => app.container.textContent.includes('Camera'), 'tiện ích sau khi có danh sách nhãn')
   const text = app.container.textContent
   assert.ok(text.includes('Tòa AL1'))
   assert.ok(text.includes('12 Láng Hạ, Láng Hạ, Đống Đa'))

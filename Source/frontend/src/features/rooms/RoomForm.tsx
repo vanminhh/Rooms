@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { FormError, RoomsButton, Spinner, TextField } from '../../components'
 import { applyApiError } from '../../shared/form-errors'
-import { TextAreaField } from '../buildings/fields'
+import { SelectField, TextAreaField } from '../buildings/fields'
+import { getPublicFilters, publicQueryKeys } from '../public/api'
 import { createRoom, updateRoom } from './api'
-import type { RoomView } from './api'
+import type { RoomType, RoomView } from './api'
 import { roomFormSchema } from './schemas'
 import type { RoomFormValues } from './schemas'
 import './staff-rooms.css'
@@ -18,10 +19,15 @@ function toList(text: string): string[] {
   return text.split(',').map(item => item.trim()).filter(Boolean)
 }
 
+// ROOM-10: '' (chưa nhập) is null on the wire, which is not the same as "Không" (false).
+const triState = (value: boolean | null): '' | 'true' | 'false' => (value === null ? '' : value ? 'true' : 'false')
+const fromTriState = (value: '' | 'true' | 'false'): boolean | null => (value === '' ? null : value === 'true')
+
 // Create (room undefined) or edit one room (ROOM-01). The room's building is fixed by the caller.
 export function RoomForm({ buildingId, room, onSaved, onCancel }: { buildingId: number; room?: RoomView; onSaved?(saved: RoomView): void; onCancel(): void }) {
   const queryClient = useQueryClient()
   const [formError, setFormError] = useState('')
+  const catalog = useQuery({ queryKey: publicQueryKeys.filters, queryFn: getPublicFilters })
   const { register, handleSubmit, setError, formState: { errors } } = useForm<RoomFormValues>({
     resolver: zodResolver(roomFormSchema),
     defaultValues: room
@@ -32,9 +38,13 @@ export function RoomForm({ buildingId, room, onSaved, onCancel }: { buildingId: 
         maxOccupants: room.maxOccupants,
         furniture: room.furniture.join(', '),
         description: room.description ?? '',
+        roomType: room.roomType ?? '',
+        hasBalcony: triState(room.hasBalcony),
+        hasWindow: triState(room.hasWindow),
+        petsAllowed: triState(room.petsAllowed),
       }
       // shortcut: 2 is the BE default when maxOccupants is omitted (rooms.service create).
-      : { maxOccupants: 2, furniture: '', description: '' },
+      : { maxOccupants: 2, furniture: '', description: '', roomType: '', hasBalcony: '', hasWindow: '', petsAllowed: '' },
   })
 
   const save = useMutation({
@@ -46,6 +56,10 @@ export function RoomForm({ buildingId, room, onSaved, onCancel }: { buildingId: 
         maxOccupants: values.maxOccupants,
         furniture: toList(values.furniture),
         description: values.description.trim() || null,
+        roomType: (values.roomType || null) as RoomType | null,
+        hasBalcony: fromTriState(values.hasBalcony),
+        hasWindow: fromTriState(values.hasWindow),
+        petsAllowed: fromTriState(values.petsAllowed),
       }
       return room ? updateRoom(room.id, input) : createRoom({ buildingId, ...input })
     },
@@ -69,6 +83,16 @@ export function RoomForm({ buildingId, room, onSaved, onCancel }: { buildingId: 
     <TextField label="Diện tích (m²)" type="number" inputMode="decimal" step="0.1" min={0.1} max={9999.9} error={errors.areaM2?.message} {...register('areaM2', { valueAsNumber: true })} />
     <TextField label="Số người tối đa" type="number" inputMode="numeric" min={1} error={errors.maxOccupants?.message} {...register('maxOccupants', { valueAsNumber: true })} />
     <TextField label="Nội thất (cách nhau bằng dấu phẩy)" autoComplete="off" {...register('furniture')} />
+    <SelectField label="Loại phòng" error={errors.roomType?.message} {...register('roomType')}>
+      <option value="">Chưa nhập</option>
+      {catalog.data?.roomTypes.map(item => <option key={item.code} value={item.code}>{item.label}</option>)}
+    </SelectField>
+    {([['hasBalcony', 'Ban công'], ['hasWindow', 'Cửa sổ'], ['petsAllowed', 'Cho nuôi thú cưng']] as const).map(([name, label]) =>
+      <SelectField key={name} label={label} error={errors[name]?.message} {...register(name)}>
+        <option value="">Chưa nhập</option>
+        <option value="true">Có</option>
+        <option value="false">Không</option>
+      </SelectField>)}
     <TextAreaField label="Mô tả" rows={4} {...register('description')} />
     <FormError>{formError}</FormError>
     <div className="staff-room-form-actions">

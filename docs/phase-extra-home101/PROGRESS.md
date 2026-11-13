@@ -15,7 +15,7 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 | EX-2 Tài khoản khách (FE) | chờ duyệt | ⏸ FE-EX-07 (đăng nhập, GuestLayout, /toi, /toi/tai-khoan) | FE-EX-04 đã commit | – | xem tay luồng đăng ký → /toi với backend thật còn chờ chủ dự án; plan: không có (không cần planner) |
 | EX-3 Việt + Anh | chưa làm | – | – | FE-EX-08 | cần EX-2 |
 | EX-4 Màn chào | chưa làm | – | – | FE-EX-14 | cần EX-3 |
-| EX-5 Bộ lọc phòng | đang làm | ⏸ BE-EX-15 (catalog, form nhân sự, bộ lọc công khai) | BE-EX-12 đã commit | BE-EX-16 | plan: `plans/EX-5/PLAN.md` |
+| EX-5 Bộ lọc phòng | chờ duyệt | ⏸ FE-EX-21 (cả part) | BE-EX-15 đã commit | – | plan: `plans/EX-5/PLAN.md` |
 | EX-6 Lịch xem (BE) | chưa làm | – | – | BE-EX-17 | cần EX-1 |
 | EX-7 Lịch xem (FE) | chưa làm | – | – | FE-EX-22 | cần EX-2, EX-6; lên production cùng EX-6 |
 | EX-8 Gửi email thật | chưa làm | – | – | BE-EX-28 | cần EX-6; BE-EX-30 cần khóa Resend của chủ dự án |
@@ -24,6 +24,8 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 ## Nhật ký điểm dừng
 
 Mới nhất ở trên. Mỗi dòng: `ngày · phần · task vừa xong · kết quả kiểm tra (số thật) · việc còn treo`.
+
+- 13/11/2026 · EX-5 · BE-EX-16 (seed mẫu thuộc tính phòng và mã tiện ích, ghi đè khi chạy lại) + FE-EX-18..21 (form phòng 4 trường Có/Không/Chưa nhập, checklist tiện ích + "Tiện ích cũ" + nút xóa, 9 bộ lọc `/phong` trong URL, thuộc tính ở `/phong/:id`, nhãn tiện ích ở `/toa/:id`) · unit BE 1631/1631, lint 0 lỗi, build OK, e2e BE 53/53; FE lint 0 lỗi, build OK, test:components 788/788 (19 test mới `tests/ex/ex5-room-filters.test.mjs`); reviewer DUYỆT, không có lỗi chặn; xem tay `/phong?balcony=true&amenities=ELEVATOR` và `/phong/7` trên dữ liệu seed thật · seed đã áp vào DB dev qua e2e `auth.e2e-spec.ts` · chờ chủ dự án duyệt
 
 - 13/11/2026 · EX-5 · BE-EX-13..15 (`common/catalog`, `GET /public/filters`, 4 trường phòng + mã tiện ích + `legacyAmenities` ở form nhân sự, 9 bộ lọc `/public/rooms`) · unit 1628/1628 (80 file), lint 0 lỗi, build OK, e2e 53/53 (7 file, có `public-filters.e2e-spec.ts` đọc-only trên DB dev); bỏ điều kiện lọc ban công / tiện ích / giữ chữ cũ thì test đỏ · tiếp: BE-EX-16 (seed) rồi FE-EX-18..21
 

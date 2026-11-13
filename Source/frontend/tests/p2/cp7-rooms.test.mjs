@@ -247,9 +247,17 @@ const ok = (data, meta) => json(200, { data, ...(meta ? { meta } : {}) })
 const fail = (status, code, message, fields) => json(status, { error: { code, message, ...(fields ? { fields } : {}) } })
 const pageMeta = (data, limit = 20) => ({ page: 1, limit, total: data.length })
 
+// PUB-06 fixture of GET /public/filters (Phase Extra EX-5); the request is answered but not recorded in `calls`.
+const FILTERS_FIXTURE = {
+  amenities: [['ELEVATOR', 'Thang máy'], ['PARKING', 'Chỗ để xe'], ['SECURITY', 'Bảo vệ'], ['CAMERA', 'Camera'], ['SHARED_WASHER', 'Máy giặt chung'], ['DRYING_AREA', 'Sân phơi'], ['FINGERPRINT_LOCK', 'Khóa vân tay'], ['FREE_HOURS', 'Giờ giấc tự do']].map(([code, label]) => ({ code, label, labelEn: label })),
+  roomTypes: [['STUDIO', 'Studio'], ['LOFT', 'Có gác xép'], ['ONE_BEDROOM', '1 phòng ngủ'], ['TWO_BEDROOM', '2 phòng ngủ']].map(([code, label]) => ({ code, label, labelEn: label })),
+}
+const filtersResponse = () => new Response(JSON.stringify({ data: FILTERS_FIXTURE }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+
 function fakeFetch(rules) {
   const calls = []
   globalThis.fetch = async (url, init = {}) => {
+    if (String(url).startsWith('/api/v1/public/filters') && !rules.some(r => r.prefix.startsWith('/public/filters'))) return filtersResponse()
     const call = { url, method: init.method ?? 'GET', headers: init.headers ?? {}, body: init.body }
     calls.push(call)
     const rule = rules.find(r => call.url.startsWith(`/api/v1${r.prefix}`) && (!r.method || r.method === call.method))
@@ -284,7 +292,7 @@ function baseRoomView(overrides = {}) {
 // ======================================================================================
 
 test('ROOM-01: code must be 1..10 chars — empty and 11 chars fail, 1 and 10 chars pass', () => {
-  const base = { floor: 1, areaM2: 20, maxOccupants: 2, furniture: '', description: '' }
+  const base = { floor: 1, areaM2: 20, maxOccupants: 2, furniture: '', description: '', roomType: '', hasBalcony: '', hasWindow: '', petsAllowed: '' }
   assert.equal(roomFormSchema.safeParse({ ...base, code: '' }).success, false, 'empty code must fail')
   assert.equal(roomFormSchema.safeParse({ ...base, code: 'A' }).success, true, '1 char must pass')
   assert.equal(roomFormSchema.safeParse({ ...base, code: 'A'.repeat(10) }).success, true, '10 chars must pass')
@@ -292,7 +300,7 @@ test('ROOM-01: code must be 1..10 chars — empty and 11 chars fail, 1 and 10 ch
 })
 
 test('ROOM-01: floor is an integer from 1 to 2147483647 — 0 and 2147483648 fail, 1 and 2147483647 pass', () => {
-  const base = { code: 'A1', areaM2: 20, maxOccupants: 2, furniture: '', description: '' }
+  const base = { code: 'A1', areaM2: 20, maxOccupants: 2, furniture: '', description: '', roomType: '', hasBalcony: '', hasWindow: '', petsAllowed: '' }
   assert.equal(roomFormSchema.safeParse({ ...base, floor: 0 }).success, false, 'floor 0 must fail')
   assert.equal(roomFormSchema.safeParse({ ...base, floor: 1 }).success, true, 'floor 1 must pass')
   assert.equal(roomFormSchema.safeParse({ ...base, floor: 2147483647 }).success, true, 'floor INT_MAX must pass')
@@ -301,7 +309,7 @@ test('ROOM-01: floor is an integer from 1 to 2147483647 — 0 and 2147483648 fai
 })
 
 test('ROOM-01: areaM2 must be >0, <=9999.9, at most one decimal place', () => {
-  const base = { code: 'A1', floor: 1, maxOccupants: 2, furniture: '', description: '' }
+  const base = { code: 'A1', floor: 1, maxOccupants: 2, furniture: '', description: '', roomType: '', hasBalcony: '', hasWindow: '', petsAllowed: '' }
   assert.equal(roomFormSchema.safeParse({ ...base, areaM2: 0 }).success, false, 'area 0 must fail')
   assert.equal(roomFormSchema.safeParse({ ...base, areaM2: 0.1 }).success, true, 'area 0.1 must pass')
   assert.equal(roomFormSchema.safeParse({ ...base, areaM2: 9999.9 }).success, true, 'area 9999.9 (the max) must pass')
@@ -310,7 +318,7 @@ test('ROOM-01: areaM2 must be >0, <=9999.9, at most one decimal place', () => {
 })
 
 test('ROOM-01: maxOccupants is an integer >=1 — 0 and negative fail, 1 passes', () => {
-  const base = { code: 'A1', floor: 1, areaM2: 20, furniture: '', description: '' }
+  const base = { code: 'A1', floor: 1, areaM2: 20, furniture: '', description: '', roomType: '', hasBalcony: '', hasWindow: '', petsAllowed: '' }
   assert.equal(roomFormSchema.safeParse({ ...base, maxOccupants: 0 }).success, false, 'maxOccupants 0 must fail')
   assert.equal(roomFormSchema.safeParse({ ...base, maxOccupants: -1 }).success, false, 'negative maxOccupants must fail')
   assert.equal(roomFormSchema.safeParse({ ...base, maxOccupants: 1 }).success, true, 'maxOccupants 1 must pass')
@@ -337,7 +345,8 @@ test('ROOM-02: creating a room sends buildingId/code/floor/areaM2/maxOccupants/f
   const post = calls.find(c => c.method === 'POST')
   assert.ok(post, 'POST /rooms was never sent (form stayed invalid)')
   const sent = JSON.parse(post.body)
-  assert.deepEqual(sent, { buildingId: 5, code: 'A101', floor: 3, areaM2: 20.5, maxOccupants: 2, furniture: [], description: null })
+  // ROOM-10: the four attributes left on "Chưa nhập" go out as null, which is not "Không" (false)
+  assert.deepEqual(sent, { buildingId: 5, code: 'A101', floor: 3, areaM2: 20.5, maxOccupants: 2, furniture: [], description: null, roomType: null, hasBalcony: null, hasWindow: null, petsAllowed: null })
   assert.equal('price' in sent, false, 'ROOM-02: price must never be sent by the form')
   await app.stop()
 })

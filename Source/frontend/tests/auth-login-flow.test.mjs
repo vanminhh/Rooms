@@ -649,13 +649,13 @@ test('Q4-A: unknown paths show "Không tìm thấy trang" inside PublicLayout an
   }
 })
 
-test('Q4-A/UI-20: "/" shows the approved hero title and introduction, "/phong" is the real search page (CP-3, empty state "Chưa có phòng phù hợp với bộ lọc" from the default empty mock, not the old "Đang làm" placeholder); the 404 link "Về trang chủ" goes to "/" without a second refresh', async () => {
+test('Q4-A/UI-20: "/" shows the approved hero title and introduction, "/phong" is the real search page (CP-3, empty state "Không có phòng phù hợp" from the default empty mock, not the old "Đang làm" placeholder); the 404 link "Về trang chủ" goes to "/" without a second refresh', async () => {
   const home = await mount('/')
   await until(() => home.text().includes('Một nơi ở vừa vặn giữa phố.'), '/')
   assert.ok(home.text().includes('Khám phá phòng thuê tại Hà Nội với thông tin rõ ràng về giá, diện tích và tiện ích.'))
   await home.stop()
   const rooms = await mount('/phong')
-  await until(() => rooms.text().includes('Tìm phòng') && rooms.text().includes('Chưa có phòng phù hợp với bộ lọc'), '/phong')
+  await until(() => rooms.text().includes('Tìm phòng') && rooms.text().includes('Không có phòng phù hợp'), '/phong')
   assert.ok(!rooms.text().includes('Đang làm'), 'CP-3 built the real page; the old placeholder text must be gone')
   await rooms.stop()
   const app = await mount('/khong-co')

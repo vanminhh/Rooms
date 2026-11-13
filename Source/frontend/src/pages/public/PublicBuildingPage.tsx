@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router'
 import { SectionHeading } from '../../components'
-import { getPublicBuilding, publicQueryKeys } from '../../features/public/api'
-import type { PublicBuildingDetail } from '../../features/public/api'
+import { getPublicBuilding, getPublicFilters, publicQueryKeys } from '../../features/public/api'
+import type { PublicBuildingDetail, PublicFiltersView } from '../../features/public/api'
+import { labelOf } from '../../features/public/attributes'
 import { ContactCard } from '../../features/public/ContactCard'
 import { ListState } from '../../features/public/ListState'
 import { RateTable } from '../../features/public/RateTable'
@@ -17,6 +18,7 @@ export function PublicBuildingPage() {
   const buildingId = Number(id)
   const valid = Number.isSafeInteger(buildingId) && buildingId > 0
   const building = useQuery({ queryKey: publicQueryKeys.building(buildingId), queryFn: () => getPublicBuilding(buildingId), enabled: valid, retry: false })
+  const catalog = useQuery({ queryKey: publicQueryKeys.filters, queryFn: getPublicFilters, enabled: building.isSuccess })
   if (!valid || (building.error instanceof ApiError && building.error.status === 404)) return <NotFoundPage />
 
   return <ListState
@@ -27,7 +29,7 @@ export function PublicBuildingPage() {
     emptyTitle=""
     onRetry={() => void building.refetch()}
   >
-    {building.data && <BuildingDetail building={building.data} />}
+    {building.data && <BuildingDetail building={building.data} catalog={catalog.data} catalogLoading={catalog.isPending} />}
   </ListState>
 }
 
@@ -35,8 +37,10 @@ function waterModeLabel(building: PublicBuildingDetail): string {
   return building.waterMode === 'PER_M3' ? 'Theo đồng hồ từng phòng' : 'Theo số người ở'
 }
 
-export function BuildingDetail({ building }: { building: PublicBuildingDetail }) {
+// `catalog` (GET /public/filters) gives the amenity labels (BLD-08); without it a code shows as is.
+export function BuildingDetail({ building, catalog, catalogLoading = false }: { building: PublicBuildingDetail; catalog?: PublicFiltersView; catalogLoading?: boolean }) {
   const roomCount = building.rooms.length
+  const amenities = catalogLoading ? [] : building.amenities // wait for the labels instead of showing codes
   return <article className="public-building">
     <nav className="public-building-breadcrumb" aria-label="Đường dẫn">
       <Link to="/">Trang chủ</Link><span aria-hidden="true">›</span><Link to="/phong">Tìm phòng</Link><span aria-hidden="true">›</span><span>{building.name}</span>
@@ -54,10 +58,10 @@ export function BuildingDetail({ building }: { building: PublicBuildingDetail })
       </dl>
     </header>
 
-    {building.amenities.length > 0 && <section className="public-building-amenities" aria-labelledby="building-amenities-title">
+    {amenities.length > 0 && <section className="public-building-amenities" aria-labelledby="building-amenities-title">
       <p className="rooms-eyebrow">Tiện ích tại tòa</p>
       <h2 id="building-amenities-title">Những gì có sẵn khi chuyển vào</h2>
-      <ul className="public-tags">{building.amenities.map(item => <li key={item}>{item}</li>)}</ul>
+      <ul className="public-tags">{amenities.map(item => <li key={item}>{labelOf(item, catalog?.amenities)}</li>)}</ul>
     </section>}
 
     <div className={`public-building-panels${building.contact ? '' : ' public-building-panels--rates-only'}`}>

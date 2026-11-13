@@ -451,6 +451,8 @@ test('FE-P2-16 #14d (D-6.5): room/building description and amenities render verb
   })
   const app = await mountRoom('/phong/10', [roomRule(10, ok(room))])
   await until(() => app.container.textContent.includes('Phòng góc, nhiều ánh sáng tự nhiên.'), 'loaded')
+  // EX-5: amenities wait for the label list (GET /public/filters) so a raw code never flashes; an unknown text is shown as it is
+  await until(() => app.container.textContent.includes('Thang máy'), 'amenities after the label list')
   const text = app.container.textContent
   assert.ok(text.includes('Tòa nhà mới xây, an ninh tốt.'))
   assert.ok(text.includes('Thang máy'))

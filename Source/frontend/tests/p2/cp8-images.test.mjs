@@ -230,9 +230,15 @@ const json = (status, body) => ({ status, body })
 const ok = (data, meta) => json(200, { data, ...(meta ? { meta } : {}) })
 const fail = (status, code, message, fields) => json(status, { error: { code, message, ...(fields ? { fields } : {}) } })
 
+// EX-5: RoomForm reads GET /public/filters; the request is answered here and not recorded in `calls`.
+const FILTERS_BODY = { data: { amenities: [], roomTypes: [{ code: 'STUDIO', label: 'Studio', labelEn: 'Studio' }] } }
+
 function fakeFetch(rules) {
   const calls = []
   globalThis.fetch = async (url, init = {}) => {
+    if (String(url).startsWith('/api/v1/public/filters') && !rules.some(r => r.prefix.startsWith('/public/filters'))) {
+      return new Response(JSON.stringify(FILTERS_BODY), { status: 200, headers: { 'Content-Type': 'application/json' } })
+    }
     const call = { url, method: init.method ?? 'GET', headers: init.headers ?? {}, credentials: init.credentials, body: init.body }
     calls.push(call)
     const rule = rules.find(r => r.match(call))

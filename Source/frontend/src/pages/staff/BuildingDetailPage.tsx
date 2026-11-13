@@ -5,6 +5,8 @@ import { useAuth } from '../../app/auth-context'
 import { BuildingForm, BuildingNotesForm } from '../../features/buildings/BuildingForm'
 import { BuildingLockControl } from '../../features/buildings/BuildingLockControl'
 import { listBuildings } from '../../features/buildings/api'
+import { getPublicFilters, publicQueryKeys } from '../../features/public/api'
+import { labelOf } from '../../features/public/attributes'
 import { managerText, waterModeLabels } from '../../features/buildings/labels'
 import { ServicesPanel } from '../../features/buildings/ServicesPanel'
 import '../../features/buildings/buildings.css'
@@ -24,6 +26,7 @@ export function BuildingDetailPage() {
     enabled: validId,
   })
   const building = query.data?.data[0]
+  const catalog = useQuery({ queryKey: publicQueryKeys.filters, queryFn: getPublicFilters })
 
   if (!validId || (query.isSuccess && !building)) {
     return <>
@@ -53,7 +56,8 @@ export function BuildingDetailPage() {
       <div><dt>Quản lý</dt><dd>{managerText(building.manager)}</dd></div>
       <div><dt>Trạng thái</dt><dd>{building.isActive ? 'Đang hoạt động' : 'Đã khóa'}</dd></div>
       <div><dt>Lịch hẹn chưa xử lý</dt><dd>{building.pendingViewingCount}</dd></div>
-      <div><dt>Tiện ích</dt><dd>{building.amenities.length > 0 ? building.amenities.join(', ') : 'Chưa có'}</dd></div>
+      <div><dt>Tiện ích</dt><dd>{building.amenities.length > 0 ? building.amenities.map(code => labelOf(code, catalog.data?.amenities)).join(', ') : 'Chưa có'}</dd></div>
+      {building.legacyAmenities.length > 0 && <div><dt>Tiện ích cũ (chưa chọn lại)</dt><dd>{building.legacyAmenities.join(', ')}</dd></div>}
       <div><dt>Mô tả</dt><dd>{building.description ?? 'Chưa có mô tả'}</dd></div>
     </dl>
 

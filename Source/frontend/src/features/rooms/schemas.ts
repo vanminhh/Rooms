@@ -19,6 +19,11 @@ export const roomFormSchema = z.object({
   // Comma-separated text in the form; RoomForm turns it into a list before the API call.
   furniture: z.string(),
   description: z.string(),
+  // ROOM-10: '' = chưa nhập (sent as null); 'true' / 'false' = Có / Không. roomType '' or one of the 4 codes.
+  roomType: z.string(),
+  hasBalcony: z.enum(['', 'true', 'false']),
+  hasWindow: z.enum(['', 'true', 'false']),
+  petsAllowed: z.enum(['', 'true', 'false']),
 })
 
 export type RoomFormValues = z.infer<typeof roomFormSchema>

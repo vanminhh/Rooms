@@ -122,6 +122,10 @@ const MODELS: Record<string, Model> = {
       maxOccupants: 2,
       furniture: [],
       description: null,
+      roomType: null,
+      hasBalcony: null,
+      hasWindow: null,
+      petsAllowed: null,
       underMaintenance: false,
       isActive: true,
     },
@@ -467,6 +471,16 @@ class FakeDb {
               this.calls.push({ model, method: 'upsert', args });
               resolve(structuredClone(this.upsert(model, args)));
             }),
+          update: (args: Row) =>
+            new Promise((resolve) => {
+              this.calls.push({ model, method: 'update', args });
+              const found = this.t[model].find((x) => matches(x, args.where));
+              ensure(found !== undefined, `update: no ${model} row`);
+              for (const k of Object.keys(args.data))
+                ensure(this.allowed(model).has(k), `fake prisma: unknown field ${model}.${k}`);
+              Object.assign(found as Row, args.data);
+              resolve(structuredClone(found));
+            }),
         },
       ]),
     );
@@ -665,11 +679,49 @@ describe('BE-LOGIN-06: seed (in-memory Prisma)', { timeout: 120_000 }, () => {
         ]);
     });
 
-    it('BE-LOGIN-06: only findFirst / create / upsert were called, and all other tables use update {} on re-run', () => {
+    it('BE-LOGIN-06, BE-EX-16: only findFirst / create / upsert / update were called, and all tables except users and rooms use update {} on re-run', () => {
       const methods = new Set(db.calls.map((c) => c.method));
-      expect(sorted([...methods])).toEqual(['create', 'findFirst', 'upsert']);
-      for (const c of db.calls.filter((x) => x.method === 'upsert' && x.model !== 'user'))
+      expect(sorted([...methods])).toEqual(['create', 'findFirst', 'update', 'upsert']);
+      for (const c of db.calls.filter((x) => x.method === 'upsert' && x.model !== 'user' && x.model !== 'room'))
         expect(c.args.update).toEqual({});
+    });
+
+    // Expected values come from docs/phase-extra-home101/plans/EX-5/PLAN.md section 2.9 (table), not from seed.ts.
+    it('BE-EX-16, ROOM-10: sample room attributes (null = "chưa nhập") so every filter has matching and non-matching rooms', () => {
+      const attrs = (building: string, code: string) => {
+        const b = db.t.building.find((x) => x.code === building)!;
+        const r = db.t.room.find((x) => x.buildingId === b.id && x.code === code)!;
+        return [r.roomType, r.hasBalcony, r.hasWindow, r.petsAllowed];
+      };
+      expect(attrs('CG01', '203')).toEqual(['STUDIO', true, true, false]);
+      expect(attrs('CG01', '204')).toEqual(['ONE_BEDROOM', false, true, true]);
+      expect(attrs('CG01', '301')).toEqual([null, null, null, null]); // fully empty on purpose
+      expect(attrs('DD01', '101')).toEqual(['LOFT', true, false, true]);
+      expect(attrs('DD01', '102')).toEqual(['TWO_BEDROOM', false, false, false]);
+      expect(attrs('HM01', '101')).toEqual(['STUDIO', null, true, null]);
+      expect(attrs('HM01', '201')).toEqual(['TWO_BEDROOM', true, true, true]);
+    });
+
+    it('BE-EX-16, BLD-08: sample building amenities are catalog codes', () => {
+      const amenities = (code: string) => db.t.building.find((x) => x.code === code)!.amenities;
+      expect(amenities('CG01')).toEqual(['ELEVATOR', 'PARKING', 'CAMERA']);
+      expect(amenities('DD01')).toEqual(['PARKING', 'SECURITY', 'FREE_HOURS']);
+      expect(amenities('HM01')).toEqual(['ELEVATOR', 'SHARED_WASHER', 'DRYING_AREA', 'FINGERPRINT_LOCK']);
+    });
+
+    it('BE-EX-16, OQ-4: a re-run puts the sample attributes and amenities back on rooms and buildings that already exist; nothing is added', async () => {
+      const local = new FakeDb();
+      await seed(local.client());
+      const before = counts(local);
+      const b = local.t.building.find((x) => x.code === 'CG01')!;
+      const r = local.t.room.find((x) => x.buildingId === b.id && x.code === '203')!;
+      r.roomType = 'LOFT';
+      r.hasBalcony = null;
+      b.amenities = ['wifi cũ'];
+      await seed(local.client());
+      expect([r.roomType, r.hasBalcony]).toEqual(['STUDIO', true]);
+      expect(b.amenities).toEqual(['ELEVATOR', 'PARKING', 'CAMERA']);
+      expect(counts(local)).toEqual(before);
     });
   });
 

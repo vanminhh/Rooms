@@ -21,11 +21,24 @@ export interface RoomView {
   maxOccupants: number
   furniture: string[]
   description: string | null
+  roomType: RoomType | null // ROOM-10: null = chưa nhập
+  hasBalcony: boolean | null
+  hasWindow: boolean | null
+  petsAllowed: boolean | null
   underMaintenance: boolean
   isActive: boolean
   status: RoomStatus
   images: RoomImageView[]
   pendingViewingCount?: number
+}
+
+export type RoomType = 'STUDIO' | 'LOFT' | 'ONE_BEDROOM' | 'TWO_BEDROOM'
+
+export interface RoomAttributesInput {
+  roomType?: RoomType | null
+  hasBalcony?: boolean | null
+  hasWindow?: boolean | null
+  petsAllowed?: boolean | null
 }
 
 export interface RoomPendingProposal {
@@ -36,13 +49,13 @@ export interface RoomPendingProposal {
 }
 
 // The grid item carries no furniture, description, images or viewing count (those come from GET /rooms/:id).
-export type RoomGridItem = Omit<RoomView, 'furniture' | 'description' | 'images' | 'pendingViewingCount'> & {
+export type RoomGridItem = Omit<RoomView, 'furniture' | 'description' | 'images' | 'pendingViewingCount' | 'roomType' | 'hasBalcony' | 'hasWindow' | 'petsAllowed'> & {
   pendingProposal: RoomPendingProposal | null
   imageCount: number
 }
 
 // price is absent on purpose: the room form never writes it (ROOM-02, PRC).
-export interface CreateRoomInput {
+export interface CreateRoomInput extends RoomAttributesInput {
   buildingId: number
   code: string
   floor: number
@@ -52,7 +65,7 @@ export interface CreateRoomInput {
   description?: string | null
 }
 
-export interface UpdateRoomInput {
+export interface UpdateRoomInput extends RoomAttributesInput {
   code?: string
   floor?: number
   areaM2?: number
@@ -108,6 +121,10 @@ export function createRoom(input: CreateRoomInput) {
       maxOccupants: input.maxOccupants,
       furniture: input.furniture,
       description: input.description,
+      roomType: input.roomType,
+      hasBalcony: input.hasBalcony,
+      hasWindow: input.hasWindow,
+      petsAllowed: input.petsAllowed,
     },
   })
 }
@@ -122,6 +139,10 @@ export function updateRoom(id: number, input: UpdateRoomInput) {
       maxOccupants: input.maxOccupants,
       furniture: input.furniture,
       description: input.description,
+      roomType: input.roomType,
+      hasBalcony: input.hasBalcony,
+      hasWindow: input.hasWindow,
+      petsAllowed: input.petsAllowed,
       underMaintenance: input.underMaintenance,
       isActive: input.isActive,
     },

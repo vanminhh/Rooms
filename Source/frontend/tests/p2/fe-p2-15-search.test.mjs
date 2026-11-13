@@ -212,7 +212,7 @@ test('FE-P2-15 #5: minPrice > maxPrice still calls the API (FE does not enforce 
   const q = queryOf(lastRoomsCall(app.calls).url)
   assert.equal(q.get('minPrice'), '5000000')
   assert.equal(q.get('maxPrice'), '1000000')
-  await until(() => app.container.textContent.includes('Chưa có phòng phù hợp với bộ lọc'), 'empty state')
+  await until(() => app.container.textContent.includes('Không có phòng phù hợp'), 'empty state')
   assert.ok(buttonByText(app.container, 'Xóa bộ lọc'))
   await app.stop()
 })
@@ -293,7 +293,7 @@ test('FE-P2-15 #7 (UI-03): the 4 list states — loading, error+retry, empty, da
   // empty
   {
     const app = await mountRooms('/phong', [roomsRule([]), locationsRule()])
-    await until(() => app.container.textContent.includes('Chưa có phòng phù hợp với bộ lọc'), 'empty')
+    await until(() => app.container.textContent.includes('Không có phòng phù hợp'), 'empty')
     await app.stop()
   }
   // data
@@ -495,20 +495,22 @@ test('FE-P2-15 #15: parseFilters/filtersToParams/filtersToQuery/validFilters pur
   assert.equal(parsed.sort, 'price')
   assert.equal(parsed.buildingId, '')
 
-  const emptyParams = filtersToParams({ district: '', ward: '', buildingId: '', minPrice: '', maxPrice: '', sort: 'price' })
+  // EX-5: every filter object carries the PUB-06 fields too
+  const F = over => ({ district: '', ward: '', buildingId: '', minPrice: '', maxPrice: '', minArea: '', maxArea: '', minOccupants: '', floor: '', amenities: [], balcony: false, window: false, pets: false, roomType: '', sort: 'price', ...over })
+  const emptyParams = filtersToParams(F({}))
   assert.equal(emptyParams.toString(), '', 'empty fields and the default sort are left out')
-  const newestParams = filtersToParams({ district: 'Cầu Giấy', ward: '', buildingId: '', minPrice: '', maxPrice: '', sort: 'newest' })
+  const newestParams = filtersToParams(F({ district: 'Cầu Giấy', sort: 'newest' }))
   assert.equal(newestParams.toString(), new URLSearchParams({ district: 'Cầu Giấy', sort: 'newest' }).toString())
 
-  const query = filtersToQuery({ district: '', ward: '', buildingId: '', minPrice: '0', maxPrice: '', sort: 'price' })
+  const query = filtersToQuery(F({ minPrice: '0' }))
   assert.equal(query.minPrice, 0, '"0" is kept as a real price')
   assert.equal(query.district, undefined)
   assert.equal(query.maxPrice, undefined)
   assert.equal(query.buildingId, undefined)
 
-  assert.equal(validFilters({ district: '', ward: '', buildingId: '', minPrice: '2147483648', maxPrice: '', sort: 'price' }), false)
-  assert.equal(validFilters({ district: '', ward: '', buildingId: '', minPrice: '2147483647', maxPrice: '', sort: 'price' }), true)
-  assert.equal(validFilters({ district: '', ward: '', buildingId: '', minPrice: '', maxPrice: '', sort: 'price' }), true)
+  assert.equal(validFilters(F({ minPrice: '2147483648' })), false)
+  assert.equal(validFilters(F({ minPrice: '2147483647' })), true)
+  assert.equal(validFilters(F({})), true)
 })
 
 

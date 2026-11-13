@@ -36,15 +36,15 @@ Out: a furniture filter (D-32 says no), guessing values from descriptions, filli
   Done when: tests `ROOM-10: …` (null stays null, unknown type refused) and `BLD-08: …` (unknown code refused, old text kept after saving codes).
 - [x] **BE-EX-15** ⏸ `/public/rooms` filters `minArea`, `maxArea`, `minOccupants`, `floor`, `amenities`, `balcony`, `window`, `pets`, `roomType` (PUB-06): AND together, applied in the query before paging, on top of ROOM-05; a null field never matches its filter; an unknown code → `VALIDATION_FAILED`. Room list and detail responses include the new fields and the building's amenity codes (PUB-04 still holds).
   Done when: the three new acceptance lines of spec 11; `meta.total` equals the filtered count on page 2; a non-public room never appears with any filter. `npm run lint`, `test`, `build`, `test:e2e` pass. Stop and report BE-EX-12..15.
-- [ ] **BE-EX-16** Dev seed: give the sample rooms and buildings values for the new fields so the filters can be tried by hand. Do not touch production data.
+- [x] **BE-EX-16** Dev seed: give the sample rooms and buildings values for the new fields so the filters can be tried by hand. Do not touch production data.
   Done when: `seed.spec.ts` passes; the seed is still safe to run twice.
-- [ ] **FE-EX-18** Staff: `RoomForm` gets "Loại phòng" and three choices "Có / Không / Chưa nhập" for "Ban công", "Cửa sổ", "Cho nuôi thú cưng"; the building page gets the amenity checklist and, when present, the block "Tiện ích cũ (chưa chọn lại)".
+- [x] **FE-EX-18** Staff: `RoomForm` gets "Loại phòng" and three choices "Có / Không / Chưa nhập" for "Ban công", "Cửa sổ", "Cho nuôi thú cưng"; the building page gets the amenity checklist and, when present, the block "Tiện ích cũ (chưa chọn lại)".
   Done when: form tests; saving without touching the new fields keeps "chưa nhập".
-- [ ] **FE-EX-19** `/phong`: the new filters in `RoomFilters` with options from `/public/filters`, every filter in the URL query (`room-filters.ts`), "Xóa bộ lọc", empty state "Không có phòng phù hợp" with the clear button (UI-03). Usable at 360 px.
+- [x] **FE-EX-19** `/phong`: the new filters in `RoomFilters` with options from `/public/filters`, every filter in the URL query (`room-filters.ts`), "Xóa bộ lọc", empty state "Không có phòng phù hợp" with the clear button (UI-03). Usable at 360 px.
   Done when: tests: URL → filters → API query round trip, clear, empty state; `tests/p2/fe-p2-15-search.test.mjs` and `ui-22-building-filter.test.mjs` still green.
-- [ ] **FE-EX-20** Show the attributes: room type, balcony, window, pets on `/phong/:id` (facts strip) and the building's amenities on `/toa/:id`; a "chưa nhập" value is not shown at all.
+- [x] **FE-EX-20** Show the attributes: room type, balcony, window, pets on `/phong/:id` (facts strip) and the building's amenities on `/toa/:id`; a "chưa nhập" value is not shown at all.
   Done when: page tests for a room with all values and one with none.
-- [ ] **FE-EX-21** ⏸ `npm run lint`, `npm run build`, `npm run test:components`. Run the reviewer on the uncommitted changes and put its full report in the checkpoint report.
+- [x] **FE-EX-21** ⏸ `npm run lint`, `npm run build`, `npm run test:components`. Run the reviewer on the uncommitted changes and put its full report in the checkpoint report.
   Done when: all pass with real output quoted; manual walk on the seed: combine three filters, share the URL, clear.
 
 ## Questions for the owner

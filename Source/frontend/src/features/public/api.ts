@@ -2,7 +2,29 @@ import { apiRequest, apiRequestPage, listPath } from '../../shared/api'
 import type { ListPage } from '../../shared/api'
 
 // Mirrors Source/backend/src/modules/rooms/public.types.ts; the BE returns no internal fields (PUB-04).
-export interface PublicRoomListItem {
+export type PublicRoomType = 'STUDIO' | 'LOFT' | 'ONE_BEDROOM' | 'TWO_BEDROOM'
+
+// ROOM-10: null = "chưa nhập"; the page shows nothing for it.
+export interface PublicRoomAttributes {
+  roomType: PublicRoomType | null
+  hasBalcony: boolean | null
+  hasWindow: boolean | null
+  petsAllowed: boolean | null
+}
+
+// GET /public/filters (PUB-06): the only source of labels, so the FE keeps no second list.
+export interface PublicCatalogItem {
+  code: string
+  label: string
+  labelEn: string
+}
+
+export interface PublicFiltersView {
+  amenities: PublicCatalogItem[]
+  roomTypes: PublicCatalogItem[]
+}
+
+export interface PublicRoomListItem extends PublicRoomAttributes {
   id: number
   code: string
   floor: number
@@ -15,6 +37,7 @@ export interface PublicRoomListItem {
   district: string
   ward: string
   imageUrl: string | null
+  buildingAmenities: string[] // catalog codes only (BLD-08)
 }
 
 export interface PublicLocation {
@@ -62,7 +85,7 @@ export interface PublicBuildingSummary {
   description: string | null
 }
 
-export interface PublicRoomDetail {
+export interface PublicRoomDetail extends PublicRoomAttributes {
   id: number
   code: string
   floor: number
@@ -96,6 +119,15 @@ export interface PublicRoomsQuery {
   buildingId?: number
   minPrice?: number
   maxPrice?: number
+  minArea?: number
+  maxArea?: number
+  minOccupants?: number
+  floor?: number
+  amenities?: string // 'ELEVATOR,PARKING'
+  balcony?: true
+  window?: true
+  pets?: true
+  roomType?: string
   sort?: PublicRoomSort
   page?: number
   limit?: number
@@ -113,6 +145,7 @@ export interface PublicViewingInput {
 
 export const publicQueryKeys = {
   locations: ['public', 'locations'] as const,
+  filters: ['public', 'filters'] as const,
   featured: ['public', 'featured'] as const,
   rooms: (query: PublicRoomsQuery) => ['public', 'rooms', query] as const,
   room: (id: number) => ['public', 'room', id] as const,
@@ -121,6 +154,10 @@ export const publicQueryKeys = {
 
 export function listPublicLocations(): Promise<PublicLocation[]> {
   return apiRequest<PublicLocation[]>('/public/locations')
+}
+
+export function getPublicFilters(): Promise<PublicFiltersView> {
+  return apiRequest<PublicFiltersView>('/public/filters')
 }
 
 export function listPublicRooms(query: PublicRoomsQuery): Promise<ListPage<PublicRoomListItem>> {

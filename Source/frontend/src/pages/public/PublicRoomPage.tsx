@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
 import { StatusBadge } from '../../components'
-import { getPublicRoom, publicQueryKeys } from '../../features/public/api'
-import type { PublicRoomDetail } from '../../features/public/api'
+import { getPublicFilters, getPublicRoom, publicQueryKeys } from '../../features/public/api'
+import type { PublicFiltersView, PublicRoomDetail } from '../../features/public/api'
+import { labelOf, roomAttributeFacts } from '../../features/public/attributes'
 import { ContactCard } from '../../features/public/ContactCard'
 import { EstimatePanel } from '../../features/public/EstimatePanel'
 import { ListState } from '../../features/public/ListState'
@@ -19,6 +20,7 @@ export function PublicRoomPage() {
   const roomId = Number(id)
   const valid = Number.isSafeInteger(roomId) && roomId > 0
   const room = useQuery({ queryKey: publicQueryKeys.room(roomId), queryFn: () => getPublicRoom(roomId), enabled: valid, retry: false })
+  const catalog = useQuery({ queryKey: publicQueryKeys.filters, queryFn: getPublicFilters, enabled: room.isSuccess })
   if (!valid || (room.error instanceof ApiError && room.error.status === 404)) return <NotFoundPage />
 
   return <ListState
@@ -29,15 +31,20 @@ export function PublicRoomPage() {
     emptyTitle=""
     onRetry={() => void room.refetch()}
   >
-    {room.data && <RoomDetail room={room.data} />}
+    {room.data && <RoomDetail room={room.data} catalog={catalog.data} catalogLoading={catalog.isPending} />}
   </ListState>
 }
 
 // This composition is deliberately thin: RoomDetailView is the single UI implementation used by both
 // the real page and preview; these slots keep all API-aware components and money formatting unchanged.
-export function RoomDetail({ room }: { room: PublicRoomDetail }) {
+// `catalog` (GET /public/filters) turns room types and building amenity codes into their labels; without it a code shows as is.
+export function RoomDetail({ room, catalog, catalogLoading = false }: { room: PublicRoomDetail; catalog?: PublicFiltersView; catalogLoading?: boolean }) {
+  // While the labels load, the amenity codes wait too, so a raw code never flashes on screen.
+  const amenities = catalogLoading ? [] : room.building.amenities.map(code => labelOf(code, catalog?.amenities))
+  const labelled = { ...room, building: { ...room.building, amenities } }
   return <RoomDetailView
-    room={room}
+    room={labelled}
+    attributeFacts={roomAttributeFacts(room, catalog, catalogLoading)}
     statusBadge={<StatusBadge>Đang trống</StatusBadge>}
     estimatePanel={<EstimatePanel monthlyEstimate={room.monthlyEstimate} deposit={room.deposit} estimate={room.estimate} />}
     rateTable={<RateTable rates={room.rates} upcomingRates={room.upcomingRates} waterMode={room.building.waterMode} />}

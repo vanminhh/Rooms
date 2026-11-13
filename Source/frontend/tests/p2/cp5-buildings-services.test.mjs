@@ -210,6 +210,7 @@ const { AuthContext } = load(entryPath('app/auth-context.ts'))
 
 // ---------- DOM query / event helpers (same style as cp3-kit.test.mjs) ----------
 const wait = ms => new Promise(r => setTimeout(r, ms))
+async function until(cond, what, ms = 3000) { const start = Date.now(); while (Date.now() - start < ms) { if (cond()) return; await wait(5) } throw new Error('timeout waiting for ' + what) }
 const walkTree = (node, out = []) => { out.push(node); node.childNodes.forEach(c => walkTree(c, out)); return out }
 const find = (root, pred) => walkTree(root).filter(n => n.nodeType === 1 && pred(n))
 const buttons = container => find(container, n => n.tagName === 'BUTTON')
@@ -297,9 +298,17 @@ const ok = (data, meta) => json(200, { data, ...(meta ? { meta } : {}) })
 const fail = (status, code, message, fields) => json(status, { error: { code, message, ...(fields ? { fields } : {}) } })
 const pageMeta = (data, limit = 20) => ({ page: 1, limit, total: data.length })
 
+// PUB-06 fixture of GET /public/filters (Phase Extra EX-5); the request is answered but not recorded in `calls`.
+const FILTERS_FIXTURE = {
+  amenities: [['ELEVATOR', 'Thang máy'], ['PARKING', 'Chỗ để xe'], ['SECURITY', 'Bảo vệ'], ['CAMERA', 'Camera'], ['SHARED_WASHER', 'Máy giặt chung'], ['DRYING_AREA', 'Sân phơi'], ['FINGERPRINT_LOCK', 'Khóa vân tay'], ['FREE_HOURS', 'Giờ giấc tự do']].map(([code, label]) => ({ code, label, labelEn: label })),
+  roomTypes: [['STUDIO', 'Studio'], ['LOFT', 'Có gác xép'], ['ONE_BEDROOM', '1 phòng ngủ'], ['TWO_BEDROOM', '2 phòng ngủ']].map(([code, label]) => ({ code, label, labelEn: label })),
+}
+const filtersResponse = () => new Response(JSON.stringify({ data: FILTERS_FIXTURE }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+
 function fakeFetch(rules) {
   const calls = []
   globalThis.fetch = async (url, init = {}) => {
+    if (String(url).startsWith('/api/v1/public/filters') && !rules.some(r => r.prefix.startsWith('/public/filters'))) return filtersResponse()
     const call = { url, method: init.method ?? 'GET', headers: init.headers ?? {}, body: init.body }
     calls.push(call)
     const rule = rules.find(r => call.url.startsWith(`/api/v1${r.prefix}`) && (!r.method || r.method === call.method))
@@ -317,7 +326,7 @@ function baseBuilding(overrides = {}) {
   return {
     id: 5, code: 'B1', name: 'Tòa B1', address: '12 Láng Hạ', district: 'Đống Đa', ward: 'Láng Hạ',
     waterMode: 'PER_M3', dueDays: 5, managerId: 2, manager: { id: 2, fullName: 'Quản lý A', isActive: true },
-    amenities: ['wifi'], description: 'Mô tả', isActive: true, pendingViewingCount: 0,
+    amenities: ['ELEVATOR'], legacyAmenities: [], description: 'Mô tả', isActive: true, pendingViewingCount: 0,
     createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z',
     ...overrides,
   }
@@ -523,9 +532,11 @@ test('VALIDATION_FAILED: a duplicate code from the API is shown as a field error
   await app.stop()
 })
 
-test('BLD-02: BuildingNotesForm only renders amenities and description controls, never code/name/managerId', async () => {
+test('BLD-02, BLD-08: BuildingNotesForm only renders the amenity checklist and description controls, never code/name/managerId', async () => {
+  fakeFetch([])
   const app = await mount(withQuery(React.createElement(BuildingNotesForm, { building: baseBuilding() })))
-  assert.ok(byName(app.container, 'amenities'), 'amenities field missing')
+  await until(() => find(app.container, n => n.tagName === 'INPUT' && n.type === 'checkbox').length === 8, 'the 8 amenity checkboxes')
+  assert.equal(byName(app.container, 'amenities'), undefined, 'amenities is no longer a free-text field')
   assert.ok(byName(app.container, 'description'), 'description field missing')
   for (const missing of ['code', 'name', 'address', 'district', 'ward', 'waterMode', 'managerId', 'dueDays']) {
     assert.equal(byName(app.container, missing), undefined, `manager edit form must not expose "${missing}"`)
@@ -533,15 +544,18 @@ test('BLD-02: BuildingNotesForm only renders amenities and description controls,
   await app.stop()
 })
 
-test('BLD-02: BuildingNotesForm submits only {amenities, description}, matching the manager\'s PATCH scope', async () => {
-  const calls = fakeFetch([{ prefix: '/buildings/5', method: 'PATCH', handler: () => ok(baseBuilding({ amenities: ['Thang máy'], description: 'Mới' })) }])
+test('BLD-02, BLD-08: BuildingNotesForm submits only {amenities (codes), description}, matching the manager\'s PATCH scope', async () => {
+  const calls = fakeFetch([{ prefix: '/buildings/5', method: 'PATCH', handler: () => ok(baseBuilding({ amenities: ['ELEVATOR', 'PARKING'], description: 'Mới' })) }])
   const app = await mount(withQuery(React.createElement(BuildingNotesForm, { building: baseBuilding() })))
-  fill(app.container, byName(app.container, 'amenities'), 'Thang máy')
+  await until(() => find(app.container, n => n.tagName === 'INPUT' && n.type === 'checkbox').length === 8, 'the 8 amenity checkboxes')
+  const parking = find(app.container, n => n.tagName === 'LABEL' && n.textContent.trim() === 'Chỗ để xe')[0].querySelector?.('input')
+    ?? find(find(app.container, n => n.tagName === 'LABEL' && n.textContent.trim() === 'Chỗ để xe')[0], n => n.tagName === 'INPUT')[0]
+  check(app.container, parking, true)
   fill(app.container, byName(app.container, 'description'), 'Mới')
   dispatch(app.container, find(app.container, n => n.tagName === 'FORM')[0], 'submit')
   await wait(30)
   assert.equal(calls.length, 1)
-  assert.deepEqual(JSON.parse(calls[0].body), { amenities: ['Thang máy'], description: 'Mới' })
+  assert.deepEqual(JSON.parse(calls[0].body), { amenities: ['ELEVATOR', 'PARKING'], description: 'Mới' })
   await app.stop()
 })
 

@@ -45,6 +45,12 @@ interface RoomSpec {
   areaM2: number;
   price: number | null; // null = no approved price yet (CON-02)
   maxOccupants: number;
+  // ROOM-10, BE-EX-16: sample values so every public filter has rooms that match and rooms that do not.
+  // null = "chưa nhập"; CG01/301 is left entirely empty on purpose.
+  roomType: 'STUDIO' | 'LOFT' | 'ONE_BEDROOM' | 'TWO_BEDROOM' | null;
+  hasBalcony: boolean | null;
+  hasWindow: boolean | null;
+  petsAllowed: boolean | null;
 }
 
 interface BuildingSpec {
@@ -54,30 +60,34 @@ interface BuildingSpec {
   district: string;
   ward: string;
   manager: DevAccount['key'] | null;
+  amenities: string[]; // BLD-08 codes
   rooms: RoomSpec[];
 }
 
 export const BUILDINGS: BuildingSpec[] = [
   {
     code: 'CG01', name: 'Tòa Cầu Giấy', address: '1 Xuân Thủy', district: 'Cầu Giấy', ward: 'Dịch Vọng Hậu', manager: 'manager1',
+    amenities: ['ELEVATOR', 'PARKING', 'CAMERA'],
     rooms: [
-      { code: '203', floor: 2, areaM2: 24, price: 2_500_000, maxOccupants: 2 },
-      { code: '204', floor: 2, areaM2: 22, price: 2_400_000, maxOccupants: 2 },
-      { code: '301', floor: 3, areaM2: 20, price: null, maxOccupants: 2 },
+      { code: '203', floor: 2, areaM2: 24, price: 2_500_000, maxOccupants: 2, roomType: 'STUDIO', hasBalcony: true, hasWindow: true, petsAllowed: false },
+      { code: '204', floor: 2, areaM2: 22, price: 2_400_000, maxOccupants: 2, roomType: 'ONE_BEDROOM', hasBalcony: false, hasWindow: true, petsAllowed: true },
+      { code: '301', floor: 3, areaM2: 20, price: null, maxOccupants: 2, roomType: null, hasBalcony: null, hasWindow: null, petsAllowed: null },
     ],
   },
   {
     code: 'DD01', name: 'Tòa Đống Đa', address: '2 Tây Sơn', district: 'Đống Đa', ward: 'Quang Trung', manager: 'manager1',
+    amenities: ['PARKING', 'SECURITY', 'FREE_HOURS'],
     rooms: [
-      { code: '101', floor: 1, areaM2: 20, price: 2_200_000, maxOccupants: 2 },
-      { code: '102', floor: 1, areaM2: 22, price: 2_300_000, maxOccupants: 2 },
+      { code: '101', floor: 1, areaM2: 20, price: 2_200_000, maxOccupants: 2, roomType: 'LOFT', hasBalcony: true, hasWindow: false, petsAllowed: true },
+      { code: '102', floor: 1, areaM2: 22, price: 2_300_000, maxOccupants: 2, roomType: 'TWO_BEDROOM', hasBalcony: false, hasWindow: false, petsAllowed: false },
     ],
   },
   {
     code: 'HM01', name: 'Tòa Hoàng Mai', address: '3 Giải Phóng', district: 'Hoàng Mai', ward: 'Giáp Bát', manager: null,
+    amenities: ['ELEVATOR', 'SHARED_WASHER', 'DRYING_AREA', 'FINGERPRINT_LOCK'],
     rooms: [
-      { code: '101', floor: 1, areaM2: 18, price: 2_000_000, maxOccupants: 2 },
-      { code: '201', floor: 2, areaM2: 25, price: 2_600_000, maxOccupants: 3 },
+      { code: '101', floor: 1, areaM2: 18, price: 2_000_000, maxOccupants: 2, roomType: 'STUDIO', hasBalcony: null, hasWindow: true, petsAllowed: null },
+      { code: '201', floor: 2, areaM2: 25, price: 2_600_000, maxOccupants: 3, roomType: 'TWO_BEDROOM', hasBalcony: true, hasWindow: true, petsAllowed: true },
     ],
   },
 ];
@@ -145,21 +155,26 @@ export async function seed(prisma: PrismaClient): Promise<void> {
   for (const b of BUILDINGS) {
     // findFirst + create, not upsert: Prisma's native upsert fires the BEFORE INSERT manager trigger
     // even when the row exists, which raises MANAGER_MAX_2_BUILDINGS for a manager with 2 buildings.
-    const building =
-      (await prisma.building.findFirst({ where: { code: b.code } })) ??
-      (await prisma.building.create({
+    // BE-EX-16: an existing dev building gets the sample amenity codes too (owner 13/11/2026: overwrite), so the filters can be tried.
+    const existing = await prisma.building.findFirst({ where: { code: b.code } });
+    const building = existing
+      ? await prisma.building.update({ where: { id: existing.id }, data: { amenities: b.amenities } })
+      : await prisma.building.create({
         data: {
           code: b.code, name: b.name, address: b.address, district: b.district, ward: b.ward,
-          managerId: b.manager ? userId[b.manager] : null, waterMode: 'PER_M3', dueDays: 5,
+          managerId: b.manager ? userId[b.manager] : null, waterMode: 'PER_M3', dueDays: 5, amenities: b.amenities,
         },
-      }));
+      });
     buildingId[b.code] = building.id;
 
     for (const r of b.rooms) {
       const room = await prisma.room.upsert({
         where: { buildingId_code: { buildingId: building.id, code: r.code } },
-        update: {},
-        create: { buildingId: building.id, code: r.code, floor: r.floor, areaM2: r.areaM2, price: r.price, maxOccupants: r.maxOccupants },
+        update: { roomType: r.roomType, hasBalcony: r.hasBalcony, hasWindow: r.hasWindow, petsAllowed: r.petsAllowed },
+        create: {
+          buildingId: building.id, code: r.code, floor: r.floor, areaM2: r.areaM2, price: r.price, maxOccupants: r.maxOccupants,
+          roomType: r.roomType, hasBalcony: r.hasBalcony, hasWindow: r.hasWindow, petsAllowed: r.petsAllowed,
+        },
       });
       roomId[`${b.code}/${r.code}`] = room.id;
       if (r.price === null) continue;

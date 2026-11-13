@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
 import { FormError, RoomsButton, Spinner, TextField } from '../../components'
 import { applyApiError } from '../../shared/form-errors'
 import { listManagers } from '../managers/api'
+import { AmenityField, LegacyAmenities } from './AmenityField'
 import { createBuilding, updateBuilding, updateBuildingNotes } from './api'
 import type { BuildingNotesInput, BuildingView, CreateBuildingInput } from './api'
 import { SelectField, TextAreaField } from './fields'
@@ -13,18 +14,14 @@ import { waterModeLabels } from './labels'
 import { buildingFormSchema, buildingNotesFormSchema } from './schemas'
 import './buildings.css'
 
-// The form keeps amenities as one comma-separated line and managerId as a select value; both are converted before the API call.
-const adminFormSchema = buildingFormSchema.extend({ amenities: z.string(), managerId: z.string(), description: z.string() })
+// The form keeps managerId as a select value (converted before the API call); amenities are the ticked catalog codes (BLD-08).
+const adminFormSchema = buildingFormSchema.extend({ managerId: z.string(), description: z.string() })
 const adminFields = ['code', 'name', 'address', 'district', 'ward', 'waterMode', 'dueDays', 'managerId', 'amenities', 'description'] as const
-const notesFormSchema = buildingNotesFormSchema.extend({ amenities: z.string(), description: z.string() })
+const notesFormSchema = buildingNotesFormSchema.extend({ description: z.string() })
 const notesFields = ['amenities', 'description'] as const
 
 type AdminFormValues = z.infer<typeof adminFormSchema>
 type NotesFormValues = z.infer<typeof notesFormSchema>
-
-function toAmenities(text: string): string[] {
-  return text.split(',').map(item => item.trim()).filter(Boolean)
-}
 
 // Boss creates a building or edits every field (BLD-01, BLD-03). Lock/unlock is a separate control (BLD-06).
 export function BuildingForm({ building, onSaved, onCancel }: { building?: BuildingView; onSaved?(saved: BuildingView): void; onCancel?(): void }) {
@@ -37,7 +34,7 @@ export function BuildingForm({ building, onSaved, onCancel }: { building?: Build
   })
   // A locked manager is kept in the list so the current assignment is not shown as empty.
   const managerOptions = (managers.data?.data ?? []).filter(manager => manager.isActive || manager.id === building?.managerId)
-  const { register, handleSubmit, setError, formState: { errors } } = useForm<AdminFormValues>({
+  const { control, register, handleSubmit, setError, formState: { errors } } = useForm<AdminFormValues>({
     resolver: zodResolver(adminFormSchema),
     defaultValues: building
       ? {
@@ -49,11 +46,11 @@ export function BuildingForm({ building, onSaved, onCancel }: { building?: Build
         waterMode: building.waterMode,
         dueDays: building.dueDays,
         managerId: building.managerId === null ? '' : String(building.managerId),
-        amenities: building.amenities.join(', '),
+        amenities: building.amenities,
         description: building.description ?? '',
       }
       // shortcut: 5 is the DB default for due_days (schema.prisma); water mode has no default, so the user picks it.
-      : { dueDays: 5, managerId: '', amenities: '', description: '' },
+      : { dueDays: 5, managerId: '', amenities: [], description: '' },
   })
 
   const save = useMutation({
@@ -76,7 +73,7 @@ export function BuildingForm({ building, onSaved, onCancel }: { building?: Build
       waterMode: values.waterMode,
       dueDays: values.dueDays,
       managerId: values.managerId ? Number(values.managerId) : null,
-      amenities: toAmenities(values.amenities),
+      amenities: values.amenities,
       description: values.description.trim() || null,
     }
     try {
@@ -102,7 +99,8 @@ export function BuildingForm({ building, onSaved, onCancel }: { building?: Build
       {managerOptions.map(manager => <option key={manager.id} value={manager.id}>{manager.fullName}{manager.isActive ? '' : ' (đã khóa)'}</option>)}
     </SelectField>
     {managers.isError && <FormError>{managers.error.message}</FormError>}
-    <TextField label="Tiện ích (cách nhau bằng dấu phẩy)" error={errors.amenities?.message} {...register('amenities')} />
+    <Controller control={control} name="amenities" render={({ field }) => <AmenityField value={field.value} onChange={field.onChange} />} />
+    {building && <LegacyAmenities building={building} />}
     <TextAreaField label="Mô tả" rows={4} error={errors.description?.message} {...register('description')} />
     <FormError>{formError}</FormError>
     <div className="buildings-form-actions">
@@ -117,9 +115,9 @@ export function BuildingNotesForm({ building }: { building: BuildingView }) {
   const queryClient = useQueryClient()
   const [formError, setFormError] = useState('')
   const [saved, setSaved] = useState(false)
-  const { register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm<NotesFormValues>({
+  const { control, register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm<NotesFormValues>({
     resolver: zodResolver(notesFormSchema),
-    defaultValues: { amenities: building.amenities.join(', '), description: building.description ?? '' },
+    defaultValues: { amenities: building.amenities, description: building.description ?? '' },
   })
 
   const save = useMutation({
@@ -134,7 +132,7 @@ export function BuildingNotesForm({ building }: { building: BuildingView }) {
     setFormError('')
     setSaved(false)
     try {
-      await save.mutateAsync({ amenities: toAmenities(values.amenities), description: values.description.trim() || null })
+      await save.mutateAsync({ amenities: values.amenities, description: values.description.trim() || null })
     } catch (error) {
       setFormError(applyApiError(error, setError, notesFields))
     }
@@ -143,7 +141,8 @@ export function BuildingNotesForm({ building }: { building: BuildingView }) {
   return <>
     {saved && <p className="buildings-notice" role="status">Đã lưu.</p>}
     <form noValidate className="buildings-form" onSubmit={handleSubmit(onSubmit)}>
-      <TextField label="Tiện ích (cách nhau bằng dấu phẩy)" error={errors.amenities?.message} {...register('amenities')} />
+      <Controller control={control} name="amenities" render={({ field }) => <AmenityField value={field.value} onChange={field.onChange} />} />
+      <LegacyAmenities building={building} />
       <TextAreaField label="Mô tả" rows={4} error={errors.description?.message} {...register('description')} />
       <FormError>{formError}</FormError>
       <div className="buildings-form-actions">

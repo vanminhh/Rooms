@@ -190,9 +190,17 @@ export const ok = (data, meta) => json(200, { data, ...(meta ? { meta } : {}) })
 export const fail = (status, code, message, fields) => json(status, { error: { code, message, ...(fields ? { fields } : {}) } })
 export const pageMeta = (data, limit = 20, page = 1) => ({ page, limit, total: data.length })
 
+// PUB-06 fixture of GET /public/filters (Phase Extra EX-5); the request is answered but not recorded in `calls`.
+export const FILTERS_FIXTURE = {
+  amenities: [['ELEVATOR', 'Thang máy'], ['PARKING', 'Chỗ để xe'], ['SECURITY', 'Bảo vệ'], ['CAMERA', 'Camera'], ['SHARED_WASHER', 'Máy giặt chung'], ['DRYING_AREA', 'Sân phơi'], ['FINGERPRINT_LOCK', 'Khóa vân tay'], ['FREE_HOURS', 'Giờ giấc tự do']].map(([code, label]) => ({ code, label, labelEn: label })),
+  roomTypes: [['STUDIO', 'Studio'], ['LOFT', 'Có gác xép'], ['ONE_BEDROOM', '1 phòng ngủ'], ['TWO_BEDROOM', '2 phòng ngủ']].map(([code, label]) => ({ code, label, labelEn: label })),
+}
+const filtersResponse = () => new Response(JSON.stringify({ data: FILTERS_FIXTURE }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+
 export function fakeFetch(rules) {
   const calls = []
   globalThis.fetch = async (url, init = {}) => {
+    if (String(url).startsWith('/api/v1/public/filters') && !rules.some(r => r.prefix.startsWith('/public/filters'))) return filtersResponse()
     const call = { url, method: init.method ?? 'GET', headers: init.headers ?? {}, body: init.body }
     calls.push(call)
     const rule = rules.find(r => call.url.startsWith(`/api/v1${r.prefix}`) && (!r.method || r.method === call.method))

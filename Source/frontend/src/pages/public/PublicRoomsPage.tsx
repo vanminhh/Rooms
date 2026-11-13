@@ -2,11 +2,11 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
 import { FilterChip, RoomsButton, SectionHeading } from '../../components'
-import { getPublicBuilding, listPublicLocations, listPublicRooms, publicQueryKeys } from '../../features/public/api'
+import { getPublicBuilding, getPublicFilters, listPublicLocations, listPublicRooms, publicQueryKeys } from '../../features/public/api'
 import { ListState } from '../../features/public/ListState'
 import { RoomCard } from '../../features/public/RoomCard'
 import { RoomFilters } from '../../features/public/RoomFilters'
-import { filtersToParams, filtersToQuery, parseFilters, validFilters } from '../../features/public/room-filters'
+import { filtersToParams, filtersToQuery, needsCatalog, parseFilters, validFilters, withCatalog } from '../../features/public/room-filters'
 import type { PublicFilters } from '../../features/public/room-filters'
 import '../../features/public/public-listing.css'
 
@@ -21,13 +21,19 @@ function pageOf(params: URLSearchParams): number {
 // /phong (UI-22): every filter, the page and the sort live in the URL query, both ways (PUB-01, ROOM-05).
 export function PublicRoomsPage() {
   const [params, setParams] = useSearchParams()
-  const values = useMemo(() => parseFilters(params), [params])
+  const catalog = useQuery({ queryKey: publicQueryKeys.filters, queryFn: getPublicFilters })
+  // PUB-06: a code in the URL that the list does not know is dropped before the request; until the list loads, a URL that needs it waits.
+  const values = useMemo(() => {
+    const parsed = parseFilters(params)
+    return catalog.data ? withCatalog(parsed, catalog.data) : parsed
+  }, [params, catalog.data])
   const page = pageOf(params)
   const valid = validFilters(values)
+  const ready = valid && (catalog.data !== undefined || catalog.isError || !needsCatalog(values))
   const query = { ...filtersToQuery(values), page, limit: PAGE_SIZE }
 
   const locations = useQuery({ queryKey: publicQueryKeys.locations, queryFn: listPublicLocations })
-  const rooms = useQuery({ queryKey: publicQueryKeys.rooms(query), queryFn: () => listPublicRooms(query), enabled: valid })
+  const rooms = useQuery({ queryKey: publicQueryKeys.rooms(query), queryFn: () => listPublicRooms(query), enabled: ready })
   const hasBuilding = valid && values.buildingId !== ''
   const building = useQuery({
     queryKey: publicQueryKeys.building(Number(values.buildingId)),
@@ -67,7 +73,7 @@ export function PublicRoomsPage() {
         </div>
       </div>
 
-      <RoomFilters locations={locations.data ?? []} values={values} onChange={apply} onReset={reset} />
+      <RoomFilters locations={locations.data ?? []} catalog={catalog.data} values={values} onChange={apply} onReset={reset} />
       {hasBuilding && <div className="public-building-filter">
         <span className="public-building-filter-status" aria-live="polite">
           {building.isPending && <span role="status">Đang tải thông tin tòa</span>}
@@ -81,12 +87,12 @@ export function PublicRoomsPage() {
       </div>}
     </section>
 
-    {valid && <ListState
+    {ready && <ListState
       status={rooms.status}
       error={rooms.error}
       isEmpty={!rooms.data?.data.length}
       loadingLabel="Đang tải danh sách phòng"
-      emptyTitle="Chưa có phòng phù hợp với bộ lọc"
+      emptyTitle="Không có phòng phù hợp"
       emptyHint={<RoomsButton variant="outline" onClick={reset}>Xóa bộ lọc</RoomsButton>}
       onRetry={() => void rooms.refetch()}
     >

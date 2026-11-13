@@ -21,7 +21,8 @@ export interface BuildingView {
   dueDays: number
   managerId: number | null
   manager: BuildingManager | null
-  amenities: string[]
+  amenities: string[] // catalog codes (BLD-08)
+  legacyAmenities: string[] // old free text, kept until staff clear it
   description: string | null
   isActive: boolean
   pendingViewingCount: number
@@ -47,6 +48,7 @@ export type UpdateBuildingInput = Partial<CreateBuildingInput> & { isActive?: bo
 // BLD-02: a manager may edit only these two fields of his own buildings.
 export interface BuildingNotesInput {
   amenities?: string[]
+  legacyAmenities?: [] // the only accepted value: "Xóa tiện ích cũ"
   description?: string | null
 }
 
@@ -104,7 +106,7 @@ export function updateBuilding(id: number, input: UpdateBuildingInput) {
 export function updateBuildingNotes(id: number, input: BuildingNotesInput) {
   return apiRequest<BuildingView>(`/buildings/${id}`, {
     method: 'PATCH',
-    body: { amenities: input.amenities, description: input.description },
+    body: { amenities: input.amenities, legacyAmenities: input.legacyAmenities, description: input.description },
   })
 }
 

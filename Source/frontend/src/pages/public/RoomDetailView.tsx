@@ -33,10 +33,11 @@ export interface RoomDetailViewProps {
   rateTable: ReactNode
   contactCard: ReactNode
   viewingForm: ReactNode
+  attributeFacts?: { label: string; value: string }[] // ROOM-10: only the values staff entered
   formatMoney(value: number): string
 }
 
-export function RoomDetailView({ room, statusBadge, estimatePanel, rateTable, contactCard, viewingForm, formatMoney }: RoomDetailViewProps) {
+export function RoomDetailView({ room, statusBadge, estimatePanel, rateTable, contactCard, viewingForm, attributeFacts, formatMoney }: RoomDetailViewProps) {
   const { building } = room
   const [shareMessage, setShareMessage] = useState('')
   const bookingCard = useRef<HTMLElement>(null)
@@ -105,6 +106,7 @@ export function RoomDetailView({ room, statusBadge, estimatePanel, rateTable, co
       <div><dt>Diện tích</dt><dd>{room.areaM2.toLocaleString('vi-VN')} m²</dd></div>
       <div><dt>Số người tối đa</dt><dd>{room.maxOccupants} người</dd></div>
       <div><dt>Tầng</dt><dd>{room.floor}</dd></div>
+      {attributeFacts?.map(fact => <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>)}
       <div><dt>Nội thất</dt><dd>{room.furniture.length > 0 ? room.furniture.join(', ') : 'Chưa có thông tin'}</dd></div>
     </dl>
 
