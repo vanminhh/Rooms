@@ -27,7 +27,7 @@ Out: the old public viewing form (owner 13/11/2026: EX-6 and EX-7 replace it, so
 
 ## Tasks
 
-- [ ] **FE-EX-08** ⏸ Dictionary core in `src/shared/i18n/`: `vi` and `en` dictionaries, `t(key, params)`, a provider, the choice kept in the browser, fallback to Vietnamese for a missing English text, never a raw key (LOC-03, LOC-04). If the plan chooses a library, stop and ask the owner before installing it.
+- [x] **FE-EX-08** ⏸ Dictionary core in `src/shared/i18n/`: `vi` and `en` dictionaries, `t(key, params)`, a provider, the choice kept in the browser, fallback to Vietnamese for a missing English text, never a raw key (LOC-03, LOC-04). If the plan chooses a library, stop and ask the owner before installing it.
   Done when: tests `LOC-04: …` for fallback and for "no raw key"; a test that fails when a key exists in `vi` but not in `en` lists the missing keys (allowed list empty at the end of the part).
 - [ ] **FE-EX-09** Language switch "Tiếng Việt / English" in the header of `PublicLayout`, `GuestLayout`, `TenantLayout` (kit component takes its texts through props, KIT-04). `shared/api.ts` sends `Accept-Language` on every request (LOC-02). When logged in, the choice is saved with `PATCH /auth/me` (`locale`) and read from `/auth/me` at login.
   Done when: tests: switching changes the page without reload and keeps typed form input (UI-12); the header is sent; `StaffLayout` has no switch.

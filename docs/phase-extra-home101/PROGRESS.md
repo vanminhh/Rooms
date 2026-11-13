@@ -13,7 +13,7 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 | EX-0 Chủ dự án chuẩn bị | đang làm | Q-09..Q-12 đã trả lời; quyết định cuối 12/11/2026 (email thay SMS) | – | tạo tài khoản Resend + xác thực tên miền (Q-14 đã chọn Resend), Q-08 video, Q-13, Q-EX4-1, Q-EX6-1, Q-EX6-2, Q-EX8-2 | không chặn EX-1 |
 | EX-1 Tài khoản khách (BE) | chờ duyệt | ⏸ BE-EX-09 (kiểm tra cuối) | BE-EX-07 đã commit; BE-EX-08 chờ commit | – | seed khách `0900000006` đã chạy trên DB dev qua e2e cũ; plan: `plans/EX-1/PLAN.md` |
 | EX-2 Tài khoản khách (FE) | chờ duyệt | ⏸ FE-EX-07 (đăng nhập, GuestLayout, /toi, /toi/tai-khoan) | FE-EX-04 đã commit | – | xem tay luồng đăng ký → /toi với backend thật còn chờ chủ dự án; plan: không có (không cần planner) |
-| EX-3 Việt + Anh | chưa làm (đã có plan) | – | – | FE-EX-08, sau khi chủ dự án trả lời OQ-1..3 trong plan | cần EX-2; plan: `plans/EX-3/PLAN.md` (planner viết lại 13/11/2026, thay bản nháp cũ) |
+| EX-3 Việt + Anh | chờ commit | ⏸ FE-EX-08 (lõi từ điển Việt/Anh) | – | FE-EX-09 sau khi chủ dự án kiểm chứng và commit | plan: `plans/EX-3/PLAN.md`; OQ-1..3 đã trả lời 13/11/2026 |
 | EX-4 Màn chào | chưa làm | – | – | FE-EX-14 | cần EX-3 |
 | EX-5 Bộ lọc phòng | chờ duyệt | ⏸ FE-EX-21 (cả part) | BE-EX-15 đã commit | – | plan: `plans/EX-5/PLAN.md` |
 | EX-6 Lịch xem (BE) | chưa làm | – | – | BE-EX-17 | cần EX-1 |
@@ -24,6 +24,8 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 ## Nhật ký điểm dừng
 
 Mới nhất ở trên. Mỗi dòng: `ngày · phần · task vừa xong · kết quả kiểm tra (số thật) · việc còn treo`.
+
+- 13/11/2026 · EX-3 · FE-EX-08 (từ điển `vi`/`en`, provider, lưu lựa chọn, fallback và số nhiều) · FE lint 0 lỗi, build thành công, test:components 799/799 (11 test mới); kiểm thử biên dịch giả lập thiếu một khóa `en` trả lỗi TypeScript đúng khóa · chờ chủ dự án kiểm chứng và commit; tiếp FE-EX-09
 
 - 13/11/2026 · EX-5 · BE-EX-16 (seed mẫu thuộc tính phòng và mã tiện ích, ghi đè khi chạy lại) + FE-EX-18..21 (form phòng 4 trường Có/Không/Chưa nhập, checklist tiện ích + "Tiện ích cũ" + nút xóa, 9 bộ lọc `/phong` trong URL, thuộc tính ở `/phong/:id`, nhãn tiện ích ở `/toa/:id`) · unit BE 1631/1631, lint 0 lỗi, build OK, e2e BE 53/53; FE lint 0 lỗi, build OK, test:components 788/788 (19 test mới `tests/ex/ex5-room-filters.test.mjs`); reviewer DUYỆT, không có lỗi chặn; xem tay `/phong?balcony=true&amenities=ELEVATOR` và `/phong/7` trên dữ liệu seed thật · seed đã áp vào DB dev qua e2e `auth.e2e-spec.ts` · chờ chủ dự án duyệt
 

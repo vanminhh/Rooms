@@ -99,7 +99,7 @@ export const vi = {
 import { vi } from './vi'
 export const en: Record<keyof typeof vi, string> = { /* cùng tập khóa, chữ tiếng Anh */ }
 
-// src/shared/i18n/index.tsx
+// src/shared/i18n/index.ts (barrel); core.ts (functions and context); index.tsx (provider)
 export type Lang = 'vi' | 'en'
 export type DictKey = keyof typeof vi
 export type Params = Record<string, string | number>
@@ -321,7 +321,7 @@ Ngoài phạm vi để so sánh: `pages/staff/` + `features/{buildings,rooms,pri
 
 | Tệp | Việc |
 |---|---|
-| `src/shared/i18n/index.tsx` (mới) | `t`, `useI18n`, `I18nProvider`, `currentLang`, `setStoredLang`, `STORAGE_KEY`, kiểu `Lang`/`DictKey` (§2.2) |
+| `src/shared/i18n/index.ts`, `core.ts`, `index.tsx` (mới) | `index.ts` xuất API chung; `core.ts` chứa `t`, `useI18n`, context, bộ nhớ, kiểu; `index.tsx` chỉ xuất `I18nProvider` để tuân Fast Refresh (§2.2) |
 | `src/shared/i18n/vi.ts`, `src/shared/i18n/en.ts` (mới) | từ điển phẳng (§2.3); `en` kiểu `Record<keyof typeof vi, string>` |
 | `src/shared/api.ts` | `setLanguage()` + `headers['Accept-Language']` trong `send()`; `GENERIC_MESSAGE` và `RangeError` của `listPath` lấy từ `t()` |
 | `src/shared/form-errors.ts` | 1 chuỗi còn lại → `t()` (thông điệp `fields` từ API đã đúng ngôn ngữ nhờ BE-EX-10) |
@@ -370,7 +370,7 @@ Mốc test hiện tại để so sánh (PROGRESS 13/11/2026): FE `test:component
 
 ### CP-1 · FE-EX-08 – lõi từ điển (⏸ của file task)
 
-Tệp: `src/shared/i18n/{index.tsx,vi.ts,en.ts}`, `tests/ex/ex3-i18n.test.mjs`. Ở CP này `vi.ts`/`en.ts` chỉ cần các khóa `common.*` + `nav.*` để test chạy; chưa đổi trang nào.
+Tệp: `src/shared/i18n/{index.ts,core.ts,index.tsx,vi.ts,en.ts}`, `tests/ex/ex3-i18n.test.mjs`. `index.ts` là API import chung, tách `core.ts` khỏi component TSX theo lint Fast Refresh. Ở CP này `vi.ts`/`en.ts` chỉ cần các khóa `common.*`, `nav.*` và `rooms.list.count.*` để test số nhiều; chưa đổi trang nào.
 
 **Done when**
 ```powershell

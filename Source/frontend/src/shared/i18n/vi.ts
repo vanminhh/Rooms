@@ -1,0 +1,16 @@
+export const vi = {
+  'common.retry': 'Thử lại',
+  'common.loading': 'Đang tải...',
+  'common.save': 'Lưu',
+  'common.cancel': 'Hủy',
+  'common.genericError': 'Đã có lỗi xảy ra. Vui lòng thử lại.',
+  'common.yes': 'Có',
+  'common.no': 'Không',
+  'nav.findRoom': 'Tìm phòng',
+  'nav.language': 'Ngôn ngữ',
+  'nav.vietnamese': 'Tiếng Việt',
+  'nav.english': 'English',
+  'rooms.list.count': '{count} phòng phù hợp',
+  'rooms.list.count.one': '{count} phòng phù hợp',
+  'rooms.list.count.other': '{count} phòng phù hợp',
+} as const
