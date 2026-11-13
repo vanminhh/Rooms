@@ -111,14 +111,22 @@ test('VIEW-20, FE-EX-06: /toi shows the empty state with a "Tìm phòng" link to
   await app.stop()
 })
 
-test('AUTH-09, FE-EX-06: /toi/tai-khoan shows name and phone read only, the email form and change password', async () => {
+test('AUTH-09, AUTH-12, FE-EX-06: /toi/tai-khoan shows a guest name, phone and email read only, and change password', async () => {
   fakeFetch([])
   const { GuestAccountPage } = mod('pages/guest/GuestAccountPage.tsx')
   const app = await mountPage('/toi/tai-khoan', React.createElement(GuestAccountPage), guestUser)
   const readOnly = find(app.container, n => n.tagName === 'INPUT' && n.hasAttribute('readonly'))
-  assert.deepEqual(readOnly.map(n => n.value).sort(), ['0912345678', 'Đỗ Thị Khách'])
-  assert.equal(byName(app.container, 'email').value, 'khach@example.com')
+  assert.deepEqual(readOnly.map(n => n.value).sort(), ['0912345678', 'khach@example.com', 'Đỗ Thị Khách'])
+  assert.equal(byName(app.container, 'email'), undefined, 'a guest has no email form: the verified address cannot be changed here')
   assert.ok(text(app.container).includes('Đổi mật khẩu'))
+  await app.stop()
+})
+
+test('AUTH-09: a tenant on /toi/tai-khoan still gets the email form', async () => {
+  fakeFetch([])
+  const { GuestAccountPage } = mod('pages/guest/GuestAccountPage.tsx')
+  const app = await mountPage('/toi/tai-khoan', React.createElement(GuestAccountPage), { ...guestUser, role: 'TENANT' })
+  assert.equal(byName(app.container, 'email').value, 'khach@example.com')
   await app.stop()
 })
 

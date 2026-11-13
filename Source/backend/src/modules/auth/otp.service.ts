@@ -19,6 +19,7 @@ type Tx = Prisma.TransactionClient;
 export interface IssuedCode {
   id: number;
   code: string;
+  replacedId: number | null; // the still-unused code this one retired, given back if the mail never leaves
 }
 
 const tooMany = () => new HttpException(ErrorCode.TOO_MANY_REQUESTS, HttpStatus.TOO_MANY_REQUESTS);
@@ -69,10 +70,14 @@ export class OtpService {
         createdAt: now,
       },
     });
-    return { id: row.id, code };
+    // At most one code per email is unused (email_otps_one_active), and it is always the newest row.
+    return { id: row.id, code, replacedId: last && last.usedAt === null ? last.id : null };
   }
 
-  /** Mails a stored code. On failure the code is removed (no email left, so it costs no daily quota) and 503 is thrown. */
+  /**
+   * Mails a stored code. On failure the code is removed (no email left, so it costs no daily quota), the code it
+   * retired works again unless a newer request has issued another one meanwhile, and 503 is thrown.
+   */
   async deliver(email: string, issued: IssuedCode): Promise<void> {
     try {
       await this.mailer.send({
@@ -83,7 +88,13 @@ export class OtpService {
           'Mã có hiệu lực 5 phút. Nếu không phải bạn yêu cầu, hãy bỏ qua email này.',
       });
     } catch {
-      await this.prisma.emailOtp.deleteMany({ where: { id: issued.id } });
+      await this.prisma.$transaction(async (tx) => {
+        await this.lock(tx, `email:${email}`);
+        await tx.emailOtp.deleteMany({ where: { id: issued.id } });
+        if (issued.replacedId === null) return;
+        if ((await tx.emailOtp.count({ where: { email, usedAt: null } })) > 0) return;
+        await tx.emailOtp.updateMany({ where: { id: issued.replacedId }, data: { usedAt: null } });
+      });
       throw new HttpException(ErrorCode.MAIL_UNAVAILABLE, HttpStatus.SERVICE_UNAVAILABLE);
     }
   }

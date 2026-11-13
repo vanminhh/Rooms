@@ -31,7 +31,7 @@ Out: the old public viewing form (owner 13/11/2026: EX-6 and EX-7 replace it, so
   Done when: tests `LOC-04: …` for fallback and for "no raw key"; a test that fails when a key exists in `vi` but not in `en` lists the missing keys (allowed list empty at the end of the part).
 - [x] **FE-EX-09** Language switch "Tiếng Việt / English" in the header of `PublicLayout`, `GuestLayout`, `TenantLayout` (kit component takes its texts through props, KIT-04). `shared/api.ts` sends `Accept-Language` on every request (LOC-02). When logged in, the choice is saved with `PATCH /auth/me` (`locale`) and read from `/auth/me` at login.
   Done when: tests: switching changes the page without reload and keeps typed form input (UI-12); the header is sent; `StaffLayout` has no switch.
-- [ ] **FE-EX-10** Public pages into the dictionary: home, `/phong`, `/toa/:id`, `/phong/:id`, header, footer, list states. `shared/status-labels.ts` stays Vietnamese: only the staff app uses it (checked by the planner, 13/11/2026). Money and dates do not change with the language (LOC-05).
+- [x] **FE-EX-10** Public pages into the dictionary: home, `/phong`, `/toa/:id`, `/phong/:id`, header, footer, list states. `shared/status-labels.ts` stays Vietnamese: only the staff app uses it (checked by the planner, 13/11/2026). Money and dates do not change with the language (LOC-05).
   Done when: no Vietnamese literal left in these pages and components (a test scans the files); `2.984.000 đ` and `dd/mm/yyyy` are the same in both languages.
 - [ ] **FE-EX-11** ⏸ Auth pages and guest area into the dictionary: `/dang-nhap`, `/dang-ky`, `/xac-minh-email`, `/quen-mat-khau`, `/doi-mat-khau`, `/toi`, `/toi/tai-khoan`, zod messages.
   Done when: same scan test for these files. Stop and report FE-EX-08..11.

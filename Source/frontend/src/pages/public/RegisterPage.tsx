@@ -34,7 +34,9 @@ export function RegisterPage() {
     } catch (error) {
       if (error instanceof ApiError && (error.code === 'PHONE_TAKEN' || error.code === 'EMAIL_TAKEN')) {
         setTaken(true) // the API message goes on the field it is about (UI-05)
-        setError(error.code === 'PHONE_TAKEN' ? 'phone' : 'email', { type: 'server', message: error.message })
+        const field = error.code === 'PHONE_TAKEN' ? 'phone' : 'email'
+        // AUTH-11: the sign-up wording ("…Hãy đăng nhập hoặc dùng Quên mật khẩu") comes in fields; message is the generic text.
+        setError(field, { type: 'server', message: error.fields?.[field] ?? error.message })
         return
       }
       setFormError(applyApiError(error, setError, ['fullName', 'phone', 'email', 'password']))

@@ -258,8 +258,10 @@ export class AuthService {
   async updateMe(user: AuthUser, dto: UpdateMeDto): Promise<Me> {
     const { email, contactPhone, zaloUrl, facebookUrl, locale } = dto;
     if (
-      (user.role === 'TENANT' || user.role === 'GUEST') &&
-      (contactPhone !== undefined || zaloUrl !== undefined || facebookUrl !== undefined)
+      ((user.role === 'TENANT' || user.role === 'GUEST') &&
+        (contactPhone !== undefined || zaloUrl !== undefined || facebookUrl !== undefined)) ||
+      // AUTH-09, AUTH-12: a guest's email is the address the code verified; changing or clearing it here would skip that check.
+      (user.role === 'GUEST' && email !== undefined)
     ) {
       throw new ForbiddenException(ErrorCode.FORBIDDEN);
     }

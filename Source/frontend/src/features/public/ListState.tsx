@@ -1,9 +1,7 @@
 import type { ReactElement, ReactNode } from 'react'
 import { FormError, RoomsButton, Spinner } from '../../components'
+import { useI18n } from '../../shared/i18n'
 import './public.css'
-
-// Same text as shared/api.ts for errors without a message; the shared constant is not exported.
-const GENERIC_MESSAGE = 'Có lỗi xảy ra, vui lòng thử lại sau'
 
 // The 4 states of a list (UI-03): loading, error with retry, empty with the next action, data.
 export function ListState({ status, error, isEmpty, loadingLabel, emptyTitle, emptyHint, onRetry, children }: {
@@ -16,10 +14,11 @@ export function ListState({ status, error, isEmpty, loadingLabel, emptyTitle, em
   onRetry: () => void
   children: ReactNode
 }): ReactElement | null {
+  const { t } = useI18n()
   if (status === 'pending') return <Spinner block label={loadingLabel} />
   if (status === 'error') return <div className="public-state">
-    <FormError>{error instanceof Error ? error.message : GENERIC_MESSAGE}</FormError>
-    <RoomsButton variant="sand" onClick={onRetry}>Thử lại</RoomsButton>
+    <FormError>{error instanceof Error ? error.message : t('common.apiGeneric')}</FormError>
+    <RoomsButton variant="sand" onClick={onRetry}>{t('common.retry')}</RoomsButton>
   </div>
   if (isEmpty) return <div className="rooms-empty public-state">
     <p>{emptyTitle}</p>

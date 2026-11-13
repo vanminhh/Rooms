@@ -39,7 +39,7 @@ The public, guest and tenant layouts have the language switch "Tiếng Việt / 
 |---|---|---|
 | `/toi` | Lịch hẹn của tôi: upcoming viewings first (waiting for confirmation, then confirmed), then past; each with room, time and status; empty state with "Tìm phòng" | VIEW-20 |
 | `/toi/lich-hen/:id` | Chi tiết lịch hẹn: room and building with address, time, status ("Chờ xác nhận" / "Đã xác nhận" with how it was confirmed), contact of the person responsible, "Hủy lịch" with a confirm dialog (hidden after the start time), note "Muốn đổi giờ? Gọi quản lý" | VIEW-18, VIEW-20 |
-| `/toi/tai-khoan` | Tài khoản: name (read only), phone (read only), email, language, change password | AUTH-09, AUTH-15 |
+| `/toi/tai-khoan` | Tài khoản: name (read only), phone (read only), email (read only for a guest, editable for a tenant), language, change password | AUTH-09, AUTH-12, AUTH-15 |
 
 ### Tenant (6)
 

@@ -1,4 +1,5 @@
 import type { PublicContact } from './api'
+import { useI18n } from '../../shared/i18n'
 import './auth.css'
 
 // Only https links are shown (A11): a javascript: or http: value from the API is dropped.
@@ -7,12 +8,13 @@ function httpsOnly(url: string | null | undefined): string | null {
 }
 
 export function ContactInfo({ contact }: { contact: PublicContact | null }) {
+  const { t } = useI18n()
   const phone = contact?.phone || null
   const zalo = httpsOnly(contact?.zaloUrl)
   const facebook = httpsOnly(contact?.facebookUrl)
   if (!phone && !zalo && !facebook) return null
   return <div className="auth-contact">
-    {phone && <p>Điện thoại: {phone}</p>}
+    {phone && <p>{t('auth.contact.phone', { phone })}</p>}
     {(zalo || facebook) && <div className="auth-contact-links">
       {zalo && <a href={zalo} target="_blank" rel="noopener noreferrer">Zalo</a>}
       {facebook && <a href={facebook} target="_blank" rel="noopener noreferrer">Facebook</a>}

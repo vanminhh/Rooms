@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 import type { ReactElement, ReactNode } from 'react'
-import { setLanguage } from '../api'
+import { forceLanguage, setLanguage } from '../api'
 import { currentLang, I18nContext, setStoredLang, t } from './core'
 import type { Lang } from './core'
 
@@ -15,7 +15,10 @@ export function I18nProvider({ children, locale }: { children: ReactNode; locale
   }, [locale])
 
   useLayoutEffect(() => {
-    if (!locale) setLanguage(lang)
+    if (!locale) return setLanguage(lang)
+    // A fixed-language area (the staff app, LOC-01) also fixes the language its API calls ask for, until it unmounts.
+    forceLanguage(locale)
+    return () => forceLanguage(null)
   }, [lang, locale])
 
   useEffect(() => {

@@ -26,6 +26,11 @@ export function GuestLayout() {
         <LanguageSwitch value={lang} onChange={setLang} viLabel={t('nav.vietnamese')} enLabel={t('nav.english')} groupLabel={t('nav.language')} />
         <RoomsButton variant="outline" type="button" disabled={signingOut} onClick={() => void signOut()}>{t('nav.signOut')}</RoomsButton>
       </div>}
+      homeLabel={t('nav.homeLabel')}
+      closeLabel={t('nav.close')}
+      menuLabel={t('nav.menu')}
+      mainNavLabel={t('nav.main')}
+      exploreLabel={t('nav.explore')}
     />
     <main className="layout-main"><Outlet /></main>
   </div>

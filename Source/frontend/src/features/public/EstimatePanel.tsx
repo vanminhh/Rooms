@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react'
 import { CostBreakdown } from '../../components'
 import { formatMoney } from '../../shared/formatters'
+import { useI18n } from '../../shared/i18n'
 import type { PublicEstimate } from './api'
 
 // ROOM-08 / UI-06: every amount is computed by the BE; the FE only shows them, never adds them up.
@@ -9,13 +10,15 @@ export function EstimatePanel({ monthlyEstimate, deposit, estimate }: {
   deposit: number
   estimate: PublicEstimate
 }): ReactElement {
+  const { t } = useI18n()
   return <section className="public-estimate">
-    <p className="rooms-eyebrow">Ước tính chi phí / tháng</p>
-    <CostBreakdown items={estimate.items} total={monthlyEstimate} note={estimate.meteredNote} />
+    <p className="rooms-eyebrow">{t('room.estimate.title')}</p>
+    <CostBreakdown items={estimate.items} total={monthlyEstimate} note={estimate.meteredNote}
+      title={t('room.estimate.tableTitle')} totalLabel={t('room.estimate.total')} />
     {estimate.missing.map(line => <p key={line} className="public-detail-note">{line}</p>)}
     <dl className="public-room-facts">
-      <div><dt>Tiền cọc · 1 tháng</dt><dd>{formatMoney(deposit)}</dd></div>
+      <div><dt>{t('room.estimate.deposit')}</dt><dd>{formatMoney(deposit)}</dd></div>
     </dl>
-    <p className="public-detail-note">Thời hạn tối thiểu 3 tháng</p>
+    <p className="public-detail-note">{t('room.estimate.minTerm')}</p>
   </section>
 }

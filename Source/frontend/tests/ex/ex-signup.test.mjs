@@ -209,13 +209,14 @@ test('UI-05: /dang-ky validates before sending (no request) and shows the BE wor
   await app.stop()
 })
 
-for (const [code, message, label] of [
-  ['PHONE_TAKEN', 'Số điện thoại đã có tài khoản. Hãy đăng nhập hoặc dùng Quên mật khẩu', 'Số điện thoại'],
-  ['EMAIL_TAKEN', 'Email đã được dùng cho tài khoản khác', 'Email'],
+// The real API answers with the generic message of the code and puts the AUTH-11 sign-up wording in fields (auth.service.ts).
+for (const [code, generic, field, message, label] of [
+  ['PHONE_TAKEN', 'Số điện thoại đã được sử dụng', 'phone', 'Số điện thoại đã có tài khoản. Hãy đăng nhập hoặc dùng Quên mật khẩu', 'Số điện thoại'],
+  ['EMAIL_TAKEN', 'Email đã được dùng cho tài khoản khác', 'email', 'Email đã được dùng cho tài khoản khác', 'Email'],
 ]) {
-  test(`AUTH-11, UI-05: ${code} shows the API message on its field with a link to login and stays on /dang-ky`, async () => {
+  test(`AUTH-11, UI-05: ${code} shows the sign-up wording from fields on its field with a link to login and stays on /dang-ky`, async () => {
     store.clear()
-    fakeFetch([{ prefix: '/auth/register', handler: () => fail(409, code, message) }])
+    fakeFetch([{ prefix: '/auth/register', handler: () => fail(409, code, generic, { [field]: message }) }])
     const app = await mountAt('/dang-ky')
     fillRegister(app.container)
     dispatch(app.container, form(app.container), 'submit')

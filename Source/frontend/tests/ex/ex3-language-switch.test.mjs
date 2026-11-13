@@ -228,6 +228,7 @@ test('LOC-01, FE-EX-09: staff content stays Vietnamese inside an English browser
   const { AuthContext } = mod('app/auth-context.ts')
   const { I18nProvider, useI18n } = mod('shared/i18n/index.ts')
   const { StaffLayout } = mod('layouts/StaffLayout.tsx')
+  const api = mod('shared/api.ts')
   function StaffText() {
     const { lang, t } = useI18n()
     return React.createElement('p', { 'data-staff-lang': lang }, t('nav.findRoom'))
@@ -245,7 +246,15 @@ test('LOC-01, FE-EX-09: staff content stays Vietnamese inside an English browser
     assert.equal(text.textContent, 'Tìm phòng')
     assert.equal(text.getAttribute('data-staff-lang'), 'vi')
     assert.equal(find(app.container, n => n.attributes.role === 'group').length, 0)
+    // LOC-01: while the staff app is on screen its API calls ask for Vietnamese, also on /auth/* (e.g. change password).
+    const calls = fakeFetch([{ prefix: '/auth/me', handler: () => ok(guest) }])
+    await api.apiRequest('/auth/me')
+    assert.equal(calls.at(-1).headers['Accept-Language'], 'vi')
   } finally {
     await app.stop()
   }
+  // Leaving the staff app gives the browser's choice back to the public pages.
+  const calls = fakeFetch([{ prefix: '/auth/me', handler: () => ok(guest) }])
+  await api.apiRequest('/auth/me')
+  assert.equal(calls.at(-1).headers['Accept-Language'], 'en')
 })

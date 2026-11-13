@@ -30,6 +30,8 @@ Read this before the first task of any part. Each line is a mistake that really 
 - A `?buildingId=` filter must end up in the Prisma `where` together with the scope fragment; a manager's filter was once read but not applied [BE-P2-17, 03/11/2026].
 - "Check, then write" on the same rows goes into one transaction; creating a room did not lock its building [BE-P2-17, 03/11/2026].
 - A DTO built with keys set to `undefined` fails "only these fields are allowed" checks; drop undefined keys before the check [BLD-02, 03/11/2026].
+- When a new rule makes a field "verified" or "required", re-read every older rule that lets the same field change. A guest could change or clear the email the sign-up code had verified, through the older "everyone may change email" rule [AUTH-09 vs AUTH-12, review 13/11/2026].
+- A screen that is fixed to one language must also fix the language its API calls ask for; the staff app showed Vietnamese but sent the browser's `Accept-Language` on `/auth/*` [LOC-01, review 13/11/2026].
 
 ## Commands and environment
 
@@ -53,6 +55,8 @@ Read this before the first task of any part. Each line is a mistake that really 
 
 ## Working with the plan
 
+- When a shared module gains an import, update every hand-written test loader that compiles it (`auth-api`, `cp4-data-api`, auth guards/schemas); these tests failed only after the full suite ran [FE-EX-10, 13/11/2026].
+- A public page can render Vietnamese through a shared kit component even when its own source scan is clean; include the rendered component in the scan and test its English labels [FE-EX-10, 13/11/2026].
 - A React TSX file exporting both a component and shared functions fails the Fast Refresh lint rule; put functions in a TS module and re-export through a barrel [FE-EX-08, 13/11/2026].
 - When the plan and the code disagree on a detail (a route that comes in a later checkpoint, a helper repeated in three places), stop at that task and say so; do not build around it [FE-LOGIN-09, 29/10/2026].
 - A business rule the spec does not state is a question for the owner, even when it looks obvious; two parts stopped mid-way for this. Collect such questions while planning, before any code [BE-P2-12, 02/11/2026; BE-P2-17, 03/11/2026].

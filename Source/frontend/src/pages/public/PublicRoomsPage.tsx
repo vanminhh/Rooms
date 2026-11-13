@@ -8,6 +8,7 @@ import { RoomCard } from '../../features/public/RoomCard'
 import { RoomFilters } from '../../features/public/RoomFilters'
 import { filtersToParams, filtersToQuery, needsCatalog, parseFilters, validFilters, withCatalog } from '../../features/public/room-filters'
 import type { PublicFilters } from '../../features/public/room-filters'
+import { useI18n } from '../../shared/i18n'
 import '../../features/public/public-listing.css'
 
 const PAGE_SIZE = 20
@@ -20,8 +21,9 @@ function pageOf(params: URLSearchParams): number {
 
 // /phong (UI-22): every filter, the page and the sort live in the URL query, both ways (PUB-01, ROOM-05).
 export function PublicRoomsPage() {
+  const { lang, t } = useI18n()
   const [params, setParams] = useSearchParams()
-  const catalog = useQuery({ queryKey: publicQueryKeys.filters, queryFn: getPublicFilters })
+  const catalog = useQuery({ queryKey: [...publicQueryKeys.filters, lang], queryFn: getPublicFilters })
   // PUB-06: a code in the URL that the list does not know is dropped before the request; until the list loads, a URL that needs it waits.
   const values = useMemo(() => {
     const parsed = parseFilters(params)
@@ -32,11 +34,11 @@ export function PublicRoomsPage() {
   const ready = valid && (catalog.data !== undefined || catalog.isError || !needsCatalog(values))
   const query = { ...filtersToQuery(values), page, limit: PAGE_SIZE }
 
-  const locations = useQuery({ queryKey: publicQueryKeys.locations, queryFn: listPublicLocations })
-  const rooms = useQuery({ queryKey: publicQueryKeys.rooms(query), queryFn: () => listPublicRooms(query), enabled: ready })
+  const locations = useQuery({ queryKey: [...publicQueryKeys.locations, lang], queryFn: listPublicLocations })
+  const rooms = useQuery({ queryKey: [...publicQueryKeys.rooms(query), lang], queryFn: () => listPublicRooms(query), enabled: ready })
   const hasBuilding = valid && values.buildingId !== ''
   const building = useQuery({
-    queryKey: publicQueryKeys.building(Number(values.buildingId)),
+    queryKey: [...publicQueryKeys.building(Number(values.buildingId)), lang],
     queryFn: () => getPublicBuilding(Number(values.buildingId)),
     enabled: hasBuilding,
   })
@@ -56,18 +58,18 @@ export function PublicRoomsPage() {
 
   return <>
     <section className="public-listing-intro" aria-labelledby="public-listing-title">
-      <SectionHeading eyebrow="Phòng đang sẵn sàng" description="Chọn khu vực và khoảng giá phù hợp với bạn.">
-        <span id="public-listing-title">Tìm phòng <em>vừa vặn</em> với bạn</span>
+      <SectionHeading eyebrow={t('rooms.page.eyebrow')} description={t('rooms.page.description')}>
+        <span id="public-listing-title">{t('rooms.page.leading')}<em>{t('rooms.page.highlight')}</em>{t('rooms.page.trailing')}</span>
       </SectionHeading>
 
-      <div className="public-district-filter" aria-label="Lọc nhanh theo quận">
+      <div className="public-district-filter" aria-label={t('rooms.district.quickLabel')}>
         <div className="public-district-filter-heading">
-          <strong>Chọn nhanh theo quận</strong>
-          {locations.isPending && <span role="status">Đang tải khu vực…</span>}
-          {locations.isError && <button type="button" onClick={() => void locations.refetch()}>Thử lại</button>}
+          <strong>{t('rooms.district.quickTitle')}</strong>
+          {locations.isPending && <span role="status">{t('rooms.district.loading')}</span>}
+          {locations.isError && <button type="button" onClick={() => void locations.refetch()}>{t('common.retry')}</button>}
         </div>
         <div className="public-district-chips">
-          <FilterChip selected={!values.district} count={totalLocations} onClick={() => selectDistrict('')}>Tất cả</FilterChip>
+          <FilterChip selected={!values.district} count={totalLocations} onClick={() => selectDistrict('')}>{t('rooms.district.all')}</FilterChip>
           {locations.data?.map(item => <FilterChip key={item.district} selected={values.district === item.district}
             count={item.roomCount} onClick={() => selectDistrict(item.district)}>{item.district}</FilterChip>)}
         </div>
@@ -76,14 +78,14 @@ export function PublicRoomsPage() {
       <RoomFilters locations={locations.data ?? []} catalog={catalog.data} values={values} onChange={apply} onReset={reset} />
       {hasBuilding && <div className="public-building-filter">
         <span className="public-building-filter-status" aria-live="polite">
-          {building.isPending && <span role="status">Đang tải thông tin tòa</span>}
+          {building.isPending && <span role="status">{t('rooms.building.loading')}</span>}
           {building.isError && <span role="alert">
-            <span>{building.error instanceof Error ? building.error.message : 'Không tải được thông tin tòa'}</span>
-            <button type="button" onClick={() => void building.refetch()}>Thử lại</button>
+            <span>{building.error instanceof Error ? building.error.message : t('rooms.building.error')}</span>
+            <button type="button" onClick={() => void building.refetch()}>{t('common.retry')}</button>
           </span>}
         </span>
-        {building.data && <span>Đang lọc theo tòa {building.data.name}</span>}
-        <RoomsButton variant="outline" onClick={() => apply({ ...values, buildingId: '' })}>Bỏ lọc tòa</RoomsButton>
+        {building.data && <span>{t('rooms.building.active', { name: building.data.name })}</span>}
+        <RoomsButton variant="outline" onClick={() => apply({ ...values, buildingId: '' })}>{t('rooms.building.remove')}</RoomsButton>
       </div>}
     </section>
 
@@ -91,26 +93,26 @@ export function PublicRoomsPage() {
       status={rooms.status}
       error={rooms.error}
       isEmpty={!rooms.data?.data.length}
-      loadingLabel="Đang tải danh sách phòng"
-      emptyTitle="Không có phòng phù hợp"
-      emptyHint={<RoomsButton variant="outline" onClick={reset}>Xóa bộ lọc</RoomsButton>}
+      loadingLabel={t('rooms.list.loading')}
+      emptyTitle={t('rooms.list.empty')}
+      emptyHint={<RoomsButton variant="outline" onClick={reset}>{t('rooms.list.clear')}</RoomsButton>}
       onRetry={() => void rooms.refetch()}
     >
       <section className="public-results" aria-labelledby="public-results-title">
         <div className="public-results-heading">
           <div>
-            <p className="rooms-eyebrow">Kết quả tìm kiếm</p>
-            <h2 id="public-results-title">{rooms.data?.meta.total} phòng phù hợp</h2>
+            <p className="rooms-eyebrow">{t('rooms.list.results')}</p>
+            <h2 id="public-results-title">{t('rooms.list.count', { count: rooms.data?.meta.total ?? 0 })}</h2>
           </div>
-          {rooms.data && rooms.data.meta.total > 0 && <p>Trang {page}/{totalPages}</p>}
+          {rooms.data && rooms.data.meta.total > 0 && <p>{t('rooms.list.page', { page, total: totalPages })}</p>}
         </div>
         <div className="public-grid public-room-listing">
-          {rooms.data?.data.map(room => <RoomCard key={room.id} room={room} ctaLabel="Xem chi tiết phòng" />)}
+          {rooms.data?.data.map(room => <RoomCard key={room.id} room={room} ctaLabel={t('rooms.list.viewDetail')} />)}
         </div>
-        {rooms.data && (page > 1 || rooms.data.meta.total > rooms.data.meta.limit) && <nav className="public-pager" aria-label="Phân trang danh sách phòng">
-          <RoomsButton variant="outline" disabled={page <= 1} onClick={() => goToPage(page - 1)}>Trang trước</RoomsButton>
-          <span aria-current="page">Trang {page}/{totalPages}</span>
-          <RoomsButton variant="outline" disabled={page * rooms.data.meta.limit >= rooms.data.meta.total} onClick={() => goToPage(page + 1)}>Trang sau</RoomsButton>
+        {rooms.data && (page > 1 || rooms.data.meta.total > rooms.data.meta.limit) && <nav className="public-pager" aria-label={t('rooms.list.pagination')}>
+          <RoomsButton variant="outline" disabled={page <= 1} onClick={() => goToPage(page - 1)}>{t('rooms.list.previous')}</RoomsButton>
+          <span aria-current="page">{t('rooms.list.page', { page, total: totalPages })}</span>
+          <RoomsButton variant="outline" disabled={page * rooms.data.meta.limit >= rooms.data.meta.total} onClick={() => goToPage(page + 1)}>{t('rooms.list.next')}</RoomsButton>
         </nav>}
       </section>
     </ListState>}

@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import test from 'node:test'
 import ts from 'typescript'
-import { draftFirst } from './draft-root.mjs'
+import { draftFirst, loadModule } from './draft-root.mjs'
 
 // Mirrored from the main copy (PLAN.md CP-6, the P2-8a lesson): `read` now resolves draft-first / main-fallback
 // via draft-root.mjs. None of these files (auth feature, layouts css, index.html) are touched by this draft, so
@@ -26,7 +26,10 @@ const elements = root => flatten(root).filter(n => n && typeof n === 'object')
 const textOf = node => Array.isArray(node) ? node.map(textOf).join('') : node && typeof node === 'object' ? textOf(node.props?.children) : node == null || node === false ? '' : String(node)
 
 // ContactInfo.tsx runs unmodified; only the stylesheet import and the JSX runtime are faked.
-const { ContactInfo } = compile('../src/features/auth/ContactInfo.tsx', { 'react/jsx-runtime': jsxRuntime, './auth.css': {} })
+const { t } = loadModule(draftFirst('src/shared/i18n/core.ts'))
+const { ContactInfo } = compile('../src/features/auth/ContactInfo.tsx', {
+  'react/jsx-runtime': jsxRuntime, './auth.css': {}, '../../shared/i18n': { useI18n: () => ({ t: (key, params) => t(key, params, 'vi') }) },
+})
 const links = root => elements(root).filter(n => n.type === 'a')
 
 test('AUTH-10: ContactInfo shows phone as plain text and Zalo / Facebook as links that open a new tab safely', () => {

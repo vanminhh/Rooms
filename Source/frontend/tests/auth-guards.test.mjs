@@ -474,11 +474,13 @@ test('T2: useSignOut ignores a second click while signing out, and reports signi
 
 function loadPage(file, user, extra = {}) {
   const SectionHeading = () => null
+  const { t } = loadModule(draftFirst('src/shared/i18n/core.ts'))
   const modules = {
     'react/jsx-runtime': jsxRuntime,
     'react-router': { Link: () => null },
     '../../components': { SectionHeading },
     '../../app/auth-context': { useAuth: () => ({ user }) },
+    '../../shared/i18n': { useI18n: () => ({ t: (key, params) => t(key, params, 'vi') }) },
     ...extra,
   }
   return { exports: compile(file, id => { if (id in modules) return modules[id]; throw new Error(`unexpected import ${id}`) }), SectionHeading, Link: modules['react-router'].Link }

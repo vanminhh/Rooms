@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import ts from 'typescript'
-import { draftFirst } from './draft-root.mjs'
+import { draftFirst, loadModule } from './draft-root.mjs'
 
 // Mirrored from the main copy (PLAN.md CP-6, the P2-8a lesson): `read` now resolves draft-first / main-fallback
 // via draft-root.mjs instead of a literal relative path. None of these three files (api.ts, form-errors.ts,
@@ -22,9 +22,14 @@ function compile(path, requireModule) {
 }
 
 function load() {
-  const api = compile('../src/shared/api.ts', () => { throw new Error('api.ts must not import anything') })
+  const i18n = loadModule(draftFirst('src/shared/i18n/core.ts'))
+  const api = compile('../src/shared/api.ts', id => {
+    if (id === './i18n/core') return i18n
+    throw new Error(`unexpected import ${id}`)
+  })
   const formErrors = compile('../src/shared/form-errors.ts', id => {
     if (id === './api') return api
+    if (id === './i18n/core') return i18n
     throw new Error(`unexpected import ${id}`)
   })
   const authApi = compile('../src/features/auth/api.ts', id => {

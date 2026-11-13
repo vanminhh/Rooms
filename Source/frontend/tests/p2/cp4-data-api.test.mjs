@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import test from 'node:test'
 import ts from 'typescript'
-import { draftFirst } from '../draft-root.mjs'
+import { draftFirst, loadModule } from '../draft-root.mjs'
 
 // CP-4 (FE-P2-05 nền dữ liệu): src/shared/api.ts (apiRequestPage/listPath additions), src/shared/formatters.ts
 // (formatDate), src/features/{buildings,managers,rooms}/api.ts and buildings/schemas.ts.
@@ -25,7 +25,7 @@ function compile(path, modules) {
 }
 
 function load() {
-  const api = compile('../../src/shared/api.ts', {})
+  const api = compile('../../src/shared/api.ts', { './i18n/core': loadModule(draftFirst('src/shared/i18n/core.ts')) })
   const buildingsApi = compile('../../src/features/buildings/api.ts', { '../../shared/api': api })
   const managersApi = compile('../../src/features/managers/api.ts', { '../../shared/api': api, '../buildings/api': buildingsApi })
   const roomsApi = compile('../../src/features/rooms/api.ts', { '../../shared/api': api, '../buildings/api': buildingsApi })

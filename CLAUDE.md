@@ -65,7 +65,7 @@ One git repo at the root. The frontend UI is built only from the kit in `Source/
 
 ## Status
 
-Phase 1 · Foundation is done (30/10/2026): the 3 roles log in and land in their layout, scope guard, first migration and seed, UI kit with form pieces; task lists and QA in `docs/phase-1-foundation/`. Phase 2 · Rooms is done (06/11/2026): buildings, services, managers, rooms and images, pricing with Boss approval and the 01:00 price job, public pages, viewings, "Việc hôm nay"; task lists, QA checklist and production notes in `docs/phase-2-rooms/`. On 12/11/2026 the owner changed the spec after the Home101 brief (`docs/home101-adoption-brief.md`, decisions D-23..D-34): the Phase 1 and 2 code is fixed in **Phase Extra** (`docs/phase-extra-home101/README.md`, plan waiting for the owner, nothing built), and Phase 3 and 5 rules were amended in the spec. Next: Phase Extra (its part EX-1 comes before Phase 3), then **3 · Contracts** (`docs/spec/01-architecture.md#roadmap`).
+Phase 1 · Foundation is done (30/10/2026): the 3 roles log in and land in their layout, scope guard, first migration and seed, UI kit with form pieces; task lists and QA in `docs/phase-1-foundation/`. Phase 2 · Rooms is done (06/11/2026): buildings, services, managers, rooms and images, pricing with Boss approval and the 01:00 price job, public pages, viewings, "Việc hôm nay"; task lists, QA checklist and production notes in `docs/phase-2-rooms/`. On 12/11/2026 the owner changed the spec after the Home101 brief (`docs/home101-adoption-brief.md`, decisions D-23..D-34): the Phase 1 and 2 code is fixed in **Phase Extra** (`docs/phase-extra-home101/README.md`, in progress – the real state per part is in `docs/phase-extra-home101/PROGRESS.md`), and Phase 3 and 5 rules were amended in the spec. Next: Phase Extra (its part EX-1 comes before Phase 3), then **3 · Contracts** (`docs/spec/01-architecture.md#roadmap`).
 
 ## Rules that apply everywhere
 
@@ -92,13 +92,13 @@ npm run lint
 npm run test:components   # UI kit tests, must stay green
 
 # database rule check (Source/backend) – see docs/spec/02-database.md
-node prisma/check-constraints.mjs . prisma   # must print 50/50
+node prisma/check-constraints.mjs . prisma   # every scenario must pass (the checker prints the count: 66/66 on 13/11/2026)
 ```
 
 ## Definition of done
 
 - The behavior matches the spec IDs you implemented; each business rule has a test named with its ID.
-- Lint and tests pass for the app you touched; DB check still 50/50 if the schema changed.
+- Lint and tests pass for the app you touched; DB check still passes every scenario if the schema changed.
 - New `[ASSUMPTION]`s or spec gaps are reported in your final message, not silently decided.
 
 ## Working with the owner

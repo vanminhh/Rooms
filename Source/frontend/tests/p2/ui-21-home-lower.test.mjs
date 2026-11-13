@@ -12,13 +12,17 @@ const page = readSource('src/pages/public/PublicHomePage.tsx')
 const card = readSource('src/features/public/RoomCard.tsx')
 const css = readSource('src/features/public/home-lower.css')
 const publicLayout = readSource('src/layouts/PublicLayout.tsx')
+const vi = readSource('src/shared/i18n/vi.ts')
 
 test('UI-21/UI-02: phần dưới trang chủ dùng đủ câu chữ đã duyệt, không còn cam kết mẫu Stitch', () => {
   for (const text of [
     'Vì sao chọn ROOMS?', 'Tìm phòng, xem thông tin và đặt lịch trên cùng một nơi.',
     'Thông tin giá rõ ràng', 'Đặt lịch xem thuận tiện', 'Thông tin theo từng phòng', 'Liên hệ thuận tiện',
     'Tìm và xem phòng trong 3 bước', 'Chọn phòng phù hợp với bạn',
-  ]) assert.match(page, new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
+  ]) assert.match(vi, new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
+  for (const key of ['home.reasons.title', 'home.reasons.intro', 'home.process.title', 'home.contact.title']) {
+    assert.match(page, new RegExp(`t\\('${key.replaceAll('.', '\\.')}\\'\\)`))
+  }
   for (const forbidden of ['Không phí ẩn', '24/7', 'trong 15 phút', 'Xem 3D', 'Hợp đồng điện tử']) {
     assert.doesNotMatch(page, new RegExp(forbidden))
   }
@@ -26,20 +30,20 @@ test('UI-21/UI-02: phần dưới trang chủ dùng đủ câu chữ đã duyệ
 
 test('UI-21/PUB-01: phòng nổi bật giữ dữ liệu API, tiền qua formatMoney và CTA tới chi tiết phòng', () => {
   assert.match(page, /listFeaturedRooms/)
-  assert.match(page, /ctaLabel="Đặt hẹn xem phòng"/)
+  assert.match(page, /ctaLabel=\{t\('home\.featured\.viewing'\)\}/)
   assert.match(card, /formatMoney\(room\.price\)/)
   assert.match(card, /to={`\/phong\/\${room\.id}`}/)
-  assert.match(card, /<dt>Diện tích<\/dt>/)
-  assert.match(card, /<dt>Tầng<\/dt>/)
-  assert.match(card, /Chưa có ảnh/)
+  assert.match(card, /t\('room\.area'\)/)
+  assert.match(card, /t\('room\.floor'\)/)
+  assert.match(card, /t\('room\.noPhoto'\)/)
 })
 
 test('UI-21/BLD-05/KIT-11: khu vực có id đích, số phòng API, ảnh minh họa đúng ba quận và URL lọc', () => {
   assert.match(page, /id="khu-vuc"/)
-  assert.match(page, /item\.roomCount} phòng trống/)
+  assert.match(page, /t\('home\.district\.availableCount', \{ count: item\.roomCount \}\)/)
   assert.match(page, /new URLSearchParams\({ district }\)/)
   for (const image of ['area-lang-ha.webp', 'area-ba-dinh.webp', 'area-cau-giay.webp']) assert.match(page, new RegExp(image))
-  assert.match(page, /<IllustrationLabel \/>/)
+  assert.match(page, /<IllustrationLabel>\{t\('home\.illustration'\)\}<\/IllustrationLabel>/)
 })
 
 test('UI-21/BLD-04/UI-03: liên hệ lấy từ API và có đủ tải, lỗi, trống, có dữ liệu', () => {

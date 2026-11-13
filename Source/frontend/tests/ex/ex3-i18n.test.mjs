@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import test, { after } from 'node:test'
 import { draftFirst, loadModule } from '../draft-root.mjs'
 import { dispatch, find, mount, until, fakeDocument } from '../p2/public-dom.mjs'
@@ -167,4 +169,51 @@ test('LOC-05, FE-EX-08: money and dates keep Vietnamese formats in either langua
     assert.equal(formatMoney(2984000), '2.984.000 đ')
     assert.equal(formatDate('2026-02-28'), '28/02/2026')
   }
+})
+
+test('UI-12, FE-EX-10: public pages and features keep display copy in the dictionaries', () => {
+  const files = [
+    'pages/public/PublicHomePage.tsx', 'pages/public/PublicRoomsPage.tsx',
+    'pages/public/PublicRoomPage.tsx', 'pages/public/RoomDetailView.tsx',
+    'pages/public/PublicBuildingPage.tsx', 'pages/public/NotFoundPage.tsx',
+    'features/public/attributes.ts', 'features/public/BookingJumpBar.tsx',
+    'features/public/ContactCard.tsx', 'features/public/EstimatePanel.tsx',
+    'features/public/ListState.tsx', 'features/public/RateTable.tsx',
+    'features/public/room-filters.ts', 'features/public/RoomCard.tsx',
+    'features/public/RoomFilters.tsx', 'layouts/PublicLayout.tsx',
+    'components/Navigation.tsx', 'components/RoomSearch.tsx', 'components/CostBreakdown.tsx',
+    'features/auth/ContactInfo.tsx',
+    'shared/api.ts', 'shared/form-errors.ts',
+    // OQ-2: EX-7 replaces these two Vietnamese-only files. Remove this exception then.
+    'features/public/ViewingForm.tsx', 'features/public/viewing-schema.ts',
+  ]
+  const exceptions = new Set(['features/public/ViewingForm.tsx', 'features/public/viewing-schema.ts'])
+  const violations = []
+  for (const file of files) {
+    if (exceptions.has(file)) continue
+    const source = readFileSync(resolve('src', file), 'utf8').replace(/\/\*[\s\S]*?\*\//g, comment => comment.replace(/[^\r\n]/g, ''))
+    source.split(/\r?\n/).forEach((line, index) => {
+      if (/^\s*\/\//.test(line) || /\/\/ i18n-allow:/.test(line)) return
+      if (file === 'pages/public/PublicHomePage.tsx' && /^\s*'(Đống Đa|Ba Đình|Cầu Giấy)': '\/images\//.test(line)) return // API district keys for image lookup, A-12.
+      if (/(?=[À-ỹĐđ])\p{L}/u.test(line)) violations.push(`${file}:${index + 1}: ${line.trim()}`)
+    })
+  }
+  assert.deepEqual(violations, [], `Display text outside dictionaries:\n${violations.join('\n')}`)
+})
+
+test('KIT-04, LOC-01, FE-EX-10: translated layouts supply every header label and staff stays Vietnamese', () => {
+  const source = file => readFileSync(resolve('src', file), 'utf8')
+  for (const layout of ['PublicLayout', 'GuestLayout', 'TenantLayout']) {
+    const text = source(`layouts/${layout}.tsx`)
+    for (const label of ['homeLabel', 'closeLabel', 'menuLabel', 'mainNavLabel', 'exploreLabel']) {
+      assert.match(text, new RegExp(`${label}=\\{t\\('nav\\.`), `${layout} needs ${label}`)
+    }
+  }
+  const footer = source('layouts/PublicLayout.tsx')
+  for (const label of ['findTitle', 'findDescription', 'areaTitle', 'areaDescription', 'contactTitle', 'contactEmpty', 'bottomLocation']) {
+    assert.match(footer, new RegExp(`${label}=\\{t\\('footer\\.`), `PublicLayout needs ${label}`)
+  }
+  const staff = source('layouts/StaffLayout.tsx')
+  assert.doesNotMatch(staff, /LanguageSwitch|useI18n/)
+  assert.match(staff, /I18nProvider locale="vi"/)
 })

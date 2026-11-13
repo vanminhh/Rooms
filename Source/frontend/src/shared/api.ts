@@ -1,6 +1,10 @@
+import { t } from './i18n/core'
+
 export const API_BASE = '/api/v1'
 
-const GENERIC_MESSAGE = 'Có lỗi xảy ra, vui lòng thử lại sau'
+function messageLang(path: string): 'vi' | 'en' {
+  return /^\/(public|auth|me)(\/|$)/.test(path) ? forcedLanguage ?? language : 'vi'
+}
 
 export class ApiError extends Error {
   readonly code: string
@@ -50,7 +54,7 @@ export function listPath(path: string, query: Record<string, QueryValue>): strin
   const page = Number(params.get('page'))
   const limit = Number(params.get('limit'))
   if (!Number.isInteger(page) || page < 1 || !Number.isInteger(limit) || limit < 1 || limit > 100) {
-    throw new RangeError('Trang hoặc số dòng mỗi trang không hợp lệ')
+    throw new RangeError(t('common.invalidPage', undefined, messageLang(path)))
   }
   return `${path}?${params.toString()}`
 }
@@ -61,8 +65,15 @@ let handlers: AuthHandlers = {}
 let refreshing: Promise<string> | null = null
 let language: 'vi' | 'en' = 'vi'
 
+// LOC-01: set while a Vietnamese-only area (the staff app) is on screen, so its /auth/* calls are not answered in English.
+let forcedLanguage: 'vi' | 'en' | null = null
+
 export function setLanguage(next: 'vi' | 'en') {
   language = next
+}
+
+export function forceLanguage(next: 'vi' | 'en' | null) {
+  forcedLanguage = next
 }
 
 export function setAccessToken(token: string | null) {
@@ -74,7 +85,7 @@ export function setAuthHandlers(next: AuthHandlers) {
 }
 
 async function send<T>(path: string, method: Method, body: unknown, token: string | null, idempotencyKey?: string): Promise<Envelope<T>> {
-  const headers: Record<string, string> = { Accept: 'application/json', 'Accept-Language': language }
+  const headers: Record<string, string> = { Accept: 'application/json', 'Accept-Language': forcedLanguage ?? language }
   if (body !== undefined) headers['Content-Type'] = 'application/json'
   if (token) headers.Authorization = `Bearer ${token}`
   if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey
@@ -88,7 +99,7 @@ async function send<T>(path: string, method: Method, body: unknown, token: strin
       body: body === undefined ? undefined : JSON.stringify(body),
     })
   } catch {
-    throw new ApiError({ code: 'NETWORK_ERROR', message: GENERIC_MESSAGE, status: 0 })
+    throw new ApiError({ code: 'NETWORK_ERROR', message: t('common.apiGeneric', undefined, messageLang(path)), status: 0 })
   }
 
   const json: unknown = await response.json().catch(() => null)
@@ -101,7 +112,7 @@ async function send<T>(path: string, method: Method, body: unknown, token: strin
     if (error.status === 403 && code === 'PASSWORD_CHANGE_REQUIRED') handlers.onPasswordChangeRequired?.()
     throw error
   }
-  throw new ApiError({ code: 'NETWORK_ERROR', message: GENERIC_MESSAGE, status: response.status })
+  throw new ApiError({ code: 'NETWORK_ERROR', message: t('common.apiGeneric', undefined, messageLang(path)), status: response.status })
 }
 
 function isUnauthorized(error: unknown): boolean {
@@ -159,6 +170,6 @@ export async function apiRequest<T>(path: string, options: { method?: Method; bo
 // A list keeps its meta (page, limit, total) so the page can show pagination controls.
 export async function apiRequestPage<T>(path: string): Promise<ListPage<T>> {
   const { data, meta } = await request<T[]>(path)
-  if (!meta) throw new ApiError({ code: 'NETWORK_ERROR', message: GENERIC_MESSAGE, status: 200 })
+  if (!meta) throw new ApiError({ code: 'NETWORK_ERROR', message: t('common.apiGeneric', undefined, messageLang(path)), status: 200 })
   return { data, meta }
 }

@@ -11,11 +11,11 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 | Phần | Trạng thái | Điểm dừng gần nhất đã xong | Commit | Việc tiếp theo | Ghi chú |
 |---|---|---|---|---|---|
 | EX-0 Chủ dự án chuẩn bị | đang làm | Q-09..Q-12 đã trả lời; quyết định cuối 12/11/2026 (email thay SMS) | – | tạo tài khoản Resend + xác thực tên miền (Q-14 đã chọn Resend), Q-08 video, Q-13, Q-EX4-1, Q-EX6-1, Q-EX6-2, Q-EX8-2 | không chặn EX-1 |
-| EX-1 Tài khoản khách (BE) | chờ duyệt | ⏸ BE-EX-09 (kiểm tra cuối) | BE-EX-07 đã commit; BE-EX-08 chờ commit | – | seed khách `0900000006` đã chạy trên DB dev qua e2e cũ; plan: `plans/EX-1/PLAN.md` |
-| EX-2 Tài khoản khách (FE) | chờ duyệt | ⏸ FE-EX-07 (đăng nhập, GuestLayout, /toi, /toi/tai-khoan) | FE-EX-04 đã commit | – | xem tay luồng đăng ký → /toi với backend thật còn chờ chủ dự án; plan: không có (không cần planner) |
-| EX-3 Việt + Anh | đang làm | FE-EX-09 (nút đổi ngôn ngữ, `Accept-Language`, đồng bộ tài khoản) | FE-EX-08 `e838f16` | FE-EX-10: dịch trang công khai | plan: `plans/EX-3/PLAN.md`; OQ-1..3 đã trả lời 13/11/2026 |
+| EX-1 Tài khoản khách (BE) | chờ duyệt | ⏸ BE-EX-09 (kiểm tra cuối) | đã commit hết (git log 13/11/2026) | – | seed khách `0900000006` đã chạy trên DB dev qua e2e cũ; plan: `plans/EX-1/PLAN.md` |
+| EX-2 Tài khoản khách (FE) | chờ duyệt | ⏸ FE-EX-07 (đăng nhập, GuestLayout, /toi, /toi/tai-khoan) | đã commit hết (git log 13/11/2026) | – | xem tay luồng đăng ký → /toi với backend thật còn chờ chủ dự án; plan: không có (không cần planner) |
+| EX-3 Việt + Anh | đang làm | FE-EX-10 (trang công khai, header/footer, bộ lọc, chi phí qua từ điển) | FE-EX-09 `ed073fb` | FE-EX-11: trang auth và khu khách | plan: `plans/EX-3/PLAN.md`; OQ-1..3 đã trả lời 13/11/2026 |
 | EX-4 Màn chào | chưa làm | – | – | FE-EX-14 | cần EX-3 |
-| EX-5 Bộ lọc phòng | chờ duyệt | ⏸ FE-EX-21 (cả part) | BE-EX-15 đã commit | – | plan: `plans/EX-5/PLAN.md` |
+| EX-5 Bộ lọc phòng | chờ duyệt | ⏸ FE-EX-21 (cả part) | đã commit hết (git log 13/11/2026) | – | plan: `plans/EX-5/PLAN.md` |
 | EX-6 Lịch xem (BE) | chưa làm | – | – | BE-EX-17 | cần EX-1 |
 | EX-7 Lịch xem (FE) | chưa làm | – | – | FE-EX-22 | cần EX-2, EX-6; lên production cùng EX-6 |
 | EX-8 Gửi email thật | chưa làm | – | – | BE-EX-28 | cần EX-6; BE-EX-30 cần khóa Resend của chủ dự án |
@@ -24,6 +24,12 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 ## Nhật ký điểm dừng
 
 Mới nhất ở trên. Mỗi dòng: `ngày · phần · task vừa xong · kết quả kiểm tra (số thật) · việc còn treo`.
+
+- 14/11/2026 · review (ngoài task) · 5 điểm nhỏ của bản review: trang đăng ký hiện câu AUTH-11 lấy từ `fields`; gửi mã mới thất bại thì mã cũ dùng lại được (AUTH-13); quãng chờ của `fe11-approvals.test.mjs` ×4 (vá nhanh, có ghi chú `shortcut:`); `shared/i18n/index.tsx` đổi tên thành `provider.tsx`; `CLAUDE.md` / `AGENTS.md` / `02-database.md` bỏ "nothing built" và "50/50" · BE lint 0 lỗi, build OK, unit 1634/1634; FE lint 0 lỗi, build OK, test:components 821/821 (một lượt, không ca nào đỏ) · chưa chạy e2e và kiểm DB; chưa xem trên trình duyệt thật
+
+- 13/11/2026 · review (ngoài task) · sửa 2 lỗi logic tìm thấy khi review EX-1/2/3/5: khách không còn đổi hay xóa được email đã xác minh qua `PATCH /auth/me` (AUTH-09, AUTH-12; `/toi/tai-khoan` hiện email chỉ đọc cho khách); khu `/ql` luôn gửi `Accept-Language: vi` (LOC-01, LOC-02) · BE lint 0 lỗi, build OK, unit 1633/1633; FE lint 0 lỗi, build OK, test:components 821/821 · chưa xem trên trình duyệt thật, chưa chạy e2e; `api.ts` chung file với phần FE-EX-10 chưa commit
+
+- 13/11/2026 · EX-3 · FE-EX-10 (home, `/phong`, `/toa/:id`, `/phong/:id`, header/footer và chi phí qua từ điển; `labelEn` cho tiện ích/loại phòng; giữ định dạng tiền/ngày) · FE lint 0 lỗi, build thành công, test:components lượt đầu 814/820 (6 ca duyệt giá cũ nhạy thời gian), nhóm duyệt giá chạy riêng 36/36, toàn bộ lượt hai 820/820; scan tệp và test render hai ngôn ngữ đạt · FE-EX-11 tiếp theo; BE-EX-11 còn phải dịch nhãn ước tính từ API, form đặt lịch cũ theo OQ-2 đợi EX-7
 
 - 13/11/2026 · EX-3 · FE-EX-09 (switch trong 3 header, kit preview, `Accept-Language` mọi request, `users.locale` khi đăng nhập, khu `/ql` giữ tiếng Việt) · FE lint 0 lỗi, build thành công, test:components lần đầu 806/807 (test PRC-03 nhạy thời gian); chạy riêng approvals 36/36, toàn bộ lần hai 808/808 (9 test FE-EX-09 mới, thêm ca phản hồi locale đến muộn) · FE-EX-10 chưa làm
 

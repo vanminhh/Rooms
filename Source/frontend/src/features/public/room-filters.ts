@@ -1,4 +1,6 @@
 import { z } from 'zod'
+import { t as translate } from '../../shared/i18n'
+import type { I18nValue } from '../../shared/i18n'
 import type { PublicFiltersView, PublicRoomSort, PublicRoomsQuery } from './api'
 
 // int32 limit of the BE filters (public-rooms.dto.ts); the BE checks it again.
@@ -41,22 +43,25 @@ function isBuildingId(value: string): boolean {
 
 // Messages copy the BE DTO text (public-rooms.dto.ts), so the client shows the same words as the API.
 // '-price' is in the type only: the UI offers 'price' and 'newest' (A-7), and parseFilters never produces '-price'.
-export const filterSchema = z.object({
+export function filterSchemaFor(t: I18nValue['t']) { return z.object({
   district: z.string(),
   ward: z.string(),
-  minPrice: z.string().refine(isPrice, 'Giá tối thiểu không hợp lệ'),
-  maxPrice: z.string().refine(isPrice, 'Giá tối đa không hợp lệ'),
-  minArea: z.string().refine(isArea, 'Diện tích tối thiểu không hợp lệ'),
-  maxArea: z.string().refine(isArea, 'Diện tích tối đa không hợp lệ'),
-  minOccupants: z.string().refine(isCount, 'Số người không hợp lệ'),
-  floor: z.string().refine(isCount, 'Tầng không hợp lệ'),
+  minPrice: z.string().refine(isPrice, t('rooms.filters.invalidMinPrice')),
+  maxPrice: z.string().refine(isPrice, t('rooms.filters.invalidMaxPrice')),
+  minArea: z.string().refine(isArea, t('rooms.filters.invalidMinArea')),
+  maxArea: z.string().refine(isArea, t('rooms.filters.invalidMaxArea')),
+  minOccupants: z.string().refine(isCount, t('rooms.filters.invalidOccupants')),
+  floor: z.string().refine(isCount, t('rooms.filters.invalidFloor')),
   amenities: z.array(z.string()),
   balcony: z.boolean(),
   window: z.boolean(),
   pets: z.boolean(),
   roomType: z.string(),
   sort: z.enum(['price', '-price', 'newest']),
-})
+}) }
+
+// The default schema remains Vietnamese for non-visual callers and existing URL validation.
+export const filterSchema = filterSchemaFor((key, params) => translate(key, params, 'vi'))
 
 export type FilterFormValues = z.infer<typeof filterSchema>
 

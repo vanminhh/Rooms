@@ -80,7 +80,7 @@ cd Source/backend
 npm i --no-save @electric-sql/pglite@0.2   # prisma is already a dev dependency
 export DATABASE_URL=postgresql://u:p@localhost/db DIRECT_URL=postgresql://u:p@localhost/db   # dummy, not used
 npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script -o prisma/schema.sql
-node prisma/check-constraints.mjs . prisma   # expect: 50/50 tình huống đúng như mong đợi
+node prisma/check-constraints.mjs . prisma   # expect every scenario to pass: "N/N tình huống đúng như mong đợi" (66/66 on 13/11/2026)
 ```
 
-Any schema change MUST keep this at 50/50 and SHOULD add a scenario for the new rule.
+Any schema change MUST keep every scenario passing and SHOULD add a scenario for the new rule. The list above names the first 50; later migrations added theirs (Phase 2: 54, Phase Extra so far: 66).

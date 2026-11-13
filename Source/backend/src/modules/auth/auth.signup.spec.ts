@@ -501,6 +501,19 @@ describe('AUTH-13: POST /auth/resend-code always answers the same', () => {
     await drain();
   });
 
+  it('AUTH-13: a resend whose mail fails leaves the code already in the mailbox usable', async () => {
+    await signUp();
+    const mailed = codeOf();
+    later(61 * SEC);
+    mailer.send.mockRejectedValueOnce(new Error('down'));
+    await resend(NEW_PHONE);
+    await drain();
+    // The unsent code is gone and the first one, still inside its 5 minutes, is the only unused code again.
+    expect(otpRows(NEW_EMAIL)).toHaveLength(1);
+    expect(otpRows(NEW_EMAIL)[0].usedAt).toBeNull();
+    expect((await verify(NEW_PHONE, mailed)).status).toBe(200);
+  });
+
   it('AUTH-13: a bad phone -> 400 VALIDATION_FAILED', async () => {
     const res = await resend('123');
     expect(res.status).toBe(400);

@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import type { RefObject } from 'react'
+import { useI18n } from '../../shared/i18n'
 import './booking-panel.css'
 
 // Phone layout of /phong/:id (UI-24): the booking card sits below gallery, facts and rates, so a bar at the
 // bottom of the screen jumps to it. It shows only while the card is still below the viewport; CSS hides it
 // on wide screens, where the card is sticky beside the content. Without IntersectionObserver it never shows.
 export function BookingJumpBar({ target, roomCode, priceLabel }: { target: RefObject<HTMLElement | null>; roomCode: string; priceLabel: string }) {
+  const { t } = useI18n()
   const [show, setShow] = useState(false)
 
   useEffect(() => {
@@ -25,7 +27,7 @@ export function BookingJumpBar({ target, roomCode, priceLabel }: { target: RefOb
   }
 
   return <div className="public-booking-jump" hidden={!show}>
-    <p><span>Giá thuê</span><strong>{priceLabel}</strong></p>
-    <button type="button" onClick={jumpToBooking}>Đặt lịch xem phòng {roomCode}</button>
+    <p><span>{t('room.jump.price')}</span><strong>{priceLabel}</strong></p>
+    <button type="button" onClick={jumpToBooking}>{t('room.jump.book', { code: roomCode })}</button>
   </div>
 }

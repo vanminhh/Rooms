@@ -163,6 +163,18 @@ describe('AUTH-09: PATCH /auth/me', () => {
     expect(fake.account('guest')).toEqual(before);
   });
 
+  // AUTH-09, AUTH-12: a guest cannot change or clear the email the code verified.
+  it.each([['email', 'moi@example.com'], ['email', null]])(
+    'AUTH-09, AUTH-12: guest sending %s %j -> 403 FORBIDDEN, DB unchanged',
+    async (key, value) => {
+      const before = snapshot('guest');
+      const res = await patchMe(await tokenFor('guest'), { [key]: value, locale: 'en' });
+      expect(res.status).toBe(403);
+      expect(res.body).toEqual(FORBIDDEN_BODY);
+      expect(fake.account('guest')).toEqual(before);
+    },
+  );
+
   it.each([['contactPhone', '0912345678'], ['zaloUrl', 'https://zalo.me/0912345678'], ['facebookUrl', 'https://facebook.com/an']])(
     'SCOPE-05, AUTH-09: guest sending %s -> 403 FORBIDDEN, DB unchanged',
     async (key, value) => {

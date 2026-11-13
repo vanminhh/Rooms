@@ -11,23 +11,25 @@ import { RateTable } from '../../features/public/RateTable'
 import { ViewingForm } from '../../features/public/ViewingForm'
 import { ApiError } from '../../shared/api'
 import { formatMoney } from '../../shared/formatters'
+import { useI18n } from '../../shared/i18n'
 import { NotFoundPage } from './NotFoundPage'
 import { RoomDetailView } from './RoomDetailView'
 
 // PUB-02: a room that is not public, or a bad id, shows the 404 page. No automatic retry, so a 404 shows at once.
 export function PublicRoomPage() {
+  const { lang, t } = useI18n()
   const { id } = useParams()
   const roomId = Number(id)
   const valid = Number.isSafeInteger(roomId) && roomId > 0
-  const room = useQuery({ queryKey: publicQueryKeys.room(roomId), queryFn: () => getPublicRoom(roomId), enabled: valid, retry: false })
-  const catalog = useQuery({ queryKey: publicQueryKeys.filters, queryFn: getPublicFilters, enabled: room.isSuccess })
+  const room = useQuery({ queryKey: [...publicQueryKeys.room(roomId), lang], queryFn: () => getPublicRoom(roomId), enabled: valid, retry: false })
+  const catalog = useQuery({ queryKey: [...publicQueryKeys.filters, lang], queryFn: getPublicFilters, enabled: room.isSuccess })
   if (!valid || (room.error instanceof ApiError && room.error.status === 404)) return <NotFoundPage />
 
   return <ListState
     status={room.status}
     error={room.error}
     isEmpty={false}
-    loadingLabel="Đang tải danh sách phòng"
+    loadingLabel={t('rooms.list.loading')}
     emptyTitle=""
     onRetry={() => void room.refetch()}
   >
@@ -39,13 +41,14 @@ export function PublicRoomPage() {
 // the real page and preview; these slots keep all API-aware components and money formatting unchanged.
 // `catalog` (GET /public/filters) turns room types and building amenity codes into their labels; without it a code shows as is.
 export function RoomDetail({ room, catalog, catalogLoading = false }: { room: PublicRoomDetail; catalog?: PublicFiltersView; catalogLoading?: boolean }) {
+  const { lang, t } = useI18n()
   // While the labels load, the amenity codes wait too, so a raw code never flashes on screen.
-  const amenities = catalogLoading ? [] : room.building.amenities.map(code => labelOf(code, catalog?.amenities))
+  const amenities = catalogLoading ? [] : room.building.amenities.map(code => labelOf(code, catalog?.amenities, lang))
   const labelled = { ...room, building: { ...room.building, amenities } }
   return <RoomDetailView
     room={labelled}
-    attributeFacts={roomAttributeFacts(room, catalog, catalogLoading)}
-    statusBadge={<StatusBadge>Đang trống</StatusBadge>}
+    attributeFacts={roomAttributeFacts(room, catalog, catalogLoading, lang)}
+    statusBadge={<StatusBadge>{t('room.available')}</StatusBadge>}
     estimatePanel={<EstimatePanel monthlyEstimate={room.monthlyEstimate} deposit={room.deposit} estimate={room.estimate} />}
     rateTable={<RateTable rates={room.rates} upcomingRates={room.upcomingRates} waterMode={room.building.waterMode} />}
     contactCard={<ContactCard contact={room.contact} />}

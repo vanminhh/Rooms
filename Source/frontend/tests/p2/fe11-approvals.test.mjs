@@ -163,7 +163,10 @@ const { AuthContext } = load(resolve(draftSrcRoot, 'app/auth-context.ts'))
 const { BuildingSelectionContext } = load(resolve(draftSrcRoot, 'features/buildings/building-selection.ts'))
 
 // ---------- DOM query / event helpers (same style as the other cp*/fe*.test.mjs files) ----------
-const wait = ms => new Promise(r => setTimeout(r, ms))
+// shortcut: every pause is 4× the written value because 20–30 ms was too short when the whole suite runs in parallel
+// (the file passed alone and failed in full runs); the pauses keep their order. Upgrade to waiting on a condition
+// (`until` in public-dom.mjs) if a full run still fails here.
+const wait = ms => new Promise(r => setTimeout(r, ms * 4))
 const walkTree = (node, out = []) => { out.push(node); node.childNodes.forEach(c => walkTree(c, out)); return out }
 const find = (root, pred) => walkTree(root).filter(n => n.nodeType === 1 && pred(n))
 const buttons = container => find(container, n => n.tagName === 'BUTTON')
