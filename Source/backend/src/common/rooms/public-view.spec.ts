@@ -11,7 +11,8 @@ function room(overrides: Partial<Record<string, unknown>> = {}) {
     price: 3_000_000,
     maxOccupants: 2,
     buildingId: 10,
-    building: { code: 'DD01', name: 'Dương Đình 1', district: 'Cầu Giấy', ward: 'Dịch Vọng' },
+    building: { code: 'DD01', name: 'Dương Đình 1', district: 'Cầu Giấy', ward: 'Dịch Vọng', amenities: ['PARKING', 'wifi cũ', 'ELEVATOR'] },
+    roomType: 'STUDIO', hasBalcony: true, hasWindow: null, petsAllowed: false,
     images: [],
     ...overrides,
   } as any;
@@ -33,6 +34,11 @@ describe('PUB-04 (BE-P2-29): toPublicRoomListItem', () => {
       district: 'Cầu Giấy',
       ward: 'Dịch Vọng',
       imageUrl: 'https://img/1.jpg',
+      roomType: 'STUDIO',
+      hasBalcony: true,
+      hasWindow: null, // ROOM-10: "chưa nhập" stays null
+      petsAllowed: false, // and false stays false
+      buildingAmenities: ['ELEVATOR', 'PARKING'], // BLD-08: codes only, catalog order; the free text "wifi cũ" never leaves staff
     });
     expect(Object.keys(item)).not.toContain('managerId');
     expect(Object.keys(item)).not.toContain('proposedById');

@@ -4,13 +4,14 @@ import type {
   PublicBuildingDetail, PublicBuildingSummary, PublicRateView, PublicRates, PublicRoomDetail,
   PublicRoomListItem,
 } from '../../modules/rooms/public.types.js';
+import { splitAmenities } from '../catalog/catalog.js';
 import { formatDateOnly } from '../date/today.js';
 import { ratesAfter, ratesAt, type RateView } from '../rates/rates-at.js';
 import { buildEstimate, type EstimateService } from './monthly-estimate.js';
 
 // Explicit field lists keep user ids, review notes and proposal data out of public bodies (PUB-04).
 export const PUBLIC_ROOM_LIST_INCLUDE = {
-  building: { select: { code: true, name: true, district: true, ward: true } },
+  building: { select: { code: true, name: true, district: true, ward: true, amenities: true } },
   images: { select: { url: true }, orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }], take: 1 },
 } satisfies Prisma.RoomInclude;
 
@@ -46,6 +47,11 @@ export function toPublicRoomListItem(room: PublicRoomListRecord): PublicRoomList
     district: room.building.district,
     ward: room.building.ward,
     imageUrl: room.images.at(0)?.url ?? null,
+    roomType: room.roomType,
+    hasBalcony: room.hasBalcony,
+    hasWindow: room.hasWindow,
+    petsAllowed: room.petsAllowed,
+    buildingAmenities: splitAmenities(room.building.amenities).codes,
   };
 }
 
@@ -127,7 +133,7 @@ export function toPublicBuildingSummary(building: PublicBuildingRecord): PublicB
     district: building.district,
     ward: building.ward,
     waterMode: building.waterMode,
-    amenities: jsonStrings(building.amenities),
+    amenities: splitAmenities(building.amenities).codes, // codes only: old free text is for staff (BLD-08, PUB-04)
     description: building.description,
   };
 }
@@ -151,6 +157,10 @@ export function toPublicRoomDetail(
     maxOccupants: room.maxOccupants,
     furniture: jsonStrings(room.furniture),
     description: room.description,
+    roomType: room.roomType,
+    hasBalcony: room.hasBalcony,
+    hasWindow: room.hasWindow,
+    petsAllowed: room.petsAllowed,
     price: room.price,
     deposit: estimate.deposit,
     monthlyEstimate: estimate.monthlyEstimate,

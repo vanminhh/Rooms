@@ -232,6 +232,11 @@ export class RoomsService {
             maxOccupants: dto.maxOccupants ?? 2,
             furniture: (dto.furniture ?? []) as Prisma.InputJsonValue,
             description: dto.description ?? null,
+            // ROOM-10: a missing key stays NULL ("chưa nhập"); an explicit null or false is kept as sent.
+            roomType: dto.roomType,
+            hasBalcony: dto.hasBalcony,
+            hasWindow: dto.hasWindow,
+            petsAllowed: dto.petsAllowed,
           },
           include: ROOM_INCLUDE,
         });
@@ -321,6 +326,10 @@ export class RoomsService {
     if (dto.maxOccupants !== undefined) data.maxOccupants = dto.maxOccupants;
     if (dto.furniture !== undefined) data.furniture = dto.furniture as Prisma.InputJsonValue;
     if (dto.description !== undefined) data.description = dto.description;
+    if (dto.roomType !== undefined) data.roomType = dto.roomType;
+    if (dto.hasBalcony !== undefined) data.hasBalcony = dto.hasBalcony;
+    if (dto.hasWindow !== undefined) data.hasWindow = dto.hasWindow;
+    if (dto.petsAllowed !== undefined) data.petsAllowed = dto.petsAllowed;
     if (dto.underMaintenance !== undefined) data.underMaintenance = dto.underMaintenance;
     if (dto.isActive !== undefined) data.isActive = dto.isActive;
     return data;
@@ -399,6 +408,10 @@ export class RoomsService {
       maxOccupants: row.maxOccupants,
       furniture,
       description: row.description,
+      roomType: row.roomType,
+      hasBalcony: row.hasBalcony,
+      hasWindow: row.hasWindow,
+      petsAllowed: row.petsAllowed,
       underMaintenance: row.underMaintenance,
       isActive: row.isActive,
       status,

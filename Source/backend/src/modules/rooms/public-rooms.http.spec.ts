@@ -27,12 +27,12 @@ function ratePlans(effectiveFrom: Date) {
 function building(overrides: Partial<Record<string, unknown>> = {}) {
   return {
     isActive: true, ratePlans: ratePlans(d('2026-01-01')),
-    code: 'DD01', name: 'Dương Đình 1', district: 'Cầu Giấy', ward: 'Dịch Vọng',
+    code: 'DD01', name: 'Dương Đình 1', district: 'Cầu Giấy', ward: 'Dịch Vọng', amenities: [] as string[],
     ...overrides,
   };
 }
 const BUILD_DD = building();
-const BUILD_HK = building({ code: 'HK01', name: 'Hàng Khay 1', district: 'Hoàn Kiếm', ward: 'Hàng Bạc' });
+const BUILD_HK = building({ code: 'HK01', name: 'Hàng Khay 1', district: 'Hoàn Kiếm', ward: 'Hàng Bạc', amenities: ['PARKING', 'ELEVATOR', 'wifi cũ'] });
 // R2-1/BLD-05: only ELECTRIC approved -> missing WATER -> no room of this building is ever public.
 const BUILD_NORATE = building({
   code: 'NR01', name: 'Chưa đủ giá', district: 'Cầu Giấy', ward: 'Dịch Vọng',
@@ -43,6 +43,7 @@ function room(overrides: Partial<Record<string, unknown>> = {}) {
   return {
     id: 1, code: 'X', floor: 1, areaM2: 20, price: 2_000_000, maxOccupants: 2,
     isActive: true, underMaintenance: false, contracts: [] as { status: string }[],
+    roomType: null as string | null, hasBalcony: null as boolean | null, hasWindow: null as boolean | null, petsAllowed: null as boolean | null,
     images: [] as { url: string; sortOrder: number }[],
     buildingId: 10, building: BUILD_DD,
     ...overrides,
@@ -52,17 +53,17 @@ function room(overrides: Partial<Record<string, unknown>> = {}) {
 // Public rooms: 101, 102, 201, 301..304 (7 total). Hidden: 103 (price null), 104 (maintenance),
 // 105 (locked), 106 (HOLD contract), 107 (building missing WATER).
 const ROOMS = [
-  room({ id: 101, code: 'A101', price: 3_000_000, images: [{ url: 'https://img/101.jpg', sortOrder: 0 }] }),
-  room({ id: 102, code: 'A102', price: 1_000_000 }),
-  room({ id: 103, code: 'A103', price: null }),
-  room({ id: 104, code: 'A104', underMaintenance: true }),
-  room({ id: 105, code: 'A105', isActive: false }),
-  room({ id: 106, code: 'A106', contracts: [{ status: 'HOLD' }] }),
-  room({ id: 107, code: 'N107', buildingId: 30, building: BUILD_NORATE }),
-  room({ id: 201, code: 'B201', buildingId: 12, building: BUILD_HK, price: 5_000_000 }),
-  room({ id: 301, code: 'A301', price: 1_500_000 }),
-  room({ id: 302, code: 'A302', price: 1_600_000 }),
-  room({ id: 303, code: 'A303', price: 1_700_000 }),
+  room({ id: 101, code: 'A101', price: 3_000_000, areaM2: 30, hasBalcony: true, hasWindow: true, petsAllowed: true, roomType: 'STUDIO', images: [{ url: 'https://img/101.jpg', sortOrder: 0 }] }),
+  room({ id: 102, code: 'A102', price: 1_000_000, areaM2: 22, hasBalcony: false, roomType: 'LOFT' }),
+  room({ id: 103, code: 'A103', price: null, areaM2: 50, hasBalcony: true }),
+  room({ id: 104, code: 'A104', underMaintenance: true, areaM2: 50, hasBalcony: true }),
+  room({ id: 105, code: 'A105', isActive: false, areaM2: 50, hasBalcony: true }),
+  room({ id: 106, code: 'A106', contracts: [{ status: 'HOLD' }], areaM2: 50, hasBalcony: true }),
+  room({ id: 107, code: 'N107', buildingId: 30, building: BUILD_NORATE, areaM2: 50, hasBalcony: true }),
+  room({ id: 201, code: 'B201', buildingId: 12, building: BUILD_HK, price: 5_000_000, areaM2: 40, hasBalcony: true, roomType: 'TWO_BEDROOM' }),
+  room({ id: 301, code: 'A301', price: 1_500_000, areaM2: 25, floor: 3, hasBalcony: true }),
+  room({ id: 302, code: 'A302', price: 1_600_000, areaM2: 28 }),
+  room({ id: 303, code: 'A303', price: 1_700_000, areaM2: 26, hasBalcony: true }),
   room({ id: 304, code: 'A304', price: 1_800_000 }),
 ];
 
@@ -96,6 +97,7 @@ function matches(row: unknown, where: Record<string, unknown>): boolean {
       if ('in' in c) return (c.in as unknown[]).includes(value);
       if ('gte' in c) return compareVal(value, c.gte) >= 0;
       if ('lte' in c) return compareVal(value, c.lte) <= 0;
+      if ('array_contains' in c) return Array.isArray(value) && (c.array_contains as unknown[]).every((x) => value.includes(x));
       if ('none' in c) return !(value as unknown[]).some((item) => matches(item, c.none as Record<string, unknown>));
       if ('some' in c) return (value as unknown[]).some((item) => matches(item, c.some as Record<string, unknown>));
       return matches(value, c);
@@ -120,7 +122,8 @@ function toIncludeShape(r: (typeof ROOMS)[number]) {
   return {
     id: r.id, code: r.code, floor: r.floor, areaM2: r.areaM2, price: r.price, maxOccupants: r.maxOccupants,
     buildingId: r.buildingId,
-    building: { code: r.building.code, name: r.building.name, district: r.building.district, ward: r.building.ward },
+    building: { code: r.building.code, name: r.building.name, district: r.building.district, ward: r.building.ward, amenities: r.building.amenities },
+    roomType: r.roomType, hasBalcony: r.hasBalcony, hasWindow: r.hasWindow, petsAllowed: r.petsAllowed,
     images: [...r.images].sort((a, b) => a.sortOrder - b.sortOrder).slice(0, 1).map((i) => ({ url: i.url })),
   };
 }
@@ -282,8 +285,8 @@ describe('CP-1 (BE-P2-29) · /public/rooms, /public/featured-rooms HTTP contract
   it('PUB-04: a list item exposes only the public contract fields, nothing from staff-only data', async () => {
     const res = await request(app.getHttpServer()).get('/api/v1/public/rooms?buildingId=10&limit=1').expect(200);
     expect(Object.keys(res.body.data[0]).sort()).toEqual([
-      'areaM2', 'buildingCode', 'buildingId', 'buildingName', 'code', 'district', 'floor',
-      'id', 'imageUrl', 'maxOccupants', 'price', 'ward',
+      'areaM2', 'buildingAmenities', 'buildingCode', 'buildingId', 'buildingName', 'code', 'district', 'floor',
+      'hasBalcony', 'hasWindow', 'id', 'imageUrl', 'maxOccupants', 'petsAllowed', 'price', 'roomType', 'ward',
     ]);
   });
 
@@ -292,4 +295,94 @@ describe('CP-1 (BE-P2-29) · /public/rooms, /public/featured-rooms HTTP contract
     await request(app.getHttpServer()).get('/api/v1/public/rooms').set('Authorization', 'Bearer not-a-real-token').expect(200);
     await request(app.getHttpServer()).get('/api/v1/public/featured-rooms').set('Authorization', 'garbage').expect(200);
   });
+
+  // ---- PUB-06: extra filters (Phase Extra EX-5). Fixture: balcony true on 101, 201, 301, 303 (public) and on every hidden room;
+  // 302 has "chưa nhập" (null) and 102 has false; 201's building (HK01) has ELEVATOR, PARKING and the free text "wifi cũ".
+  const ids = (res: request.Response) => res.body.data.map((r: any) => r.id);
+  const get = (query: string) => request(app.getHttpServer()).get(`/api/v1/public/rooms?${query}`);
+
+  it('PUB-06: balcony=true&minArea=25 returns only public rooms with a balcony and >= 25 m2; "chưa nhập" and false do not match', async () => {
+    const res = await get('balcony=true&minArea=25').expect(200);
+    expect(ids(res)).toEqual([301, 303, 101, 201]); // price ascending; 302 (28 m2, null) and 102 (false) are out
+    expect(res.body.meta.total).toBe(4);
+  });
+
+  it('PUB-06: meta.total counts after filtering and stays the same on page 2', async () => {
+    const p1 = await get('balcony=true&limit=2&page=1').expect(200);
+    const p2 = await get('balcony=true&limit=2&page=2').expect(200);
+    expect(ids(p1)).toEqual([301, 303]);
+    expect(ids(p2)).toEqual([101, 201]);
+    expect(p1.body.meta.total).toBe(4);
+    expect(p2.body.meta.total).toBe(4);
+  });
+
+  it('PUB-06, ROOM-05: a filter never returns a non-public room (the hidden rooms have a balcony and 50 m2)', async () => {
+    const res = await get('balcony=true&minArea=50').expect(200);
+    expect(ids(res)).toEqual([]);
+    expect(res.body.meta.total).toBe(0);
+    for (const hidden of [103, 104, 105, 106, 107]) expect(ids(await get('balcony=true').expect(200))).not.toContain(hidden);
+  });
+
+  it.each([
+    ['roomType=STUDIO', [101]],
+    ['roomType=TWO_BEDROOM', [201]],
+    ['window=true', [101]],
+    ['pets=true', [101]],
+    ['floor=3', [301]],
+    ['minOccupants=3', []],
+    ['minArea=22&maxArea=26', [102, 301, 303]],
+    ['maxArea=21', [304]],
+    ['balcony=true&window=true&pets=true&roomType=STUDIO', [101]],
+  ])('PUB-06: %s -> %j (AND, "chưa nhập" never matches)', async (query, expected) => {
+    expect(ids(await get(query).expect(200))).toEqual(expected);
+  });
+
+  it('PUB-06, BLD-08: amenities needs every listed code; old free text never matches; a repeated key and a trailing comma work', async () => {
+    expect(ids(await get('amenities=ELEVATOR').expect(200))).toEqual([201]);
+    expect(ids(await get('amenities=ELEVATOR,PARKING').expect(200))).toEqual([201]);
+    expect(ids(await get('amenities=ELEVATOR&amenities=PARKING').expect(200))).toEqual([201]);
+    expect(ids(await get('amenities=ELEVATOR,').expect(200))).toEqual([201]);
+    expect(ids(await get('amenities=ELEVATOR,CAMERA').expect(200))).toEqual([]); // no building has both
+    expect((await get('amenities=ELEVATOR,ELEVATOR').expect(200)).body.meta.total).toBe(1); // duplicates collapse
+  });
+
+  it.each([
+    ['amenities=SAUNA', 'amenities', 'Tiện ích không có trong danh mục'],
+    ['amenities=wifi cũ', 'amenities', 'Tiện ích không có trong danh mục'],
+    ['amenities=elevator', 'amenities', 'Tiện ích không có trong danh mục'],
+    ['roomType=DUPLEX', 'roomType', 'Loại phòng không hợp lệ'],
+    ['balcony=false', 'balcony', 'Giá trị bộ lọc không hợp lệ'],
+    ['window=1', 'window', 'Giá trị bộ lọc không hợp lệ'],
+    ['pets=yes', 'pets', 'Giá trị bộ lọc không hợp lệ'],
+    ['minArea=abc', 'minArea', 'Diện tích tối thiểu không hợp lệ'],
+    ['minArea=0', 'minArea', 'Diện tích tối thiểu không hợp lệ'],
+    ['maxArea=10000', 'maxArea', 'Diện tích tối đa không hợp lệ'],
+    ['maxArea=20.55', 'maxArea', 'Diện tích tối đa không hợp lệ'],
+    ['minOccupants=0', 'minOccupants', 'Số người không hợp lệ'],
+    ['minOccupants=99999999999', 'minOccupants', 'Số người không hợp lệ'],
+    ['floor=0', 'floor', 'Tầng không hợp lệ'],
+  ])('PUB-06: %s -> 400 VALIDATION_FAILED on fields.%s', async (query, field, message) => {
+    const res = await get(query).expect(400);
+    expect(res.body.error.code).toBe('VALIDATION_FAILED');
+    expect(res.body.error.fields[field]).toBe(message);
+    expect(roomFindMany).not.toHaveBeenCalled();
+  });
+
+  it('PUB-06: GET /public/filters lists the 8 amenities and 4 room types, with no building or room data and no database read', async () => {
+    const res = await request(app.getHttpServer()).get('/api/v1/public/filters').expect(200);
+    expect(Object.keys(res.body.data).sort()).toEqual(['amenities', 'roomTypes']);
+    expect(res.body.data.amenities.map((a: any) => a.code)).toEqual([
+      'ELEVATOR', 'PARKING', 'SECURITY', 'CAMERA', 'SHARED_WASHER', 'DRYING_AREA', 'FINGERPRINT_LOCK', 'FREE_HOURS',
+    ]);
+    expect(res.body.data.roomTypes.map((a: any) => a.code)).toEqual(['STUDIO', 'LOFT', 'ONE_BEDROOM', 'TWO_BEDROOM']);
+    expect(Object.keys(res.body.data.roomTypes[0]).sort()).toEqual(['code', 'label', 'labelEn']);
+    expect(roomFindMany).not.toHaveBeenCalled();
+    expect(roomCount).not.toHaveBeenCalled();
+  });
+
+  it('PUB-04, PUB-06: a list item carries the room attributes (null stays null) and only the building codes, never the free text', async () => {
+    const res = await get('buildingId=12').expect(200);
+    expect(res.body.data[0]).toMatchObject({ id: 201, roomType: 'TWO_BEDROOM', hasBalcony: true, hasWindow: null, petsAllowed: null, buildingAmenities: ['ELEVATOR', 'PARKING'] });
+  });
+
 });

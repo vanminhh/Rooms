@@ -188,3 +188,23 @@ describe('BE-P2-18 · RoomsService maintenance and locking', () => {
     }
   });
 });
+
+describe('ROOM-10 · RoomsService attributes', () => {
+  it('ROOM-10: an update that does not mention the attributes leaves them as they are (null stays "chưa nhập")', async () => {
+    const { service, state, tx } = makeHarness();
+    Object.assign(state, { roomType: null, hasBalcony: null, hasWindow: null, petsAllowed: null });
+    const view = await service.update(boss, 101, { description: 'Mô tả' } as any);
+    expect(view).toMatchObject({ roomType: null, hasBalcony: null, hasWindow: null, petsAllowed: null });
+    const written = tx.room.updateMany.mock.calls[0][0].data;
+    for (const key of ['roomType', 'hasBalcony', 'hasWindow', 'petsAllowed']) expect(key in written).toBe(false);
+  });
+
+  it('ROOM-10: false is saved as false (not dropped as "not sent") and null clears a value back to "chưa nhập"', async () => {
+    const { service, state } = makeHarness();
+    const set = await service.update(boss, 101, { roomType: 'LOFT', hasBalcony: false, hasWindow: true, petsAllowed: false } as any);
+    expect(set).toMatchObject({ roomType: 'LOFT', hasBalcony: false, hasWindow: true, petsAllowed: false });
+    expect(state).toMatchObject({ roomType: 'LOFT', hasBalcony: false, hasWindow: true, petsAllowed: false });
+    const cleared = await service.update(boss, 101, { hasBalcony: null, roomType: null } as any);
+    expect(cleared).toMatchObject({ roomType: null, hasBalcony: null, hasWindow: true, petsAllowed: false });
+  });
+});

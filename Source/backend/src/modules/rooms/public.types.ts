@@ -1,3 +1,10 @@
+export type PublicRoomType = 'STUDIO' | 'LOFT' | 'ONE_BEDROOM' | 'TWO_BEDROOM';
+
+export interface PublicFiltersView {
+  amenities: { code: string; label: string; labelEn: string }[];
+  roomTypes: { code: string; label: string; labelEn: string }[];
+}
+
 export interface PublicRoomListItem {
   id: number;
   code: string;
@@ -11,6 +18,11 @@ export interface PublicRoomListItem {
   district: string;
   ward: string;
   imageUrl: string | null; // image with the smallest sort_order
+  roomType: PublicRoomType | null; // ROOM-10: null = chưa nhập
+  hasBalcony: boolean | null;
+  hasWindow: boolean | null;
+  petsAllowed: boolean | null;
+  buildingAmenities: string[]; // catalog codes only (BLD-08); old free text never leaves staff
 }
 
 export interface PublicRateTier { tierNo: number; upTo: number | null; unitPrice: number }
@@ -56,6 +68,10 @@ export interface PublicRoomDetail {
   maxOccupants: number;
   furniture: string[];
   description: string | null;
+  roomType: PublicRoomType | null;
+  hasBalcony: boolean | null;
+  hasWindow: boolean | null;
+  petsAllowed: boolean | null;
   price: number;
   deposit: number; // = price (ROOM-08)
   monthlyEstimate: number; // ROOM-08 / A-05, đồng nguyên

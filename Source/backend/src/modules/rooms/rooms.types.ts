@@ -18,6 +18,10 @@ export interface RoomView {
   maxOccupants: number;
   furniture: string[];
   description: string | null;
+  roomType: 'STUDIO' | 'LOFT' | 'ONE_BEDROOM' | 'TWO_BEDROOM' | null; // ROOM-10: null = chưa nhập
+  hasBalcony: boolean | null;
+  hasWindow: boolean | null;
+  petsAllowed: boolean | null;
   underMaintenance: boolean;
   isActive: boolean;
   status: RoomStatus;
@@ -25,7 +29,7 @@ export interface RoomView {
   pendingViewingCount?: number;
 }
 
-export interface RoomGridItem extends Omit<RoomView, 'furniture' | 'description' | 'images'> {
+export interface RoomGridItem extends Omit<RoomView, 'furniture' | 'description' | 'images' | 'roomType' | 'hasBalcony' | 'hasWindow' | 'petsAllowed'> {
   pendingProposal: null | { id: number; price: number; effectiveFrom: string; expired: boolean };
   imageCount: number;
 }

@@ -51,8 +51,8 @@ Not in `schema.prisma` yet. They follow the decisions of 12/11/2026 (D-25..D-33)
 |---|---|---|---|
 | EX-1 | `users` | enum `Role` gets `GUEST`; `email_verified_at timestamptz null`; `locale` (`vi` / `en`, default `vi`). The first EX-1 migration (`guest_accounts`, applied to the dev database on 12/11/2026) added `phone_verified_at`, which is no longer used; a second migration adds `email_verified_at` | AUTH-11..15 |
 | EX-1 | email codes (the table the first EX-1 migration created as `phone_otps`) | email, code hash, tries, expiry, used time | AUTH-13 |
-| EX-5 | `rooms` | `room_type`, `has_balcony`, `has_window`, `pets_allowed`; null = not entered yet | ROOM-10 |
-| EX-5 | `buildings` | `amenities` holds codes of a fixed list instead of free text; old values are kept until staff enter them again | BLD-08 |
+| EX-5 | `rooms` | **Done 13/11/2026** (migration `room_attributes`): `room_type`, `has_balcony`, `has_window`, `pets_allowed`; null = not entered yet | ROOM-10 |
+| EX-5 | `buildings` | **No migration.** `amenities` stays one jsonb array: an item in the fixed list is a code, any other item is old free text; the API splits them (`amenities` and `legacyAmenities`) and a save keeps the old text until staff clear it (BLD-08) | BLD-08 |
 | EX-6 | `viewings` | `user_id null` (owner account); `visit_at timestamptz null` (exact hour); statuses `DONE`, `NO_SHOW`; how it was confirmed (`PHONE` / `EMAIL`) and when; who cancelled; `visit_date` + `time_slot` stay for old rows; CHECK: `visit_at`, or `visit_date` and `time_slot` | VIEW-01, VIEW-04, VIEW-08, VIEW-15, VIEW-18 |
 | Phase 3 | `contracts` | trigger "tenant is TENANT" stays; the BE switches a `GUEST` to `TENANT` in the same transaction before the insert | CON-07 |
 | Phase 5 | `requests` | repair review: rating 1–5, comment, time, hidden reason; only on `INCIDENT` in `CLOSED` | REQ-09 |

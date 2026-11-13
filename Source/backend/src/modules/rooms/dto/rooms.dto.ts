@@ -3,6 +3,7 @@ import {
   ArrayMaxSize, IsArray, IsBoolean, IsIn, IsInt, IsNumber, IsOptional, IsString,
   Max, MaxLength, Min, MinLength, ValidateIf,
 } from 'class-validator';
+import { ROOM_TYPE_CODES } from '../../../common/catalog/catalog.js';
 import { PaginationQuery } from '../../../common/pagination.js';
 
 const ROOM_ID_MESSAGE = 'Mã phòng không hợp lệ';
@@ -110,6 +111,23 @@ export class CreateRoomDto {
   @ValidateIf((_object, value) => value !== undefined && value !== null)
   @IsString({ message: 'Mô tả phải là chuỗi' })
   description?: string | null;
+
+  // ROOM-10: each optional; null = "chưa nhập" is a valid value and is not the same as false.
+  @ValidateIf((_object, value) => value !== undefined && value !== null)
+  @IsIn(ROOM_TYPE_CODES, { message: 'Loại phòng không hợp lệ' })
+  roomType?: 'STUDIO' | 'LOFT' | 'ONE_BEDROOM' | 'TWO_BEDROOM' | null;
+
+  @ValidateIf((_object, value) => value !== undefined && value !== null)
+  @IsBoolean({ message: 'Giá trị ban công không hợp lệ' })
+  hasBalcony?: boolean | null;
+
+  @ValidateIf((_object, value) => value !== undefined && value !== null)
+  @IsBoolean({ message: 'Giá trị cửa sổ không hợp lệ' })
+  hasWindow?: boolean | null;
+
+  @ValidateIf((_object, value) => value !== undefined && value !== null)
+  @IsBoolean({ message: 'Giá trị cho nuôi thú cưng không hợp lệ' })
+  petsAllowed?: boolean | null;
 }
 
 export class UpdateRoomDto {
@@ -148,6 +166,23 @@ export class UpdateRoomDto {
   @ValidateIf((_object, value) => value !== undefined && value !== null)
   @IsString({ message: 'Mô tả phải là chuỗi' })
   description?: string | null;
+
+  // ROOM-10: each optional; null = "chưa nhập" is a valid value and is not the same as false.
+  @ValidateIf((_object, value) => value !== undefined && value !== null)
+  @IsIn(ROOM_TYPE_CODES, { message: 'Loại phòng không hợp lệ' })
+  roomType?: 'STUDIO' | 'LOFT' | 'ONE_BEDROOM' | 'TWO_BEDROOM' | null;
+
+  @ValidateIf((_object, value) => value !== undefined && value !== null)
+  @IsBoolean({ message: 'Giá trị ban công không hợp lệ' })
+  hasBalcony?: boolean | null;
+
+  @ValidateIf((_object, value) => value !== undefined && value !== null)
+  @IsBoolean({ message: 'Giá trị cửa sổ không hợp lệ' })
+  hasWindow?: boolean | null;
+
+  @ValidateIf((_object, value) => value !== undefined && value !== null)
+  @IsBoolean({ message: 'Giá trị cho nuôi thú cưng không hợp lệ' })
+  petsAllowed?: boolean | null;
 
   @ValidateIf((_object, value) => value !== undefined)
   @IsBoolean({ message: 'Trạng thái bảo trì không hợp lệ' })

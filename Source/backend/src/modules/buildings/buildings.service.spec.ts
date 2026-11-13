@@ -76,7 +76,7 @@ describe('BE-P2-11/12 · BuildingsService', () => {
     const h = harness();
     h.state.buildings[0] = building({ managerId: 2 });
     const user = { id: 2, role: 'MANAGER', mustChangePassword: false, buildingIds: [10] } as any;
-    await expect(h.service.update(user, 10, { amenities: ['Wifi'], description: 'Mô tả' } as any)).resolves.toMatchObject({ amenities: ['Wifi'], description: 'Mô tả' });
+    await expect(h.service.update(user, 10, { amenities: ['PARKING'], description: 'Mô tả' } as any)).resolves.toMatchObject({ amenities: ['PARKING'], description: 'Mô tả' });
     await expect(h.service.update(user, 10, { address: 'Mới' } as any)).rejects.toBeInstanceOf(ForbiddenException);
     await expect(h.service.update(user, 11, { description: 'Khác' } as any)).rejects.toMatchObject({ response: { message: 'OUT_OF_SCOPE' } });
   });
@@ -164,5 +164,41 @@ describe('BE-P2-11/12 · BuildingsService', () => {
     expect(h.state.audits).toHaveLength(0);
     await h.service.update(boss, 10, { isActive: true } as any);
     expect(h.state.audits).toHaveLength(0);
+  });
+});
+
+describe('BLD-08 · amenity codes and old free text', () => {
+  it('BLD-08: reading splits the stored array into codes (catalog order) and old free text (stored order)', async () => {
+    const h = harness();
+    h.state.buildings[0] = building({ amenities: ['wifi cũ', 'PARKING', 'Thang máy', 'ELEVATOR'] });
+    const list = await h.service.list(boss, {} as any);
+    expect(list.data[0]).toMatchObject({ amenities: ['ELEVATOR', 'PARKING'], legacyAmenities: ['wifi cũ', 'Thang máy'] });
+  });
+
+  it('BLD-08: saving codes keeps the old free text and never converts it', async () => {
+    const h = harness();
+    h.state.buildings[0] = building({ amenities: ['wifi cũ', 'Thang máy'] });
+    const saved = await h.service.update(boss, 10, { amenities: ['SECURITY', 'ELEVATOR', 'SECURITY'] } as any);
+    expect(saved).toMatchObject({ amenities: ['ELEVATOR', 'SECURITY'], legacyAmenities: ['wifi cũ', 'Thang máy'] });
+    expect((h.state.buildings[0] as any).amenities).toEqual(['ELEVATOR', 'SECURITY', 'wifi cũ', 'Thang máy']);
+  });
+
+  it('BLD-08, OQ-1: legacyAmenities [] removes only the old free text, codes stay; with no field the stored value is untouched', async () => {
+    const h = harness();
+    h.state.buildings[0] = building({ amenities: ['CAMERA', 'wifi cũ'] });
+    await h.service.update(boss, 10, { description: 'Mô tả mới' } as any);
+    expect((h.state.buildings[0] as any).amenities).toEqual(['CAMERA', 'wifi cũ']);
+    const cleared = await h.service.update(boss, 10, { legacyAmenities: [] } as any);
+    expect(cleared).toMatchObject({ amenities: ['CAMERA'], legacyAmenities: [] });
+    expect((h.state.buildings[0] as any).amenities).toEqual(['CAMERA']);
+  });
+
+  it('BLD-08, BLD-02: a manager of the building may clear the old free text; creating a building stores codes only', async () => {
+    const h = harness();
+    h.state.buildings[0] = building({ managerId: 2, amenities: ['wifi cũ'] });
+    const user = { id: 2, role: 'MANAGER', mustChangePassword: false, buildingIds: [10] } as any;
+    await expect(h.service.update(user, 10, { legacyAmenities: [] } as any)).resolves.toMatchObject({ legacyAmenities: [] });
+    const created = await h.service.create(boss, { code: 'hn09', name: 'Tòa 9', address: 'X', district: 'Y', ward: 'Z', waterMode: 'PER_M3', amenities: ['PARKING', 'ELEVATOR'] } as any);
+    expect(created).toMatchObject({ amenities: ['ELEVATOR', 'PARKING'], legacyAmenities: [] });
   });
 });

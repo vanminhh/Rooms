@@ -193,11 +193,11 @@ describe('D2-14, BE-P2-09: Buildings and manager API against real Prisma', () =>
       .toEqual(created.buildingIds.slice(0, 2).sort((left, right) => left - right));
 
     const allowed = await send(app, 'patch', `/buildings/${created.buildingIds[0]}`, {
-      amenities: ['Thang máy', 'Camera'],
+      amenities: ['CAMERA', 'ELEVATOR'], // BLD-08: codes of the fixed list, saved in catalog order
       description: 'Tòa E2E do quản lý cập nhật',
     }, managerSession);
     expect(allowed.status).toBe(200);
-    expect(allowed.body.data.amenities).toEqual(['Thang máy', 'Camera']);
+    expect(allowed.body.data.amenities).toEqual(['ELEVATOR', 'CAMERA']);
     expect(allowed.body.data.description).toBe('Tòa E2E do quản lý cập nhật');
 
     const forbidden = await send(app, 'patch', `/buildings/${created.buildingIds[0]}`, {
@@ -206,7 +206,7 @@ describe('D2-14, BE-P2-09: Buildings and manager API against real Prisma', () =>
     expect(forbidden.status).toBe(403);
     expect(forbidden.body.error.code).toBe('FORBIDDEN');
     const outOfScope = await send(app, 'patch', `/buildings/${created.buildingIds[2]}`, {
-      amenities: ['Không được phép'],
+      amenities: ['PARKING'],
     }, managerSession);
     expect(outOfScope.status).toBe(403);
     expect(outOfScope.body.error.code).toBe('OUT_OF_SCOPE');

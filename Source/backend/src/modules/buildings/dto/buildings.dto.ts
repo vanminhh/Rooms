@@ -1,5 +1,6 @@
 import { Type, Transform } from 'class-transformer';
 import {
+  ArrayMaxSize,
   IsArray,
   IsBoolean,
   IsEnum,
@@ -15,6 +16,7 @@ import {
   ValidateIf,
 } from 'class-validator';
 import { WaterMode } from '@prisma/client';
+import { AMENITY_CODES } from '../../../common/catalog/catalog.js';
 import { PaginationQuery } from '../../../common/pagination.js';
 
 const CODE_MESSAGE = 'Mã tòa gồm 2–6 ký tự A–Z hoặc 0–9';
@@ -90,7 +92,8 @@ export class CreateBuildingDto {
 
   @ValidateIf((_object, value) => value !== undefined)
   @IsArray({ message: 'Danh sách tiện ích không hợp lệ' })
-  @IsString({ each: true, message: 'Mỗi tiện ích phải là chuỗi' })
+  @ArrayMaxSize(AMENITY_CODES.length, { message: 'Tiện ích không có trong danh mục' })
+  @IsIn(AMENITY_CODES, { each: true, message: 'Tiện ích không có trong danh mục' })
   amenities?: string[];
 
   @IsOptional()
@@ -147,12 +150,19 @@ export class UpdateBuildingDto {
 
   @ValidateIf((_object, value) => value !== undefined)
   @IsArray({ message: 'Danh sách tiện ích không hợp lệ' })
-  @IsString({ each: true, message: 'Mỗi tiện ích phải là chuỗi' })
+  @ArrayMaxSize(AMENITY_CODES.length, { message: 'Tiện ích không có trong danh mục' })
+  @IsIn(AMENITY_CODES, { each: true, message: 'Tiện ích không có trong danh mục' })
   amenities?: string[];
 
   @IsOptional()
   @IsString({ message: 'Mô tả phải là chuỗi' })
   description?: string | null;
+
+  // BLD-08, OQ-1: the only accepted value is [], the "Xóa tiện ích cũ" command; old free text is never edited item by item.
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsArray({ message: 'Tiện ích cũ chỉ có thể được xóa hết' })
+  @ArrayMaxSize(0, { message: 'Tiện ích cũ chỉ có thể được xóa hết' })
+  legacyAmenities?: string[];
 
   @ValidateIf((_object, value) => value !== undefined)
   @IsBoolean({ message: 'Trạng thái tòa không hợp lệ' })

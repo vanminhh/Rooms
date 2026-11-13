@@ -8,6 +8,7 @@ import {
 import { Prisma } from '@prisma/client';
 import type { Building, Prisma as PrismaTypes } from '@prisma/client';
 import { AuditService } from '../audit/audit.service.js';
+import { splitAmenities } from '../../common/catalog/catalog.js';
 import { ErrorCode } from '../../common/errors/error-code.js';
 import { pageParams, paginated } from '../../common/pagination.js';
 import type { AuthUser } from '../../common/guards/auth.decorators.js';
@@ -97,7 +98,7 @@ export class BuildingsService {
           waterMode: dto.waterMode,
           dueDays: dto.dueDays ?? 5,
           managerId,
-          amenities: (dto.amenities ?? []) as Prisma.InputJsonValue,
+          amenities: splitAmenities(dto.amenities).codes as Prisma.InputJsonValue,
           description: dto.description ?? null,
         },
         include: BUILDING_INCLUDE,
@@ -176,7 +177,13 @@ export class BuildingsService {
       if (dto.waterMode !== undefined) data.waterMode = dto.waterMode;
       if (dto.dueDays !== undefined) data.dueDays = dto.dueDays;
       if (dto.managerId !== undefined) data.managerId = dto.managerId;
-      if (dto.amenities !== undefined) data.amenities = dto.amenities as Prisma.InputJsonValue;
+      if (dto.amenities !== undefined || dto.legacyAmenities !== undefined) {
+        // BLD-08: saving codes keeps the old free text; only the explicit `legacyAmenities: []` removes it. Same transaction as the read.
+        const stored = splitAmenities(current.amenities);
+        const codes = dto.amenities !== undefined ? splitAmenities(dto.amenities).codes : stored.codes;
+        const legacy = dto.legacyAmenities !== undefined ? [] : stored.legacy;
+        data.amenities = [...codes, ...legacy] as Prisma.InputJsonValue;
+      }
       if (dto.description !== undefined) data.description = dto.description;
       if (statusChanged) data.isActive = finalIsActive;
       if (!finalIsActive) data.managerId = null;
@@ -283,9 +290,7 @@ export class BuildingsService {
   }
 
   private toView(building: BuildingRecord, pendingViewingCount: number): BuildingView {
-    const amenities = Array.isArray(building.amenities)
-      ? building.amenities.filter((item): item is string => typeof item === 'string')
-      : [];
+    const { codes: amenities, legacy: legacyAmenities } = splitAmenities(building.amenities);
     return {
       id: building.id,
       code: building.code,
@@ -298,6 +303,7 @@ export class BuildingsService {
       managerId: building.managerId,
       manager: building.manager,
       amenities,
+      legacyAmenities,
       description: building.description,
       isActive: building.isActive,
       pendingViewingCount,

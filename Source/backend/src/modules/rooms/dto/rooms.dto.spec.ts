@@ -128,3 +128,27 @@ describe('BE-P2-17 · rooms DTO validation', () => {
     expect(await invalidProperties(OrderRoomImagesDto, { imageIds })).toContain('imageIds');
   });
 });
+
+describe('ROOM-10 · room attribute fields', () => {
+  const base = { buildingId: '1', code: '203', floor: '2', areaM2: '24' };
+
+  it('ROOM-10: create and update accept each field omitted, null, a catalog room type and booleans (false is a real value)', async () => {
+    for (const type of [CreateRoomDto, UpdateRoomDto]) {
+      const extra = type === CreateRoomDto ? base : {};
+      expect(await invalidProperties(type, { ...extra })).toEqual([]);
+      expect(await invalidProperties(type, { ...extra, roomType: null, hasBalcony: null, hasWindow: null, petsAllowed: null })).toEqual([]);
+      expect(await invalidProperties(type, { ...extra, roomType: 'LOFT', hasBalcony: false, hasWindow: true, petsAllowed: false })).toEqual([]);
+    }
+  });
+
+  it.each([
+    [{ roomType: 'DUPLEX' }, 'roomType'],
+    [{ roomType: 'studio' }, 'roomType'],
+    [{ hasBalcony: 'true' }, 'hasBalcony'],
+    [{ hasWindow: 1 }, 'hasWindow'],
+    [{ petsAllowed: 'no' }, 'petsAllowed'],
+  ])('ROOM-10: %j is refused on %s', async (patch, field) => {
+    expect(await invalidProperties(UpdateRoomDto, patch)).toEqual([field]);
+    expect(await invalidProperties(CreateRoomDto, { ...base, ...patch })).toEqual([field]);
+  });
+});

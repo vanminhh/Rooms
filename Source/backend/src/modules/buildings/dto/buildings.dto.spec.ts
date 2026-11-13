@@ -60,12 +60,16 @@ describe('building DTO validation', () => {
     }
   });
 
-  it('BLD-02: accepts empty/string amenities and nullable description', async () => {
+  it('BLD-02, BLD-08: accepts empty or catalog-code amenities and nullable description', async () => {
     expect(await errorsFor(UpdateBuildingDto, { amenities: [], description: null })).toEqual([]);
-    expect(await errorsFor(UpdateBuildingDto, { amenities: ['Thang máy', 'Wifi'], description: 'Mô tả' })).toEqual([]);
+    expect(await errorsFor(UpdateBuildingDto, { amenities: ['ELEVATOR', 'FREE_HOURS'], description: 'Mô tả' })).toEqual([]);
   });
 
-  it.each([{ amenities: null }, { amenities: {} }, { amenities: ['Wifi', 1] }])('BLD-02: rejects malformed amenities %#', async (patch) => {
+  it.each([
+    { amenities: null }, { amenities: {} }, { amenities: ['PARKING', 1] },
+    { amenities: ['Thang máy'] }, { amenities: ['SAUNA'] }, { amenities: ['elevator'] }, // BLD-08: only codes of the list
+    { amenities: ['ELEVATOR', 'PARKING', 'SECURITY', 'CAMERA', 'SHARED_WASHER', 'DRYING_AREA', 'FINGERPRINT_LOCK', 'FREE_HOURS', 'ELEVATOR'] },
+  ])('BLD-02, BLD-08: rejects malformed or unknown amenities %#', async (patch) => {
     expect((await validate(plainToInstance(UpdateBuildingDto, patch))).map(({ property }) => property)).toContain('amenities');
   });
 
@@ -91,5 +95,12 @@ describe('building DTO validation', () => {
 
   it.each(['0', '2147483648', '1.2'])('API-03/API-04: rejects building id outside positive int32: %s', async (id) => {
     expect((await validate(plainToInstance(BuildingIdParamsDto, { id }))).map(({ property }) => property)).toContain('id');
+  });
+
+  it('BLD-08: legacyAmenities accepts only [] (the "Xóa tiện ích cũ" command)', async () => {
+    expect(await errorsFor(UpdateBuildingDto, { legacyAmenities: [] })).toEqual([]);
+    for (const bad of [['Wifi'], null, 'x', {}]) {
+      expect((await validate(plainToInstance(UpdateBuildingDto, { legacyAmenities: bad }))).map(({ property }) => property)).toContain('legacyAmenities');
+    }
   });
 });

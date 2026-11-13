@@ -11,7 +11,8 @@ export interface BuildingView {
   dueDays: number;
   managerId: number | null;
   manager: { id: number; fullName: string; isActive: boolean } | null;
-  amenities: string[];
+  amenities: string[]; // catalog codes only (BLD-08)
+  legacyAmenities: string[]; // old free text, for staff only, until they choose from the list
   description: string | null;
   isActive: boolean;
   pendingViewingCount: number;

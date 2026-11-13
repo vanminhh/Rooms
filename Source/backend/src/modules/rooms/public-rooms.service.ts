@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { AMENITIES, ROOM_TYPES } from '../../common/catalog/catalog.js';
 import { ErrorCode } from '../../common/errors/error-code.js';
 import { todayHanoi } from '../../common/date/today.js';
 import { newestRoomIds } from '../../common/rooms/public-price-order.js';
@@ -11,7 +12,7 @@ import { pageParams, paginated, type Paginated } from '../../common/pagination.j
 import { PrismaService } from '../../common/prisma/prisma.service.js';
 import { BuildingContactService } from '../buildings/building-contact.service.js';
 import type { PublicRoomsQueryDto } from './dto/public-rooms.dto.js';
-import type { PublicRoomDetail, PublicRoomListItem } from './public.types.js';
+import type { PublicFiltersView, PublicRoomDetail, PublicRoomListItem } from './public.types.js';
 
 const FEATURED_LIMIT = 6;
 
@@ -23,6 +24,17 @@ function publicWhere(query: PublicRoomsQueryDto, today: Date): Prisma.RoomWhereI
   if (query.ward !== undefined) conditions.push({ building: { ward: query.ward } });
   if (query.minPrice !== undefined) conditions.push({ price: { gte: query.minPrice } });
   if (query.maxPrice !== undefined) conditions.push({ price: { lte: query.maxPrice } });
+  // PUB-06: every extra filter goes into the same AND list, so it runs before paging. A "chưa nhập" (null) value never matches.
+  if (query.minArea !== undefined) conditions.push({ areaM2: { gte: new Prisma.Decimal(query.minArea) } });
+  if (query.maxArea !== undefined) conditions.push({ areaM2: { lte: new Prisma.Decimal(query.maxArea) } });
+  if (query.minOccupants !== undefined) conditions.push({ maxOccupants: { gte: query.minOccupants } });
+  if (query.floor !== undefined) conditions.push({ floor: query.floor });
+  if (query.balcony === 'true') conditions.push({ hasBalcony: true });
+  if (query.window === 'true') conditions.push({ hasWindow: true });
+  if (query.pets === 'true') conditions.push({ petsAllowed: true });
+  if (query.roomType !== undefined) conditions.push({ roomType: query.roomType });
+  // One condition per code: the building must have every listed code. Old free text never equals a code (BLD-08).
+  for (const code of query.amenities ?? []) conditions.push({ building: { amenities: { array_contains: [code] } } });
   return { AND: conditions };
 }
 
@@ -64,6 +76,11 @@ export class PublicRoomsService {
       this.prisma.room.count({ where }),
     ]);
     return paginated(rows.map(toPublicRoomListItem), page, limit, total);
+  }
+
+  // PUB-06: constant lists, no database read and no building or room data.
+  filters(): PublicFiltersView {
+    return { amenities: [...AMENITIES], roomTypes: [...ROOM_TYPES] };
   }
 
   async featured(): Promise<PublicRoomListItem[]> {

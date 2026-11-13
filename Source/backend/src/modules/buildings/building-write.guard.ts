@@ -3,7 +3,7 @@ import type { Request } from 'express';
 import { ErrorCode } from '../../common/errors/error-code.js';
 import type { AuthUser } from '../../common/guards/auth.decorators.js';
 
-const MANAGER_BUILDING_FIELDS = new Set(['amenities', 'description']);
+const MANAGER_BUILDING_FIELDS = new Set(['amenities', 'description', 'legacyAmenities']);
 
 export function assertBuildingPatchFields(user: Pick<AuthUser, 'role'>, body: unknown): void {
   if (user.role !== 'MANAGER' || body === null || typeof body !== 'object' || Array.isArray(body)) return;
