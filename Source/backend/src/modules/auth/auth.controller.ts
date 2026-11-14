@@ -1,3 +1,4 @@
+import { localeOf } from '../../common/i18n/locale.js';
 import { Body, Controller, Get, Headers, HttpCode, Ip, Patch, Post, Req, Res } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import {
@@ -84,10 +85,10 @@ export class AuthController {
   @Post('register')
   async register(
     @Body() dto: RegisterDto,
-    @Headers('accept-language') acceptLanguage: string | undefined,
+    @Req() req: Request,
     @Ip() ip: string,
   ): Promise<null> {
-    await this.auth.register(dto, /^en\b/i.test(acceptLanguage ?? '') ? 'en' : 'vi', ip);
+    await this.auth.register(dto, localeOf(req), ip);
     return null;
   }
 

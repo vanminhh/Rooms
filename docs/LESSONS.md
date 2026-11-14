@@ -62,3 +62,6 @@ Read this before the first task of any part. Each line is a mistake that really 
 - A business rule the spec does not state is a question for the owner, even when it looks obvious; two parts stopped mid-way for this. Collect such questions while planning, before any code [BE-P2-12, 02/11/2026; BE-P2-17, 03/11/2026].
 
 - When moving UI copy into dictionaries, adapt source-layout checks to resolve dictionary calls while retaining the old literal expectations; otherwise static checks fail despite unchanged rendered Vietnamese [FE-EX-11, 14/11/2026].
+
+- In the managed Windows sandbox, Vitest module-cache rename in its default temporary folder can fail with EPERM; a process-local TEMP/TMP under ignored node_modules/.cache allows transformation, but HTTP loopback can still fail with EACCES. Report those separately from assertion failures [BE-EX-10/11, 14/11/2026].
+- Preserve punctuation when moving mail templates: the verification subject used an en dash, not a hyphen; compare the original literal as well as the wording [BE-EX-11, 14/11/2026].

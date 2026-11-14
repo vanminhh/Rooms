@@ -1,3 +1,4 @@
+import type { Lang } from '../../common/i18n/locale.js';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { AMENITIES, ROOM_TYPES } from '../../common/catalog/catalog.js';
@@ -47,7 +48,7 @@ export class PublicRoomsService {
   constructor(private readonly prisma: PrismaService, private readonly contacts: BuildingContactService) {}
 
   // PUB-02: a missing room and a non-public room give the same 404 (no hint that it exists).
-  async detail(id: number): Promise<PublicRoomDetail> {
+  async detail(id: number, lang: Lang = 'vi'): Promise<PublicRoomDetail> {
     const today = todayHanoi();
     const room = await this.prisma.room.findFirst({
       where: { id, ...publicRoomWhere(today) },
@@ -58,7 +59,7 @@ export class PublicRoomsService {
       loadPublicRates(this.prisma, room.buildingId, today),
       this.contacts.buildingContact(room.building),
     ]);
-    return toPublicRoomDetail(room, rates, contact);
+    return toPublicRoomDetail(room, rates, contact, lang);
   }
 
   async list(query: PublicRoomsQueryDto): Promise<Paginated<PublicRoomListItem>> {

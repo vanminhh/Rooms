@@ -1,4 +1,6 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import type { Request } from 'express';
+import { localeOf } from '../../common/i18n/locale.js';
+import { Controller, Get, Param, Query, Req } from '@nestjs/common';
 import { Public } from '../../common/guards/auth.decorators.js';
 import type { Paginated } from '../../common/pagination.js';
 import { PublicIdParamsDto, PublicRoomsQueryDto } from './dto/public-rooms.dto.js';
@@ -30,7 +32,7 @@ export class PublicRoomsController {
 
   @Public()
   @Get('rooms/:id')
-  detail(@Param() params: PublicIdParamsDto): Promise<PublicRoomDetail> {
-    return this.rooms.detail(params.id);
+  detail(@Param() params: PublicIdParamsDto, @Req() req: Request): Promise<PublicRoomDetail> {
+    return this.rooms.detail(params.id, localeOf(req));
   }
 }

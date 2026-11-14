@@ -1,3 +1,4 @@
+import type { Lang } from '../i18n/locale.js';
 import type { Prisma, PrismaClient, ServiceUnit } from '@prisma/client';
 import type { PublicContact } from '../../modules/settings/settings.service.js';
 import type {
@@ -139,7 +140,7 @@ export function toPublicBuildingSummary(building: PublicBuildingRecord): PublicB
 }
 
 export function toPublicRoomDetail(
-  room: PublicRoomDetailRecord, rates: PublicRateSet, contact: PublicContact | null,
+  room: PublicRoomDetailRecord, rates: PublicRateSet, contact: PublicContact | null, lang: Lang = 'vi',
 ): PublicRoomDetail {
   // ROOM-05 guarantees a price; see toPublicRoomListItem.
   if (room.price === null) throw new Error(`public room ${room.id} has no price`);
@@ -148,7 +149,7 @@ export function toPublicRoomDetail(
     waterMode: room.building.waterMode,
     water: rates.water,
     services: rates.services,
-  });
+  }, lang);
   return {
     id: room.id,
     code: room.code,

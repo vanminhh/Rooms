@@ -12,6 +12,8 @@ import { PrismaService } from '../../common/prisma/prisma.service.js';
 import { publicRoomWhere } from '../../common/rooms/public-room.js';
 import { TokenService } from '../auth/token.service.js';
 import { RoomsModule } from './rooms.module.js';
+import { PublicRoomsController } from './public-rooms.controller.js';
+import type { Request } from 'express';
 
 // CP-2 (BE-P2-30) · PUB-02, PUB-03, PUB-04, ROOM-08, BLD-04, A-05: GET /public/rooms/:id HTTP contract.
 // Prisma + the Setting table (for the default contact fallback) are the external edges, both mocked.
@@ -100,6 +102,20 @@ describe('CP-2 (BE-P2-30) · GET /public/rooms/:id HTTP contract', () => {
     serviceRows = [];
     defaultContactRow = { key: 'default_contact', value: { phone: '0900000000', zaloUrl: null, facebookUrl: null } };
     roomFindFirst.mockClear(); ratePlanFindMany.mockClear(); serviceFindMany.mockClear(); settingFindUnique.mockClear();
+  });
+
+  it.each(['HTTP', 'controller'] as const)('LOC-02/05, A-12: %s carries en-US through to the estimate and preserves money/names', async transport => {
+    roomRow = room({ building: buildingRow({ waterMode: 'PER_PERSON' }) });
+    ratePlanRows = [ratePlan('WATER', { tiers: [{ tierNo: 1, upTo: null, unitPrice: 80_000 }] })];
+    serviceRows = [{ id: 7, name: 'Dọn phòng', unit: 'ROOM', buildingId: 10, isActive: true }];
+    const data = transport === 'HTTP'
+      ? (await request(app.getHttpServer()).get('/api/v1/public/rooms/101').set('Accept-Language', 'en-US').expect(200)).body.data
+      : await app.get(PublicRoomsController).detail({ id: 101 }, { headers: { 'accept-language': 'en-US' } } as Request);
+    expect(data.monthlyEstimate).toBe(2_580_000);
+    expect(data.deposit).toBe(2_500_000);
+    expect(data.estimate.items).toEqual([{ label: 'Rent', amount: 2_500_000 }, { label: 'Water (1 person)', amount: 80_000 }]);
+    expect(data.estimate.missing).toEqual(['excludes: Dọn phòng (no rate available)']);
+    expect(data.estimate.meteredNote).toBe('excludes electricity and water billed by room meter readings');
   });
 
   it('PUB-02: queries room.findFirst with exactly { id, ...publicRoomWhere(today) } (no ad hoc public filter)', async () => {

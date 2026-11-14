@@ -33,12 +33,14 @@ Out: the old public viewing form (owner 13/11/2026: EX-6 and EX-7 replace it, so
   Done when: tests: switching changes the page without reload and keeps typed form input (UI-12); the header is sent; `StaffLayout` has no switch.
 - [x] **FE-EX-10** Public pages into the dictionary: home, `/phong`, `/toa/:id`, `/phong/:id`, header, footer, list states. `shared/status-labels.ts` stays Vietnamese: only the staff app uses it (checked by the planner, 13/11/2026). Money and dates do not change with the language (LOC-05).
   Done when: no Vietnamese literal left in these pages and components (a test scans the files); `2.984.000 đ` and `dd/mm/yyyy` are the same in both languages.
-- [~] **FE-EX-11** ⏸ Auth pages and guest area into the dictionary: `/dang-nhap`, `/dang-ky`, `/xac-minh-email`, `/quen-mat-khau`, `/doi-mat-khau`, `/toi`, `/toi/tai-khoan`, zod messages.
+- [x] **FE-EX-11** ⏸ Auth pages and guest area into the dictionary: `/dang-nhap`, `/dang-ky`, `/xac-minh-email`, `/quen-mat-khau`, `/doi-mat-khau`, `/toi`, `/toi/tai-khoan`, zod messages.
   Done when: same scan test for these files. Stop and report FE-EX-08..11.
-  Checkpoint 14/11/2026: implementation finished; final checks recorded in PROGRESS.md. Remains `[~]` until CP-3 manual walk with the real backend is verified (browser localhost timed out). No BE-EX-10 work started.
-- [ ] **BE-EX-10** Request language: read `Accept-Language` (`vi` / `en`, anything else → `vi`), use `en` only on `/public/*`, `/auth/*`, `/me/*` (LOC-02). One catalog of messages per error code and language used by the exception filter and by validation messages; error `code`s unchanged.
+  Checkpoint 14/11/2026: owner confirmed the guided manual checks and requested continuation; code committed in 414ef1d. Checks covered registration, wrong/correct code, guest account read-only fields, and client validation on password change/recovery; successful password change/recovery submissions were not exercised.
+- [x] **BE-EX-10** Request language: read `Accept-Language` (`vi` / `en`, anything else → `vi`), use `en` only on `/public/*`, `/auth/*`, `/me/*` (LOC-02). One catalog of messages per error code and language used by the exception filter and by validation messages; error `code`s unchanged.
+  Checkpoint 14/11/2026: owner-provided full unit/HTTP result: 1655/1655 pass, 81 files, 64.40 s. Q-EX3-4 resolved as B; owner-provided e2e result: 53/53 pass, 7 files, 216.14 s. CP-4 verified, awaiting owner commit.
   Done when: tests `LOC-02: …`: `/auth/login` wrong password in English with `en`; a staff route in Vietnamese with `en`; `fr` → Vietnamese.
-- [ ] **BE-EX-11** English texts for every message the `auth`, public `rooms` / `buildings` and `viewings` endpoints can return, including `fields` messages. Emails to guests use `users.locale` (LOC-06).
+- [x] **BE-EX-11** English texts for every message the `auth`, public `rooms` / `buildings` and `viewings` endpoints can return, including `fields` messages. Emails to guests use `users.locale` (LOC-06).
+  Checkpoint 14/11/2026: catalog, mail and estimate translations implemented; unit/HTTP 1655/1655 pass (owner screenshot), lint/build pass; e2e 53/53 pass (7 files, owner screenshot). Read-only review: source approved, see `plans/EX-3/CP-4-REVIEW.md`.
   Done when: a test walks the catalog and fails on a code without an English text; BE `lint`, `test`, `build` pass.
 - [ ] **FE-EX-12** ⏸ English copy for approval: write every English sentence of the home page and other marketing copy (slogans, promises) in `docs/phase-extra-home101/en-copy.md`, Vietnamese beside English. The owner approves or edits it (KIT-13); until then the English site is not shown on production.
   Done when: the owner's answer is recorded in that file.
@@ -46,6 +48,8 @@ Out: the old public viewing form (owner 13/11/2026: EX-6 and EX-7 replace it, so
   Done when: all pass with real output quoted; manual walk of every translated page in both languages at 360 px and desktop; list `[ASSUMPTION]`s used (A-12).
 
 ## Questions for the owner
+
+- Q-EX3-4: owner chose B on 14/11/2026 — preserve /^en\b/i matching, including en-US/en-GB; other first languages fall back to vi.
 
 Đã trả lời 13/11/2026 (câu hỏi của planner, chi tiết trong `plans/EX-3/PLAN.md`):
 
@@ -56,3 +60,9 @@ Out: the old public viewing form (owner 13/11/2026: EX-6 and EX-7 replace it, so
 ## Issues log
 
 <!-- When a task is [!], add: date · task ID · what failed · what is needed -->
+
+- 14/11/2026 · BE-EX-10 · Header parsing differs between LOC-02 and plan §2.9/current registration. Resolved: owner chose B on 14/11/2026.
+
+- 14/11/2026 · BE-EX-10/11 · code review approved; HTTP tests blocked by managed sandbox (`connect EACCES 127.0.0.1`). Run unit and e2e from the owner terminal before marking done. No schema/migration/seed/env changes.
+
+- 14/11/2026 - BE-EX-10/11 - Resolved: owner ran tests outside the sandbox; unit/HTTP 1655/1655 and e2e 53/53 passed. Owner explicitly approved the e2e suite resetting seeded dev accounts before running it. CP-4 is verified and awaiting owner commit.

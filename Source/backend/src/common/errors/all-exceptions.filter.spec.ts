@@ -10,7 +10,7 @@ function fakeHost(): { host: ArgumentsHost; status: ReturnType<typeof vi.fn>; js
   const json = vi.fn();
   const status = vi.fn(() => ({ json }));
   const host = {
-    switchToHttp: () => ({ getResponse: () => ({ status }) }),
+    switchToHttp: () => ({ getRequest: () => ({}), getResponse: () => ({ status }) }),
   } as unknown as ArgumentsHost;
   return { host, status, json };
 }

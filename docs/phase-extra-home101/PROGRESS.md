@@ -13,7 +13,7 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 | EX-0 Chủ dự án chuẩn bị | đang làm | Q-09..Q-12 đã trả lời; quyết định cuối 12/11/2026 (email thay SMS) | – | tạo tài khoản Resend + xác thực tên miền (Q-14 đã chọn Resend), Q-08 video, Q-13, Q-EX4-1, Q-EX6-1, Q-EX6-2, Q-EX8-2 | không chặn EX-1 |
 | EX-1 Tài khoản khách (BE) | chờ duyệt | ⏸ BE-EX-09 (kiểm tra cuối) | đã commit hết (git log 13/11/2026) | – | seed khách `0900000006` đã chạy trên DB dev qua e2e cũ; plan: `plans/EX-1/PLAN.md` |
 | EX-2 Tài khoản khách (FE) | chờ duyệt | ⏸ FE-EX-07 (đăng nhập, GuestLayout, /toi, /toi/tai-khoan) | đã commit hết (git log 13/11/2026) | – | xem tay luồng đăng ký → /toi với backend thật còn chờ chủ dự án; plan: không có (không cần planner) |
-| EX-3 Việt + Anh | chờ kiểm chứng | ⏸ FE-EX-11: đã code; còn đi tay CP-3 với backend thật | FE-EX-10 + review `232fab1` | chủ dự án kiểm chứng FE-EX-11 và commit; sau đó BE-EX-10 | plan: `plans/EX-3/PLAN.md`; OQ-1..3 đã trả lời; không dịch form đặt lịch cũ |
+| EX-3 Việt + Anh | chờ commit | CP-4 BE-EX-10/11: code/review, unit 1655/1655, e2e 53/53 đạt | FE-EX-11 `414ef1d` | chủ dự án commit CP-4, sau đó FE-EX-12 | Q-EX3-4 = B; lint/build đạt |
 | EX-4 Màn chào | chưa làm | – | – | FE-EX-14 | cần EX-3 |
 | EX-5 Bộ lọc phòng | chờ duyệt | ⏸ FE-EX-21 (cả part) | đã commit hết (git log 13/11/2026) | – | plan: `plans/EX-5/PLAN.md` |
 | EX-6 Lịch xem (BE) | chưa làm | – | – | BE-EX-17 | cần EX-1 |
@@ -24,6 +24,14 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 ## Nhật ký điểm dừng
 
 Mới nhất ở trên. Mỗi dòng: `ngày · phần · task vừa xong · kết quả kiểm tra (số thật) · việc còn treo`.
+
+- 14/11/2026 · EX-3 CP-4 · BE-EX-10/11 hoàn tất kiểm chứng: chủ dự án gửi ảnh e2e 7/7 file, 53/53 test pass, 216.14 s (bắt đầu 19:32:01), sau khi đã đồng ý cho suite đặt lại tài khoản mẫu bằng seed. Kết hợp unit/HTTP 81/81 file, 1655/1655 pass; lint 0 lỗi / 7 cảnh báo cũ; build exit 0. Đã bổ sung bằng chứng vào báo cáo review; không có giả định nghiệp vụ mới, A-12 giữ nguyên nội dung người dùng nhập. Dừng CP-4 chờ chủ dự án commit; chưa làm FE-EX-12.
+
+- 14/11/2026 19:22 · EX-3 CP-4 · chủ dự án gửi ảnh kết quả `npm run test` ngoài sandbox: 81/81 file, 1655/1655 test pass, 64.40 s (bắt đầu 19:21:08). Đã gỡ vướng unit/HTTP do sandbox. Còn e2e: `test/auth.e2e-spec.ts` tự gọi seed trước/sau suite, đặt lại tài khoản mẫu; cần chốt với chủ dự án vì plan CP-4 nói không chạy seed.
+
+- 14/11/2026 · EX-3 CP-4 · BE-EX-10/11 đã code: Q-EX3-4 B, catalog 29 lỗi + 34 thông điệp trường, Vary, mail theo locale người nhận (nhân sự VI), nhãn ước tính EN giữ tiền và tên dịch vụ. Lint 0 lỗi / 7 cảnh báo cũ, build exit 0, diff check sạch. Nhóm chọn không dùng HTTP: 18 pass, 22 ca không được chọn (không tính là chạy toàn bộ). Full suite cuối: 915 pass / 740 fail / 1655 ca, 81 file (67.04 s); cả 740 lỗi đều là `connect EACCES 127.0.0.1:<port>`, trước khi kiểm HTTP. Lượt trước khi thêm 2 ca estimate: 914 pass / 739 fail / 1653 ca. E2e chưa chạy vì mạng sandbox chặn loopback; không sửa DB/schema/env, không seed. Reviewer duyệt mã nguồn, chưa duyệt hoàn tất kiểm chứng; báo cáo đầy đủ: `plans/EX-3/CP-4-REVIEW.md`. Chưa làm FE-EX-12; chờ kiểm tra ngoài sandbox.
+
+- 14/11/2026 · EX-3 · chủ dự án xác nhận kiểm thử và yêu cầu làm tiếp; Git sạch, commit FE-EX-11 `414ef1d`. Đã ghi nhận các bước kiểm thử trong file task; không coi submit đổi/quên mật khẩu thành công là đã kiểm. BE-EX-10 đang chờ Q-EX3-4 (LOC-02 chỉ vi/en nhưng plan và đăng ký hiện tại nhận en-US). Chưa sửa backend.
 
 - 14/11/2026 · EX-3 · FE-EX-11 (code): auth, khách và hai trang người thuê vào từ điển; schema theo ngôn ngữ, đổi ngôn ngữ giữ dữ liệu và lỗi API; PasswordField nhận nhãn qua props; khách vẫn chỉ đọc email, `/ql` vẫn tiếng Việt. Kiểm tra cuối: `npm run lint` exit 0; `npm run build` exit 0 (729 modules; cảnh báo chunk >500 kB); `npm run test:components` 829/829 pass, 0 fail/skip (150357.6174 ms); scan 0 chuỗi ngoài ngoại lệ; `git diff --check` sạch. Trước đó các test kiểm tra nguồn còn tìm literal tiếng Việt đã được cập nhật để đọc từ điển, giữ nguyên câu kỳ vọng (lượt gần cuối 828/829). Đi tay CP-3 chưa xác nhận: trình duyệt không mở được localhost (`ERR_CONNECTION_TIMED_OUT`); luồng đăng ký → mã sai/đúng → khách đã kiểm tự động bằng API giả lập. A-12 giữ nguyên tên người dùng; không có giả định nghiệp vụ mới. Dừng tại FE-EX-11, chưa làm BE-EX-10.
 

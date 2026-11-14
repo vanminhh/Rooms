@@ -1,3 +1,5 @@
+import { mailLocale, type Lang } from '../../common/i18n/locale.js';
+import { MAILS } from '../../common/i18n/mails.js';
 import {
   BadRequestException,
   ConflictException,
@@ -166,7 +168,7 @@ export class AuthService {
       else await tx.user.create({ data: { role: 'GUEST', ...data } });
       return this.otp.issue(tx, email);
     });
-    await this.otp.deliver(email, issued);
+    await this.otp.deliver(email, issued, locale);
   }
 
   // AUTH-12: the code proves the email; the account is verified and logged in, like login (AUTH-T1, AUTH-T2).
@@ -204,7 +206,7 @@ export class AuthService {
   private async resendInBackground({ phone }: ResendCodeDto, ip?: string): Promise<void> {
     const user = await this.prisma.user.findUnique({ where: { phone } });
     if (!user || !isReplaceable(user) || !user.email) return;
-    await this.otp.send(user.email, ip);
+    await this.otp.send(user.email, ip, mailLocale(user));
   }
 
   // AUTH-T2 rotation. The new session keeps the old expiresAt: the 12 h / 30 d cap counts from login (Q1).
@@ -337,14 +339,14 @@ export class AuthService {
     if (user.role === Role.GUEST && !user.emailVerifiedAt) return;
 
     // Not awaited: the reply time must not depend on the token write or the mail send (AUTH-07).
-    void this.sendResetLink({ id: user.id, email: user.email }).catch((e) =>
+    void this.sendResetLink({ id: user.id, email: user.email, locale: mailLocale(user) }).catch((e) =>
       // Name only: the error text could echo the mail body, which holds the token.
       this.logger.error(`Could not send the password reset link (${e instanceof Error ? e.name : 'unknown error'})`),
     );
   }
 
   // Runs after forgotPassword has replied; its caller catches errors.
-  private async sendResetLink(user: { id: number; email: string }): Promise<void> {
+  private async sendResetLink(user: { id: number; email: string; locale: Lang }): Promise<void> {
     const token = randomToken();
     const now = new Date();
     await this.prisma.$transaction(async (tx) => {
@@ -363,11 +365,7 @@ export class AuthService {
     });
     await this.mailer.send({
       to: user.email,
-      subject: 'Đặt lại mật khẩu – Trọ Thông Minh',
-      text:
-        `Bấm vào liên kết sau để đặt lại mật khẩu (có hiệu lực 30 phút):\n` +
-        `${process.env.APP_URL}/quen-mat-khau?token=${token}\n\n` +
-        'Nếu không phải bạn yêu cầu, hãy bỏ qua email này.',
+      ...MAILS.resetLink(user.locale, `${process.env.APP_URL}/quen-mat-khau?token=${token}`),
     });
   }
 

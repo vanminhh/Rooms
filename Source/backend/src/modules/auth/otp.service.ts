@@ -1,3 +1,5 @@
+import type { Lang } from '../../common/i18n/locale.js';
+import { MAILS } from '../../common/i18n/mails.js';
 import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { randomInt, timingSafeEqual } from 'node:crypto';
@@ -78,14 +80,11 @@ export class OtpService {
    * Mails a stored code. On failure the code is removed (no email left, so it costs no daily quota), the code it
    * retired works again unless a newer request has issued another one meanwhile, and 503 is thrown.
    */
-  async deliver(email: string, issued: IssuedCode): Promise<void> {
+  async deliver(email: string, issued: IssuedCode, lang: Lang = 'vi'): Promise<void> {
     try {
       await this.mailer.send({
         to: email,
-        subject: 'Mã xác minh email – Trọ Thông Minh',
-        text:
-          `Mã xác minh của bạn: ${issued.code}\n` +
-          'Mã có hiệu lực 5 phút. Nếu không phải bạn yêu cầu, hãy bỏ qua email này.',
+        ...MAILS.verifyCode(lang, issued.code),
       });
     } catch {
       await this.prisma.$transaction(async (tx) => {
@@ -100,10 +99,10 @@ export class OtpService {
   }
 
   /** IP limit + issue + deliver, for flows with no other write. */
-  async send(email: string, ip: string | undefined): Promise<void> {
+  async send(email: string, ip: string | undefined, lang: Lang = 'vi'): Promise<void> {
     this.takeIp(ip);
     const issued = await this.prisma.$transaction((tx) => this.issue(tx, email));
-    await this.deliver(email, issued);
+    await this.deliver(email, issued, lang);
   }
 
   /**

@@ -10,8 +10,10 @@ export function configureApp(app: INestApplication): void {
   app.setGlobalPrefix('api/v1');
   // Nest 12 mounts its 404 handler only under the prefix, so other paths would get Express's HTML 404 (API-03).
   // shortcut: case-sensitive match, update this guard if a route ever lives outside /api/v1.
-  app.use((req: Request, _res: Response, next: NextFunction) =>
-    req.path === '/api/v1' || req.path.startsWith('/api/v1/') ? next() : next(new NotFoundException()),
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    res.vary('Accept-Language');
+    return req.path === '/api/v1' || req.path.startsWith('/api/v1/') ? next() : next(new NotFoundException());
+  }
   );
   app.use(cookieParser());
   app.useGlobalPipes(

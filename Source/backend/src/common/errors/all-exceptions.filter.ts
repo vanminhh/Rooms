@@ -5,7 +5,9 @@ import {
   HttpException,
   Logger,
 } from '@nestjs/common';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
+import { isTranslatedPath, localeOf } from '../i18n/locale.js';
+import { errorMessage, translateField } from '../i18n/messages.js';
 import { mapDbError } from './db-errors.js';
 import { ERRORS, ErrorCode } from './error-code.js';
 
@@ -74,9 +76,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
       );
     }
 
-    const { status, message } = ERRORS[code];
+    const req = host.switchToHttp().getRequest<Request>();
+    const lang = isTranslatedPath(req?.path) ? localeOf(req) : 'vi';
+    const { status } = ERRORS[code];
+    const message = errorMessage(code, lang);
     const error: ErrorBody['error'] = { code, message };
-    if (fields) error.fields = fields;
+    if (fields) error.fields = Object.fromEntries(Object.entries(fields).map(([key, text]) => [key, translateField(text, lang)]));
     host.switchToHttp().getResponse<Response>().status(status).json({ error } satisfies ErrorBody);
   }
 }
