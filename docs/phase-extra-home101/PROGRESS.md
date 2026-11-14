@@ -13,7 +13,7 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 | EX-0 Chủ dự án chuẩn bị | đang làm | Q-09..Q-12 đã trả lời; quyết định cuối 12/11/2026 (email thay SMS) | – | tạo tài khoản Resend + xác thực tên miền (Q-14 đã chọn Resend), Q-08 video, Q-13, Q-EX4-1, Q-EX6-1, Q-EX6-2, Q-EX8-2 | không chặn EX-1 |
 | EX-1 Tài khoản khách (BE) | chờ duyệt | ⏸ BE-EX-09 (kiểm tra cuối) | đã commit hết (git log 13/11/2026) | – | seed khách `0900000006` đã chạy trên DB dev qua e2e cũ; plan: `plans/EX-1/PLAN.md` |
 | EX-2 Tài khoản khách (FE) | chờ duyệt | ⏸ FE-EX-07 (đăng nhập, GuestLayout, /toi, /toi/tai-khoan) | đã commit hết (git log 13/11/2026) | – | xem tay luồng đăng ký → /toi với backend thật còn chờ chủ dự án; plan: không có (không cần planner) |
-| EX-3 Việt + Anh | chờ commit | CP-4 BE-EX-10/11: code/review, unit 1655/1655, e2e 53/53 đạt | FE-EX-11 `414ef1d` | chủ dự án commit CP-4, sau đó FE-EX-12 | Q-EX3-4 = B; lint/build đạt |
+| EX-3 Việt + Anh | chờ commit | CP-5 FE-EX-12: chủ dự án đã duyệt toàn bộ nội dung Việt–Anh | CP-4 `e95efad` | chủ dự án commit CP-5, sau đó FE-EX-13 | FE-EX-12 [x]; KIT-13 |
 | EX-4 Màn chào | chưa làm | – | – | FE-EX-14 | cần EX-3 |
 | EX-5 Bộ lọc phòng | chờ duyệt | ⏸ FE-EX-21 (cả part) | đã commit hết (git log 13/11/2026) | – | plan: `plans/EX-5/PLAN.md` |
 | EX-6 Lịch xem (BE) | chưa làm | – | – | BE-EX-17 | cần EX-1 |
@@ -24,6 +24,10 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 ## Nhật ký điểm dừng
 
 Mới nhất ở trên. Mỗi dòng: `ngày · phần · task vừa xong · kết quả kiểm tra (số thật) · việc còn treo`.
+
+- 14/11/2026 · EX-3 CP-5 · chủ dự án trả lời “duyệt hết nhé”: duyệt toàn bộ bảng 107 khóa Việt–Anh, slogan ghép và năm mức giá trong en-copy.md, không sửa câu nào. Đã ghi quyết định KIT-13 và đánh dấu FE-EX-12 [x]. Chỉ sửa tài liệu; không thêm giả định nghiệp vụ. Dừng chờ commit CP-5 trước FE-EX-13.
+
+- 14/11/2026 · EX-3 CP-5 · xác nhận CP-4 đã commit e95efad, Git sạch trước khi làm. FE-EX-12: lập en-copy.md gồm 107 khóa nguyên văn Việt–Anh (home/nav/footer và rooms.page), năm mức giá, hai slogan ghép; đánh dấu câu đặt lịch tạm sẽ thay ở EX-6/7. Chỉ sửa tài liệu, không chạy lại lint/build/test ứng dụng. Chờ chủ dự án duyệt nội dung theo KIT-13; chưa đánh dấu task hoàn tất và chưa làm FE-EX-13. A-12 giữ nguyên nội dung nhập, không có giả định nghiệp vụ mới.
 
 - 14/11/2026 · EX-3 CP-4 · BE-EX-10/11 hoàn tất kiểm chứng: chủ dự án gửi ảnh e2e 7/7 file, 53/53 test pass, 216.14 s (bắt đầu 19:32:01), sau khi đã đồng ý cho suite đặt lại tài khoản mẫu bằng seed. Kết hợp unit/HTTP 81/81 file, 1655/1655 pass; lint 0 lỗi / 7 cảnh báo cũ; build exit 0. Đã bổ sung bằng chứng vào báo cáo review; không có giả định nghiệp vụ mới, A-12 giữ nguyên nội dung người dùng nhập. Dừng CP-4 chờ chủ dự án commit; chưa làm FE-EX-12.
 

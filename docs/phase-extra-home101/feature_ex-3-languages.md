@@ -42,7 +42,8 @@ Out: the old public viewing form (owner 13/11/2026: EX-6 and EX-7 replace it, so
 - [x] **BE-EX-11** English texts for every message the `auth`, public `rooms` / `buildings` and `viewings` endpoints can return, including `fields` messages. Emails to guests use `users.locale` (LOC-06).
   Checkpoint 14/11/2026: catalog, mail and estimate translations implemented; unit/HTTP 1655/1655 pass (owner screenshot), lint/build pass; e2e 53/53 pass (7 files, owner screenshot). Read-only review: source approved, see `plans/EX-3/CP-4-REVIEW.md`.
   Done when: a test walks the catalog and fails on a code without an English text; BE `lint`, `test`, `build` pass.
-- [ ] **FE-EX-12** ⏸ English copy for approval: write every English sentence of the home page and other marketing copy (slogans, promises) in `docs/phase-extra-home101/en-copy.md`, Vietnamese beside English. The owner approves or edits it (KIT-13); until then the English site is not shown on production.
+- [x] **FE-EX-12** ⏸ English copy for approval: write every English sentence of the home page and other marketing copy (slogans, promises) in `docs/phase-extra-home101/en-copy.md`, Vietnamese beside English. The owner approves or edits it (KIT-13); until then the English site is not shown on production.
+  Checkpoint 14/11/2026: en-copy.md contains all home/nav/footer keys and room-list marketing copy, copied exactly from the dictionaries; owner approved all copy on 14/11/2026 (“duyệt hết nhé”), recorded in en-copy.md (KIT-13). CP-5 awaits owner commit. CP-4 committed as e95efad.
   Done when: the owner's answer is recorded in that file.
 - [ ] **FE-EX-13** ⏸ `npm run lint`, `npm run build`, `npm run test:components`.
   Done when: all pass with real output quoted; manual walk of every translated page in both languages at 360 px and desktop; list `[ASSUMPTION]`s used (A-12).
