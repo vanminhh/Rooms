@@ -43,10 +43,11 @@ Out: the old public viewing form (owner 13/11/2026: EX-6 and EX-7 replace it, so
   Checkpoint 14/11/2026: catalog, mail and estimate translations implemented; unit/HTTP 1655/1655 pass (owner screenshot), lint/build pass; e2e 53/53 pass (7 files, owner screenshot). Read-only review: source approved, see `plans/EX-3/CP-4-REVIEW.md`.
   Done when: a test walks the catalog and fails on a code without an English text; BE `lint`, `test`, `build` pass.
 - [x] **FE-EX-12** ⏸ English copy for approval: write every English sentence of the home page and other marketing copy (slogans, promises) in `docs/phase-extra-home101/en-copy.md`, Vietnamese beside English. The owner approves or edits it (KIT-13); until then the English site is not shown on production.
-  Checkpoint 14/11/2026: en-copy.md contains all home/nav/footer keys and room-list marketing copy, copied exactly from the dictionaries; owner approved all copy on 14/11/2026 (“duyệt hết nhé”), recorded in en-copy.md (KIT-13). CP-5 awaits owner commit. CP-4 committed as e95efad.
+  Checkpoint 14/11/2026: en-copy.md contains all home/nav/footer keys and room-list marketing copy, copied exactly from the dictionaries; owner approved all copy on 14/11/2026 (“duyệt hết nhé”), recorded in en-copy.md (KIT-13). CP-5 committed as 12e3135. CP-4 committed as e95efad.
   Done when: the owner's answer is recorded in that file.
-- [ ] **FE-EX-13** ⏸ `npm run lint`, `npm run build`, `npm run test:components`.
+- [x] **FE-EX-13** ⏸ `npm run lint`, `npm run build`, `npm run test:components`.
   Done when: all pass with real output quoted; manual walk of every translated page in both languages at 360 px and desktop; list `[ASSUMPTION]`s used (A-12).
+  Checkpoint 14/11/2026: owner explicitly confirmed verification and closure of both remaining items (FE-EX-12 commit and final VI/EN checks on desktop and 360 px). Git was clean at 12e3135. Accepted on owner confirmation; no new automated run is claimed. Earlier evidence: FE lint/build exit 0 and 829/829 component tests; BE lint/build exit 0, 1655/1655 unit tests and 53/53 e2e tests. Assumptions remain those recorded in PLAN.md section 7; A-12 preserves user-entered content. Old public viewing form remains Vietnamese under OQ-2 until EX-7. EX-3 closed.
 
 ## Questions for the owner
 

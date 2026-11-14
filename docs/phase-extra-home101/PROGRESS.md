@@ -13,7 +13,7 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 | EX-0 Chủ dự án chuẩn bị | đang làm | Q-09..Q-12 đã trả lời; quyết định cuối 12/11/2026 (email thay SMS) | – | tạo tài khoản Resend + xác thực tên miền (Q-14 đã chọn Resend), Q-08 video, Q-13, Q-EX4-1, Q-EX6-1, Q-EX6-2, Q-EX8-2 | không chặn EX-1 |
 | EX-1 Tài khoản khách (BE) | chờ duyệt | ⏸ BE-EX-09 (kiểm tra cuối) | đã commit hết (git log 13/11/2026) | – | seed khách `0900000006` đã chạy trên DB dev qua e2e cũ; plan: `plans/EX-1/PLAN.md` |
 | EX-2 Tài khoản khách (FE) | chờ duyệt | ⏸ FE-EX-07 (đăng nhập, GuestLayout, /toi, /toi/tai-khoan) | đã commit hết (git log 13/11/2026) | – | xem tay luồng đăng ký → /toi với backend thật còn chờ chủ dự án; plan: không có (không cần planner) |
-| EX-3 Việt + Anh | chờ commit | CP-5 FE-EX-12: chủ dự án đã duyệt toàn bộ nội dung Việt–Anh | CP-4 `e95efad` | chủ dự án commit CP-5, sau đó FE-EX-13 | FE-EX-12 [x]; KIT-13 |
+| EX-3 Việt + Anh | xong | CP-6 FE-EX-13: chủ dự án xác nhận đã kiểm chứng và chốt | CP-5 `12e3135`; CP-4 `e95efad` | EX-4 FE-EX-14 | chốt theo xác nhận chủ dự án; form đặt lịch cũ chờ EX-7 |
 | EX-4 Màn chào | chưa làm | – | – | FE-EX-14 | cần EX-3 |
 | EX-5 Bộ lọc phòng | chờ duyệt | ⏸ FE-EX-21 (cả part) | đã commit hết (git log 13/11/2026) | – | plan: `plans/EX-5/PLAN.md` |
 | EX-6 Lịch xem (BE) | chưa làm | – | – | BE-EX-17 | cần EX-1 |
@@ -24,6 +24,8 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 ## Nhật ký điểm dừng
 
 Mới nhất ở trên. Mỗi dòng: `ngày · phần · task vừa xong · kết quả kiểm tra (số thật) · việc còn treo`.
+
+- 14/11/2026 · EX-3 CP-6 · chủ dự án xác nhận “2 cái này tôi đã kiểm chứng và chốt”: tài liệu FE-EX-12 đã commit và kiểm tra cuối Việt/Anh trên desktop, mobile 360 px đã được chủ dự án kiểm chứng. Git sạch tại 12e3135. Đánh dấu FE-EX-13 [x], EX-3 xong theo xác nhận này. Không chạy lại hoặc tuyên bố có output mới: bằng chứng trước đó FE lint/build exit 0, test:components 829/829; BE lint/build exit 0, unit 1655/1655, e2e 53/53. Giữ các giả định tại PLAN.md mục 7, A-12 không dịch nội dung người dùng nhập; OQ-2 form đặt lịch cũ vẫn tiếng Việt đến EX-7. Chưa bắt đầu EX-4.
 
 - 14/11/2026 · EX-3 CP-5 · chủ dự án trả lời “duyệt hết nhé”: duyệt toàn bộ bảng 107 khóa Việt–Anh, slogan ghép và năm mức giá trong en-copy.md, không sửa câu nào. Đã ghi quyết định KIT-13 và đánh dấu FE-EX-12 [x]. Chỉ sửa tài liệu; không thêm giả định nghiệp vụ. Dừng chờ commit CP-5 trước FE-EX-13.
 
