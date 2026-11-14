@@ -1,3 +1,4 @@
+import { vietnameseSource } from '../vietnamese-source.mjs'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
@@ -7,7 +8,7 @@ import { fileURLToPath } from 'node:url'
 // Static checks of the UI-33 layout; the behaviour (PATCH bodies, notices, errors) is covered by the CP-6 flow tests
 // in tests/auth-login-flow.test.mjs. tests/p2 -> root: the draft folder before apply, Source/frontend after apply.
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
-const read = path => readFileSync(join(root, path), 'utf8')
+const read = path => vietnameseSource(readFileSync(join(root, path), 'utf8'))
 const tenant = read('src/pages/tenant/TenantAccountPage.tsx')
 const staff = read('src/pages/staff/StaffAccountPage.tsx')
 const forms = read('src/features/auth/ProfileForm.tsx')

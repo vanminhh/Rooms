@@ -171,7 +171,7 @@ test('LOC-05, FE-EX-08: money and dates keep Vietnamese formats in either langua
   }
 })
 
-test('UI-12, FE-EX-10: public pages and features keep display copy in the dictionaries', () => {
+test('UI-12, FE-EX-10, FE-EX-11: public and auth pages and features keep display copy in the dictionaries', () => {
   const files = [
     'pages/public/PublicHomePage.tsx', 'pages/public/PublicRoomsPage.tsx',
     'pages/public/PublicRoomPage.tsx', 'pages/public/RoomDetailView.tsx',
@@ -183,6 +183,14 @@ test('UI-12, FE-EX-10: public pages and features keep display copy in the dictio
     'features/public/RoomFilters.tsx', 'layouts/PublicLayout.tsx',
     'components/Navigation.tsx', 'components/RoomSearch.tsx', 'components/CostBreakdown.tsx',
     'features/auth/ContactInfo.tsx',
+    'pages/public/LoginPage.tsx', 'pages/public/RegisterPage.tsx',
+    'pages/public/VerifyEmailPage.tsx', 'pages/public/ForgotPasswordPage.tsx',
+    'pages/public/ChangePasswordPage.tsx', 'pages/guest/GuestHomePage.tsx',
+    'pages/guest/GuestAccountPage.tsx', 'pages/tenant/TenantHomePage.tsx',
+    'pages/tenant/TenantAccountPage.tsx', 'features/auth/AuthFrame.tsx',
+    'features/auth/ChangePasswordForm.tsx', 'features/auth/ProfileForm.tsx',
+    'features/auth/schemas.ts', 'features/auth/pendingVerification.ts',
+    'components/FormFields.tsx', 'app/RequireAuth.tsx',
     'shared/api.ts', 'shared/form-errors.ts',
     // OQ-2: EX-7 replaces these two Vietnamese-only files. Remove this exception then.
     'features/public/ViewingForm.tsx', 'features/public/viewing-schema.ts',

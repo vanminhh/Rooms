@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ROOMS · Công cụ chỉnh màu</title>
+  <title>ROOMS · Công cụ chỉnh màu & chữ</title>
   <link rel="stylesheet" href="editor.css">
   <script defer src="catalog.js"></script>
   <script defer src="color-core.js"></script>
@@ -12,10 +12,10 @@
 </head>
 <body>
   <header class="tool-header">
-    <div class="tool-title"><h1>ROOMS <span>/ Chỉnh màu</span></h1><p>Chọn trên trang, kéo màu, lấy mã.</p></div>
+    <div class="tool-title"><h1>ROOMS <span>/ Màu & chữ</span></h1><p>Chọn trên trang, chỉnh giao diện, lấy mã.</p></div>
     <div class="tool-actions">
-      <button id="import-button" type="button">Nạp bảng màu</button>
-      <button id="save-button" type="button">Lưu bảng màu</button>
+      <button id="import-button" type="button">Nạp bộ chỉnh</button>
+      <button id="save-button" type="button">Lưu bộ chỉnh</button>
       <button id="reset-all" type="button" class="quiet">Khôi phục gốc</button>
       <input id="import-file" type="file" accept=".json,application/json" hidden>
     </div>
@@ -27,24 +27,28 @@
         <div class="preview-options" aria-label="Kích thước xem trước">
           <button id="desktop" type="button" aria-pressed="true">Máy tính</button>
           <button id="mobile" type="button" aria-pressed="false">Điện thoại</button>
-          <button id="original" type="button" aria-pressed="false">Xem màu gốc</button>
+          <button id="original" type="button" aria-pressed="false">Xem bản gốc</button>
         </div>
       </div>
-      <div class="preview-tip"><span id="preview-hint">Bấm vào một phần của trang để chọn màu cần chỉnh.</span><span id="zoom-label"></span></div>
+      <div class="preview-tip"><span id="preview-hint">Rê chuột để xem phần có thể chỉnh, bấm để chọn. Hoặc chọn mục bên phải.</span><span id="zoom-label"></span></div>
       <div class="preview-scroll" id="preview-scroll">
         <div id="canvas" class="preview-canvas"><iframe id="preview" title="Bản sao trang chủ Rooms để thử màu" sandbox="allow-same-origin"></iframe></div>
       </div>
-      <div class="preview-foot"><span>Dữ liệu & ảnh minh họa · Thử màu chỉ đổi bản xem trước.</span><span id="save-status" role="status" aria-live="polite">Đang mở…</span></div>
+      <div class="preview-foot"><span>Dữ liệu & ảnh minh họa · Chỉ thay đổi bản xem trước.</span><span id="save-status" role="status" aria-live="polite">Đang mở…</span></div>
     </section>
-    <aside class="controls" aria-label="Công cụ chỉnh màu">
+    <aside class="controls" aria-label="Công cụ chỉnh màu và chữ">
       <fieldset id="edit-controls">
-        <legend class="sr-only">Chỉnh màu thành phần</legend>
+        <legend class="sr-only">Chỉnh giao diện thành phần</legend>
         <div class="section-heading"><h2>Chọn phần cần chỉnh</h2><span id="change-count">0 thay đổi</span></div>
         <label for="group">Thành phần</label><select id="group"></select>
         <p class="control-help" id="group-help"></p>
-        <label for="field">Màu cần chỉnh</label><select id="field"></select>
+        <div class="edit-tabs" role="group" aria-label="Nội dung chỉnh">
+          <button id="color-mode" type="button" aria-pressed="true">Màu sắc</button>
+          <button id="type-mode" type="button" aria-pressed="false">Cỡ chữ & phông</button>
+        </div>
+        <label for="field" id="field-label">Màu cần chỉnh</label><select id="field"></select>
         <div id="swatches" class="swatches" aria-label="Các màu của thành phần"></div>
-        <div class="color-editor">
+        <div class="color-editor" id="color-editor">
           <div class="color-value">
             <div class="color-well" id="color-well"><input id="picker" type="color" aria-label="Mở bảng chọn màu"></div>
             <div class="hex-field"><label for="hex">Mã HEX</label><input id="hex" type="text" value="#f8f2e6" spellcheck="false" autocomplete="off" maxlength="9" aria-describedby="hex-error"></div>
@@ -56,6 +60,19 @@
           <div class="slider-row"><label for="lightness">Độ sáng</label><output id="lightness-value" for="lightness"></output><input id="lightness" type="range" min="0" max="100" step="1"></div>
           <div class="slider-row"><label for="alpha">Độ đậm / trong suốt</label><output id="alpha-value" for="alpha"></output><input id="alpha" type="range" min="0" max="100" step="1"></div>
           <div class="color-meta"><span id="contrast"></span><span id="override-state"></span></div>
+        </div>
+        <div class="type-editor" id="type-editor" hidden>
+          <label for="font-family">Phông chữ</label>
+          <select id="font-family"></select>
+          <p class="control-help">Manrope, Taviraj dùng phông có sẵn của Rooms; các lựa chọn còn lại dùng phông trên máy.</p>
+          <div class="font-size-heading"><label for="font-size">Cỡ chữ (px)</label><button id="reset-size" class="quiet" type="button">Cỡ gốc</button></div>
+          <div class="font-size-input"><input id="font-size" type="number" min="8" max="160" step="0.1" aria-describedby="size-error"><span>px</span></div>
+          <input id="font-size-range" type="range" min="8" max="160" step="0.1" aria-label="Kéo cỡ chữ">
+          <div class="size-limits"><span>8 px</span><span>160 px</span></div>
+          <p id="size-error" class="error" role="alert" hidden>Nhập cỡ chữ từ 8 đến 160 px.</p>
+          <p class="type-current" id="type-current"></p>
+          <button id="reset-type" type="button">Đặt lại chữ đang chọn</button>
+          <p class="control-help">Cỡ chữ đặt theo px, áp dụng ở cả máy tính và điện thoại. Chọn “Cỡ gốc” để dùng lại cách co giãn của UI.</p>
         </div>
       </fieldset>
       <section class="export-panel" aria-label="Mã tự cập nhật">
@@ -71,7 +88,7 @@
       <p id="message" class="message" role="status" aria-live="polite"></p>
     </aside>
   </main>
-  <dialog id="reset-dialog"><form method="dialog"><h2>Khôi phục toàn bộ màu gốc?</h2><p>Bảng màu đang chỉnh sẽ được xóa khỏi bộ nhớ của công cụ. Bạn có thể lưu bảng màu trước khi khôi phục.</p><div class="dialog-actions"><button value="cancel">Giữ lại</button><button value="reset" class="primary">Khôi phục</button></div></form></dialog>
+  <dialog id="reset-dialog"><form method="dialog"><h2>Khôi phục toàn bộ giao diện gốc?</h2><p>Màu và kiểu chữ đang chỉnh sẽ được xóa khỏi bộ nhớ của công cụ. Bạn có thể lưu bộ chỉnh trước khi khôi phục.</p><div class="dialog-actions"><button value="cancel">Giữ lại</button><button value="reset" class="primary">Khôi phục</button></div></form></dialog>
   <noscript>Cần bật JavaScript để dùng công cụ chỉnh màu.</noscript>
 </body>
 </html>

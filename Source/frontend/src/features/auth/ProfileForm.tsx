@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useValidationLanguage } from './useValidationLanguage'
+import { t as translate, useI18n } from '../../shared/i18n'
+import { useMemo, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { FormError, RoomsButton, Spinner, TextField } from '../../components'
@@ -12,25 +14,29 @@ import './auth.css'
 
 // AUTH-09: PATCH /auth/me updates only the keys it receives (undefined = leave as is, null = clear),
 // so the email card and the public contact card save separately (UI-33, mockup 07). Empty text is sent as null (A8).
-const contactSchema = staffProfileSchema.omit({ email: true })
+
 type ContactValues = Omit<StaffProfileValues, 'email'>
 
 function SubmitButton({ label, submitting }: { label: string; submitting: boolean }) {
+  const { t } = useI18n()
   return <RoomsButton className="auth-account-submit" type="submit" disabled={submitting}>
     <span>{label}</span>
-    {submitting ? <Spinner label="Đang lưu" /> : <span aria-hidden="true">→</span>}
+    {submitting ? <Spinner label={t('auth.saving')} /> : <span aria-hidden="true">→</span>}
   </RoomsButton>
 }
 
-// Everyone: the email used for notices and password recovery. Sends exactly { email }.
+// Staff and tenants: the email used for notices and password recovery. Guests see a read-only field (AUTH-09).
 export function EmailForm() {
+  const { t, lang } = useI18n()
   const { user, refreshMe } = useAuth()
   const [formError, setFormError] = useState('')
   const [saved, setSaved] = useState(false)
-  const { register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm<TenantProfileValues>({
-    resolver: zodResolver(tenantProfileSchema),
+  const schema = useMemo(() => tenantProfileSchema((key, params) => translate(key, params, lang)), [lang])
+  const { register, trigger, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm<TenantProfileValues>({
+    resolver: zodResolver(schema),
     defaultValues: { email: user?.email ?? '' },
   })
+  useValidationLanguage(lang, errors, trigger)
 
   async function onSubmit(values: TenantProfileValues) {
     setFormError('')
@@ -40,15 +46,15 @@ export function EmailForm() {
       await refreshMe()
       setSaved(true)
     } catch (error) {
-      setFormError(applyApiError(error, setError, ['email']))
+      setFormError(applyApiError(error, setError, ['email'], lang))
     }
   }
 
   return <>
-    {saved && <p className="auth-notice" role="status">Đã lưu.</p>}
+    {saved && <p className="auth-notice" role="status">{t('account.saved')}</p>}
     <form className="auth-account-form" noValidate onSubmit={handleSubmit(onSubmit)}>
       <TextField
-        label="Email"
+        label={t('auth.email')}
         type="email"
         autoComplete="email"
         placeholder="name@example.com"
@@ -56,24 +62,27 @@ export function EmailForm() {
         {...register('email')}
       />
       <FormError>{formError}</FormError>
-      <SubmitButton label="Lưu email" submitting={isSubmitting} />
+      <SubmitButton label={t('account.saveEmail')} submitting={isSubmitting} />
     </form>
   </>
 }
 
 // Staff only: the contact guests see (BLD-04). Sends exactly { contactPhone, zaloUrl, facebookUrl }.
 export function PublicContactForm() {
+  const { t, lang } = useI18n()
   const { user, refreshMe } = useAuth()
   const [formError, setFormError] = useState('')
   const [saved, setSaved] = useState(false)
-  const { register, handleSubmit, setError, control, formState: { errors, isSubmitting } } = useForm<ContactValues>({
-    resolver: zodResolver(contactSchema),
+  const schema = useMemo(() => staffProfileSchema((key, params) => translate(key, params, lang)).omit({ email: true }), [lang])
+  const { register, trigger, handleSubmit, setError, control, formState: { errors, isSubmitting } } = useForm<ContactValues>({
+    resolver: zodResolver(schema),
     defaultValues: {
       contactPhone: user?.contactPhone ?? '',
       zaloUrl: user?.zaloUrl ?? '',
       facebookUrl: user?.facebookUrl ?? '',
     },
   })
+  useValidationLanguage(lang, errors, trigger)
   const typed = useWatch({ control })
 
   async function onSubmit(values: ContactValues) {
@@ -84,7 +93,7 @@ export function PublicContactForm() {
       await refreshMe()
       setSaved(true)
     } catch (error) {
-      setFormError(applyApiError(error, setError, ['contactPhone', 'zaloUrl', 'facebookUrl']))
+      setFormError(applyApiError(error, setError, ['contactPhone', 'zaloUrl', 'facebookUrl'], lang))
     }
   }
 
@@ -92,10 +101,10 @@ export function PublicContactForm() {
   const hasContact = Boolean(preview.phone || preview.zaloUrl || preview.facebookUrl)
 
   return <>
-    {saved && <p className="auth-notice" role="status">Đã lưu.</p>}
+    {saved && <p className="auth-notice" role="status">{t('account.saved')}</p>}
     <form className="auth-account-form" noValidate onSubmit={handleSubmit(onSubmit)}>
       <TextField
-        label="Số điện thoại liên hệ"
+        label={t('account.contactPhone')}
         type="tel"
         inputMode="numeric"
         autoComplete="tel"
@@ -104,25 +113,25 @@ export function PublicContactForm() {
         {...register('contactPhone')}
       />
       <TextField
-        label="Zalo"
+        label={t('account.zalo')}
         type="url"
         placeholder="https://zalo.me/…"
         error={errors.zaloUrl?.message}
         {...register('zaloUrl')}
       />
       <TextField
-        label="Facebook"
+        label={t('account.facebook')}
         type="url"
         placeholder="https://facebook.com/…"
         error={errors.facebookUrl?.message}
         {...register('facebookUrl')}
       />
       <FormError>{formError}</FormError>
-      <SubmitButton label="Lưu liên hệ" submitting={isSubmitting} />
+      <SubmitButton label={t('account.saveContact')} submitting={isSubmitting} />
     </form>
     <div className="auth-account-preview" aria-live="polite">
-      <p className="auth-account-preview-title">Khách sẽ thấy:</p>
-      {hasContact ? <ContactInfo contact={preview} /> : <p>Chưa có thông tin liên hệ</p>}
+      <p className="auth-account-preview-title">{t('account.preview')}</p>
+      {hasContact ? <ContactInfo contact={preview} /> : <p>{t('account.noContact')}</p>}
     </div>
   </>
 }

@@ -1,3 +1,4 @@
+import { vietnameseSource } from '../vietnamese-source.mjs'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
@@ -5,7 +6,7 @@ import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 const draftRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
-const page = readFileSync(join(draftRoot, 'src/pages/public/LoginPage.tsx'), 'utf8')
+const page = vietnameseSource(readFileSync(join(draftRoot, 'src/pages/public/LoginPage.tsx'), 'utf8'))
 const css = readFileSync(join(draftRoot, 'src/features/auth/auth.css'), 'utf8')
 
 test('UI-30 · AUTH-01..04: form keeps all required login and error/loading hooks', () => {

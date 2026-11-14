@@ -96,6 +96,7 @@ test('A7: safeNext never points back to the login page', () => {
 // ---- RequireAuth / GuestOnly (Q6-A, AUTH-06): react-router, the kit and useAuth are the outside edges and are faked;
 // RequireAuth.tsx and guards.ts run unmodified. Output is the element tree, so Navigate props can be read.
 function loadRequireAuth(authValue, location = { pathname: '/thue', search: '' }) {
+  const { t } = loadModule(draftFirst('src/shared/i18n/index.ts'))
   const jsx = (type, props) => ({ type, props })
   const Navigate = props => ({ navigate: props })
   const Outlet = () => ({ outlet: true })
@@ -107,6 +108,7 @@ function loadRequireAuth(authValue, location = { pathname: '/thue', search: '' }
     '../components': { RoomsButton, Spinner },
     './auth-context': { useAuth: () => authValue },
     './guards': guards,
+    '../shared/i18n': { t, useI18n: () => ({ lang: 'vi', t: (key, params) => t(key, params, 'vi') }) },
   }
   const exports = compile('../src/app/RequireAuth.tsx', id => {
     if (id in modules) return modules[id]

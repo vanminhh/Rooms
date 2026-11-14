@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useValidationLanguage } from '../../features/auth/useValidationLanguage'
+import { t as translate, useI18n } from '../../shared/i18n'
+import { useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useNavigate, useSearchParams } from 'react-router'
@@ -13,7 +15,6 @@ import { applyApiError } from '../../shared/form-errors'
 import '../../features/auth/auth.css'
 import '../../features/auth/forgot-password.css'
 
-const SENT_MESSAGE = 'Nếu số điện thoại có email, chúng tôi đã gửi link đặt lại mật khẩu. Nếu không, hãy liên hệ quản lý.'
 
 export function ForgotPasswordPage() {
   const [params] = useSearchParams()
@@ -24,13 +25,14 @@ export function ForgotPasswordPage() {
 }
 
 function RecoveryFrame({ children }: { children: React.ReactNode }) {
+  const { t } = useI18n()
   return <div className="auth-recovery-page">
-    <section className="auth-login-visual" aria-label="Giới thiệu ROOMS">
+    <section className="auth-login-visual" aria-label={t('auth.intro')}>
       <img src="/images/auth-room.webp" alt="" />
-      <IllustrationLabel className="auth-login-image-label" />
+      <IllustrationLabel className="auth-login-image-label">{t('home.illustration')}</IllustrationLabel>
       <div className="auth-login-visual-copy">
-        <p className="rooms-eyebrow">Phòng thuê tại Hà Nội</p>
-        <p className="auth-login-promise">Một nơi ở <em>vừa vặn</em> giữa phố.</p>
+        <p className="rooms-eyebrow">{t('home.hero.eyebrow')}</p>
+        <p className="auth-login-promise">{t('home.hero.leading')}<em>{t('home.hero.highlight')}</em>{t('home.hero.trailing')}</p>
       </div>
     </section>
     <section className="auth-recovery-panel">{children}</section>
@@ -53,28 +55,32 @@ function managementHref(contact: ReturnType<typeof usePublicContact>['data']) {
 }
 
 function ContactSupport() {
+  const { t } = useI18n()
   const contact = usePublicContact()
   const href = managementHref(contact.data)
 
   return <div className="auth-recovery-support">
-    <p>Cần hỗ trợ? Vui lòng liên hệ quản lý.</p>
-    {contact.isLoading && <p className="auth-contact-status" role="status">Đang tải thông tin liên hệ…</p>}
-    {contact.isError && <p className="auth-contact-status">Chưa tải được thông tin liên hệ.</p>}
+    <p>{t('auth.support')}</p>
+    {contact.isLoading && <p className="auth-contact-status" role="status">{t('auth.contactLoading')}</p>}
+    {contact.isError && <p className="auth-contact-status">{t('auth.contactError')}</p>}
     {!contact.isLoading && !contact.isError && <ContactInfo contact={contact.data ?? null} />}
     <div className="auth-recovery-actions">
-      {href ? <a href={href}>Liên hệ quản lý</a> : <span>Liên hệ quản lý</span>}
-      <Link to="/dang-nhap">Quay lại đăng nhập</Link>
+      {href ? <a href={href}>{t('auth.contactManager')}</a> : <span>{t('auth.contactManager')}</span>}
+      <Link to="/dang-nhap">{t('auth.backToLogin')}</Link>
     </div>
   </div>
 }
 
 function ForgotForm() {
+  const { t, lang } = useI18n()
   const [sent, setSent] = useState(false)
   const [formError, setFormError] = useState('')
-  const { register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm<ForgotValues>({
-    resolver: zodResolver(forgotSchema),
+  const schema = useMemo(() => forgotSchema((key, params) => translate(key, params, lang)), [lang])
+  const { register, trigger, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm<ForgotValues>({
+    resolver: zodResolver(schema),
     defaultValues: { phone: '' },
   })
+  useValidationLanguage(lang, errors, trigger)
 
   async function onSubmit(values: ForgotValues) {
     setFormError('')
@@ -82,26 +88,26 @@ function ForgotForm() {
       await forgotPassword(values)
       setSent(true)
     } catch (error) {
-      setFormError(applyApiError(error, setError, ['phone']))
+      setFormError(applyApiError(error, setError, ['phone'], lang))
     }
   }
 
   if (sent) return <div className="auth-recovery-result" aria-labelledby="forgot-sent-title">
     <div className="auth-recovery-icon" aria-hidden="true">✓</div>
-    <RecoveryHeading id="forgot-sent-title" title="Kiểm tra hướng dẫn" description={SENT_MESSAGE} descriptionRole="status" />
+    <RecoveryHeading id="forgot-sent-title" title={t('auth.checkInstructions')} description={t('auth.forgotSent')} descriptionRole="status" />
     <ContactSupport />
-    <Link className="auth-recovery-primary-link" to="/dang-nhap">Quay lại đăng nhập <span aria-hidden="true">→</span></Link>
+    <Link className="auth-recovery-primary-link" to="/dang-nhap">{t('auth.backToLogin')} <span aria-hidden="true">→</span></Link>
   </div>
 
   return <div aria-labelledby="forgot-title">
-    <RecoveryHeading id="forgot-title" title="Quên mật khẩu" description="Nhập số điện thoại để nhận hướng dẫn đặt lại mật khẩu." />
+    <RecoveryHeading id="forgot-title" title={t('auth.forgotTitle')} description={t('auth.forgotIntro')} />
     <form className="auth-recovery-form" noValidate onSubmit={handleSubmit(onSubmit)}>
       <TextField
-        label="Số điện thoại"
+        label={t('auth.phone')}
         type="tel"
         inputMode="numeric"
         autoComplete="username"
-        placeholder="Nhập số điện thoại của bạn"
+        placeholder={t('auth.phonePlaceholder')}
         disabled={isSubmitting}
         error={errors.phone?.message}
         {...register('phone')}
@@ -110,8 +116,8 @@ function ForgotForm() {
         <FormError>{formError}</FormError>
       </div>
       <RoomsButton className="auth-recovery-submit" type="submit" disabled={isSubmitting}>
-        <span>{isSubmitting ? 'Đang gửi' : 'Gửi'}</span>
-        {isSubmitting && <Spinner label="Đang gửi" />}
+        <span>{isSubmitting ? t('auth.sending') : t('auth.send')}</span>
+        {isSubmitting && <Spinner label={t('auth.sending')} />}
       </RoomsButton>
     </form>
     <ContactSupport />
@@ -119,13 +125,16 @@ function ForgotForm() {
 }
 
 function ResetForm({ token }: { token: string }) {
+  const { t, lang } = useI18n()
   const navigate = useNavigate()
   const [formError, setFormError] = useState('')
   const [linkInvalid, setLinkInvalid] = useState(false)
-  const { register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm<ResetPasswordValues>({
-    resolver: zodResolver(resetPasswordSchema),
+  const schema = useMemo(() => resetPasswordSchema((key, params) => translate(key, params, lang)), [lang])
+  const { register, trigger, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm<ResetPasswordValues>({
+    resolver: zodResolver(schema),
     defaultValues: { newPassword: '', confirmPassword: '' },
   })
+  useValidationLanguage(lang, errors, trigger)
 
   async function onSubmit(values: ResetPasswordValues) {
     setFormError('')
@@ -136,32 +145,36 @@ function ResetForm({ token }: { token: string }) {
     } catch (error) {
       const invalid = error instanceof ApiError && error.fields?.token !== undefined
       setLinkInvalid(invalid)
-      if (!invalid) setFormError(applyApiError(error, setError, ['newPassword', 'confirmPassword']))
+      if (!invalid) setFormError(applyApiError(error, setError, ['newPassword', 'confirmPassword'], lang))
     }
   }
 
   return <div aria-labelledby="reset-title">
-    <RecoveryHeading id="reset-title" title="Đặt lại mật khẩu" description="Tạo mật khẩu mới cho tài khoản của bạn." />
+    <RecoveryHeading id="reset-title" title={t('auth.resetTitle')} description={t('auth.newPasswordIntro')} />
     <form className="auth-recovery-form" noValidate onSubmit={handleSubmit(onSubmit)}>
       {linkInvalid && <div className="auth-recovery-link-error">
-        <FormError>Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn</FormError>
-        <p>Liên kết có thể đã hết hạn hoặc đã được sử dụng. Hãy yêu cầu một liên kết mới.</p>
-        <Link to="/quen-mat-khau">Gửi lại liên kết</Link>
+        <FormError>{t('auth.invalidLink')}</FormError>
+        <p>{t('auth.invalidLinkHint')}</p>
+        <Link to="/quen-mat-khau">{t('auth.requestLink')}</Link>
       </div>}
       <PasswordField
-        label="Mật khẩu mới"
+        showLabel={t('auth.show')} hideLabel={t('auth.hide')}
+        showPasswordLabel={t('auth.showPassword')} hidePasswordLabel={t('auth.hidePassword')}
+        label={t('auth.newPassword')}
         autoComplete="new-password"
-        placeholder="Nhập mật khẩu mới"
+        placeholder={t('auth.newPasswordPlaceholder')}
         aria-describedby="reset-password-hint"
         disabled={isSubmitting}
         error={errors.newPassword?.message}
         {...register('newPassword')}
       />
-      <p className="auth-recovery-hint" id="reset-password-hint">Tối thiểu 8 ký tự</p>
+      <p className="auth-recovery-hint" id="reset-password-hint">{t('auth.passwordHint')}</p>
       <PasswordField
-        label="Nhập lại mật khẩu mới"
+        showLabel={t('auth.show')} hideLabel={t('auth.hide')}
+        showPasswordLabel={t('auth.showPassword')} hidePasswordLabel={t('auth.hidePassword')}
+        label={t('auth.confirmPassword')}
         autoComplete="new-password"
-        placeholder="Nhập lại mật khẩu mới"
+        placeholder={t('auth.confirmPassword')}
         disabled={isSubmitting}
         error={errors.confirmPassword?.message}
         {...register('confirmPassword')}
@@ -170,10 +183,10 @@ function ResetForm({ token }: { token: string }) {
         <FormError>{formError}</FormError>
       </div>
       <RoomsButton className="auth-recovery-submit" type="submit" disabled={isSubmitting}>
-        <span>{isSubmitting ? 'Đang đặt lại mật khẩu' : 'Đặt lại mật khẩu'}</span>
-        {isSubmitting && <Spinner label="Đang lưu" />}
+        <span>{isSubmitting ? t('auth.resetting') : t('auth.resetTitle')}</span>
+        {isSubmitting && <Spinner label={t('auth.saving')} />}
       </RoomsButton>
-      <Link className="auth-recovery-back-link" to="/dang-nhap">Quay lại đăng nhập</Link>
+      <Link className="auth-recovery-back-link" to="/dang-nhap">{t('auth.backToLogin')}</Link>
     </form>
   </div>
 }

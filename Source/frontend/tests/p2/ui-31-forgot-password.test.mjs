@@ -1,3 +1,4 @@
+import { vietnameseSource } from '../vietnamese-source.mjs'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
@@ -5,7 +6,7 @@ import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 const draftRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
-const page = readFileSync(join(draftRoot, 'src/pages/public/ForgotPasswordPage.tsx'), 'utf8')
+const page = vietnameseSource(readFileSync(join(draftRoot, 'src/pages/public/ForgotPasswordPage.tsx'), 'utf8'))
 const css = readFileSync(join(draftRoot, 'src/features/auth/forgot-password.css'), 'utf8')
 
 test('UI-31 · AUTH-07: request form keeps the phone schema, shared response and contact', () => {

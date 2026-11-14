@@ -33,8 +33,9 @@ Out: the old public viewing form (owner 13/11/2026: EX-6 and EX-7 replace it, so
   Done when: tests: switching changes the page without reload and keeps typed form input (UI-12); the header is sent; `StaffLayout` has no switch.
 - [x] **FE-EX-10** Public pages into the dictionary: home, `/phong`, `/toa/:id`, `/phong/:id`, header, footer, list states. `shared/status-labels.ts` stays Vietnamese: only the staff app uses it (checked by the planner, 13/11/2026). Money and dates do not change with the language (LOC-05).
   Done when: no Vietnamese literal left in these pages and components (a test scans the files); `2.984.000 đ` and `dd/mm/yyyy` are the same in both languages.
-- [ ] **FE-EX-11** ⏸ Auth pages and guest area into the dictionary: `/dang-nhap`, `/dang-ky`, `/xac-minh-email`, `/quen-mat-khau`, `/doi-mat-khau`, `/toi`, `/toi/tai-khoan`, zod messages.
+- [~] **FE-EX-11** ⏸ Auth pages and guest area into the dictionary: `/dang-nhap`, `/dang-ky`, `/xac-minh-email`, `/quen-mat-khau`, `/doi-mat-khau`, `/toi`, `/toi/tai-khoan`, zod messages.
   Done when: same scan test for these files. Stop and report FE-EX-08..11.
+  Checkpoint 14/11/2026: implementation finished; final checks recorded in PROGRESS.md. Remains `[~]` until CP-3 manual walk with the real backend is verified (browser localhost timed out). No BE-EX-10 work started.
 - [ ] **BE-EX-10** Request language: read `Accept-Language` (`vi` / `en`, anything else → `vi`), use `en` only on `/public/*`, `/auth/*`, `/me/*` (LOC-02). One catalog of messages per error code and language used by the exception filter and by validation messages; error `code`s unchanged.
   Done when: tests `LOC-02: …`: `/auth/login` wrong password in English with `en`; a staff route in Vietnamese with `en`; `fr` → Vietnamese.
 - [ ] **BE-EX-11** English texts for every message the `auth`, public `rooms` / `buildings` and `viewings` endpoints can return, including `fields` messages. Emails to guests use `users.locale` (LOC-06).

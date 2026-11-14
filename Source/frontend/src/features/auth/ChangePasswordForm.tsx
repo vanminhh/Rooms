@@ -1,4 +1,6 @@
-import { useId, useState } from 'react'
+import { useValidationLanguage } from './useValidationLanguage'
+import { t as translate, useI18n } from '../../shared/i18n'
+import { useMemo, useId, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from 'react-router'
@@ -15,15 +17,18 @@ import './auth.css'
 // `layout="page"` is the /doi-mat-khau card (mockup 05): placeholders, the 8-character hint, stable error space
 // and a full-width submit. The account pages keep the plain layout until UI-33 restyles them.
 export function ChangePasswordForm({ afterSuccess, layout = 'plain' }: { afterSuccess: 'go-home' | 'stay'; layout?: 'page' | 'plain' }) {
+  const { t, lang } = useI18n()
   const { refreshMe } = useAuth()
   const navigate = useNavigate()
   const hintId = useId()
   const [formError, setFormError] = useState('')
   const [saved, setSaved] = useState(false)
-  const { register, handleSubmit, reset, setError, formState: { errors, isSubmitting } } = useForm<ChangePasswordValues>({
-    resolver: zodResolver(changePasswordSchema),
+  const schema = useMemo(() => changePasswordSchema((key, params) => translate(key, params, lang)), [lang])
+  const { register, trigger, handleSubmit, reset, setError, formState: { errors, isSubmitting } } = useForm<ChangePasswordValues>({
+    resolver: zodResolver(schema),
     defaultValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
   })
+  useValidationLanguage(lang, errors, trigger)
   const page = layout === 'page'
 
   async function onSubmit(values: ChangePasswordValues) {
@@ -40,33 +45,39 @@ export function ChangePasswordForm({ afterSuccess, layout = 'plain' }: { afterSu
       reset()
       setSaved(true)
     } catch (error) {
-      setFormError(applyApiError(error, setError, ['currentPassword', 'newPassword']))
+      setFormError(applyApiError(error, setError, ['currentPassword', 'newPassword'], lang))
     }
   }
 
   return <>
-    {saved && <p className="auth-notice" role="status">Đã đổi mật khẩu.</p>}
+    {saved && <p className="auth-notice" role="status">{t('auth.passwordChanged')}</p>}
     <form className={page ? 'auth-recovery-form' : undefined} noValidate onSubmit={handleSubmit(onSubmit)}>
       <PasswordField
-        label="Mật khẩu hiện tại"
+        showLabel={t('auth.show')} hideLabel={t('auth.hide')}
+        showPasswordLabel={t('auth.showPassword')} hidePasswordLabel={t('auth.hidePassword')}
+        label={t('auth.currentPassword')}
         autoComplete="current-password"
-        placeholder={page ? 'Nhập mật khẩu hiện tại' : undefined}
+        placeholder={page ? t('auth.currentPasswordPlaceholder') : undefined}
         error={errors.currentPassword?.message}
         {...register('currentPassword')}
       />
       <PasswordField
-        label="Mật khẩu mới"
+        showLabel={t('auth.show')} hideLabel={t('auth.hide')}
+        showPasswordLabel={t('auth.showPassword')} hidePasswordLabel={t('auth.hidePassword')}
+        label={t('auth.newPassword')}
         autoComplete="new-password"
-        placeholder={page ? 'Nhập mật khẩu mới' : undefined}
+        placeholder={page ? t('auth.newPasswordPlaceholder') : undefined}
         aria-describedby={page ? hintId : undefined}
         error={errors.newPassword?.message}
         {...register('newPassword')}
       />
-      {page && <p className="auth-recovery-hint" id={hintId}>Tối thiểu 8 ký tự</p>}
+      {page && <p className="auth-recovery-hint" id={hintId}>{t('auth.passwordHint')}</p>}
       <PasswordField
-        label="Nhập lại mật khẩu mới"
+        showLabel={t('auth.show')} hideLabel={t('auth.hide')}
+        showPasswordLabel={t('auth.showPassword')} hidePasswordLabel={t('auth.hidePassword')}
+        label={t('auth.confirmPassword')}
         autoComplete="new-password"
-        placeholder={page ? 'Nhập lại mật khẩu mới' : undefined}
+        placeholder={page ? t('auth.confirmPassword') : undefined}
         error={errors.confirmPassword?.message}
         {...register('confirmPassword')}
       />
@@ -74,7 +85,7 @@ export function ChangePasswordForm({ afterSuccess, layout = 'plain' }: { afterSu
         ? <div className="auth-recovery-form-message" aria-live="polite"><FormError>{formError}</FormError></div>
         : <FormError>{formError}</FormError>}
       <RoomsButton className={page ? 'auth-recovery-submit' : undefined} type="submit" disabled={isSubmitting}>
-        Đổi mật khẩu{isSubmitting ? <Spinner label="Đang lưu" /> : page && <span aria-hidden="true">→</span>}
+        {t('auth.changePassword')}{isSubmitting ? <Spinner label={t('auth.saving')} /> : page && <span aria-hidden="true">→</span>}
       </RoomsButton>
     </form>
   </>

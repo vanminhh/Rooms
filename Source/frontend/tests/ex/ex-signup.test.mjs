@@ -25,7 +25,8 @@ globalThis.window.setInterval = globalThis.setInterval
 globalThis.window.clearInterval = globalThis.clearInterval
 
 const guards = mod('app/guards.ts')
-const schemas = mod('features/auth/schemas.ts')
+const { t } = mod('shared/i18n/index.ts')
+const schemas = Object.fromEntries(Object.entries(mod('features/auth/schemas.ts')).map(([name, factory]) => [name, factory((key, params) => t(key, params, 'vi'))]))
 const pending = mod('features/auth/pendingVerification.ts')
 const api = mod('features/auth/api.ts')
 

@@ -1,4 +1,32 @@
 globalThis.RoomsColorCore = (() => {
+  const fonts = [
+    { id: 'manrope', label: 'Manrope · Không chân', family: '"Manrope", Arial, sans-serif' },
+    { id: 'taviraj', label: 'Taviraj · Có chân', family: '"Taviraj", Georgia, serif' },
+    { id: 'arial', label: 'Arial', family: 'Arial, sans-serif' },
+    { id: 'segoe', label: 'Segoe UI', family: '"Segoe UI", Arial, sans-serif' },
+    { id: 'georgia', label: 'Georgia', family: 'Georgia, "Times New Roman", serif' },
+    { id: 'times', label: 'Times New Roman', family: '"Times New Roman", serif' },
+    { id: 'system', label: 'Phông hệ thống', family: 'system-ui, sans-serif' },
+  ];
+  const validSize = value => typeof value === 'number' && Number.isFinite(value) && value >= 8 && value <= 160;
+  function pickTarget(target, groups, mode = 'color') {
+    const group = groups.slice(1).find(group => target.closest(group.selector));
+    if (!group) return null;
+    const hit = group.fields.filter(field => ['color', 'background-color'].includes(field.property))
+      .map(field => ({ field, element: target.closest(field.selector) }))
+      .filter(item => item.element)
+      .reduce((best, item) => !best || best.element.contains(item.element) ? item : best, null);
+    const field = hit?.field || group.fields[0];
+    return { group, field, element: hit?.element || target.closest(group.selector),
+      mode: mode === 'type' && group.textFields.some(item => item.id === field.id) ? 'type' : 'color' };
+  }
+  function textDeclarations(value = {}) {
+    const rules = [];
+    if (validSize(value.size)) rules.push(`font-size: ${value.size}px`);
+    const font = fonts.find(font => font.id === value.font);
+    if (font) rules.push(`font-family: ${font.family}`);
+    return rules;
+  }
   const byte = value => Math.round(Math.max(0, Math.min(255, value))).toString(16).padStart(2, '0');
   function normalizeHex(value) {
     if (typeof value !== 'string') return null;
@@ -58,7 +86,7 @@ globalThis.RoomsColorCore = (() => {
     const a = luminance(fg), b = luminance(bg);
     return (Math.max(a,b) + .05) / (Math.min(a,b) + .05);
   }
-  function css(overrides, groups) {
+  function css(overrides, groups, typography = {}) {
     const chunks = [];
     for (const group of groups) for (const field of group.fields) {
       const value = normalizeHex(overrides[field.id]);
@@ -66,25 +94,43 @@ globalThis.RoomsColorCore = (() => {
       const shadow = field.shadow ? `\n  box-shadow: ${field.shadow.replaceAll('VALUE', value)} !important;` : '';
       chunks.push(`/* ${group.name} — ${field.label}\n   ${field.source} */\n${field.selector} {\n  ${field.property}: ${value} !important;${shadow}\n}`);
     }
-    return chunks.length ? `/* ROOMS — màu đã chọn. Nạp sau CSS gốc. */\n\n${chunks.join('\n\n')}\n` : '/* Chưa thay màu. Chọn một phần và thử màu bên phải. */';
+    for (const group of groups) for (const field of group.textFields || []) {
+      const rules = textDeclarations(typography[field.id]);
+      if (rules.length) chunks.push(`/* ${group.name} — ${field.label} · Kiểu chữ\n   ${field.source} */\n${field.selector} {\n  ${rules.join(' !important;\n  ')} !important;\n}`);
+    }
+    return chunks.length ? `/* ROOMS — màu và kiểu chữ đã chọn. Nạp sau CSS gốc. */\n\n${chunks.join('\n\n')}\n` : '/* Chưa có thay đổi. Chọn một phần và chỉnh màu hoặc chữ bên phải. */';
   }
-  function instructions(overrides, groups) {
-    const lines = ['Áp dụng các màu sau vào Rooms, giữ bố cục hiện tại.'];
+  function instructions(overrides, groups, typography = {}) {
+    const lines = ['Áp dụng các màu và kiểu chữ sau vào Rooms. Giữ các phần không được liệt kê.'];
     for (const group of groups) for (const field of group.fields) {
       const value = normalizeHex(overrides[field.id]);
       if (value) lines.push(`${group.name} / ${field.label}: ${value}\n  File: ${field.source}\n  Selector: ${field.selector}\n  Thuộc tính: ${field.property}${field.shadow ? `\n  Đồng bộ box-shadow: ${field.shadow.replaceAll('VALUE', value)}` : ''}`);
     }
-    return lines.length > 1 ? lines.join('\n\n') : 'Chưa có thay đổi màu.';
+    for (const group of groups) for (const field of group.textFields || []) {
+      const rules = textDeclarations(typography[field.id]);
+      if (rules.length) lines.push(`${group.name} / ${field.label} · Kiểu chữ\n  File: ${field.source}\n  Selector: ${field.selector}\n  ${rules.join('\n  ')}`);
+    }
+    return lines.length > 1 ? lines.join('\n\n') : 'Chưa có thay đổi.';
   }
   function parsePreset(text, groups) {
     const input = JSON.parse(text);
-    if (!input || input.version !== 1 || !input.colors || typeof input.colors !== 'object' || Array.isArray(input.colors)) throw new Error('File này không phải bảng màu Rooms phiên bản 1.');
+    if (!input || ![1, 2].includes(input.version) || !input.colors || typeof input.colors !== 'object' || Array.isArray(input.colors)) throw new Error('File này không phải bộ chỉnh Rooms phiên bản 1 hoặc 2.');
     const ids = new Set(groups.flatMap(g => g.fields.map(f => f.id))), result = {};
     for (const [id, value] of Object.entries(input.colors)) {
       if (!ids.has(id) || !normalizeHex(value)) throw new Error(`Màu hoặc thành phần không hợp lệ: ${id}`);
       result[id] = normalizeHex(value);
     }
-    return result;
+    const rawText = input.version === 2 && input.typography !== undefined ? input.typography : {};
+    if (!rawText || typeof rawText !== 'object' || Array.isArray(rawText)) throw new Error('Dữ liệu kiểu chữ không hợp lệ.');
+    const textIds = new Set(groups.flatMap(group => (group.textFields || []).map(field => field.id))), typography = {};
+    for (const [id, value] of Object.entries(rawText)) {
+      if (!textIds.has(id) || !value || typeof value !== 'object' || Array.isArray(value)
+        || Object.keys(value).some(key => !['size', 'font'].includes(key))
+        || ('size' in value && !validSize(value.size))
+        || ('font' in value && !fonts.some(font => font.id === value.font))) throw new Error(`Kiểu chữ không hợp lệ: ${id}`);
+      if (Object.keys(value).length) typography[id] = { ...value };
+    }
+    return { colors: result, typography };
   }
-  return { normalizeHex, rgba, toHex, fromCss, hexToHsl, hslToHex, composite, contrast, css, instructions, parsePreset };
+  return { fonts, validSize, pickTarget, normalizeHex, rgba, toHex, fromCss, hexToHsl, hslToHex, composite, contrast, css, instructions, parsePreset };
 })();

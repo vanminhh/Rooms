@@ -124,5 +124,13 @@ globalThis.RoomsColorCatalog = (() => {
     ['bottom', 'Chữ bản quyền', '.rooms-theme .rooms-footer-bottom', 'color'],
     ['line', 'Đường phân cách', '.rooms-theme .rooms-footer-bottom', 'border-top-color'],
   ]);
+  for (const item of groups) item.textFields = item.fields.filter(field => field.property === 'color')
+    .map(({ id, label, selector, source }) => ({ id, label, selector, source }));
+  groups[0].textFields = [
+    ['h1', 'Tiêu đề lớn · H1', '.rooms-theme h1'],
+    ['h2', 'Tiêu đề khu vực · H2', '.rooms-theme h2'],
+    ['h3', 'Tiêu đề thẻ · H3', '.rooms-theme h3'],
+    ['paragraphs', 'Các đoạn văn', '.rooms-theme p'],
+  ].map(([id, label, selector]) => ({ id: `palette.${id}`, label, selector, source: kit }));
   return groups;
 })();

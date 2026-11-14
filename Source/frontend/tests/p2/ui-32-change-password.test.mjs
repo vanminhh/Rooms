@@ -1,3 +1,4 @@
+import { vietnameseSource } from '../vietnamese-source.mjs'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
@@ -6,8 +7,8 @@ import { fileURLToPath } from 'node:url'
 
 // tests/p2 -> root: the draft folder before apply, Source/frontend after apply.
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
-const page = readFileSync(join(root, 'src/pages/public/ChangePasswordPage.tsx'), 'utf8')
-const form = readFileSync(join(root, 'src/features/auth/ChangePasswordForm.tsx'), 'utf8')
+const page = vietnameseSource(readFileSync(join(root, 'src/pages/public/ChangePasswordPage.tsx'), 'utf8'))
+const form = vietnameseSource(readFileSync(join(root, 'src/features/auth/ChangePasswordForm.tsx'), 'utf8'))
 const css = readFileSync(join(root, 'src/features/auth/change-password.css'), 'utf8')
 
 test('UI-32 · AUTH-05: page uses the auth frame, title and the forced / not forced sentence', () => {
@@ -42,7 +43,7 @@ test('UI-32 · AUTH-03/UI-09: page layout adds placeholders, the 8-character hin
     '>Tối thiểu 8 ký tự</p>',
     'Đổi mật khẩu{isSubmitting ? <Spinner label="Đang lưu" />',
     'className="auth-recovery-form-message" aria-live="polite"',
-    "applyApiError(error, setError, ['currentPassword', 'newPassword'])",
+    "applyApiError(error, setError, ['currentPassword', 'newPassword'], lang)",
     'const me = await refreshMe()',
   ]) assert.ok(form.includes(needle), `form is missing ${needle}`)
 })

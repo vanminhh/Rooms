@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useValidationLanguage } from '../../features/auth/useValidationLanguage'
+import { t as translate, useI18n } from '../../shared/i18n'
+import { useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router'
@@ -15,16 +17,19 @@ import { applyApiError } from '../../shared/form-errors'
 import '../../features/auth/auth.css'
 
 export function LoginPage() {
+  const { t, lang } = useI18n()
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [params] = useSearchParams()
   const contact = usePublicContact()
   const [formError, setFormError] = useState('')
-  const { register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm<LoginValues>({
-    resolver: zodResolver(loginSchema),
+  const schema = useMemo(() => loginSchema((key, params) => translate(key, params, lang)), [lang])
+  const { register, trigger, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm<LoginValues>({
+    resolver: zodResolver(schema),
     defaultValues: { phone: '', password: '', remember: false },
   })
+  useValidationLanguage(lang, errors, trigger)
   const next = safeNext(params.get('next'))
   const signUpHref = next ? `/dang-ky?next=${encodeURIComponent(next)}` : '/dang-ky'
   const passwordReset = (location.state as { notice?: string } | null)?.notice === 'password-reset'
@@ -49,70 +54,72 @@ export function LoginPage() {
         navigate(next ? `/xac-minh-email?next=${encodeURIComponent(next)}` : '/xac-minh-email', { replace: true })
         return
       }
-      setFormError(applyApiError(error, setError, ['phone', 'password']))
+      setFormError(applyApiError(error, setError, ['phone', 'password'], lang))
     }
   }
 
   return <div className="auth-login-page">
-    <section className="auth-login-visual" aria-label="Giới thiệu ROOMS">
+    <section className="auth-login-visual" aria-label={t('auth.intro')}>
       <img src="/images/auth-room.webp" alt="" />
-      <IllustrationLabel className="auth-login-image-label" />
+      <IllustrationLabel className="auth-login-image-label">{t('home.illustration')}</IllustrationLabel>
       <div className="auth-login-visual-copy">
-        <p className="rooms-eyebrow">Phòng thuê tại Hà Nội</p>
-        <p className="auth-login-promise">Một nơi ở <em>vừa vặn</em> giữa phố.</p>
+        <p className="rooms-eyebrow">{t('home.hero.eyebrow')}</p>
+        <p className="auth-login-promise">{t('home.hero.leading')}<em>{t('home.hero.highlight')}</em>{t('home.hero.trailing')}</p>
       </div>
     </section>
 
     <section className="auth-login-panel" aria-labelledby="login-title">
       <header className="auth-login-heading">
         <span aria-hidden="true" />
-        <h1 id="login-title">Đăng nhập</h1>
-        <p>Chào mừng bạn trở lại ROOMS.</p>
+        <h1 id="login-title">{t('auth.login')}</h1>
+        <p>{t('auth.welcome')}</p>
       </header>
 
       <div className="auth-column">
-        {passwordReset && <p className="auth-notice" role="status">Đã đặt lại mật khẩu. Hãy đăng nhập bằng mật khẩu mới.</p>}
+        {passwordReset && <p className="auth-notice" role="status">{t('auth.resetDone')}</p>}
         <form noValidate onSubmit={handleSubmit(onSubmit)}>
           <TextField
-            label="Số điện thoại"
+            label={t('auth.phone')}
             type="tel"
             inputMode="numeric"
             autoComplete="username"
-            placeholder="Nhập số điện thoại của bạn"
+            placeholder={t('auth.phonePlaceholder')}
             disabled={isSubmitting}
             error={errors.phone?.message}
             {...register('phone')}
           />
           <PasswordField
-            label="Mật khẩu"
+        showLabel={t('auth.show')} hideLabel={t('auth.hide')}
+        showPasswordLabel={t('auth.showPassword')} hidePasswordLabel={t('auth.hidePassword')}
+            label={t('auth.password')}
             autoComplete="current-password"
-            placeholder="Nhập mật khẩu"
+            placeholder={t('auth.passwordPlaceholder')}
             disabled={isSubmitting}
             error={errors.password?.message}
             {...register('password')}
           />
           <div className="auth-login-options">
-            <Checkbox label="Ghi nhớ đăng nhập" disabled={isSubmitting} {...register('remember')} />
-            <Link to="/quen-mat-khau">Quên mật khẩu?</Link>
+            <Checkbox label={t('auth.remember')} disabled={isSubmitting} {...register('remember')} />
+            <Link to="/quen-mat-khau">{t('auth.forgotLink')}</Link>
           </div>
           <div className="auth-login-form-message" aria-live="polite">
             <FormError>{formError}</FormError>
           </div>
           <RoomsButton className="auth-login-submit" type="submit" disabled={isSubmitting}>
-            <span>{isSubmitting ? 'Đang đăng nhập' : 'Đăng nhập'}</span>
-            {isSubmitting ? <Spinner label="Đang đăng nhập" /> : <span aria-hidden="true">→</span>}
+            <span>{isSubmitting ? t('auth.signingIn') : t('auth.login')}</span>
+            {isSubmitting ? <Spinner label={t('auth.signingIn')} /> : <span aria-hidden="true">→</span>}
           </RoomsButton>
         </form>
 
         <div className="auth-login-account-note">
-          <p>Chưa có tài khoản? <Link to={signUpHref}>Đăng ký</Link></p>
-          {contact.isLoading && <p className="auth-contact-status" role="status">Đang tải thông tin liên hệ…</p>}
+          <p>{t('auth.noAccount')} <Link to={signUpHref}>{t('auth.register')}</Link></p>
+          {contact.isLoading && <p className="auth-contact-status" role="status">{t('auth.contactLoading')}</p>}
           {!contact.isLoading && !contact.isError && <ContactInfo contact={contact.data ?? null} />}
           <div className="auth-login-account-actions">
             {managementHref
-              ? <a href={managementHref}>Liên hệ quản lý</a>
-              : <span>Liên hệ quản lý</span>}
-            <Link to="/phong">Xem phòng trống</Link>
+              ? <a href={managementHref}>{t('auth.contactManager')}</a>
+              : <span>{t('auth.contactManager')}</span>}
+            <Link to="/phong">{t('auth.viewRooms')}</Link>
           </div>
         </div>
       </div>

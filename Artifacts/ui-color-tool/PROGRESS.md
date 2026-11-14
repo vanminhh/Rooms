@@ -1,5 +1,30 @@
 # FE-COLOR-TOOL · Công cụ chỉnh màu trang chủ
 
+## Chọn trực tiếp và chọn qua danh sách · 14/11/2026
+
+- [x] Rê chuột có viền nét đứt và tên mục; bấm chọn phần tử gần điểm bấm nhất. Bấm nền trong tab chữ tự chuyển sang chỉnh màu nền.
+- [x] Viền xanh liền theo đúng mục đang chỉnh; chọn mục bên phải cập nhật viền và cuộn đến phần tử bên trái. Các phần tử cùng selector dùng chung kiểu như trước.
+- File trong checkpoint: `editor.js`, `color-core.js`, `index.html`, `tests.test.cjs`, `README.md`, `PROGRESS.md`, `preview.jpg`. Giữ phần chỉnh chữ trước đó và các thay đổi ứng dụng ngoài công cụ.
+- Kết quả: **11 tests, 11 pass, 0 fail, 0 skipped**; kiểm tra cú pháp exit 0; ESLint công cụ **0 errors**. Trên trình duyệt: bấm chữ nhấn chọn đúng “Chữ nhấn trong tiêu đề”; chọn “Mô tả” từ danh sách đánh dấu đúng `.public-hero-intro`; cơ chế rê chuột tạo thuộc tính viền và cập nhật thanh hướng dẫn.
+- [ASSUMPTION] Bấm nền chọn màu nền, bấm chữ giữ chế độ màu/chữ đang dùng. Chọn không tự đổi các giá trị đã lưu.
+- Tự kiểm tra: mở công cụ, rê và bấm một dòng chữ bên trái; xem mục bên phải đổi theo. Sau đó chọn “Mô tả” bên phải để thấy viền và vị trí cuộn bên trái đổi theo.
+- Chỉ kiểm tra công cụ; không chạy lại frontend chính. Không commit.
+- Commit gợi ý: `feat(FE-COLOR-TOOL): sync pointer and panel selection (UI-08)`.
+
+## Bổ sung cỡ chữ và phông · 14/11/2026
+
+- [x] Thêm tab **Cỡ chữ & phông** cho từng nhóm chữ và các tiêu đề/đoạn văn chung. Thanh kéo và ô số 8–160 px; 7 lựa chọn phông; đặt lại riêng cỡ hoặc toàn bộ chữ đang chọn.
+- [x] CSS/lệnh xuất chung màu, `font-size`, `font-family`. Tự lưu, so sánh gốc, JSON v2 chứa cả màu và chữ; nạp được JSON v1 cũ.
+- Chỉ sửa trong tool độc lập đã được chủ dự án cho phép: `catalog.js`, `color-core.js`, `editor.js`, `editor.css`, `index.html`, `tests.test.cjs`, `README.md`, `PROGRESS.md`, `preview.jpg`. Các thay đổi auth/i18n đang có trong working tree được giữ nguyên. Không thêm dependency; không commit.
+- Kiểm tra: Node tests **10 tests, 10 pass, 0 fail, 0 skipped**; `node --check editor.js` exit 0; ESLint của frontend chạy riêng trên 3 file JS công cụ với `no-undef`/`no-unused-vars`: **Tool lint: 0 errors**. `git diff --check` không có lỗi whitespace.
+- Trình duyệt: tiêu đề Arial 48 px đổi trực tiếp; kéo lên 48.1 px cập nhật CSS; nhập 200 bị từ chối và giữ giá trị hợp lệ. Màu nền và kiểu chữ cùng tồn tại. So sánh gốc bỏ toàn bộ override tạm thời. Cỡ gốc bỏ size nhưng giữ phông. Đổi điện thoại giữ đúng cỡ đã đặt. Tải lại giữ thiết lập. Lưu JSON v2 thực tế chứa màu nền và Georgia 48 px; đặt lại chữ giữ màu, rồi nạp file phục hồi đúng cả hai thuộc tính chữ.
+- Không chạy lại bộ test/build của ứng dụng chính trong lần bổ sung này vì chỉ sửa công cụ độc lập; các kết quả frontend bên dưới thuộc checkpoint 13/11.
+- [ASSUMPTION] Cỡ chữ đặt theo px dùng chung cho máy tính/điện thoại. Cỡ gốc khôi phục quy tắc responsive ban đầu. Phông trên máy có thể dùng fallback; không tải thêm phông hoặc chỉnh nội dung ảnh/logo.
+- Tự kiểm tra: mở công cụ → Banner · Đầu trang → **Cỡ chữ & phông** → Tiêu đề → nhập 48, chọn Arial → xem CSS phía dưới; thử **Cỡ gốc** và **Lưu/Nạp bộ chỉnh**.
+- Commit gợi ý: `feat(FE-COLOR-TOOL): add font and text size controls (KIT-02, UI-08)`.
+
+## Checkpoint ban đầu · 13/11/2026
+
 - Chủ dự án cho phép tạo tool độc lập trong `Artifacts/ui-color-tool/` khi workspace có thay đổi khác chưa commit (13/11/2026).
 - Phạm vi: bản sao trang chủ hiện tại, chỉnh bảng màu chung và từng phần, xuất CSS/ghi chú, lưu để dùng lại. KIT-01, KIT-09, UI-08.
 - [x] Snapshot từ component hiện tại, 7 stylesheet gốc và 7 ảnh tại máy; không gọi API.

@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useValidationLanguage } from '../../features/auth/useValidationLanguage'
+import { t as translate, useI18n } from '../../shared/i18n'
+import { useMemo, useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router'
@@ -23,17 +25,20 @@ export function VerifyEmailPage() {
 }
 
 function VerifyForm({ pending, onPending }: { pending: PendingVerification; onPending: (value: PendingVerification) => void }) {
+  const { t, lang } = useI18n()
   const { acceptSession } = useAuth()
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const [formError, setFormError] = useState('')
-  const [notice, setNotice] = useState('')
+  const [notice, setNotice] = useState(false)
   const [sending, setSending] = useState(false)
   const [now, setNow] = useState(() => Date.now())
-  const { register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm<VerifyEmailValues>({
-    resolver: zodResolver(verifyEmailSchema),
+  const schema = useMemo(() => verifyEmailSchema((key, params) => translate(key, params, lang)), [lang])
+  const { register, trigger, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm<VerifyEmailValues>({
+    resolver: zodResolver(schema),
     defaultValues: { code: '' },
   })
+  useValidationLanguage(lang, errors, trigger)
   const left = secondsLeft(pending.sentAt, now)
 
   useEffect(() => {
@@ -44,7 +49,7 @@ function VerifyForm({ pending, onPending }: { pending: PendingVerification; onPe
 
   async function onSubmit(values: VerifyEmailValues) {
     setFormError('')
-    setNotice('')
+    setNotice(false)
     try {
       const data = await verifyEmailRequest({ phone: pending.phone, code: values.code })
       const user = acceptSession(data)
@@ -55,13 +60,13 @@ function VerifyForm({ pending, onPending }: { pending: PendingVerification; onPe
         setError('code', { type: 'server', message: error.message })
         return
       }
-      setFormError(applyApiError(error, setError, ['code']))
+      setFormError(applyApiError(error, setError, ['code'], lang))
     }
   }
 
   async function sendCode() {
     setFormError('')
-    setNotice('')
+    setNotice(false)
     setSending(true)
     try {
       await resendCodeRequest({ phone: pending.phone })
@@ -69,28 +74,28 @@ function VerifyForm({ pending, onPending }: { pending: PendingVerification; onPe
       writePending(next)
       onPending(next)
       setNow(Date.now())
-      setNotice('Đã gửi mã. Nếu chưa thấy email, hãy kiểm tra thư mục spam.')
+      setNotice(true)
     } catch (error) {
-      setFormError(applyApiError(error, setError, []))
+      setFormError(applyApiError(error, setError, [], lang))
     } finally {
       setSending(false)
     }
   }
 
   const description = pending.email
-    ? `Nhập mã 6 số đã gửi tới ${pending.email}.`
-    : 'Nhập mã 6 số gửi tới email bạn đã đăng ký tài khoản.'
+    ? t('auth.verifyDescription', { email: pending.email })
+    : t('auth.verifyUnknownEmail')
   const neverSent = pending.sentAt === null
 
-  return <AuthFrame titleId="verify-title" title="Xác minh email" description={description}>
+  return <AuthFrame titleId="verify-title" title={t('auth.verifyTitle')} description={description}>
     <form noValidate onSubmit={handleSubmit(onSubmit)}>
-      {notice && <p className="auth-notice" role="status">{notice}</p>}
+      {notice && <p className="auth-notice" role="status">{t('auth.codeSent')}</p>}
       <TextField
-        label="Mã xác minh"
+        label={t('auth.code')}
         inputMode="numeric"
         autoComplete="one-time-code"
         maxLength={6}
-        placeholder="6 chữ số"
+        placeholder={t('auth.codePlaceholder')}
         disabled={isSubmitting}
         error={errors.code?.message}
         {...register('code')}
@@ -99,14 +104,14 @@ function VerifyForm({ pending, onPending }: { pending: PendingVerification; onPe
         <FormError>{formError}</FormError>
       </div>
       <RoomsButton className="auth-login-submit" type="submit" disabled={isSubmitting}>
-        <span>{isSubmitting ? 'Đang xác minh' : 'Xác minh'}</span>
-        {isSubmitting ? <Spinner label="Đang xác minh" /> : <span aria-hidden="true">→</span>}
+        <span>{isSubmitting ? t('auth.verifying') : t('auth.verify')}</span>
+        {isSubmitting ? <Spinner label={t('auth.verifying')} /> : <span aria-hidden="true">→</span>}
       </RoomsButton>
       <div className="auth-code-actions">
         <RoomsButton type="button" variant="outline" disabled={sending || left > 0} onClick={sendCode}>
-          {neverSent ? 'Gửi mã xác minh' : left > 0 ? `Gửi lại mã (${left}s)` : 'Gửi lại mã'}
+          {neverSent ? t('auth.sendCode') : left > 0 ? t('auth.resendCountdown', { seconds: left }) : t('auth.resend')}
         </RoomsButton>
-        <Link to="/dang-nhap">Quay lại đăng nhập</Link>
+        <Link to="/dang-nhap">{t('auth.backToLogin')}</Link>
       </div>
     </form>
   </AuthFrame>

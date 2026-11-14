@@ -2,7 +2,9 @@ import { useId, useState } from 'react'
 import type { ComponentProps, ReactNode } from 'react'
 
 export type TextFieldProps = ComponentProps<'input'> & { label: string; error?: string }
-export type PasswordFieldProps = Omit<TextFieldProps, 'type'>
+export type PasswordFieldProps = Omit<TextFieldProps, 'type'> & {
+  showLabel?: string; hideLabel?: string; showPasswordLabel?: string; hidePasswordLabel?: string
+}
 export type CheckboxProps = Omit<ComponentProps<'input'>, 'type'> & { label: string; error?: string }
 
 // Shared by TextField and Checkbox: the input id, the aria attributes that tie the input to its error text, and that text.
@@ -34,10 +36,10 @@ export function TextField(props: TextFieldProps) {
   return <Field {...props} />
 }
 
-export function PasswordField(props: PasswordFieldProps) {
+export function PasswordField({ showLabel = 'Hiện', hideLabel = 'Ẩn', showPasswordLabel = 'Hiện mật khẩu', hidePasswordLabel = 'Ẩn mật khẩu', ...props }: PasswordFieldProps) { // i18n-allow: Vietnamese kit defaults preserve existing callers.
   const [visible, setVisible] = useState(false)
   return <Field {...props} type={visible ? 'text' : 'password'} spellCheck={false} autoCapitalize="none"
-    trailing={id => <button type="button" className="rooms-field-toggle" aria-controls={id} aria-label={visible ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} disabled={props.disabled} onClick={() => setVisible(!visible)}>{visible ? 'Ẩn' : 'Hiện'}</button>} />
+    trailing={id => <button type="button" className="rooms-field-toggle" aria-controls={id} aria-label={visible ? hidePasswordLabel : showPasswordLabel} disabled={props.disabled} onClick={() => setVisible(!visible)}>{visible ? hideLabel : showLabel}</button>} />
 }
 
 export function Checkbox({ label, error, id: idProp, 'aria-describedby': describedBy, ...rest }: CheckboxProps) {

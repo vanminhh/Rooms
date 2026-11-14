@@ -13,7 +13,7 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 | EX-0 Chủ dự án chuẩn bị | đang làm | Q-09..Q-12 đã trả lời; quyết định cuối 12/11/2026 (email thay SMS) | – | tạo tài khoản Resend + xác thực tên miền (Q-14 đã chọn Resend), Q-08 video, Q-13, Q-EX4-1, Q-EX6-1, Q-EX6-2, Q-EX8-2 | không chặn EX-1 |
 | EX-1 Tài khoản khách (BE) | chờ duyệt | ⏸ BE-EX-09 (kiểm tra cuối) | đã commit hết (git log 13/11/2026) | – | seed khách `0900000006` đã chạy trên DB dev qua e2e cũ; plan: `plans/EX-1/PLAN.md` |
 | EX-2 Tài khoản khách (FE) | chờ duyệt | ⏸ FE-EX-07 (đăng nhập, GuestLayout, /toi, /toi/tai-khoan) | đã commit hết (git log 13/11/2026) | – | xem tay luồng đăng ký → /toi với backend thật còn chờ chủ dự án; plan: không có (không cần planner) |
-| EX-3 Việt + Anh | đang làm | FE-EX-10 (trang công khai, header/footer, bộ lọc, chi phí qua từ điển) | FE-EX-09 `ed073fb` | FE-EX-11: trang auth và khu khách | plan: `plans/EX-3/PLAN.md`; OQ-1..3 đã trả lời 13/11/2026 |
+| EX-3 Việt + Anh | chờ kiểm chứng | ⏸ FE-EX-11: đã code; còn đi tay CP-3 với backend thật | FE-EX-10 + review `232fab1` | chủ dự án kiểm chứng FE-EX-11 và commit; sau đó BE-EX-10 | plan: `plans/EX-3/PLAN.md`; OQ-1..3 đã trả lời; không dịch form đặt lịch cũ |
 | EX-4 Màn chào | chưa làm | – | – | FE-EX-14 | cần EX-3 |
 | EX-5 Bộ lọc phòng | chờ duyệt | ⏸ FE-EX-21 (cả part) | đã commit hết (git log 13/11/2026) | – | plan: `plans/EX-5/PLAN.md` |
 | EX-6 Lịch xem (BE) | chưa làm | – | – | BE-EX-17 | cần EX-1 |
@@ -24,6 +24,8 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 ## Nhật ký điểm dừng
 
 Mới nhất ở trên. Mỗi dòng: `ngày · phần · task vừa xong · kết quả kiểm tra (số thật) · việc còn treo`.
+
+- 14/11/2026 · EX-3 · FE-EX-11 (code): auth, khách và hai trang người thuê vào từ điển; schema theo ngôn ngữ, đổi ngôn ngữ giữ dữ liệu và lỗi API; PasswordField nhận nhãn qua props; khách vẫn chỉ đọc email, `/ql` vẫn tiếng Việt. Kiểm tra cuối: `npm run lint` exit 0; `npm run build` exit 0 (729 modules; cảnh báo chunk >500 kB); `npm run test:components` 829/829 pass, 0 fail/skip (150357.6174 ms); scan 0 chuỗi ngoài ngoại lệ; `git diff --check` sạch. Trước đó các test kiểm tra nguồn còn tìm literal tiếng Việt đã được cập nhật để đọc từ điển, giữ nguyên câu kỳ vọng (lượt gần cuối 828/829). Đi tay CP-3 chưa xác nhận: trình duyệt không mở được localhost (`ERR_CONNECTION_TIMED_OUT`); luồng đăng ký → mã sai/đúng → khách đã kiểm tự động bằng API giả lập. A-12 giữ nguyên tên người dùng; không có giả định nghiệp vụ mới. Dừng tại FE-EX-11, chưa làm BE-EX-10.
 
 - 14/11/2026 · review (ngoài task) · 5 điểm nhỏ của bản review: trang đăng ký hiện câu AUTH-11 lấy từ `fields`; gửi mã mới thất bại thì mã cũ dùng lại được (AUTH-13); quãng chờ của `fe11-approvals.test.mjs` ×4 (vá nhanh, có ghi chú `shortcut:`); `shared/i18n/index.tsx` đổi tên thành `provider.tsx`; `CLAUDE.md` / `AGENTS.md` / `02-database.md` bỏ "nothing built" và "50/50" · BE lint 0 lỗi, build OK, unit 1634/1634; FE lint 0 lỗi, build OK, test:components 821/821 (một lượt, không ca nào đỏ) · chưa chạy e2e và kiểm DB; chưa xem trên trình duyệt thật
 

@@ -1,3 +1,4 @@
+import { vietnameseSource } from './vietnamese-source.mjs'
 import assert from 'node:assert/strict'
 import { readFileSync, existsSync, statSync } from 'node:fs'
 import { createRequire } from 'node:module'
@@ -778,7 +779,7 @@ test('FE-LOGIN-10/T2: "Đăng xuất" is a type=button; click posts /auth/logout
 
 // ---------- source-level checks ----------
 test('A5/UI-08: LoginPage has the labelled fields, remember unchecked by default, and Vietnamese-only visible text', () => {
-  const page = readFileSync(srcPath('pages/public/LoginPage.tsx'), 'utf8')
+  const page = vietnameseSource(readFileSync(srcPath('pages/public/LoginPage.tsx'), 'utf8'))
   for (const needle of ['label="Số điện thoại"', 'type="tel"', 'inputMode="numeric"', 'autoComplete="username"', 'label="Mật khẩu"', 'autoComplete="current-password"', 'label="Ghi nhớ đăng nhập"', 'remember: false', 'Quên mật khẩu?', 'Xem phòng trống']) {
     assert.ok(page.includes(needle), `missing ${needle}`)
   }

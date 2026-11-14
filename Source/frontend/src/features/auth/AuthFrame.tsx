@@ -1,3 +1,4 @@
+import { useI18n } from '../../shared/i18n'
 import type { ReactNode } from 'react'
 import { IllustrationLabel } from '../../components'
 import './auth.css'
@@ -10,13 +11,14 @@ export function AuthFrame({ titleId, title, description, children }: {
   description: string
   children: ReactNode
 }) {
+  const { t } = useI18n()
   return <div className="auth-login-page">
-    <section className="auth-login-visual" aria-label="Giới thiệu ROOMS">
+    <section className="auth-login-visual" aria-label={t('auth.intro')}>
       <img src="/images/auth-room.webp" alt="" />
-      <IllustrationLabel className="auth-login-image-label" />
+      <IllustrationLabel className="auth-login-image-label">{t('home.illustration')}</IllustrationLabel>
       <div className="auth-login-visual-copy">
-        <p className="rooms-eyebrow">Phòng thuê tại Hà Nội</p>
-        <p className="auth-login-promise">Một nơi ở <em>vừa vặn</em> giữa phố.</p>
+        <p className="rooms-eyebrow">{t('home.hero.eyebrow')}</p>
+        <p className="auth-login-promise">{t('home.hero.leading')}<em>{t('home.hero.highlight')}</em>{t('home.hero.trailing')}</p>
       </div>
     </section>
 

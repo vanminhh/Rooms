@@ -104,7 +104,7 @@ test('KIT-01/KIT-07: layouts.css and auth.css add no hex colours, no new fonts, 
 })
 
 // schemas.ts runs unmodified on the real zod.
-const { loginSchema } = compile('../src/features/auth/schemas.ts', { zod: createRequire(import.meta.url)('zod') })
+const loginSchema = compile('../src/features/auth/schemas.ts', { zod: createRequire(import.meta.url)('zod') }).loginSchema((key, params) => t(key, params, 'vi'))
 const loginIssues = input => { const r = loginSchema.safeParse(input); return r.success ? [] : r.error.issues.map(i => `${i.path.join('.')}: ${i.message}`) }
 const okLogin = { phone: '0900000004', password: 'a', remember: false }
 
@@ -127,7 +127,9 @@ test('AUTH-01: loginSchema keeps remember as a boolean', () => {
 })
 
 // ---------- CP-5: forgot / change / reset schemas (real schemas.ts on the real zod) ----------
-const { forgotSchema, changePasswordSchema, resetPasswordSchema } = compile('../src/features/auth/schemas.ts', { zod: createRequire(import.meta.url)('zod') })
+const forgotSchema = compile('../src/features/auth/schemas.ts', { zod: createRequire(import.meta.url)('zod') }).forgotSchema((key, params) => t(key, params, 'vi'))
+const changePasswordSchema = compile('../src/features/auth/schemas.ts', { zod: createRequire(import.meta.url)('zod') }).changePasswordSchema((key, params) => t(key, params, 'vi'))
+const resetPasswordSchema = compile('../src/features/auth/schemas.ts', { zod: createRequire(import.meta.url)('zod') }).resetPasswordSchema((key, params) => t(key, params, 'vi'))
 const issuesOf = (schema, input) => { const r = schema.safeParse(input); return r.success ? [] : r.error.issues.map(i => `${i.path.join('.')}: ${i.message}`) }
 const okChange = { currentPassword: 'matkhau123', newPassword: '12345678', confirmPassword: '12345678' }
 
@@ -164,7 +166,8 @@ test('AUTH-07/G-04: forgotSchema uses the same phone boundary as login (10 digit
 })
 
 // ---------- CP-6: profile schemas (real schemas.ts on the real zod) ----------
-const { tenantProfileSchema, staffProfileSchema } = compile('../src/features/auth/schemas.ts', { zod: createRequire(import.meta.url)('zod') })
+const tenantProfileSchema = compile('../src/features/auth/schemas.ts', { zod: createRequire(import.meta.url)('zod') }).tenantProfileSchema((key, params) => t(key, params, 'vi'))
+const staffProfileSchema = compile('../src/features/auth/schemas.ts', { zod: createRequire(import.meta.url)('zod') }).staffProfileSchema((key, params) => t(key, params, 'vi'))
 const okStaff = { email: '', contactPhone: '', zaloUrl: '', facebookUrl: '' }
 
 test('AUTH-09: tenantProfileSchema email: empty is valid (sent as null), a@b.vn valid, "abc" -> "Email không hợp lệ", 255 characters valid, 256 refused', () => {
