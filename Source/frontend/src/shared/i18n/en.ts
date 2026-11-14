@@ -1,6 +1,10 @@
 import { vi } from './vi'
 
 export const en: Record<keyof typeof vi, string> = {
+  'entry.title': 'What would you like to do?',
+  'entry.findRoom': 'Find a room',
+  'entry.tenant': 'I am a tenant',
+  'entry.staff': 'Building management',
   'common.retry': 'Try again',
   'common.loading': 'Loading...',
   'common.save': 'Save',

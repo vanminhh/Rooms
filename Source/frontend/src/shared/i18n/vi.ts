@@ -1,4 +1,8 @@
 export const vi = {
+  'entry.title': 'Bạn muốn làm gì?',
+  'entry.findRoom': 'Tìm phòng',
+  'entry.tenant': 'Tôi đang thuê',
+  'entry.staff': 'Quản lý tòa nhà',
   'common.retry': 'Thử lại',
   'common.loading': 'Đang tải...',
   'common.save': 'Lưu',

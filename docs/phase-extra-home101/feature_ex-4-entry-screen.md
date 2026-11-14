@@ -27,8 +27,9 @@ Out: any new role or right (a choice only navigates), a new landing route, Home1
 
 ## Tasks
 
-- [ ] **FE-EX-14** Overlay in `src/features/public/` (one feature only, KIT-07), built from kit pieces: three choices "Tìm phòng" (closes onto `/`), "Tôi đang thuê" → `/thue`, "Quản lý tòa nhà" → `/ql`; the route guard handles login and `?next=` (AUTH-06). Texts from the dictionary in both languages.
+- [x] **FE-EX-14** Overlay in `src/features/public/` (one feature only, KIT-07), built from kit pieces: three choices "Tìm phòng" (closes onto `/`), "Tôi đang thuê" → `/thue`, "Quản lý tòa nhà" → `/ql`; the route guard handles login and `?next=` (AUTH-06). Texts from the dictionary in both languages.
   Done when: tests `UI-11: …`: each choice goes to the right place; a logged-in GUEST who picks "Quản lý tòa nhà" lands on `/toi`; picking never calls an API that changes the account (SCOPE-05).
+  Checkpoint 14/11/2026: EntryScreen uses kit buttons/card and VI/EN dictionary, mounted by PublicHomePage only. Nine new tests cover visitor redirects with next, tenant/manager/boss destinations, GUEST fallback to /toi, zero API calls, and English labels. Lint exit 0, build exit 0 (731 modules; existing >500 kB chunk warning), full component suite 838/838 pass, 0 fail/skip, 135607.388 ms. Manual browser check not performed in this task. Persistence/reopen belongs to FE-EX-15; background and focus handling to FE-EX-16. Stop after FE-EX-14 for owner commit.
 - [ ] **FE-EX-15** Remember and reopen: the choice is kept in the browser (wrapped so a blocked storage still renders the page); the overlay shows only on `/` and only when nothing is remembered; the header gets "Chọn lại". `/phong/:id`, `/dang-nhap`, and links from notifications never show it.
   Done when: tests: first visit to `/` shows it, second does not, "Chọn lại" shows it again, a direct visit to `/phong/12` never does.
 - [ ] **FE-EX-16** ⏸ Background and accessibility (KIT-05): the still image always renders first; the video plays over it only when the file exists, is muted, has no controls, and is skipped with reduced-motion or when it fails to load. Focus stays inside the overlay, every choice works by keyboard and touch, no horizontal overflow at 360 px. The video file comes from the owner (Q-08): until it is in the repo, ship the still image only and say so in the report.
@@ -39,7 +40,7 @@ Out: any new role or right (a choice only navigates), a new landing route, Home1
 ## Questions for the owner
 
 - Q-08 (spec): file video nền. Chưa có thì phần này giao ảnh tĩnh, video thêm sau.
-- Q-EX4-1 (FE-EX-16): ảnh tĩnh của màn chào dùng ảnh nào? Đề xuất: ảnh hero của trang chủ hiện tại.
+- Q-EX4-1 resolved 14/11/2026: owner chose the current home hero image (`/images/hero-building.webp`).
 
 ## Issues log
 

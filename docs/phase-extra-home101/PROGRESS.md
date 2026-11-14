@@ -14,7 +14,7 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 | EX-1 Tài khoản khách (BE) | chờ duyệt | ⏸ BE-EX-09 (kiểm tra cuối) | đã commit hết (git log 13/11/2026) | – | seed khách `0900000006` đã chạy trên DB dev qua e2e cũ; plan: `plans/EX-1/PLAN.md` |
 | EX-2 Tài khoản khách (FE) | chờ duyệt | ⏸ FE-EX-07 (đăng nhập, GuestLayout, /toi, /toi/tai-khoan) | đã commit hết (git log 13/11/2026) | – | xem tay luồng đăng ký → /toi với backend thật còn chờ chủ dự án; plan: không có (không cần planner) |
 | EX-3 Việt + Anh | xong | CP-6 FE-EX-13: chủ dự án xác nhận đã kiểm chứng và chốt | CP-5 `12e3135`; CP-4 `e95efad` | EX-4 FE-EX-14 | chốt theo xác nhận chủ dự án; form đặt lịch cũ chờ EX-7 |
-| EX-4 Màn chào | chưa làm | – | – | FE-EX-14 | cần EX-3 |
+| EX-4 Màn chào | chờ commit | FE-EX-14: ba lựa chọn Việt–Anh, điều hướng qua guard | — | chủ dự án kiểm tra/commit, sau đó FE-EX-15 | Q-EX4-1: ảnh hero hiện tại; Q-08: ảnh tĩnh đến khi có video |
 | EX-5 Bộ lọc phòng | chờ duyệt | ⏸ FE-EX-21 (cả part) | đã commit hết (git log 13/11/2026) | – | plan: `plans/EX-5/PLAN.md` |
 | EX-6 Lịch xem (BE) | chưa làm | – | – | BE-EX-17 | cần EX-1 |
 | EX-7 Lịch xem (FE) | chưa làm | – | – | FE-EX-22 | cần EX-2, EX-6; lên production cùng EX-6 |
@@ -24,6 +24,8 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 ## Nhật ký điểm dừng
 
 Mới nhất ở trên. Mỗi dòng: `ngày · phần · task vừa xong · kết quả kiểm tra (số thật) · việc còn treo`.
+
+- 14/11/2026 · EX-4 · FE-EX-14: Git sạch tại 7f77db3 (đã chốt EX-3). Chủ dự án chọn ảnh hero hiện tại cho Q-EX4-1. Thêm EntryScreen trong features/public, gắn riêng trang chủ, dùng kit và 4 khóa từ điển mỗi ngôn ngữ; ba nút chỉ đóng/điều hướng, guard hiện có xử lý quyền và next. Test riêng 9/9; lint exit 0; build exit 0 (731 modules, cảnh báo chunk >500 kB); toàn bộ test:components 838/838 pass, 0 fail/skip, 135607.388 ms; diff check sạch. Chưa kiểm tra tay trình duyệt. Chưa ghi nhớ lựa chọn (FE-EX-15), chưa thêm nền/focus trap (FE-EX-16); không có giả định nghiệp vụ mới. Dừng FE-EX-14 chờ commit.
 
 - 14/11/2026 · EX-3 CP-6 · chủ dự án xác nhận “2 cái này tôi đã kiểm chứng và chốt”: tài liệu FE-EX-12 đã commit và kiểm tra cuối Việt/Anh trên desktop, mobile 360 px đã được chủ dự án kiểm chứng. Git sạch tại 12e3135. Đánh dấu FE-EX-13 [x], EX-3 xong theo xác nhận này. Không chạy lại hoặc tuyên bố có output mới: bằng chứng trước đó FE lint/build exit 0, test:components 829/829; BE lint/build exit 0, unit 1655/1655, e2e 53/53. Giữ các giả định tại PLAN.md mục 7, A-12 không dịch nội dung người dùng nhập; OQ-2 form đặt lịch cũ vẫn tiếng Việt đến EX-7. Chưa bắt đầu EX-4.
 

@@ -1,0 +1,10 @@
+.rooms-theme .public-entry-card {
+  width: min(100%, 32rem);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+}
+
+.rooms-theme .public-entry-card h2 { margin-top: 0; }
+.rooms-theme .public-entry-choices { display: grid; gap: 1rem; }
+.rooms-theme .public-entry-choices .rooms-button { white-space: normal; }
