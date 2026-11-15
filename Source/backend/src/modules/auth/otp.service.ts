@@ -1,5 +1,6 @@
 import type { Lang } from '../../common/i18n/locale.js';
-import { MAILS } from '../../common/i18n/mails.js';
+import { emailTemplate } from '../mailer/email-templates.js';
+import { sendWithRetry } from '../mailer/send-mail.js';
 import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { randomInt, timingSafeEqual } from 'node:crypto';
@@ -82,10 +83,10 @@ export class OtpService {
    */
   async deliver(email: string, issued: IssuedCode, lang: Lang = 'vi'): Promise<void> {
     try {
-      await this.mailer.send({
+      await sendWithRetry(this.mailer, {
         to: email,
-        ...MAILS.verifyCode(lang, issued.code),
-      });
+        ...await emailTemplate(this.prisma, 'emailCode', lang, { code: issued.code }),
+      }, `email-code/${issued.id}`);
     } catch {
       await this.prisma.$transaction(async (tx) => {
         await this.lock(tx, `email:${email}`);

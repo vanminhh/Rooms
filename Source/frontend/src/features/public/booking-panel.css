@@ -96,3 +96,23 @@
   .rooms-theme .public-booking-card *::before,
   .rooms-theme .public-booking-card *::after { scroll-behavior: auto !important; transition-duration: .001ms !important; animation-duration: .001ms !important; }
 }
+
+/* EX-7: compact calendar uses the existing kit palette and real, keyboard-accessible buttons. */
+.rooms-theme .viewing-calendar-heading { display: grid; grid-template-columns: 44px 1fr 44px; gap: 6px; align-items: center; text-align: center; }
+.rooms-theme .viewing-calendar-heading .rooms-button { padding: 0; min-height: 44px; }
+.rooms-theme .viewing-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; margin-top: 12px; }
+.rooms-theme .viewing-calendar-grid .rooms-button { width: 100%; min-width: 0; min-height: 44px; padding: 0; border-radius: 8px; font-size: 13px; }
+.rooms-theme .viewing-weekday { font-size: 11px; text-align: center; padding-block: 6px; }
+.rooms-theme .viewing-calendar [aria-pressed="true"], .rooms-theme .viewing-hours [aria-pressed="true"] { background: var(--rooms-ink); color: var(--rooms-paper); }
+.rooms-theme .viewing-calendar button:disabled, .rooms-theme .viewing-hours button:disabled { opacity: .38; cursor: not-allowed; }
+.rooms-theme .viewing-calendar-legend { display: flex; flex-wrap: wrap; gap: 8px 12px; font-size: 11px; margin-block: 12px; }
+.rooms-theme .viewing-calendar-legend span { display: flex; align-items: center; gap: 4px; }
+.rooms-theme .viewing-calendar-legend span::before { content: ''; width: 8px; height: 8px; border: 1px solid currentColor; border-radius: 50%; }
+.rooms-theme .viewing-calendar-legend span:nth-child(2) { opacity: .5; }
+.rooms-theme .viewing-calendar-legend span:last-child::before { background: currentColor; }
+.rooms-theme .viewing-hours { margin: 0; padding: 0; border: 0; min-width: 0; }
+.rooms-theme .viewing-hours legend { font-weight: 600; margin-bottom: 10px; }
+.rooms-theme .viewing-hours-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.rooms-theme .viewing-hours-grid .rooms-button { min-height: 44px; padding: 8px; }
+.rooms-theme .viewing-contacts { overflow-wrap: anywhere; }
+.rooms-theme .public-viewing-success .rooms-button { margin-top: 16px; }

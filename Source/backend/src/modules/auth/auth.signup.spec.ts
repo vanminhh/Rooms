@@ -90,6 +90,21 @@ const register = (body: object, lang?: string) => {
 };
 const signUp = (phone = NEW_PHONE, email = NEW_EMAIL, password = PASSWORD, fullName = 'Khách Mới') =>
   register({ fullName, phone, email, password });
+
+it('AUTH-13 / NOTI-07: retry uses one stored code and the saved English template', async () => {
+  fake.db.setting.push({ key: 'email_templates', value: { emailCode: { en: { subject: 'Custom code', text: 'Verify {code} in 5 minutes.' } } } });
+  mailer.send.mockRejectedValueOnce(new Error('transient'));
+  const res = await register({ fullName: 'Guest', phone: NEW_PHONE, email: NEW_EMAIL, password: PASSWORD }, 'en');
+  expect(res.status).toBe(201);
+  expect(mailer.send).toHaveBeenCalledTimes(2);
+  const first = mailer.send.mock.calls[0][0];
+  expect(first.subject).toBe('Custom code');
+  expect(first.text).toMatch(/^Verify \d{6} in 5 minutes\.$/);
+  expect(mailer.send.mock.calls[1][0]).toEqual(first);
+  expect(fake.db.emailOtp).toHaveLength(1);
+  const code = first.text.match(/\d{6}/)![0];
+  expect((await http().post('/api/v1/auth/verify-email').send({ phone: NEW_PHONE, code })).status).toBe(200);
+});
 const verify = (phone: string, code: string) => http().post('/api/v1/auth/verify-email').send({ phone, code });
 const login = (phone: string, password: string) => http().post('/api/v1/auth/login').send({ phone, password });
 const resend = (phone: string) => http().post('/api/v1/auth/resend-code').send({ phone });
@@ -450,15 +465,19 @@ describe('AUTH-13: email code rules (A-11)', () => {
     expect((await one(10)).status).toBe(201);
   });
 
-  it('AUTH-13: a mail failure never reports success: 503 MAIL_UNAVAILABLE, and the unsent code does not exist', async () => {
-    mailer.send.mockRejectedValueOnce(new Error('provider down'));
+  it('AUTH-13 / NOTI-07: two failed sends return 503 without consuming quota; recovery allows immediate sign-up', async () => {
+    mailer.send.mockRejectedValue(new Error('provider down'));
     const res = await signUp();
     expect(res.status).toBe(503);
     expect(res.body).toEqual(MAIL_UNAVAILABLE);
     expect(otpRows(NEW_EMAIL)).toHaveLength(0);
     expect(userBy(NEW_PHONE)!.emailVerifiedAt).toBeNull();
+    expect(mailer.send).toHaveBeenCalledTimes(2);
     // The unsent code costs no daily quota and the visitor may sign up again at once.
+    mailer.send.mockResolvedValue(undefined);
     expect((await signUp()).status).toBe(201);
+    expect(mailer.send).toHaveBeenCalledTimes(3);
+    expect(otpRows(NEW_EMAIL)).toHaveLength(1);
   });
 });
 
@@ -494,7 +513,7 @@ describe('AUTH-13: POST /auth/resend-code always answers the same', () => {
   it('AUTH-13: a mail failure on resend is hidden from the reply: still 200', async () => {
     await signUp();
     later(61 * SEC);
-    mailer.send.mockRejectedValueOnce(new Error('down'));
+    mailer.send.mockRejectedValue(new Error('down'));
     const res = await resend(NEW_PHONE);
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ data: null });
@@ -505,7 +524,7 @@ describe('AUTH-13: POST /auth/resend-code always answers the same', () => {
     await signUp();
     const mailed = codeOf();
     later(61 * SEC);
-    mailer.send.mockRejectedValueOnce(new Error('down'));
+    mailer.send.mockRejectedValue(new Error('down'));
     await resend(NEW_PHONE);
     await drain();
     // The unsent code is gone and the first one, still inside its 5 minutes, is the only unused code again.

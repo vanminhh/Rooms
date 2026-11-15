@@ -81,11 +81,16 @@ describe('BE-P2-01 / BE-P2-02: mapDbError, one test per row of PLAN 2.2', () => 
     expect(mapDbError(p2002('users_email_key'))).toEqual({ code: ErrorCode.EMAIL_TAKEN });
   });
 
-  it('API-03: DB_ERROR_MAP has exactly the 8 keys listed in PLAN 2.2 plus users_email_key (EX-1), no more no less', () => {
+  it.each(['viewings_one_open_per_user_room', ['user_id', 'room_id'], ['roomId', 'userId']])('VIEW-02a: duplicate account/room %j maps to CONFLICT_STATE', target => {
+    expect(mapDbError(p2002(target))).toEqual({ code: ErrorCode.CONFLICT_STATE });
+  });
+
+  it('API-03: DB_ERROR_MAP includes the EX-1 email and EX-6 open-viewing constraints', () => {
     expect(Object.keys(DB_ERROR_MAP).sort()).toEqual(
       [
         'users_phone_key',
         'users_email_key',
+        'viewings_one_open_per_user_room',
         'rooms_building_id_code_key',
         'room_prices_one_pending',
         'rate_plans_one_pending',

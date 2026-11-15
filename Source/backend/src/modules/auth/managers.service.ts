@@ -13,6 +13,7 @@ import { ErrorCode } from '../../common/errors/error-code.js';
 import type { AuthUser } from '../../common/guards/auth.decorators.js';
 import { pageParams, paginated } from '../../common/pagination.js';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
+import { lockViewingMapping } from '../../common/viewings/viewing-lock.js';
 import { AuditService } from '../audit/audit.service.js';
 import type { CreateManagerDto, ManagersQueryDto, UpdateManagerDto } from './dto/managers.dto.js';
 
@@ -151,6 +152,7 @@ export class ManagersService {
     if (user.role !== 'BOSS') throw new ForbiddenException(ErrorCode.FORBIDDEN);
 
     return this.prisma.$transaction(async (tx) => {
+        await lockViewingMapping(tx, true);
         await tx.$queryRaw<Array<{ id: number }>>`SELECT id FROM users WHERE id = ${id} FOR UPDATE`;
         const current = await tx.user.findUnique({
           where: { id },

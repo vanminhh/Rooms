@@ -250,7 +250,10 @@ function loadLayout(file, { auth = { status: 'ready', user: null }, contact = {}
   }
   const modules = {
     'react/jsx-runtime': jsxRuntime,
-    'react-router': { Outlet: fakes.Outlet, useNavigate: () => to => navigations.push(to) },
+    'react': { useState: initial => [typeof initial === 'function' ? initial() : initial, () => {}] },
+    'react-router': { Outlet: fakes.Outlet, useLocation: () => ({ pathname: '/' }), useNavigate: () => to => navigations.push(to) },
+    '../features/public/EntryScreen': { EntryScreen: () => null },
+    '../features/public/entry-choice': { readEntryChoice: () => null, saveEntryChoice() {} },
     '../components': fakes,
     '../app/auth-context': { useAuth: () => auth },
     '../shared/i18n': { I18nProvider: () => null, useI18n: () => ({ lang: 'vi', setLang() {}, t: key => loadModule(draftFirst('src/shared/i18n/index.ts')).t(key, undefined, 'vi') }) },
@@ -589,6 +592,7 @@ test('AUTH-06 / T3 / FE-P2-01: routes wire guards and layouts (tenant area TENAN
     '../layouts/GuestLayout': stub('GuestLayout'),
     '../pages/guest/GuestHomePage': stub('GuestHomePage'),
     '../pages/guest/GuestAccountPage': stub('GuestAccountPage'),
+    '../pages/guest/GuestViewingPage': stub('GuestViewingPage'),
     '../pages/public/RegisterPage': stub('RegisterPage'),
     '../pages/public/VerifyEmailPage': stub('VerifyEmailPage'),
     './RequireAuth': { ...stub('RequireAuth'), ...stub('GuestOnly') },

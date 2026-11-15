@@ -19,11 +19,16 @@ function Location() {
   return h('p', { 'data-location': true }, l.pathname + l.search)
 }
 
-async function boot(user, lang = 'vi') {
+function EntryHarness({ videoSrc }) {
+  const [open, setOpen] = React.useState(true)
+  return open ? h(EntryScreen, { onChoose: () => setOpen(false), videoSrc }) : h('p', null, 'Home')
+}
+
+async function boot(user, lang = 'vi', videoSrc) {
   return mount(h(AuthContext.Provider, { value: { status: 'ready', user } },
     h(I18nProvider, { locale: lang }, h(MemoryRouter, { initialEntries: ['/'] },
       h(Location), h(Routes, null,
-        h(Route, { path: '/', element: h(EntryScreen) }),
+        h(Route, { path: '/', element: h(EntryHarness, { videoSrc }) }),
         h(Route, { path: '/thue', element: h(RequireAuth, { allow: ['TENANT'] }) }),
         h(Route, { path: '/ql', element: h(RequireAuth, { allow: ['MANAGER', 'BOSS'] }) }),
         h(Route, { path: '*', element: h('p', null, 'Destination') }),
@@ -59,6 +64,43 @@ test('UI-11, LOC-01: English entry choices come from the dictionary', async () =
   const app = await boot(null, 'en')
   try {
     assert.deepEqual(find(app.container, n => n.tagName === 'BUTTON').map(n => n.textContent),
-      ['Find a room', 'I am a tenant', 'Building management'])
+      ['Find a room', 'I am a tenant', 'Building management', 'Tiếng Việt', 'English'])
   } finally { await app.stop() }
+})
+
+
+test('UI-11, KIT-05: initial focus and Tab stay inside the choices; still image is always present', async () => {
+  const app = await boot(null)
+  try {
+    const buttons = find(app.container, n => n.tagName === 'BUTTON')
+    assert.equal(document.activeElement, buttons[0])
+    dispatch(app.container, buttons[0], 'keydown', { key: 'Tab', shiftKey: true })
+    assert.equal(document.activeElement, buttons.at(-1))
+    dispatch(app.container, buttons.at(-1), 'keydown', { key: 'Tab' })
+    assert.equal(document.activeElement, buttons[0])
+    assert.equal(find(app.container, n => n.tagName === 'IMG').length, 1)
+    assert.equal(find(app.container, n => n.tagName === 'VIDEO').length, 0)
+  } finally { await app.stop() }
+})
+
+test('UI-11, KIT-05: a failed optional video leaves the still image', async () => {
+  const app = await boot(null, 'vi', '/test-entry.webm')
+  try {
+    const video = find(app.container, n => n.tagName === 'VIDEO')[0]
+    assert.ok(video)
+    // Media errors do not bubble; React attaches this listener to the video itself.
+    dispatch(video, video, 'error')
+    await until(() => find(app.container, n => n.tagName === 'VIDEO').length === 0, 'failed video removed')
+    assert.equal(find(app.container, n => n.tagName === 'IMG').length, 1)
+  } finally { await app.stop() }
+})
+
+test('UI-11, KIT-05: reduced motion does not load even an available video', async () => {
+  const previous = window.matchMedia
+  window.matchMedia = () => ({ matches: true, addEventListener() {}, removeEventListener() {} })
+  const app = await boot(null, 'vi', '/test-entry.webm')
+  try {
+    assert.equal(find(app.container, n => n.tagName === 'VIDEO').length, 0)
+    assert.equal(find(app.container, n => n.tagName === 'IMG').length, 1)
+  } finally { await app.stop(); window.matchMedia = previous }
 })

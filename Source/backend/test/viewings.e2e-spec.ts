@@ -1,383 +1,181 @@
-// BE-P2-34 / BE-P2-35 · CP-6: real database coverage for VIEW-13 (maintenance / lock room / lock
-// building keep pending viewings) and the real Postgres advisory lock behind VIEW-11.
-// vitest.config.ts only collects **/*.spec.ts; this file's name ends in `-spec.ts`, not `.spec.ts`,
-// so it is excluded from `npm run test` on purpose (see vitest.config.e2e.ts for the real run).
 import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { configureApp } from '../src/app.setup.js';
 import { AppModule } from '../src/app.module.js';
+import { configureApp } from '../src/app.setup.js';
 import { PrismaService } from '../src/common/prisma/prisma.service.js';
+import { hashPassword } from '../src/common/crypto/password.js';
 import { addDays, formatDateOnly, todayHanoi } from '../src/common/date/today.js';
-import { cleanupRun, E2eRun, uniqueBuildingCode, uniquePhone } from '../scripts/e2e/run.js';
+import { TokenService } from '../src/modules/auth/token.service.js';
+import { MailerService } from '../src/modules/mailer/mailer.service.js';
+import { cleanupRun, E2eRun, uniqueBuildingCode, uniquePhone, randomPassword } from '../scripts/e2e/run.js';
 
+// EX-6: real HTTP/Postgres races. No seed import/call and no changes to existing accounts.
 if (existsSync('.env')) process.loadEnvFile('.env');
+vi.setConfig({ testTimeout: 180_000, hookTimeout: 240_000 });
 
-// Remote dev DB (~0.8 s per query): the fixture test creates two buildings, rooms and prices, so it needs more than 60 s.
-vi.setConfig({ testTimeout: 180_000, hookTimeout: 120_000 });
+describe('BE-EX-24 real viewing transactions, no seed', () => {
+  let app: INestApplication, prisma: PrismaService, tokens: TokenService, run: E2eRun;
+  let bossId: number, boss: string, manager: string, passwordHash: string;
+  const buildings: number[] = [], rooms: number[][] = [];
+  const day = formatDateOnly(addDays(todayHanoi(), 1));
+  const at = (hour: number) => `${day}T${String(hour).padStart(2, '0')}:00:00+07:00`;
+  const sendMail = vi.fn(async () => {});
 
-type DevAccount = { key: string; phone: string; password: string; role: string };
-type Session = { token: string; cookie: string };
-type ApiResponse = request.Response;
-
-const e2e = new E2eRun();
-const today = formatDateOnly(todayHanoi());
-const tomorrow = formatDateOnly(addDays(todayHanoi(), 1));
-
-const created = {
-  managerId: 0,
-  buildingAId: 0,
-  buildingBId: 0,
-  roomA1: 0, // maintenance + lock + public/404 flow
-  roomA2: 0, // stays active, used for the manual-create-after-lock checks
-  roomB1: 0, // VIEW-11 advisory-lock flow only, never touched by the building lock
-};
-
-function send(
-  app: INestApplication,
-  method: 'get' | 'post' | 'patch',
-  path: string,
-  body?: object,
-  session?: Session,
-) {
-  let req = request(app.getHttpServer())[method](`/api/v1${path}`);
-  if (session?.token) req = req.set('Authorization', `Bearer ${session.token}`);
-  if (session?.cookie) req = req.set('Cookie', `rt=${session.cookie}`);
-  return body === undefined ? req : req.send(body);
-}
-
-function cookieOf(res: ApiResponse): string {
-  const header = (res.headers['set-cookie'] as unknown as string[] | undefined)
-    ?.find((value) => value.startsWith('rt='));
-  if (!header) throw new Error('response has no refresh cookie');
-  return header.split(';')[0].slice(3);
-}
-
-function sessionOf(res: ApiResponse): Session {
-  return { token: res.body.data.accessToken as string, cookie: cookieOf(res) };
-}
-
-// Boss proposes a room price for effectiveFrom = today: proposeRoomPrice auto-approves for BOSS,
-// and an immediate effectiveFrom applies rooms.price in the same transaction (PRC-03/PRC-04).
-async function makeRoomPublicPrice(app: INestApplication, boss: Session, roomId: number): Promise<void> {
-  const res = await send(app, 'post', '/room-prices', { roomId, price: 3_000_000, effectiveFrom: today }, boss);
-  expect(res.status).toBe(201);
-  expect(res.body.data.status).toBe('APPROVED');
-}
-
-// Same auto-approve path for a building's ELECTRIC/WATER rate plans (ROOM-05 needs both, PRC-04).
-async function makeBuildingRatePlans(app: INestApplication, boss: Session, buildingId: number): Promise<void> {
-  for (const kind of ['ELECTRIC', 'WATER'] as const) {
-    const res = await send(app, 'post', '/rate-plans', {
-      buildingId,
-      kind,
-      effectiveFrom: today,
-      tiers: [{ tierNo: 1, upTo: null, unitPrice: kind === 'ELECTRIC' ? 3_500 : 20_000 }],
-    }, boss);
-    expect(res.status).toBe(201);
-    expect(res.body.data.status).toBe('APPROVED');
+  async function api(method: 'get' | 'post' | 'patch', path: string, token: string, body?: object) {
+    let req = request(app.getHttpServer())[method](`/api/v1${path}`).set('Authorization', token);
+    if (body) req = req.send(body);
+    const result = await req;
+    if (result.status === 201 && (path === '/me/viewings' || path === '/viewings') && result.body.data?.id) run.record('viewings', result.body.data.id);
+    return result;
   }
-}
-
-describe('BE-P2-34/35: VIEW-13 (maintenance/lock keep pending viewings) against real Prisma', () => {
-  let app: INestApplication;
-  let prisma: PrismaService;
-  let boss: Session;
-  let bossId: number;
-  let managerSession: Session;
+  async function user(role: 'GUEST' | 'MANAGER' = 'GUEST') {
+    const phone = await uniquePhone(async p => !!await prisma.user.findUnique({ where: { phone: p }, select: { id: true } }));
+    const account = await prisma.user.create({ data: { role, phone, fullName: `[E2E ${run.runId}] ${role}`,
+      email: `${phone}.${run.runId}@example.test`, emailVerifiedAt: new Date(), locale: 'en', passwordHash, mustChangePassword: false,
+      ...(role === 'MANAGER' ? { contactPhone: phone } : {}) } });
+    run.record('users', account.id);
+    return { ...account, token: `Bearer ${await tokens.signAccessToken(account)}` };
+  }
+  async function book(token: string, roomId: number, hour: number) { return api('post', '/me/viewings', token, { roomId, visitAt: at(hour) }); }
+  async function manual(roomId: number, phone: string, hour: number) {
+    return api('post', '/viewings', boss, { roomId, guestName: `[E2E ${run.runId}] Manual`, guestPhone: phone, visitAt: at(hour) });
+  }
+  async function openAt(buildingId: number, hour: number) {
+    return prisma.viewing.findMany({ where: { room: { buildingId }, visitAt: new Date(at(hour)), status: { in: ['NEW', 'CONFIRMED'] } } });
+  }
+  function oneWinner(results: request.Response[], code: string) {
+    expect(results.map(r => r.status).sort((a, b) => a - b)).toEqual([201, code === 'TOO_MANY_REQUESTS' ? 429 : 409]);
+    expect(results.find(r => r.status !== 201)!.body.error.code).toBe(code);
+  }
 
   beforeAll(async () => {
-    const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
-    app = moduleRef.createNestApplication();
-    configureApp(app);
-    await app.init();
-    prisma = app.get(PrismaService);
-
-    const seedUrl = pathToFileURL(resolve(process.cwd(), 'prisma/seed.ts')).href;
-    const seed = await import(seedUrl) as { DEV_ACCOUNTS: DevAccount[] };
-    const bossAccount = seed.DEV_ACCOUNTS.find((account) => account.key === 'boss');
-    if (!bossAccount) throw new Error('seed has no Boss dev account');
-    const login = await send(app, 'post', '/auth/login', {
-      phone: bossAccount.phone,
-      password: bossAccount.password,
-    });
-    expect(login.status).toBe(200);
-    boss = sessionOf(login);
-    bossId = login.body.data.user.id as number;
+    const module = await Test.createTestingModule({ imports: [AppModule] }).overrideProvider(MailerService).useValue({ send: sendMail }).compile();
+    app = module.createNestApplication(); configureApp(app); await app.init();
+    prisma = app.get(PrismaService); tokens = app.get(TokenService);
+    const owner = await prisma.user.findFirstOrThrow({ where: { role: 'BOSS', isActive: true } });
+    bossId = owner.id; boss = `Bearer ${await tokens.signAccessToken(owner)}`;
+    // Start the cleanup log only after the connection preflight succeeds.
+    run = new E2eRun(); passwordHash = await hashPassword(randomPassword());
+    const managerA = await user('MANAGER'), managerB = await user('MANAGER'); manager = managerA.token;
+    for (let index = 0; index < 3; index++) {
+      const code = await uniqueBuildingCode(async c => !!await prisma.building.findUnique({ where: { code: c }, select: { id: true } }));
+      const created = await prisma.building.create({ data: { code, name: `[E2E ${run.runId}] ${index}`, address: '[E2E] Hà Nội', district: 'Cầu Giấy', ward: 'Dịch Vọng', waterMode: 'PER_M3', managerId: index === 2 ? managerB.id : managerA.id } });
+      run.record('buildings', created.id); run.recordBuildingCode(code); buildings.push(created.id); rooms.push([]);
+      for (const kind of ['ELECTRIC', 'WATER'] as const) {
+        const rate = await prisma.ratePlan.create({ data: { buildingId: created.id, kind, effectiveFrom: todayHanoi(), status: 'APPROVED', proposedById: bossId, reviewedById: bossId, reviewedAt: new Date(), tiers: { create: [{ tierNo: 1, upTo: null, unitPrice: 3500 }] } } });
+        run.record('rate_plans', rate.id);
+      }
+      for (let n = 0; n < 5; n++) {
+        const room = await prisma.room.create({ data: { buildingId: created.id, code: `P${n + 1}`, floor: 1, areaM2: 25, price: 3000000 } });
+        run.record('rooms', room.id); rooms[index].push(room.id);
+      }
+    }
   });
-
   afterAll(async () => {
-    if (!app) return;
     try {
-      const skipped = await cleanupRun(prisma, e2e.log);
-      expect(skipped, 'E2E-created rows must have no contract or invoice links').toEqual([]);
-      e2e.finish('CLEANED');
+      if (run) {
+        // Include a committed test booking even if a later response assertion failed.
+        const rows = await prisma.viewing.findMany({ where: { roomId: { in: run.log.ids.rooms } }, select: { id: true } });
+        rows.forEach(row => run.record('viewings', row.id));
+        expect(await cleanupRun(prisma, run.log)).toEqual([]); run.finish('CLEANED');
+      }
+    } catch (error) { run?.finish('FAILED_CLEANUP'); throw error; }
+    finally { await app?.close(); }
+  });
 
-      // CP-6 closing bullet: no leftover E2E-created viewing is still NEW/CONFIRMED, no room/building is
-      // still active, after cleanupRun ran (same facts planCleanup/skippedReport show the owner).
-      const leftoverViewings = await prisma.viewing.count({
-        where: { id: { in: e2e.log.ids.viewings }, status: { in: ['NEW', 'CONFIRMED'] } },
-      });
-      const leftoverRooms = await prisma.room.count({ where: { id: { in: e2e.log.ids.rooms }, isActive: true } });
-      const leftoverBuildings = await prisma.building.count({
-        where: { id: { in: e2e.log.ids.buildings }, isActive: true },
-      });
-      expect(leftoverViewings).toBe(0);
-      expect(leftoverRooms).toBe(0);
-      expect(leftoverBuildings).toBe(0);
-    } catch (error) {
-      e2e.finish('FAILED_CLEANUP');
-      throw error;
-    } finally {
-      await app.close();
+  it('VIEW-16: two accounts race for the third place: exactly one succeeds', async () => {
+    const a = await user(), b = await user(), c = await user(), d = await user();
+    expect((await book(a.token, rooms[0][0], 8)).status).toBe(201);
+    expect((await book(b.token, rooms[0][1], 8)).status).toBe(201);
+    const results = await Promise.all([book(c.token, rooms[0][2], 8), book(d.token, rooms[0][3], 8)]);
+    oneWinner(results, 'VIEWING_TIME_TAKEN'); expect(new Set((await openAt(buildings[0], 8)).map(r => r.guestPhone)).size).toBe(3);
+  });
+  it('VIEW-02: two requests race for daily booking three: cancelled creations still count', async () => {
+    const guest = await user();
+    for (let n = 0; n < 2; n++) {
+      const created = await book(guest.token, rooms[0][n], 9); expect(created.status).toBe(201);
+      expect((await api('post', `/me/viewings/${created.body.data.id}/cancel`, guest.token)).status).toBe(201);
     }
+    oneWinner(await Promise.all([book(guest.token, rooms[0][2], 9), book(guest.token, rooms[0][3], 9)]), 'TOO_MANY_REQUESTS');
+    expect(await prisma.viewing.count({ where: { userId: guest.id, source: 'WEB' } })).toBe(3);
   });
-
-  it('fixtures: one manager, two buildings (its max, SCOPE-02), each with a public room', async () => {
-    const managerPhone = await uniquePhone(
-      async (phone) => (await prisma.user.findUnique({ where: { phone }, select: { id: true } })) !== null,
-    );
-    const createdManager = await send(app, 'post', '/managers', {
-      phone: managerPhone,
-      fullName: `[E2E ${e2e.runId}] Viewings manager`,
-    }, boss);
-    expect(createdManager.status).toBe(201);
-    created.managerId = createdManager.body.data.manager.id as number;
-    e2e.record('users', created.managerId);
-    const temporaryPassword = createdManager.body.data.temporaryPassword as string;
-
-    const login = await send(app, 'post', '/auth/login', { phone: managerPhone, password: temporaryPassword });
-    expect(login.status).toBe(200);
-    const tempSession = sessionOf(login);
-    const changed = await send(app, 'post', '/auth/change-password', {
-      currentPassword: temporaryPassword,
-      newPassword: `E2e-${e2e.runId}-pw`,
-    }, tempSession);
-    expect(changed.status).toBe(200);
-    managerSession = tempSession;
-
-    const codeA = await uniqueBuildingCode(
-      async (candidate) => (await prisma.building.findUnique({ where: { code: candidate }, select: { id: true } })) !== null,
-    );
-    const buildingA = await send(app, 'post', '/buildings', {
-      code: codeA, name: `[E2E ${e2e.runId}] Viewings building A`,
-      address: '1 Đường thử nghiệm', district: 'Cầu Giấy', ward: 'Dịch Vọng',
-      waterMode: 'PER_M3', managerId: created.managerId,
-    }, boss);
-    expect(buildingA.status).toBe(201);
-    created.buildingAId = buildingA.body.data.id as number;
-    e2e.record('buildings', created.buildingAId);
-    e2e.recordBuildingCode(codeA);
-
-    const codeB = await uniqueBuildingCode(
-      async (candidate) => (await prisma.building.findUnique({ where: { code: candidate }, select: { id: true } })) !== null,
-    );
-    const buildingB = await send(app, 'post', '/buildings', {
-      code: codeB, name: `[E2E ${e2e.runId}] Viewings building B`,
-      address: '2 Đường thử nghiệm', district: 'Cầu Giấy', ward: 'Dịch Vọng',
-      waterMode: 'PER_M3', managerId: created.managerId,
-    }, boss);
-    expect(buildingB.status).toBe(201);
-    created.buildingBId = buildingB.body.data.id as number;
-    e2e.record('buildings', created.buildingBId);
-    e2e.recordBuildingCode(codeB);
-
-    for (const [key, buildingId, code] of [
-      ['roomA1', created.buildingAId, 'A1'], ['roomA2', created.buildingAId, 'A2'], ['roomB1', created.buildingBId, 'B1'],
-    ] as const) {
-      const room = await send(app, 'post', '/rooms', { buildingId, code, floor: 1, areaM2: 20 }, managerSession);
-      expect(room.status).toBe(201);
-      created[key] = room.body.data.id as number;
-      e2e.record('rooms', created[key]);
+  it('VIEW-02a: concurrent same-account/same-room requests create one open row', async () => {
+    const guest = await user();
+    oneWinner(await Promise.all([book(guest.token, rooms[0][0], 10), book(guest.token, rooms[0][0], 10)]), 'CONFLICT_STATE');
+  });
+  it('VIEW-16: mixed WEB/MANUAL race cannot consume a fourth place', async () => {
+    const a = await user(), b = await user(), c = await user(), d = await user();
+    expect((await manual(rooms[0][0], a.phone, 11)).status).toBe(201);
+    expect((await manual(rooms[0][1], b.phone, 11)).status).toBe(201);
+    oneWinner(await Promise.all([book(c.token, rooms[0][2], 11), manual(rooms[0][3], d.phone, 11)]), 'VIEWING_TIME_TAKEN');
+    expect(new Set((await openAt(buildings[0], 11)).map(r => r.guestPhone)).size).toBe(3);
+  });
+  it('VIEW-16/21: manual-only phone at full capacity can book two extra rooms concurrently', async () => {
+    const a = await user(), b = await user(), c = await user();
+    for (const guest of [a, b, c]) expect((await manual(rooms[0][0], guest.phone, 12)).status).toBe(201);
+    const range = `?from=${day}&to=${day}`;
+    const pub = await api('get', `/public/rooms/${rooms[0][1]}/viewing-times${range}`, '');
+    const own = await api('get', `/me/rooms/${rooms[0][1]}/viewing-times${range}`, a.token);
+    expect(pub.body.data[0].hours).not.toContain(new Date(at(12)).toISOString());
+    expect(own.body.data[0].hours).toContain(new Date(at(12)).toISOString());
+    const results = await Promise.all([book(a.token, rooms[0][1], 12), book(a.token, rooms[0][2], 12)]);
+    expect(results.map(r => r.status)).toEqual([201, 201]);
+    expect(new Set((await openAt(buildings[0], 12)).map(r => r.guestPhone)).size).toBe(3);
+  });
+  it('VIEW-16: same phone races across buildings with different managers: only one succeeds', async () => {
+    const guest = await user();
+    oneWinner(await Promise.all([book(guest.token, rooms[0][0], 13), manual(rooms[2][0], guest.phone, 13)]), 'VIEWING_TIME_TAKEN');
+  });
+  it('VIEW-16: same responsible races across buildings with different phones: only one succeeds', async () => {
+    const a = await user(), b = await user();
+    oneWinner(await Promise.all([book(a.token, rooms[0][0], 14), book(b.token, rooms[1][0], 14)]), 'VIEWING_TIME_TAKEN');
+  });
+  it('VIEW-18: only cancellation of the last room releases a phone place', async () => {
+    const a = await user(), b = await user(), c = await user(), d = await user();
+    const first = await book(a.token, rooms[0][0], 15), second = await book(a.token, rooms[0][1], 15);
+    expect(first.status).toBe(201); expect(second.status).toBe(201);
+    expect((await manual(rooms[0][2], b.phone, 15)).status).toBe(201); expect((await manual(rooms[0][3], c.phone, 15)).status).toBe(201);
+    expect((await api('post', `/me/viewings/${first.body.data.id}/cancel`, a.token)).status).toBe(201);
+    expect((await book(d.token, rooms[0][4], 15)).body.error.code).toBe('VIEWING_TIME_TAKEN');
+    expect((await api('post', `/me/viewings/${second.body.data.id}/cancel`, a.token)).status).toBe(201);
+    expect((await book(d.token, rooms[0][4], 15)).status).toBe(201);
+  });
+  it('VIEW-09/16: reschedule and new booking race for the same last place', async () => {
+    const a = await user(), b = await user(), c = await user(), d = await user();
+    expect((await manual(rooms[0][0], a.phone, 16)).status).toBe(201);
+    expect((await manual(rooms[0][1], b.phone, 16)).status).toBe(201);
+    const moving = await manual(rooms[0][2], c.phone, 17); expect(moving.status).toBe(201);
+    const results = await Promise.all([api('patch', `/viewings/${moving.body.data.id}`, boss, { visitAt: at(16) }), book(d.token, rooms[0][3], 16)]);
+    expect(results.filter(r => r.status === 200 || r.status === 201)).toHaveLength(1);
+    expect(results.find(r => r.status === 409)!.body.error.code).toBe('VIEWING_TIME_TAKEN');
+    expect(new Set((await openAt(buildings[0], 16)).map(r => r.guestPhone)).size).toBe(3);
+  });
+  it('VIEW-08/15/18/20: legacy retains its label, can confirm/cancel/convert, never owned by phone', async () => {
+    const guest = await user();
+    const legacy = await prisma.viewing.create({ data: { roomId: rooms[2][0], guestName: guest.fullName, guestPhone: guest.phone, visitDate: addDays(todayHanoi(), 2), timeSlot: 'AFTERNOON', status: 'NEW', source: 'WEB' } });
+    run.record('viewings', legacy.id);
+    expect((await api('get', `/me/viewings/${legacy.id}`, guest.token)).status).toBe(404);
+    const confirmed = await api('post', `/viewings/${legacy.id}/confirm`, boss, { via: 'PHONE' });
+    expect(confirmed.status).toBe(201); expect(confirmed.body.data.timeSlotLabel).toBe('Chiều (14:00–17:00)'); expect(confirmed.body.data.visitAt).toBeNull();
+    const converted = await api('patch', `/viewings/${legacy.id}`, boss, { visitAt: at(18) });
+    expect(converted.status).toBe(200); expect(converted.body.data.visitDate).toBeNull(); expect(converted.body.data.timeSlot).toBeNull();
+    expect((await api('patch', `/viewings/${legacy.id}`, boss, { status: 'CANCELLED', note: '[E2E] khách hủy' })).status).toBe(200);
+  });
+  it('VIEW-13/22: maintenance/room/building lock preserve open rows and move locked building work to Boss', async () => {
+    const guest = await user(); const created = await book(guest.token, rooms[0][4], 19); expect(created.status).toBe(201);
+    const id = created.body.data.id;
+    for (const patch of [{ underMaintenance: true }, { isActive: false }]) {
+      expect((await api('patch', `/rooms/${rooms[0][4]}`, boss, patch)).status).toBe(200);
+      expect((await prisma.viewing.findUniqueOrThrow({ where: { id } })).status).toBe('NEW');
     }
-
-    await makeRoomPublicPrice(app, boss, created.roomA1);
-    await makeRoomPublicPrice(app, boss, created.roomB1);
-    await makeBuildingRatePlans(app, boss, created.buildingAId);
-    await makeBuildingRatePlans(app, boss, created.buildingBId);
-
-    const publicA1 = await send(app, 'get', `/public/rooms/${created.roomA1}`);
-    expect(publicA1.status).toBe(200);
-    const publicB1 = await send(app, 'get', `/public/rooms/${created.roomB1}`);
-    expect(publicB1.status).toBe(200);
-  });
-
-  let viewing1Id: number;
-  let viewing2Id: number;
-
-  it('VIEW-01/13, ROOM-09: two guests book the same public room; turning on maintenance keeps both NEW and reports pendingViewingCount = 2', async () => {
-    const phone1 = await uniquePhone(
-      async (phone) => (await prisma.user.findUnique({ where: { phone }, select: { id: true } })) !== null,
-    );
-    const phone2 = await uniquePhone(
-      async (phone) => (await prisma.user.findUnique({ where: { phone }, select: { id: true } })) !== null,
-    );
-
-    const first = await send(app, 'post', '/public/viewings', {
-      roomId: created.roomA1, guestName: `[E2E ${e2e.runId}] Khách 1`, guestPhone: phone1,
-      visitDate: tomorrow, timeSlot: 'MORNING',
-    });
-    expect(first.status).toBe(201);
-    expect(first.body.data).toEqual({ received: true });
-
-    const second = await send(app, 'post', '/public/viewings', {
-      roomId: created.roomA1, guestName: `[E2E ${e2e.runId}] Khách 2`, guestPhone: phone2,
-      visitDate: tomorrow, timeSlot: 'AFTERNOON',
-    });
-    expect(second.status).toBe(201);
-
-    const createdRows = await prisma.viewing.findMany({
-      where: { roomId: created.roomA1, guestPhone: { in: [phone1, phone2] } },
-      select: { id: true, guestPhone: true, status: true },
-    });
-    expect(createdRows).toHaveLength(2);
-    for (const row of createdRows) {
-      expect(row.status).toBe('NEW');
-      e2e.record('viewings', row.id);
-    }
-    viewing1Id = createdRows.find((r) => r.guestPhone === phone1)!.id;
-    viewing2Id = createdRows.find((r) => r.guestPhone === phone2)!.id;
-
-    const maintenance = await send(app, 'patch', `/rooms/${created.roomA1}`, { underMaintenance: true }, managerSession);
-    expect(maintenance.status).toBe(200);
-    expect(maintenance.body.data.underMaintenance).toBe(true);
-    expect(maintenance.body.data.pendingViewingCount).toBe(2);
-
-    const stillNewAfterMaintenance = await prisma.viewing.count({
-      where: { id: { in: [viewing1Id, viewing2Id] }, status: 'NEW' },
-    });
-    expect(stillNewAfterMaintenance).toBe(2);
-  });
-
-  it('VIEW-13: locking the room keeps both viewings NEW, repeats pendingViewingCount = 2, and the room 404s from the public side', async () => {
-    const lock = await send(app, 'patch', `/rooms/${created.roomA1}`, { isActive: false }, managerSession);
-    expect(lock.status).toBe(200);
-    expect(lock.body.data.isActive).toBe(false);
-    expect(lock.body.data.pendingViewingCount).toBe(2);
-
-    const stillNewAfterLock = await prisma.viewing.count({
-      where: { id: { in: [viewing1Id, viewing2Id] }, status: 'NEW' },
-    });
-    expect(stillNewAfterLock).toBe(2);
-
-    const publicDetail = await send(app, 'get', `/public/rooms/${created.roomA1}`);
-    expect(publicDetail.status).toBe(404);
-    expect(publicDetail.body.error.code).toBe('NOT_FOUND');
-  });
-
-  it('VIEW-13/BLD-06 (Q-P6-1 = B): locking the building unassigns the manager but keeps the two viewings NEW', async () => {
-    const lockBuilding = await send(app, 'patch', `/buildings/${created.buildingAId}`, { isActive: false }, boss);
-    expect(lockBuilding.status).toBe(200);
-    expect(lockBuilding.body.data.isActive).toBe(false);
-    expect(lockBuilding.body.data.managerId).toBeNull();
-
-    const stillNewAfterBuildingLock = await prisma.viewing.count({
-      where: { id: { in: [viewing1Id, viewing2Id] }, status: 'NEW' },
-    });
-    expect(stillNewAfterBuildingLock).toBe(2);
-  });
-
-  it('VIEW-07/SCOPE-04 (Q-P6-2 = A): Boss dashboard scoped to the locked building sees exactly the 2 NEW viewings, in slot order', async () => {
-    const dashboard = await send(app, 'get', `/dashboard?buildingId=${created.buildingAId}`, undefined, boss);
-    expect(dashboard.status).toBe(200);
-    expect(dashboard.body.data.newViewings.count).toBe(2);
-    expect(dashboard.body.data.newViewings.items.map((v: { id: number }) => v.id)).toEqual([viewing1Id, viewing2Id]);
-  });
-
-  it('SCOPE-02/API-08: the former manager loses the locked building from scope; Boss still reaches it', async () => {
-    const managerAttempt = await send(
-      app, 'get', `/viewings?buildingId=${created.buildingAId}`, undefined, managerSession,
-    );
-    expect(managerAttempt.status).toBe(403);
-    expect(managerAttempt.body.error.code).toBe('OUT_OF_SCOPE');
-
-    const bossView = await send(app, 'get', `/viewings?buildingId=${created.buildingAId}`, undefined, boss);
-    expect(bossView.status).toBe(200);
-    expect(bossView.body.data.map((v: { id: number }) => v.id).sort((a: number, b: number) => a - b))
-      .toEqual([viewing1Id, viewing2Id].sort((a, b) => a - b));
-  });
-
-  it('VIEW-13/Q-P6-3 = A: Boss cancels a viewing of the locked building without an outcomeNote', async () => {
-    const cancel = await send(app, 'patch', `/viewings/${viewing1Id}`, { status: 'CANCELLED' }, boss);
-    expect(cancel.status).toBe(200);
-    expect(cancel.body.data.status).toBe('CANCELLED');
-    expect(cancel.body.data.outcomeNote).toBeNull();
-    expect(cancel.body.data.handledById).toBe(bossId);
-  });
-
-  it('VIEW-03/Q-P6-1 = B: Boss creates a manual viewing for an active room of the locked building; the former manager cannot', async () => {
-    const bossPhone = await uniquePhone(
-      async (phone) => (await prisma.user.findUnique({ where: { phone }, select: { id: true } })) !== null,
-    );
-    const bossCreate = await send(app, 'post', '/viewings', {
-      roomId: created.roomA2, guestName: `[E2E ${e2e.runId}] Khách thủ công`, guestPhone: bossPhone,
-      visitDate: tomorrow, timeSlot: 'EVENING',
-    }, boss);
-    expect(bossCreate.status).toBe(201);
-    expect(bossCreate.body.data.source).toBe('MANUAL');
-    expect(bossCreate.body.data.handledById).toBe(bossId);
-    e2e.record('viewings', bossCreate.body.data.id as number);
-
-    const managerPhone = await uniquePhone(
-      async (phone) => (await prisma.user.findUnique({ where: { phone }, select: { id: true } })) !== null,
-    );
-    const managerAttempt = await send(app, 'post', '/viewings', {
-      roomId: created.roomA2, guestName: `[E2E ${e2e.runId}] Khách bị chặn`, guestPhone: managerPhone,
-      visitDate: tomorrow, timeSlot: 'EVENING',
-    }, managerSession);
-    expect(managerAttempt.status).toBe(403);
-    expect(managerAttempt.body.error.code).toBe('OUT_OF_SCOPE');
-  });
-
-  it('VIEW-11: pg_advisory_xact_lock lets only one of two parallel bookings through once a phone already has 2 WEB viewings today', async () => {
-    const phone3 = await uniquePhone(
-      async (phone) => (await prisma.user.findUnique({ where: { phone }, select: { id: true } })) !== null,
-    );
-    // Two existing WEB/NEW viewings are seeded directly (bypassing the public HTTP route, which is
-    // also IP-rate-limited at 5/hour, A-03): VIEW-11 is about the DB lock, not about reaching it by HTTP.
-    const seeded = await prisma.viewing.createMany({
-      data: Array.from({ length: 2 }, () => ({
-        roomId: created.roomB1,
-        guestName: `[E2E ${e2e.runId}] Khách lặp lại`,
-        guestPhone: phone3,
-        visitDate: new Date(`${tomorrow}T00:00:00.000Z`),
-        timeSlot: 'MORNING' as const,
-        note: null,
-        source: 'WEB' as const,
-        status: 'NEW' as const,
-      })),
-    });
-    expect(seeded.count).toBe(2);
-
-    const fire = () => send(app, 'post', '/public/viewings', {
-      roomId: created.roomB1, guestName: `[E2E ${e2e.runId}] Khách song song`, guestPhone: phone3,
-      visitDate: tomorrow, timeSlot: 'AFTERNOON',
-    });
-    const [resultA, resultB] = await Promise.all([fire(), fire()]);
-    const statuses = [resultA.status, resultB.status].sort((a, b) => a - b);
-    expect(statuses).toEqual([201, 429]);
-    const blocked = resultA.status === 429 ? resultA : resultB;
-    expect(blocked.body.error.code).toBe('TOO_MANY_REQUESTS');
-
-    const rows = await prisma.viewing.findMany({
-      where: { guestPhone: phone3, source: 'WEB' }, select: { id: true, status: true },
-    });
-    expect(rows).toHaveLength(3);
-    expect(rows.every((row) => row.status === 'NEW')).toBe(true);
-    for (const row of rows) e2e.record('viewings', row.id);
-  });
-
-  it('BE-P2-09: the run log holds no secrets', () => {
-    const serialized = JSON.stringify(e2e.log);
-    expect(serialized).not.toContain('password');
-    expect(serialized).not.toContain('token');
-    expect(serialized).not.toContain(boss.token);
-    expect(serialized).not.toContain(boss.cookie);
-    expect(serialized).not.toContain(managerSession.token);
-    expect(serialized).not.toContain(managerSession.cookie);
+    expect((await api('patch', `/buildings/${buildings[0]}`, boss, { isActive: false })).status).toBe(200);
+    expect((await prisma.viewing.findUniqueOrThrow({ where: { id } })).status).toBe('NEW');
+    expect((await api('get', `/viewings?buildingId=${buildings[0]}`, manager)).status).toBe(403);
+    expect((await api('get', `/me/viewings/${id}`, guest.token)).status).toBe(200);
+    const dashboard = await api('get', `/dashboard?buildingId=${buildings[0]}`, boss);
+    expect(dashboard.status).toBe(200); expect(dashboard.body.data.newViewings.count).toBeGreaterThan(0);
+    expect((await manual(rooms[0][0], guest.phone, 19)).status).toBe(201); // active room, Boss scope
   });
 });

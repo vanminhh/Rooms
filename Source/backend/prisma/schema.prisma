@@ -64,6 +64,7 @@ enum ViewingStatus {
   WON
   LOST
   CANCELLED
+  DONE
 }
 
 enum ContractStatus {
@@ -197,7 +198,8 @@ model User {
   roomPricesReviewed  RoomPrice[]          @relation("RoomPriceReviewer")
   ratePlansProposed   RatePlan[]           @relation("RatePlanProposer")
   ratePlansReviewed   RatePlan[]           @relation("RatePlanReviewer")
-  viewingsHandled     Viewing[]
+  viewingsHandled     Viewing[] @relation("ViewingHandler")
+  viewingsOwned       Viewing[] @relation("ViewingOwner")
   meterReadings       MeterReading[]
   paymentsRecorded    Payment[]
   bankTxHandled       BankTransaction[]
@@ -438,8 +440,10 @@ model Viewing {
   roomId      Int           @map("room_id")
   guestName   String        @map("guest_name") @db.VarChar(100)
   guestPhone  String        @map("guest_phone") @db.VarChar(10)
-  visitDate   DateTime      @map("visit_date") @db.Date
-  timeSlot    String        @map("time_slot") @db.VarChar(20)
+  visitDate   DateTime?     @map("visit_date") @db.Date
+  timeSlot    String?       @map("time_slot") @db.VarChar(20)
+  userId      Int?          @map("user_id")
+  visitAt     DateTime?     @map("visit_at") @db.Timestamptz
   note        String?
   source      ViewingSource @default(WEB)
   status      ViewingStatus @default(NEW)
@@ -450,10 +454,13 @@ model Viewing {
   updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz
 
   room      Room      @relation(fields: [roomId], references: [id], onDelete: Restrict)
-  handledBy User?     @relation(fields: [handledById], references: [id], onDelete: SetNull)
+  handledBy User?     @relation("ViewingHandler", fields: [handledById], references: [id], onDelete: SetNull)
+  user      User?     @relation("ViewingOwner", fields: [userId], references: [id], onDelete: Restrict)
   contract  Contract? @relation(fields: [contractId], references: [id], onDelete: SetNull)
 
   @@index([roomId, visitDate])
+  @@index([userId, createdAt])
+  @@index([visitAt, status])
   @@index([status])
   @@map("viewings")
 }

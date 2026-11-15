@@ -71,6 +71,18 @@ class FakeElement extends FakeNode {
   removeEventListener(type, listener) { this.listeners = this.listeners.filter(l => !(l.type === type && l.listener === listener)) }
   get options() { return this.tagName === 'SELECT' ? this.childNodes.filter(n => n.tagName === 'OPTION') : undefined } // react-dom reads select.options on mount
   focus() {}
+  querySelectorAll(selector) {
+    const result = []
+    const visit = node => node.childNodes.forEach(child => {
+      if (child.nodeType === 1) {
+        if (child.tagName === selector.toUpperCase()) result.push(child)
+        visit(child)
+      }
+    })
+    visit(this)
+    return result
+  }
+  querySelector(selector) { return this.querySelectorAll(selector)[0] ?? null }
   matches() { return false }
   closest(selector) { // enough for the `a[href]` lookup of internal-links.ts
     for (let n = this; n && n.nodeType === 1; n = n.parentNode) if (selector === 'a[href]' && n.tagName === 'A' && 'href' in n.attributes) return n

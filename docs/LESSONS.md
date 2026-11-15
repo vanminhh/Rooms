@@ -65,3 +65,20 @@ Read this before the first task of any part. Each line is a mistake that really 
 
 - In the managed Windows sandbox, Vitest module-cache rename in its default temporary folder can fail with EPERM; a process-local TEMP/TMP under ignored node_modules/.cache allows transformation, but HTTP loopback can still fail with EACCES. Report those separately from assertion failures [BE-EX-10/11, 14/11/2026].
 - Preserve punctuation when moving mail templates: the verification subject used an en dash, not a hyphen; compare the original literal as well as the wording [BE-EX-11, 14/11/2026].
+
+- Media error events are non-bubbling: dispatch to the video node in the fake DOM; modal focus also requires querySelector in the separate auth-flow DOM harness [FE-EX-16, 14/11/2026].
+- After moving an overlay outside an inert wrapper, check that only one instance remains; a CRLF-sensitive string replacement left a duplicate and failed the entry tests [FE-EX-16, 14/11/2026].
+
+- Managed shell calls may receive different OS temporary directories; keep cross-command offline schema snapshots in ignored node_modules/.cache or pass an explicit stable path [BE-EX-17, 14/11/2026].
+
+- Availability based only on public hours plus owned viewings misses a full-hour place entered manually with the same phone; compute signed-in availability server-side without granting ownership of manual rows [BE-EX-17, 15/11/2026].
+
+- Prisma generate can write updated types before failing to replace a Windows engine DLL (EPERM); inspect the build after failure and do not report generation complete merely because types changed [BE-EX-18, 15/11/2026].
+
+- Vitest JSON alone can omit the cause of a failed beforeAll hook and list every e2e case as pending; retain the default reporter alongside JSON so connectivity failures do not require a second run to diagnose [BE-EX-24, 15/11/2026].
+
+- A native select has type="select-one"; set it on the numeric-select test fixture before testing react-hook-form valueAsNumber, or the selected room remains a string. Do not change the shared fake DOM globally without checking older form tests [FE-EX-26, 15/11/2026].
+- listPath always adds page/limit; build availability URLs with URLSearchParams so a non-paginated DTO does not reject those extra query fields [FE-EX-22, 15/11/2026].
+
+- When adding one mail retry, failure fixtures must fail both attempts and explicitly restore success before testing recovery; an always-failing signup mailer incorrectly expected the next signup to succeed [BE-EX-28, 15/11/2026].
+- Validate required template placeholders as well as unknown ones; a nonempty custom email without its code, reset link or appointment details passed the initial template checks [BE-EX-29, 15/11/2026].

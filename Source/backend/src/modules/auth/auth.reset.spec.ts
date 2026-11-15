@@ -348,6 +348,18 @@ describe('AUTH-07: POST /auth/forgot-password', () => {
   });
 
   describe('mail failure', () => {
+    it('AUTH-07 / NOTI-07 / LOC-06: retries the same reset link using the staff Vietnamese stored template', async () => {
+      setEmail('boss', BOSS_EMAIL);
+      fake.account('boss').locale = 'en';
+      fake.db.setting.push({ key: 'email_templates', value: { passwordReset: { vi: { subject: 'Khôi phục', text: 'Liên kết 30 phút: {url}' } } } });
+      mailer.send.mockRejectedValueOnce(new Error('transient'));
+      expect((await forgot(PHONE.boss)).status).toBe(200);
+      await sent(2);
+      expect(mailer.send.mock.calls[0][0]).toEqual(mailer.send.mock.calls[1][0]);
+      expect(mailer.send.mock.calls[0][0].subject).toBe('Khôi phục');
+      expect(mailer.send.mock.calls[0][0].text).toContain(`${APP_URL}/quen-mat-khau?token=`);
+      expect(fake.db.passwordResetToken).toHaveLength(1);
+    });
     it('AUTH-07: send() throws -> still 200 { data: null }; the logged error does not contain the token', async () => {
       setEmail('boss', BOSS_EMAIL);
       // The failure message echoes the whole mail, so a careless log line would leak the token.
@@ -359,10 +371,10 @@ describe('AUTH-07: POST /auth/forgot-password', () => {
       expect(res.status).toBe(200);
       expect(res.body).toEqual({ data: null });
       await vi.waitFor(() => expect(errorLog).toHaveBeenCalled()); // the failure is not swallowed silently
-      expect(mailer.send).toHaveBeenCalledTimes(1);
+      expect(mailer.send).toHaveBeenCalledTimes(2);
       const t = sentToken(0);
       // BE-LOGIN-18: the line carries the error name only, never the message / stack / token.
-      expect(errorLog.mock.calls).toEqual([['Could not send the password reset link (Error)']]);
+      expect(errorLog.mock.calls).toEqual([[expect.stringMatching(/^Could not send the password reset link \([A-Za-z]+\)$/)]]);
       const logged = JSON.stringify(errorLog.mock.calls);
       expect(logged).not.toContain(t);
       expect(logged).not.toContain('quen-mat-khau');
@@ -375,7 +387,7 @@ describe('AUTH-07: POST /auth/forgot-password', () => {
       const ok = await forgot(PHONE.boss);
       await sent(1);
       const errorLog = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
-      mailer.send.mockRejectedValueOnce(new Error('boom'));
+      mailer.send.mockRejectedValue(new Error('boom'));
       const failed = await forgot(PHONE.manager1);
       await vi.waitFor(() => expect(errorLog).toHaveBeenCalledTimes(1));
       expect(failed.status).toBe(ok.status);
@@ -395,9 +407,9 @@ describe('AUTH-07: POST /auth/forgot-password', () => {
       fake.account('manager2').email = null;
       bodies.push(['no email', await forgot(PHONE.manager2)]);
       bodies.push(['locked', await forgot(PHONE.lockedTenant)]);
-      mailer.send.mockRejectedValueOnce(new Error('boom'));
+      mailer.send.mockRejectedValue(new Error('boom'));
       bodies.push(['send fails', await forgot(PHONE.manager1)]);
-      await sent(2);
+      await sent(3); // initial happy mail + two failed attempts
       vi.spyOn(fake, '$transaction').mockRejectedValue(new Error('db down'));
       bodies.push(['transaction fails', await forgot(PHONE.tenant)]);
       await drain();
@@ -517,7 +529,7 @@ describe('AUTH-07: POST /auth/forgot-password', () => {
       // sanity: the helper really is where the write and the send live
       const helper = src.slice(end, src.indexOf('async resetPassword('));
       expect(helper).toContain('$transaction');
-      expect(helper).toContain('this.mailer.send');
+      expect(helper).toContain('sendWithRetry(this.mailer');
     });
   });
 

@@ -9,6 +9,7 @@ export type ConfirmDialogProps = {
   description: ReactNode
   confirmLabel: string
   cancelLabel?: string
+  pendingLabel?: string
   pending?: boolean
   onConfirm(): void
   onClose(): void
@@ -16,7 +17,7 @@ export type ConfirmDialogProps = {
 
 // Modal: Tab stays inside the dialog, Escape closes it, focus returns to the opener.
 // Confirm uses aria-disabled (not disabled) so it keeps focus while pending; extra clicks are ignored.
-export function ConfirmDialog({ open, title, description, confirmLabel, cancelLabel = 'Hủy', pending = false, onConfirm, onClose }: ConfirmDialogProps) {
+export function ConfirmDialog({ open, title, description, confirmLabel, cancelLabel = 'Hủy', pendingLabel = 'Đang xử lý', pending = false, onConfirm, onClose }: ConfirmDialogProps) {
   const titleId = useId()
   const descriptionId = useId()
   const dialogRef = useRef<HTMLDivElement>(null)
@@ -56,7 +57,7 @@ export function ConfirmDialog({ open, title, description, confirmLabel, cancelLa
       <div className="rooms-dialog-actions">
         <RoomsButton variant="outline" onClick={() => onClose()}>{cancelLabel}</RoomsButton>
         <RoomsButton aria-disabled={pending || undefined} onClick={() => { if (!pending) onConfirm() }}>
-          {pending && <Spinner label="Đang xử lý" />}{confirmLabel}
+          {pending && <Spinner label={pendingLabel} />}{confirmLabel}
         </RoomsButton>
       </div>
     </div>

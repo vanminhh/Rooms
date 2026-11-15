@@ -100,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setStatus('ready')
         }
       } catch (error) {
-        if (active) {
+        if (active && !(error instanceof ApiError && error.code === 'SESSION_CHANGED')) {
           setUser(null)
           setStatus(isUnauthorized(error) ? 'ready' : 'error')
         }

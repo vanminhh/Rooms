@@ -4,7 +4,8 @@
 // features/public/*, the kit) runs unmodified via `loadModule` from draft-root.mjs, which this file re-exports
 // so a test only needs one import. Installs its fakes on `globalThis` as soon as it is imported.
 import assert from 'node:assert/strict'
-export { draftRoot, mainRoot, draftFirst, loadModule } from '../draft-root.mjs'
+import { draftRoot, mainRoot, draftFirst, loadModule } from '../draft-root.mjs'
+export { draftRoot, mainRoot, draftFirst, loadModule }
 
 // ---------- minimal fake DOM ----------
 class FakeNode {
@@ -176,12 +177,16 @@ export async function mount(element) {
   const container = fakeDocument.createElement('div')
   fakeDocument.body.appendChild(container)
   const root = createRoot(container)
-  root.render(element)
+  const React = await import('react')
+  const { AuthContext } = loadModule(draftFirst('src/app/auth-context.ts'))
+  // Public booking now reads auth; explicit providers inside element override this anonymous shell.
+  const wrap = child => React.createElement(AuthContext.Provider, { value: { status: 'ready', user: null } }, child)
+  root.render(wrap(element))
   await wait(30)
   // Flake fix (11/11/2026): 30 ms is not always enough on a busy machine; wait until the first commit has put
   // something into the container (max 3 s) so a test never queries an empty tree.
   for (let tries = 0; tries < 300 && container.childNodes.length === 0; tries++) await wait(10)
-  return { container, rerender: async next => { root.render(next); await wait(30) }, stop: async () => { root.unmount(); await wait(10) } }
+  return { container, rerender: async next => { root.render(wrap(next)); await wait(30) }, stop: async () => { root.unmount(); await wait(10) } }
 }
 
 // ---------- fake fetch (outside edge): routes by URL prefix under /api/v1 ----------
@@ -201,6 +206,8 @@ export function fakeFetch(rules) {
   const calls = []
   globalThis.fetch = async (url, init = {}) => {
     if (String(url).startsWith('/api/v1/public/filters') && !rules.some(r => r.prefix.startsWith('/public/filters'))) return filtersResponse()
+    // Older room-detail tests do not exercise availability and must not answer it with a room object.
+    if (String(url).includes('/viewing-times?') && !rules.some(r => r.prefix.includes('/viewing-times'))) return new Response(JSON.stringify({ data: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } })
     const call = { url, method: init.method ?? 'GET', headers: init.headers ?? {}, body: init.body }
     calls.push(call)
     const rule = rules.find(r => call.url.startsWith(`/api/v1${r.prefix}`) && (!r.method || r.method === call.method))

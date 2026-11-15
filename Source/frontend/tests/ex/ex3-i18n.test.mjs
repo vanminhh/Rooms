@@ -192,10 +192,10 @@ test('UI-12, FE-EX-10, FE-EX-11: public and auth pages and features keep display
     'features/auth/schemas.ts', 'features/auth/pendingVerification.ts',
     'components/FormFields.tsx', 'app/RequireAuth.tsx',
     'shared/api.ts', 'shared/form-errors.ts',
-    // OQ-2: EX-7 replaces these two Vietnamese-only files. Remove this exception then.
-    'features/public/ViewingForm.tsx', 'features/public/viewing-schema.ts',
+    // EX-7 removes the old booking form exception; all public/guest viewing text is translated.
+    'features/public/ViewingForm.tsx', 'features/public/viewing-schema.ts', 'features/public/ViewingCalendar.tsx', 'features/viewings/ViewingContacts.tsx', 'pages/guest/GuestViewingPage.tsx',
   ]
-  const exceptions = new Set(['features/public/ViewingForm.tsx', 'features/public/viewing-schema.ts'])
+  const exceptions = new Set()
   const violations = []
   for (const file of files) {
     if (exceptions.has(file)) continue

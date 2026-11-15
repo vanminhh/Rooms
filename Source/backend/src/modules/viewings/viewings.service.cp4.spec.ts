@@ -1,497 +1,207 @@
-import { addDays, formatDateOnly, todayHanoi } from '../../common/date/today.js';
-import type { AuthUser } from '../../common/guards/auth.decorators.js';
-import { ViewingsService } from './viewings.service.js';
-import type { CreateViewingDto, UpdateViewingDto, ViewingsQueryDto } from './dto/viewings.dto.js';
+import { setupViewings, BOSS, MANAGER, GUEST, HOUR, NOW } from '../../../test/fixtures/viewing-prisma.js';
 
-// CP-4 (BE-P2-32) · VIEW-03, 04, 09, 10, SCOPE-02, API-08: unit tests of ViewingsService
-// list/create/update against the spec and PLAN.md §2.3 (not the coder's comments).
-// Prisma is the only mocked edge (DB), reproduced here just enough to exercise the where/orderBy
-// shapes the service actually sends (including the known time_slot alphabetical DB order, so the
-// service's own JS re-sort is what is really under test, not a pre-sorted fixture).
+beforeEach(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(NOW); });
+afterEach(() => vi.useRealTimers());
 
-const TODAY = todayHanoi();
-const TOMORROW = formatDateOnly(addDays(TODAY, 1));
-const YESTERDAY = formatDateOnly(addDays(TODAY, -1));
-const TODAY_STR = formatDateOnly(TODAY);
-const PLUS30 = formatDateOnly(addDays(TODAY, 30));
-const PLUS31 = formatDateOnly(addDays(TODAY, 31));
+const PAST = new Date('2026-11-14T03:00:00Z');
 
-// Rooms: 101/102 in building 10 (active manager), 103 in building 20 (active manager),
-// 104 in building 30 (locked: no manager, per BLD-06).
-const ROOMS = new Map<number, { code: string; buildingId: number; isActive: boolean }>([
-  [101, { code: 'P101', buildingId: 10, isActive: true }],
-  [102, { code: 'P102', buildingId: 10, isActive: false }],
-  [103, { code: 'P103', buildingId: 20, isActive: true }],
-  [104, { code: 'P104', buildingId: 30, isActive: true }],
-]);
-const BUILDING_NAMES = new Map<number, string>([
-  [10, 'Tòa A'],
-  [20, 'Tòa B'],
-  [30, 'Tòa Khóa'],
-]);
-
-const BOSS: AuthUser = { id: 1, role: 'BOSS', mustChangePassword: false, buildingIds: null };
-// Manager of building 10 only; building 20 belongs to another manager; building 30 is locked
-// (its manager was removed, BLD-06), so 30 is out of scope for every manager, old or new.
-const MANAGER_10: AuthUser = { id: 2, role: 'MANAGER', mustChangePassword: false, buildingIds: [10] };
-const MANAGER_1020: AuthUser = { id: 2, role: 'MANAGER', mustChangePassword: false, buildingIds: [10, 20] };
-
-interface Row {
-  id: number;
-  roomId: number;
-  guestName: string;
-  guestPhone: string;
-  visitDate: Date;
-  timeSlot: string;
-  note: string | null;
-  source: 'WEB' | 'MANUAL';
-  status: string;
-  handledById: number | null;
-  outcomeNote: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-function roomInclude(roomId: number) {
-  const r = ROOMS.get(roomId)!;
-  return { code: r.code, buildingId: r.buildingId, building: { name: BUILDING_NAMES.get(r.buildingId) } };
-}
-
-function matchWhere(row: Row, where: any): boolean {
-  if (where.room) {
-    const bf = where.room.buildingId;
-    if (bf !== undefined) {
-      const rbId = ROOMS.get(row.roomId)!.buildingId;
-      if (bf && typeof bf === 'object' && 'in' in bf) {
-        if (!bf.in.includes(rbId)) return false;
-      } else if (rbId !== bf) return false;
-    }
-  }
-  if (where.status !== undefined && row.status !== where.status) return false;
-  if (where.visitDate) {
-    const { gte, lte } = where.visitDate;
-    if (gte !== undefined && row.visitDate.getTime() < gte.getTime()) return false;
-    if (lte !== undefined && row.visitDate.getTime() > lte.getTime()) return false;
-  }
-  return true;
-}
-
-// Mirrors Prisma's actual behaviour: time_slot is a plain varchar, so ORDER BY sorts it
-// alphabetically (AFTERNOON < EVENING < MORNING) — deliberately "wrong" so the service's
-// post-fetch JS re-sort (SLOT_START_MINUTES) is the thing that makes the final order correct.
-function sortRows(rows: Row[], orderBy: any): Row[] {
-  const specs = Array.isArray(orderBy) ? orderBy : [orderBy];
-  return [...rows].sort((a, b) => {
-    for (const spec of specs) {
-      const [field, dir] = Object.entries(spec)[0] as [string, 'asc' | 'desc'];
-      let av: any = (a as any)[field];
-      let bv: any = (b as any)[field];
-      if (field === 'visitDate') {
-        av = av.getTime();
-        bv = bv.getTime();
-      }
-      if (av < bv) return dir === 'asc' ? -1 : 1;
-      if (av > bv) return dir === 'asc' ? 1 : -1;
-    }
-    return 0;
+describe('BE-EX-20/23 staff changes', () => {
+  it.each(['NEW', 'CONFIRMED'])('VIEW-09: converts legacy %s to an exact hour and clears both legacy fields', async status => {
+    const { db, service } = setupViewings();
+    db.add({ status, visitAt: null, visitDate: new Date('2026-11-14'), timeSlot: 'AFTERNOON' });
+    const result = await service.update(MANAGER, 1, { visitAt: HOUR });
+    expect(result).toMatchObject({ visitAt: HOUR, visitDate: null, timeSlot: null, handledById: 2 });
   });
-}
+  it.each(['DONE', 'LOST', 'CANCELLED', 'WON'])('VIEW-09: closed %s cannot be rescheduled', async status => {
+    const { db, service } = setupViewings(); db.add({ status });
+    await expect(service.update(BOSS, 1, { visitAt: HOUR })).rejects.toMatchObject({ status: 409 });
+  });
+  it('VIEW-16: rescheduling excludes only this row and refuses a full new hour', async () => {
+    const { db, service } = setupViewings();
+    db.add({ visitAt: new Date('2026-11-16T02:00:00Z'), guestPhone: '0944444444' });
+    for (const phone of ['0911111111', '0922222222', '0933333333']) db.add({ guestPhone: phone });
+    await expect(service.update(BOSS, 1, { visitAt: HOUR })).rejects.toMatchObject({ status: 409 });
+    expect(db.rows[0].visitAt.toISOString()).toBe('2026-11-16T02:00:00.000Z');
+  });
+  it.each(['NEW', 'CONFIRMED'])('VIEW-04: %s may become DONE only after start', async status => {
+    const { db, service } = setupViewings(); const row = db.add({ status });
+    await expect(service.update(BOSS, 1, { status: 'DONE' })).rejects.toMatchObject({ status: 409 });
+    db.rows[0].visitAt = PAST;
+    expect((await service.update(BOSS, row.id, { status: 'DONE' })).status).toBe('DONE');
+  });
+  it('VIEW-04: DONE cannot be smuggled through a simultaneous future reschedule', async () => {
+    const { db, service } = setupViewings(); db.add({ visitAt: PAST });
+    await expect(service.update(BOSS, 1, { status: 'DONE', visitAt: HOUR })).rejects.toMatchObject({ status: 409 });
+  });
+  it.each(['NEW', 'CONFIRMED'])('VIEW-04: %s to LOST is refused even overdue', async status => {
+    const { db, service } = setupViewings(); db.add({ status, visitAt: PAST });
+    await expect(service.update(BOSS, 1, { status: 'LOST', outcomeNote: 'Không thuê' })).rejects.toMatchObject({ status: 409 });
+  });
+  it('VIEW-04: DONE to LOST needs outcome note; staff cancellation needs note and records actor', async () => {
+    const { db, service } = setupViewings(); db.add({ status: 'DONE' }); db.add();
+    await expect(service.update(BOSS, 1, { status: 'LOST' })).rejects.toMatchObject({ status: 400 });
+    expect((await service.update(BOSS, 1, { status: 'LOST', outcomeNote: 'Không thuê' })).status).toBe('LOST');
+    await expect(service.update(BOSS, 2, { status: 'CANCELLED' })).rejects.toMatchObject({ status: 400 });
+    expect(await service.update(BOSS, 2, { status: 'CANCELLED', note: 'Khách không đến' })).toMatchObject({ status: 'CANCELLED', handledById: 1 });
+  });
+  it.each(['CONFIRMED', 'WON', 'NEW'])('VIEW-04/15: PATCH cannot set %s', async status => {
+    const { db, service } = setupViewings(); db.add();
+    await expect(service.update(BOSS, 1, { status: status as any })).rejects.toMatchObject({ status: 409 });
+  });
+  it('VIEW-04: conditional update detects a lost state race', async () => {
+    const { db, service } = setupViewings(); db.add({ visitAt: PAST });
+    db.prisma.viewing.updateMany.mockResolvedValueOnce({ count: 0 });
+    await expect(service.update(BOSS, 1, { status: 'DONE' })).rejects.toMatchObject({ status: 409 });
+  });
+  it('SCOPE-02: current manager assignment controls edits and confirmations', async () => {
+    const { db, service } = setupViewings(); db.add(); db.buildings[0].managerId = 3;
+    await expect(service.update(MANAGER, 1, { note: 'test' })).rejects.toMatchObject({ status: 403 });
+    await expect(service.confirm(MANAGER, 1, { via: 'PHONE' })).rejects.toMatchObject({ status: 403 });
+  });
+  it('VIEW-15a: late PHONE confirmation keeps visitAt and stores no method or time', async () => {
+    const { db, service, send } = setupViewings(); db.add({ visitAt: PAST });
+    expect(await service.confirm(MANAGER, 1, { via: 'PHONE' })).toMatchObject({ status: 'CONFIRMED', handledById: 2, visitAt: PAST.toISOString() });
+    for (const key of ['confirmedAt', 'confirmedVia', 'cancelledBy']) expect(db.rows[0]).not.toHaveProperty(key);
+    expect(send).not.toHaveBeenCalled();
+  });
+  it('VIEW-15/LOC-06: late EMAIL sends English with address/public phone before CONFIRMED', async () => {
+    const { db, service, send } = setupViewings(); db.add({ userId: 4, visitAt: PAST });
+    send.mockImplementationOnce(async () => { expect(db.rows[0].status).toBe('NEW'); });
+    await service.confirm(BOSS, 1, { via: 'EMAIL' });
+    expect(db.rows[0].status).toBe('CONFIRMED');
+    const mail = send.mock.calls[0][0];
+    expect(mail.to).toBe('guest@example.test'); expect(mail.subject).toContain('confirmed');
+    expect(mail.text).toContain('Hà Nội'); expect(mail.text).toContain('0981111111'); expect(mail.text).not.toContain('0900000002');
+  });
+  it('VIEW-15: email failure retries once and leaves NEW; no owner email refuses sending', async () => {
+    const { db, service, send } = setupViewings(); db.add({ userId: 4 }); db.add();
+    send.mockRejectedValue(new Error('provider down'));
+    await expect(service.confirm(BOSS, 1, { via: 'EMAIL' })).rejects.toMatchObject({ status: 503 });
+    expect(db.rows[0].status).toBe('NEW'); expect(send).toHaveBeenCalledTimes(2);
+    await expect(service.confirm(BOSS, 2, { via: 'EMAIL' })).rejects.toMatchObject({ status: 409 });
+    expect(send).toHaveBeenCalledTimes(2);
+  });
+});
 
-function makePrisma(rows: Row[]) {
-  let nextId = rows.length ? Math.max(...rows.map((r) => r.id)) + 1 : 1;
-  const prisma: any = {
-    room: {
-      findUnique: vi.fn(async ({ where }: any) => {
-        const r = ROOMS.get(where.id);
-        return r ? { isActive: r.isActive, buildingId: r.buildingId } : null;
-      }),
-    },
-    viewing: {
-      create: vi.fn(async ({ data }: any) => {
-        const row: Row = {
-          id: nextId++,
-          note: null,
-          outcomeNote: null,
-          handledById: null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          ...data,
-        };
-        rows.push(row);
-        return { ...row, room: roomInclude(row.roomId) };
-      }),
-      findUnique: vi.fn(async ({ where }: any) => {
-        const row = rows.find((r) => r.id === where.id);
-        return row ? { ...row, room: roomInclude(row.roomId) } : null;
-      }),
-      findMany: vi.fn(async ({ where, orderBy, skip, take }: any) => {
-        let result = rows.filter((r) => matchWhere(r, where));
-        result = sortRows(result, orderBy);
-        if (skip !== undefined) result = result.slice(skip);
-        if (take !== undefined) result = result.slice(0, take);
-        return result.map((row) => ({ ...row, room: roomInclude(row.roomId) }));
-      }),
-      count: vi.fn(async ({ where }: any) => rows.filter((r) => matchWhere(r, where)).length),
-      updateMany: vi.fn(async ({ where, data }: any) => {
-        const matches = rows.filter((r) => r.id === where.id && r.status === where.status);
-        matches.forEach((r) => Object.assign(r, data));
-        return { count: matches.length };
-      }),
-    },
-  };
-  return { prisma, rows };
-}
-
-function addRow(rows: Row[], overrides: Partial<Row> & { id: number; roomId: number; visitDate: string | Date }) {
-  const visitDate = overrides.visitDate instanceof Date ? overrides.visitDate : new Date(`${overrides.visitDate}T00:00:00.000Z`);
-  const row: Row = {
-    guestName: 'Khách E2E',
-    guestPhone: '0912340000',
-    timeSlot: 'MORNING',
-    note: null,
-    source: 'MANUAL',
-    status: 'NEW',
-    handledById: null,
-    outcomeNote: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    ...overrides,
-    visitDate,
-  };
-  rows.push(row);
-  return row;
-}
-
-async function expectHttpError(promise: Promise<unknown>, status: number, field?: string) {
-  try {
-    await promise;
-    throw new Error('should have thrown');
-  } catch (e: any) {
-    expect(e.getStatus()).toBe(status);
-    if (field) {
-      const res = e.getResponse();
-      expect(res.fields?.[field]).toBeTruthy();
+describe('VIEW-20/18 ownership and cancellation', () => {
+  it('VIEW-20: upcoming NEW then CONFIRMED precede history before pagination, including older creations', async () => {
+    const { db, service } = setupViewings();
+    db.add({ userId: 4, status: 'CONFIRMED', createdAt: new Date('2026-11-01'), visitAt: new Date(HOUR) });
+    db.add({ userId: 4, status: 'NEW', createdAt: new Date('2026-11-02'), visitAt: new Date(HOUR) });
+    for (let i = 0; i < 22; i++) db.add({ userId: 4, status: 'CANCELLED', visitAt: PAST });
+    db.add({ userId: 5, status: 'NEW' });
+    const first = await service.listMine(GUEST, { page: 1, limit: 2 });
+    expect(first.data.map(v => v.id)).toEqual([2, 1]);
+    expect(first.meta).toEqual({ page: 1, limit: 2, total: 24 });
+    const next = await service.listMine(GUEST, { page: 2, limit: 2 });
+    expect(next.data.map(v => v.id)).toEqual([24, 23]);
+    expect(db.prisma.viewing.findMany.mock.calls.every(([query]) => query.take <= 2)).toBe(true);
+  });
+  it('VIEW-20: group counts and reads share RepeatableRead so a concurrent confirmation cannot duplicate a row', async () => {
+    const { db, service } = setupViewings();
+    db.add({ userId: 4 });
+    const count = db.prisma.viewing.count.getMockImplementation();
+    const findMany = db.prisma.viewing.findMany.getMockImplementation();
+    db.prisma.viewing.count.mockImplementation(async (query: unknown) => { expect(db.inTransaction).toBe(true); return count(query); });
+    db.prisma.viewing.findMany.mockImplementation(async (query: unknown) => { expect(db.inTransaction).toBe(true); return findMany(query); });
+    await service.listMine(GUEST, {});
+    expect(db.prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), expect.objectContaining({ isolationLevel: 'RepeatableRead' }));
+  });
+  it('VIEW-20: same phone gives no ownership of manual or other account rows; locked room remains readable', async () => {
+    const { db, service } = setupViewings();
+    db.add({ userId: 4 }); db.add({ userId: 5, guestPhone: '0900000004' }); db.add({ guestPhone: '0900000004' });
+    db.rooms[0].isActive = false;
+    expect((await service.listMine(GUEST, {})).data.map(v => v.id)).toEqual([1]);
+    expect((await service.getMine(GUEST, 1)).roomId).toBe(101);
+    for (const id of [2, 3, 99]) {
+      await expect(service.getMine(GUEST, id)).rejects.toMatchObject({ status: 404 });
+      await expect(service.cancelMine(GUEST, id)).rejects.toMatchObject({ status: 404 });
     }
-    return e;
-  }
-}
+  });
+  it('VIEW-18: one minute before start clears earlier staff handler; at/after start refuses', async () => {
+    const { db, service } = setupViewings();
+    db.add({ userId: 4, status: 'CONFIRMED', handledById: 2, visitAt: new Date(NOW.getTime() + 60_000) });
+    db.add({ userId: 4, visitAt: NOW }); db.add({ userId: 4, visitAt: PAST });
+    expect((await service.cancelMine(GUEST, 1)).status).toBe('CANCELLED');
+    expect(db.rows[0].handledById).toBeNull();
+    for (const id of [2, 3]) await expect(service.cancelMine(GUEST, id)).rejects.toMatchObject({ status: 409 });
+  });
+  it('VIEW-18: cancelling one room keeps the phone place until its last open room closes', async () => {
+    const { db, service } = setupViewings();
+    db.add({ userId: 4, guestPhone: '0900000004' }); db.add({ roomId: 102, userId: 4, guestPhone: '0900000004' });
+    db.add({ guestPhone: '0911111111' }); db.add({ guestPhone: '0922222222' });
+    await service.cancelMine(GUEST, 1);
+    expect((await service.times(101, { from: '2026-11-16', to: '2026-11-16' }))[0].hours).not.toContain(HOUR);
+    await service.cancelMine(GUEST, 2);
+    expect((await service.times(101, { from: '2026-11-16', to: '2026-11-16' }))[0].hours).toContain(HOUR);
+  });
+});
 
-describe('CP-4 (BE-P2-32) · ViewingsService.create (VIEW-03)', () => {
-  it('VIEW-03 happy: MANAGER creates a manual viewing for an active room in their own building', async () => {
-    const { prisma } = makePrisma([]);
-    const service = new ViewingsService(prisma);
-    const dto: CreateViewingDto = {
-      roomId: 101,
-      guestName: 'Nguyễn Văn B',
-      guestPhone: '0912345671',
-      visitDate: TOMORROW,
-      timeSlot: 'MORNING',
+describe('VIEW-21 availability', () => {
+  it('VIEW-21: anonymous sees only dates/hours; private permits MANUAL-only phone at capacity without claiming it', async () => {
+    const { db, service } = setupViewings();
+    for (const phone of ['0900000004', '0911111111', '0922222222']) db.add({ guestPhone: phone });
+    const range = { from: '2026-11-16', to: '2026-11-16' };
+    const publicHours = await service.times(102, range);
+    expect(publicHours[0].hours).not.toContain(HOUR);
+    expect((await service.times(102, range, GUEST))[0].hours).toContain(HOUR);
+    expect((await service.listMine(GUEST, {})).data).toEqual([]);
+    expect(Object.keys(publicHours[0]).sort()).toEqual(['date', 'hours']);
+    expect(JSON.stringify(publicHours)).not.toMatch(/phone|name|email|userId|responsible/i);
+  });
+  it('VIEW-16/21: a phone in another building is excluded privately even with another manager', async () => {
+    const { db, service } = setupViewings(); db.add({ roomId: 301, guestPhone: '0900000004' });
+    const range = { from: '2026-11-16', to: '2026-11-16' };
+    expect((await service.times(101, range))[0].hours).toContain(HOUR);
+    expect((await service.times(101, range, GUEST))[0].hours).not.toContain(HOUR);
+  });
+  it.each([['2026-02-30', '2026-03-02'], ['2026-11-17', '2026-11-16'], ['2026-11-15', '2026-12-16']])('VIEW-21: invalid range %s..%s is refused', async (from, to) => {
+    const { service } = setupViewings(); await expect(service.times(101, { from, to })).rejects.toMatchObject({ status: 400 });
+  });
+  it('VIEW-08/21: 31 inclusive days allowed; past and beyond horizon hours remain empty', async () => {
+    const { service } = setupViewings();
+    const rows = await service.times(101, { from: '2026-11-15', to: '2026-12-15' });
+    expect(rows).toHaveLength(31); expect(rows[0].hours).toHaveLength(12); expect(rows[30].hours).toHaveLength(12);
+    expect((await service.times(101, { from: '2026-12-16', to: '2026-12-16' }))[0].hours).toEqual([]);
+  });
+  it('VIEW-21: nonpublic rooms are 404 on either availability route', async () => {
+    const { db, service } = setupViewings(); db.rooms[0].isActive = false;
+    await expect(service.times(101, { from: '2026-11-16', to: '2026-11-16' })).rejects.toMatchObject({ status: 404 });
+    await expect(service.times(101, { from: '2026-11-16', to: '2026-11-16' }, GUEST)).rejects.toMatchObject({ status: 404 });
+  });
+});
+
+describe('VIEW-19 notification', () => {
+  it('NOTI-08 / LOC-06: both viewing callers use stored templates and a padded Hanoi date', async () => {
+    const { db, service, send } = setupViewings();
+    const templates = {
+      viewingNew: { vi: { subject: 'Lịch mới', text: '{guestName}\n{guestPhone}\n{guestEmail}\n{room}\n{building}\n{time}\n{note}' } },
+      viewingConfirmed: { en: { subject: 'Confirmed', text: '{room}\n{building}\n{address}\n{time}\n{contact}' } },
     };
-    const res = await service.create(MANAGER_10, dto);
-    expect(res.source).toBe('MANUAL');
-    expect(res.status).toBe('NEW');
-    expect(res.handledById).toBe(MANAGER_10.id);
-    expect(res.roomId).toBe(101);
+    db.prisma.setting.findUnique.mockImplementation(async ({ where }: any) => ({ value: where.key === 'email_templates' ? templates : { phone: '0982222222' } }) as any);
+    await service.book(GUEST, { roomId: 101, visitAt: HOUR, note: 'Gọi trước' });
+    expect(send.mock.calls[0][0].subject).toBe('Lịch mới');
+    expect(send.mock.calls[0][0].text).toContain('16/11/2026, 10:00 (Asia/Ho_Chi_Minh)');
+    expect(send.mock.calls[0][0].text).toContain('guest@example.test');
+    await service.confirm(BOSS, 1, { via: 'EMAIL' });
+    expect(send.mock.calls[1][0].subject).toBe('Confirmed');
+    expect(send.mock.calls[1][0].text).toContain('16/11/2026, 10:00 (Asia/Ho_Chi_Minh)');
+    expect(send.mock.calls[1][0].text).toContain('0981111111');
   });
-
-  it('VIEW-03: room is_active=false → 409 CONFLICT_STATE', async () => {
-    const { prisma } = makePrisma([]);
-    const service = new ViewingsService(prisma);
-    const dto: CreateViewingDto = { roomId: 102, guestName: 'A', guestPhone: '0912345672', visitDate: TOMORROW, timeSlot: 'MORNING' };
-    await expectHttpError(service.create(MANAGER_10, dto), 409);
+  it.each(['inactive', 'missing email', 'unassigned'])('VIEW-19: %s manager falls back to Boss', async kind => {
+    const { db, service, send } = setupViewings();
+    if (kind === 'inactive') db.users[1].isActive = false;
+    if (kind === 'missing email') db.users[1].email = null;
+    if (kind === 'unassigned') db.buildings[0].managerId = null as any;
+    send.mockImplementationOnce(async () => { expect(db.inTransaction).toBe(false); });
+    await service.book(GUEST, { roomId: 101, visitAt: HOUR, note: 'Gọi trước' });
+    expect(send).toHaveBeenCalledOnce();
+    expect(send.mock.calls[0][0]).toMatchObject({ to: 'boss@example.test' });
+    expect(send.mock.calls[0][0].text).toContain('Gọi trước');
   });
-
-  it('VIEW-03: room of a different building (MANAGER) → 403 OUT_OF_SCOPE', async () => {
-    const { prisma } = makePrisma([]);
-    const service = new ViewingsService(prisma);
-    const dto: CreateViewingDto = { roomId: 103, guestName: 'A', guestPhone: '0912345673', visitDate: TOMORROW, timeSlot: 'MORNING' };
-    await expectHttpError(service.create(MANAGER_10, dto), 403);
-  });
-
-  it('VIEW-03: room does not exist → 404 NOT_FOUND', async () => {
-    const { prisma } = makePrisma([]);
-    const service = new ViewingsService(prisma);
-    const dto: CreateViewingDto = { roomId: 999999, guestName: 'A', guestPhone: '0912345674', visitDate: TOMORROW, timeSlot: 'MORNING' };
-    await expectHttpError(service.create(MANAGER_10, dto), 404);
-  });
-
-  it('VIEW-03 + BLD-06 + Q-P6-1=B: BOSS can create a manual viewing for an active room of a locked building', async () => {
-    const { prisma } = makePrisma([]);
-    const service = new ViewingsService(prisma);
-    const dto: CreateViewingDto = { roomId: 104, guestName: 'A', guestPhone: '0912345675', visitDate: TOMORROW, timeSlot: 'MORNING' };
-    const res = await service.create(BOSS, dto);
-    expect(res.status).toBe('NEW');
-    expect(res.handledById).toBe(BOSS.id);
-  });
-
-  it('VIEW-03 + BLD-06 + Q-P6-1=B: the locked building’s former MANAGER (no longer in scope) is 403 OUT_OF_SCOPE', async () => {
-    const { prisma } = makePrisma([]);
-    const service = new ViewingsService(prisma);
-    const dto: CreateViewingDto = { roomId: 104, guestName: 'A', guestPhone: '0912345676', visitDate: TOMORROW, timeSlot: 'MORNING' };
-    await expectHttpError(service.create(MANAGER_10, dto), 403);
-  });
-
-  it('VIEW-03/VIEW-08: visitDate = today+31 on create → 400 fields.visitDate; today and today+30 are accepted', async () => {
-    const { prisma } = makePrisma([]);
-    const service = new ViewingsService(prisma);
-    await expectHttpError(
-      service.create(MANAGER_10, { roomId: 101, guestName: 'A', guestPhone: '0912345677', visitDate: PLUS31, timeSlot: 'MORNING' }),
-      400,
-      'visitDate',
-    );
-    await expect(
-      service.create(MANAGER_10, { roomId: 101, guestName: 'A', guestPhone: '0912345678', visitDate: PLUS30, timeSlot: 'MORNING' }),
-    ).resolves.toMatchObject({ status: 'NEW' });
-  });
-});
-
-describe('CP-4 (BE-P2-32) · ViewingsService.update (VIEW-04, VIEW-09, Q-P6-3)', () => {
-  function setupWith(status: string, extra: Partial<Row> = {}) {
-    const rows: Row[] = [];
-    addRow(rows, { id: 1, roomId: 101, status, visitDate: TOMORROW, timeSlot: 'MORNING', ...extra });
-    const { prisma } = makePrisma(rows);
-    return { service: new ViewingsService(prisma), rows, prisma };
-  }
-
-  it('Q4-WON: status=WON is 409 CONFLICT_STATE, never 400 (NEW → WON is not an allowed PATCH move)', async () => {
-    const { service } = setupWith('NEW');
-    await expectHttpError(service.update(BOSS, 1, { status: 'WON' } as UpdateViewingDto), 409);
-  });
-
-  it('VIEW-04: NEW → LOST → 409 CONFLICT_STATE (LOST only reachable from CONFIRMED)', async () => {
-    const { service } = setupWith('NEW');
-    await expectHttpError(service.update(BOSS, 1, { status: 'LOST', outcomeNote: 'Khách không đến' } as UpdateViewingDto), 409);
-  });
-
-  it('VIEW-04: CONFIRMED → LOST without outcomeNote → 400 fields.outcomeNote', async () => {
-    const { service } = setupWith('CONFIRMED');
-    await expectHttpError(service.update(BOSS, 1, { status: 'LOST' } as UpdateViewingDto), 400, 'outcomeNote');
-  });
-
-  it('VIEW-04: CONFIRMED → LOST with outcomeNote → 200, status and note saved', async () => {
-    const { service } = setupWith('CONFIRMED');
-    const res = await service.update(MANAGER_10, 1, { status: 'LOST', outcomeNote: 'Khách đổi ý' } as UpdateViewingDto);
-    expect(res.status).toBe('LOST');
-    expect(res.outcomeNote).toBe('Khách đổi ý');
-    expect(res.handledById).toBe(MANAGER_10.id);
-  });
-
-  it('VIEW-04: NEW → CONFIRMED → 200, handledById is the caller', async () => {
-    const { service } = setupWith('NEW');
-    const res = await service.update(MANAGER_10, 1, { status: 'CONFIRMED' } as UpdateViewingDto);
-    expect(res.status).toBe('CONFIRMED');
-    expect(res.handledById).toBe(MANAGER_10.id);
-  });
-
-  it('VIEW-04: CANCELLED → CONFIRMED → 409 CONFLICT_STATE (CANCELLED has no outgoing move)', async () => {
-    const { service } = setupWith('CANCELLED');
-    await expectHttpError(service.update(BOSS, 1, { status: 'CONFIRMED' } as UpdateViewingDto), 409);
-  });
-
-  it('VIEW-04: WON → anything (e.g. CANCELLED) → 409 CONFLICT_STATE', async () => {
-    const { service } = setupWith('WON');
-    await expectHttpError(service.update(BOSS, 1, { status: 'CANCELLED' } as UpdateViewingDto), 409);
-  });
-
-  it('Q-P6-3=A: NEW → CANCELLED without outcomeNote → 200, outcomeNote stays null', async () => {
-    const { service } = setupWith('NEW');
-    const res = await service.update(BOSS, 1, { status: 'CANCELLED' } as UpdateViewingDto);
-    expect(res.status).toBe('CANCELLED');
-    expect(res.outcomeNote).toBeNull();
-  });
-
-  it('Q-P6-3=A: CONFIRMED → CANCELLED with outcomeNote → 200, outcomeNote is saved', async () => {
-    const { service } = setupWith('CONFIRMED');
-    const res = await service.update(BOSS, 1, { status: 'CANCELLED', outcomeNote: 'Khách hủy' } as UpdateViewingDto);
-    expect(res.status).toBe('CANCELLED');
-    expect(res.outcomeNote).toBe('Khách hủy');
-  });
-
-  it('VIEW-09: NEW allows changing visitDate/timeSlot → 200', async () => {
-    const { service } = setupWith('NEW');
-    const res = await service.update(BOSS, 1, { visitDate: PLUS30, timeSlot: 'EVENING' } as UpdateViewingDto);
-    expect(res.visitDate).toBe(PLUS30);
-    expect(res.timeSlot).toBe('EVENING');
-  });
-
-  it('VIEW-09: CONFIRMED allows changing visitDate/timeSlot → 200', async () => {
-    const { service } = setupWith('CONFIRMED');
-    const res = await service.update(BOSS, 1, { timeSlot: 'EVENING' } as UpdateViewingDto);
-    expect(res.timeSlot).toBe('EVENING');
-  });
-
-  it.each(['WON', 'LOST', 'CANCELLED'])('VIEW-09: %s refuses a visitDate/timeSlot change → 409 CONFLICT_STATE', async (status) => {
-    const { service } = setupWith(status);
-    await expectHttpError(service.update(BOSS, 1, { timeSlot: 'EVENING' } as UpdateViewingDto), 409);
-  });
-
-  it('VIEW-09/VIEW-08: moving visitDate to today+31 → 400 fields.visitDate', async () => {
-    const { service } = setupWith('NEW');
-    await expectHttpError(service.update(BOSS, 1, { visitDate: PLUS31 } as UpdateViewingDto), 400, 'visitDate');
-  });
-
-  it('[ASSUMPTION 12] a NEW viewing stuck at yesterday, PATCH with only timeSlot → 400 fields.visitDate (current date carried over still fails VIEW-08)', async () => {
-    const { service } = setupWith('NEW', { visitDate: new Date(`${YESTERDAY}T00:00:00.000Z`) });
-    await expectHttpError(service.update(BOSS, 1, { timeSlot: 'EVENING' } as UpdateViewingDto), 400, 'visitDate');
-  });
-
-  it('[ASSUMPTION 12] the same stale viewing, PATCH with both visitDate and timeSlot → 200', async () => {
-    const { service } = setupWith('NEW', { visitDate: new Date(`${YESTERDAY}T00:00:00.000Z`) });
-    const res = await service.update(BOSS, 1, { visitDate: TOMORROW, timeSlot: 'EVENING' } as UpdateViewingDto);
-    expect(res.visitDate).toBe(TOMORROW);
-    expect(res.timeSlot).toBe('EVENING');
-  });
-
-  it('[ASSUMPTION 12] editing only note on a LOST viewing → 200 (VIEW-08 is not applied, note is not date/slot)', async () => {
-    const { service } = setupWith('LOST', { outcomeNote: 'Đã gọi' });
-    const res = await service.update(BOSS, 1, { note: 'khách gọi lại' } as UpdateViewingDto);
-    expect(res.status).toBe('LOST');
-    expect(res.note).toBe('khách gọi lại');
-  });
-
-  it('SCOPE-02: PATCH on a viewing of another building (MANAGER) → 403 OUT_OF_SCOPE', async () => {
-    const rows: Row[] = [];
-    addRow(rows, { id: 1, roomId: 103, status: 'NEW', visitDate: TOMORROW, timeSlot: 'MORNING' });
-    const { prisma } = makePrisma(rows);
-    const service = new ViewingsService(prisma);
-    await expectHttpError(service.update(MANAGER_10, 1, { status: 'CONFIRMED' } as UpdateViewingDto), 403);
-  });
-
-  it('VIEW-04: a concurrent status change (updateMany returns 0 rows) → 409 CONFLICT_STATE', async () => {
-    const { service, prisma } = setupWith('NEW');
-    // Simulate someone else flipping the status between the read and the conditional update.
-    prisma.viewing.updateMany = vi.fn(async () => ({ count: 0 }));
-    await expectHttpError(service.update(BOSS, 1, { status: 'CONFIRMED' } as UpdateViewingDto), 409);
-  });
-
-  it('PATCH on a non-existent viewing → 404 NOT_FOUND', async () => {
-    const { prisma } = makePrisma([]);
-    const service = new ViewingsService(prisma);
-    await expectHttpError(service.update(BOSS, 999, { status: 'CONFIRMED' } as UpdateViewingDto), 404);
-  });
-});
-
-describe('CP-4 (BE-P2-32) · ViewingsService.list (GET /viewings, SCOPE-02/API-08)', () => {
-  it('[ASSUMPTION 14] slot order: MORNING < AFTERNOON < EVENING for the same date, regardless of insertion/DB-alphabetical order', async () => {
-    const rows: Row[] = [];
-    // Inserted in EVENING, MORNING, AFTERNOON order so ids are 1=EVENING, 2=MORNING, 3=AFTERNOON.
-    addRow(rows, { id: 1, roomId: 101, visitDate: TOMORROW, timeSlot: 'EVENING' });
-    addRow(rows, { id: 2, roomId: 101, visitDate: TOMORROW, timeSlot: 'MORNING' });
-    addRow(rows, { id: 3, roomId: 101, visitDate: TOMORROW, timeSlot: 'AFTERNOON' });
-    const { prisma } = makePrisma(rows);
-    const service = new ViewingsService(prisma);
-    const res = await service.list(BOSS, {} as ViewingsQueryDto);
-    expect(res.data.map((v) => v.timeSlot)).toEqual(['MORNING', 'AFTERNOON', 'EVENING']);
-    expect(res.data.map((v) => v.id)).toEqual([2, 3, 1]);
-  });
-
-  it('[ASSUMPTION 14] an earlier visitDate always sorts before a later one, regardless of slot', async () => {
-    const rows: Row[] = [];
-    addRow(rows, { id: 1, roomId: 101, visitDate: PLUS30, timeSlot: 'MORNING' });
-    addRow(rows, { id: 2, roomId: 101, visitDate: TODAY_STR, timeSlot: 'EVENING' });
-    const { prisma } = makePrisma(rows);
-    const service = new ViewingsService(prisma);
-    const res = await service.list(BOSS, {} as ViewingsQueryDto);
-    expect(res.data.map((v) => v.id)).toEqual([2, 1]);
-  });
-
-  it('[ASSUMPTION 14] same date, same slot → tiebreak by ascending id', async () => {
-    const rows: Row[] = [];
-    addRow(rows, { id: 5, roomId: 101, visitDate: TOMORROW, timeSlot: 'MORNING' });
-    addRow(rows, { id: 2, roomId: 101, visitDate: TOMORROW, timeSlot: 'MORNING' });
-    const { prisma } = makePrisma(rows);
-    const service = new ViewingsService(prisma);
-    const res = await service.list(BOSS, {} as ViewingsQueryDto);
-    expect(res.data.map((v) => v.id)).toEqual([2, 5]);
-  });
-
-  it('SCOPE-02/API-08: MANAGER without buildingId sees only viewings of buildings in scope', async () => {
-    const rows: Row[] = [];
-    addRow(rows, { id: 1, roomId: 101, visitDate: TOMORROW }); // building 10, in scope
-    addRow(rows, { id: 2, roomId: 103, visitDate: TOMORROW }); // building 20, out of scope for MANAGER_10
-    const { prisma } = makePrisma(rows);
-    const service = new ViewingsService(prisma);
-    const res = await service.list(MANAGER_10, {} as ViewingsQueryDto);
-    expect(res.data.map((v) => v.id)).toEqual([1]);
-  });
-
-  it('SCOPE-02/API-08: MANAGER with 2 buildings sees both; BOSS sees every building incl. a locked one', async () => {
-    const rows: Row[] = [];
-    addRow(rows, { id: 1, roomId: 101, visitDate: TOMORROW }); // 10
-    addRow(rows, { id: 2, roomId: 103, visitDate: TOMORROW }); // 20
-    addRow(rows, { id: 3, roomId: 104, visitDate: TOMORROW }); // 30, locked
-    const { prisma } = makePrisma(rows);
-    const service = new ViewingsService(prisma);
-    const manager = await service.list(MANAGER_1020, {} as ViewingsQueryDto);
-    expect(manager.data.map((v) => v.id).sort()).toEqual([1, 2]);
-    const boss = await service.list(BOSS, {} as ViewingsQueryDto);
-    expect(boss.data.map((v) => v.id).sort()).toEqual([1, 2, 3]);
-  });
-
-  it('SCOPE-02: ?buildingId of a building outside MANAGER scope → 403 OUT_OF_SCOPE', async () => {
-    const { prisma } = makePrisma([]);
-    const service = new ViewingsService(prisma);
-    await expectHttpError(service.list(MANAGER_10, { buildingId: 30 } as ViewingsQueryDto), 403);
-  });
-
-  it('status=NEW filters out every other status', async () => {
-    const rows: Row[] = [];
-    addRow(rows, { id: 1, roomId: 101, visitDate: TOMORROW, status: 'NEW' });
-    addRow(rows, { id: 2, roomId: 101, visitDate: TOMORROW, status: 'CONFIRMED' });
-    const { prisma } = makePrisma(rows);
-    const service = new ViewingsService(prisma);
-    const res = await service.list(BOSS, { status: 'NEW' } as ViewingsQueryDto);
-    expect(res.data.map((v) => v.id)).toEqual([1]);
-  });
-
-  it('from/to filter visitDate inclusive of both ends', async () => {
-    const d1 = formatDateOnly(addDays(TODAY, 1));
-    const d2 = formatDateOnly(addDays(TODAY, 2));
-    const d3 = formatDateOnly(addDays(TODAY, 3));
-    const rows: Row[] = [];
-    addRow(rows, { id: 1, roomId: 101, visitDate: d1 });
-    addRow(rows, { id: 2, roomId: 101, visitDate: d2 });
-    addRow(rows, { id: 3, roomId: 101, visitDate: d3 });
-    const { prisma } = makePrisma(rows);
-    const service = new ViewingsService(prisma);
-    const res = await service.list(BOSS, { from: d1, to: d2 } as ViewingsQueryDto);
-    expect(res.data.map((v) => v.id)).toEqual([1, 2]);
-  });
-
-  it('from > to → data: [] (no error, just an empty window)', async () => {
-    const d1 = formatDateOnly(addDays(TODAY, 1));
-    const d2 = formatDateOnly(addDays(TODAY, 2));
-    const rows: Row[] = [];
-    addRow(rows, { id: 1, roomId: 101, visitDate: d1 });
-    const { prisma } = makePrisma(rows);
-    const service = new ViewingsService(prisma);
-    const res = await service.list(BOSS, { from: d2, to: d1 } as ViewingsQueryDto);
-    expect(res.data).toEqual([]);
-  });
-
-  it('from with an impossible calendar date (2026-02-30) → 400 fields.from', async () => {
-    const { prisma } = makePrisma([]);
-    const service = new ViewingsService(prisma);
-    await expectHttpError(service.list(BOSS, { from: '2026-02-30' } as ViewingsQueryDto), 400, 'from');
-  });
-
-  it('pagination meta: total reflects the filtered set, data is paged by limit/page', async () => {
-    const rows: Row[] = [];
-    for (let i = 1; i <= 3; i++) addRow(rows, { id: i, roomId: 101, visitDate: TOMORROW });
-    const { prisma } = makePrisma(rows);
-    const service = new ViewingsService(prisma);
-    const res = await service.list(BOSS, { page: 2, limit: 1 } as ViewingsQueryDto);
-    expect(res.meta).toEqual({ page: 2, limit: 1, total: 3 });
-    expect(res.data).toHaveLength(1);
-  });
-
-  it('VIEW-10: statusLabel and timeSlotLabel use the exact Vietnamese text of 13-viewings.md', async () => {
-    const rows: Row[] = [];
-    addRow(rows, { id: 1, roomId: 101, visitDate: TOMORROW, timeSlot: 'AFTERNOON', status: 'CONFIRMED' });
-    const { prisma } = makePrisma(rows);
-    const service = new ViewingsService(prisma);
-    const res = await service.list(BOSS, {} as ViewingsQueryDto);
-    expect(res.data[0].timeSlotLabel).toBe('Chiều (14:00–17:00)');
-    expect(res.data[0].statusLabel).toBe('Đã xác nhận');
+  it('VIEW-19/NOTI-07: email failure retries once but booking remains saved', async () => {
+    const { db, service, send } = setupViewings(); send.mockRejectedValue(new Error('down'));
+    expect((await service.book(GUEST, { roomId: 101, visitAt: HOUR })).id).toBe(1);
+    expect(send).toHaveBeenCalledTimes(2); expect(db.rows).toHaveLength(1);
   });
 });

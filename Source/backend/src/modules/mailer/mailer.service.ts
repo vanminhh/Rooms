@@ -7,9 +7,14 @@ export interface Mail {
   text: string;
 }
 
+export interface MailOptions {
+  idempotencyKey?: string;
+  signal?: AbortSignal;
+}
+
 // Abstract so a real provider can replace the console one in MailerModule without touching callers.
 export abstract class MailerService {
-  abstract send(mail: Mail): Promise<void>;
+  abstract send(mail: Mail, options?: MailOptions): Promise<void>;
 }
 
 // shortcut: logs the reset link (secret) to the console, dev only; replace with a real provider before production

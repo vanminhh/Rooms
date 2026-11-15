@@ -116,8 +116,10 @@ function makePrisma(
   ratePlanRows: { status: string; effectiveFrom: Date }[] = [],
 ) {
   return {
+    user: { findFirst: vi.fn(async () => ({ id: 1 })) },
     viewing: {
       findMany: vi.fn(async ({ where, select }: any) => {
+        if (where.visitAt?.not === null) return []; // These historical fixtures have only legacy slots.
         const rows = viewingRows.filter((r) => matchWhere(r, where));
         if (select) return rows.map((r) => ({ id: r.id, visitDate: r.visitDate, timeSlot: r.timeSlot }));
         return rows.map((r) => ({ ...r, room: roomInclude(r.roomId) }));

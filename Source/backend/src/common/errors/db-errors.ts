@@ -10,6 +10,7 @@ export interface DbErrorMapping {
 export const DB_ERROR_MAP: Record<string, DbErrorMapping> = {
   users_phone_key: { code: ErrorCode.PHONE_TAKEN },
   users_email_key: { code: ErrorCode.EMAIL_TAKEN },
+  viewings_one_open_per_user_room: { code: ErrorCode.CONFLICT_STATE },
   rooms_building_id_code_key: {
     code: ErrorCode.VALIDATION_FAILED,
     fields: { code: 'Mã phòng đã có trong tòa (kể cả phòng đã khóa)' },
@@ -40,6 +41,11 @@ export function mapDbError(e: unknown): DbErrorMapping | null {
     // Prisma puts the violated index name in meta.target (a string, or an array on some versions).
     const target = meta?.target;
     const targets: unknown[] = Array.isArray(target) ? target : [target];
+    if (targets.length === 2 &&
+        ((targets.includes('user_id') && targets.includes('room_id')) ||
+         (targets.includes('userId') && targets.includes('roomId')))) {
+      return { code: ErrorCode.CONFLICT_STATE };
+    }
     const hit = targets.find(
       (t): t is string => typeof t === 'string' && Object.hasOwn(DB_ERROR_MAP, t),
     );

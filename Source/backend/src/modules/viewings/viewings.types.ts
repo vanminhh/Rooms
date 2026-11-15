@@ -1,8 +1,8 @@
 import type { TimeSlot } from '../../common/date/today.js';
+import type { PublicContact } from '../settings/settings.service.js';
 
-export type ViewingStatus = 'NEW' | 'CONFIRMED' | 'WON' | 'LOST' | 'CANCELLED';
+export type ViewingStatus = 'NEW' | 'CONFIRMED' | 'WON' | 'LOST' | 'CANCELLED' | 'DONE';
 
-// API shape of one viewing for staff (CP-4 returns it; CP-3 only declares it).
 export interface ViewingView {
   id: number;
   roomId: number;
@@ -11,15 +11,39 @@ export interface ViewingView {
   buildingName: string;
   guestName: string;
   guestPhone: string;
-  visitDate: string; // YYYY-MM-DD
-  timeSlot: TimeSlot;
-  timeSlotLabel: string; // VIEW-08
+  guestEmail: string | null;
+  visitAt: string | null;
+  visitDate: string | null;
+  timeSlot: TimeSlot | null;
+  timeSlotLabel: string | null;
   note: string | null;
   source: 'WEB' | 'MANUAL';
   status: ViewingStatus;
-  statusLabel: string; // VIEW-10
+  statusLabel: string;
   handledById: number | null;
   outcomeNote: string | null;
-  createdAt: string; // ISO 8601
+  overdue: boolean;
+  overlap: boolean;
+  roomLocked: boolean;
+  createdAt: string;
   updatedAt: string;
 }
+
+// Explicit allowlist: no staff ids, internal outcome notes, or other guests' details.
+export interface OwnViewingView {
+  id: number;
+  roomId: number;
+  roomCode: string;
+  buildingName: string;
+  buildingAddress: string;
+  visitAt: string | null;
+  visitDate: string | null;
+  timeSlot: TimeSlot | null;
+  note: string | null;
+  status: ViewingStatus;
+  contact: PublicContact | null;
+  bossContact: PublicContact | null;
+  createdAt: string;
+}
+
+export interface ViewingDay { date: string; hours: string[] }

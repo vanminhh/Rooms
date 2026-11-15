@@ -7,7 +7,6 @@ import { listFeaturedRooms, listPublicLocations, publicQueryKeys } from '../../f
 import type { PublicLocation } from '../../features/public/api'
 import { ListState } from '../../features/public/ListState'
 import { RoomCard } from '../../features/public/RoomCard'
-import { EntryScreen } from '../../features/public/EntryScreen'
 import { formatMoney } from '../../shared/formatters'
 import { useI18n } from '../../shared/i18n'
 import '../../features/public/home-lower.css'
@@ -76,7 +75,6 @@ export function PublicHomePage() {
   const zalo = contact.data?.zaloUrl?.startsWith('https://') ? contact.data.zaloUrl : null
 
   return <>
-    <EntryScreen />
     <section className="public-hero" aria-labelledby="public-home-title">
       <div className="public-hero-copy">
         <p className="rooms-eyebrow">{t('home.hero.eyebrow')}</p>

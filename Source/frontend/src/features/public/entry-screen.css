@@ -1,10 +1,19 @@
 .rooms-theme .public-entry-card {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
   width: min(100%, 32rem);
   max-height: calc(100dvh - 2rem);
   overflow-y: auto;
   padding: clamp(1.25rem, 4vw, 2.5rem);
 }
 
-.rooms-theme .public-entry-card h2 { margin-top: 0; }
+.rooms-theme .public-entry { isolation: isolate; overflow: auto; }
+.rooms-theme .public-entry-background { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.rooms-theme .public-entry::after { content: ''; position: absolute; inset: 0; background: var(--rooms-ink); opacity: .35; }
+.rooms-theme .public-entry-card > .rooms-language-switch { margin-top: 1.25rem; }
+.rooms-theme .public-entry-card > .rooms-illustration-label { position: static; display: inline-block; margin-top: 1rem; }
+
+.rooms-theme .public-entry-card h2 { margin: 0 0 1.25rem; line-height: 1.4; }
 .rooms-theme .public-entry-choices { display: grid; gap: 1rem; }
 .rooms-theme .public-entry-choices .rooms-button { white-space: normal; }

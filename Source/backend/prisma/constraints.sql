@@ -136,3 +136,12 @@ CREATE UNIQUE INDEX requests_one_pending_moveout_renew ON requests (contract_id)
 
 ALTER TABLE announcements ADD CONSTRAINT announcements_room_needs_building CHECK (room_id IS NULL OR building_id IS NOT NULL);
 CREATE UNIQUE INDEX notifications_once_per_announcement ON notifications (announcement_id, user_id) WHERE announcement_id IS NOT NULL;
+
+-- VIEW-08: preserve legacy slots and require one usable time representation.
+ALTER TABLE viewings ADD CONSTRAINT viewings_time_present
+  CHECK (visit_at IS NOT NULL OR (visit_date IS NOT NULL AND time_slot IS NOT NULL));
+
+-- VIEW-02a: one open viewing per account/room; legacy and manual rows have no owner.
+-- VIEW-16 capacity and cross-building conflicts are checked under backend transaction locks.
+CREATE UNIQUE INDEX viewings_one_open_per_user_room ON viewings (user_id, room_id)
+  WHERE user_id IS NOT NULL AND status IN ('NEW', 'CONFIRMED');

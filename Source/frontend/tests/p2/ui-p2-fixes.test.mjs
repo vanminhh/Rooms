@@ -26,34 +26,21 @@ function installFixedNow(ms) {
   return () => { globalThis.Date = RealDate }
 }
 
-async function mountViewingForm(nowMs) {
+async function mountViewingCalendar(nowMs, hours) {
   const restore = installFixedNow(nowMs)
   const React = nodeRequire('react')
-  const { ViewingForm } = loadModule(draftFirst('src/features/public/ViewingForm.tsx'))
-  const app = await mount(React.createElement(ViewingForm, { roomId: 7, roomCode: '201' }))
+  const { ViewingCalendar } = loadModule(draftFirst('src/features/public/ViewingCalendar.tsx'))
+  const app = await mount(React.createElement(ViewingCalendar, { days: [{ date: '2026-11-10', hours }, { date: '2026-11-11', hours: ['2026-11-11T03:00:00Z'] }], selectedDay: '', onSelectDay() {} }))
   return { app, async stop() { await app.stop(); restore() } }
 }
-const dateInput = container => find(container, n => n.tagName === 'INPUT' && n.type === 'date')[0]
-
-test('VIEW-08: at 19:00 Hà Nội every slot of today has started, so "Hôm nay" is disabled and the picker starts tomorrow', async () => {
-  const { app, stop } = await mountViewingForm(hanoiInstant('2026-11-10', 19, 0).getTime())
-  try {
-    const todayButton = buttonByText(app.container, 'Hôm nay')
-    assert.ok(isDisabled(todayButton), '"Hôm nay" must be disabled when no slot is left today')
-    assert.equal(todayButton.attributes['aria-describedby'], 'viewing-today-closed')
-    assert.ok(app.container.textContent.includes('Hôm nay đã hết buổi xem, vui lòng chọn từ ngày mai.'))
-    assert.equal(dateInput(app.container).attributes.min, '2026-11-11')
-    assert.ok(!isDisabled(buttonByText(app.container, 'Ngày mai')))
-  } finally { await stop() }
+const calendarDay = (container, day) => find(container, n => n.attributes?.['aria-label']?.startsWith(day))[0]
+test('VIEW-08/21: at 19:00 the API returns no remaining hour today; calendar keeps today visible and disabled', async () => {
+  const { app, stop } = await mountViewingCalendar(hanoiInstant('2026-11-10', 19).getTime(), [])
+  try { assert.ok(isDisabled(calendarDay(app.container, '2026-11-10'))); assert.ok(!isDisabled(calendarDay(app.container, '2026-11-11'))) } finally { await stop() }
 })
-
-test('VIEW-08: at 17:59 the evening slot is still open, so "Hôm nay" stays enabled and the picker starts today', async () => {
-  const { app, stop } = await mountViewingForm(hanoiInstant('2026-11-10', 17, 59).getTime())
-  try {
-    assert.ok(!isDisabled(buttonByText(app.container, 'Hôm nay')))
-    assert.ok(!app.container.textContent.includes('Hôm nay đã hết buổi xem'))
-    assert.equal(dateInput(app.container).attributes.min, '2026-11-10')
-  } finally { await stop() }
+test('VIEW-08/21: a remaining 19:00 hour keeps today available, after the old evening slot has started', async () => {
+  const { app, stop } = await mountViewingCalendar(hanoiInstant('2026-11-10', 18, 30).getTime(), ['2026-11-10T12:00:00Z'])
+  try { assert.ok(!isDisabled(calendarDay(app.container, '2026-11-10'))) } finally { await stop() }
 })
 
 test('UI-24: the phone booking bar is rendered hidden and stays hidden without IntersectionObserver', async () => {

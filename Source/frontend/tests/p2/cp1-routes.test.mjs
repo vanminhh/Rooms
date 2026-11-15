@@ -82,6 +82,7 @@ function compileRoutes() {
     '../layouts/GuestLayout': stub('GuestLayout'),
     '../pages/guest/GuestHomePage': stub('GuestHomePage'),
     '../pages/guest/GuestAccountPage': stub('GuestAccountPage'),
+    '../pages/guest/GuestViewingPage': stub('GuestViewingPage'),
     '../pages/public/RegisterPage': stub('RegisterPage'),
     '../pages/public/VerifyEmailPage': stub('VerifyEmailPage'),
     './RequireAuth': { ...stub('RequireAuth'), ...stub('GuestOnly') },

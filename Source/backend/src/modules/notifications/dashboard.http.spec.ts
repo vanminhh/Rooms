@@ -73,7 +73,7 @@ describe('CP-5 (BE-P2-33) · GET /dashboard HTTP contract (VIEW-07, SCOPE-04, PR
   }
 
   const fakePrisma: any = {
-    user: { findUnique: vi.fn(async ({ where }: any) => users.get(where.id) ?? null) },
+    user: { findUnique: vi.fn(async ({ where }: any) => users.get(where.id) ?? null), findFirst: vi.fn(async () => ({ id: 1 })) },
     building: {
       findMany: vi.fn(async ({ where }: any) =>
         [...buildings.values()].filter((b) => b.managerId === where.managerId && b.isActive === where.isActive),
@@ -81,6 +81,7 @@ describe('CP-5 (BE-P2-33) · GET /dashboard HTTP contract (VIEW-07, SCOPE-04, PR
     },
     viewing: {
       findMany: vi.fn(async ({ where, select }: any) => {
+        if (where.visitAt?.not === null) return []; // Legacy fixture holds no exact hour.
         const rows = viewingRows.filter(
           (r) => (where.status === undefined || r.status === where.status) && matchRoomWhere(where.room, r.roomId),
         );

@@ -300,12 +300,21 @@ test('VIEW-07: newViewings.count:0 with items:[] shows the empty state "Chưa c�
   await app.stop()
 })
 
-test('UI-02: an item\'s timeSlotLabel renders exactly as the API sends it (no FE remapping of the label)', async () => {
-  const items = [baseViewing({ id: 1, timeSlot: 'EVENING', timeSlotLabel: 'Buổi lạ không giống chữ chuẩn' })]
+test('VIEW-08/UI-02: legacy slots keep the spec label, without inventing an exact hour', async () => {
+  const items = [baseViewing({ id: 1, visitAt: null, timeSlot: 'EVENING', timeSlotLabel: 'Tối (18:00–20:00)' })]
   fakeFetch([{ prefix: '/dashboard', method: 'GET', handler: () => ok(baseDashboard({ newViewings: { count: 1, items } })) }])
   const app = await mountHome({ user: BOSS_USER })
-  await until(() => app.container.textContent.includes('Buổi lạ không giống chữ chuẩn'), 'API time-slot label')
-  assert.ok(app.container.textContent.includes('Buổi lạ không giống chữ chuẩn'), 'the FE must show the API\'s own timeSlotLabel text verbatim, not a label it computed itself')
+  await until(() => app.container.textContent.includes('Tối (18:00–20:00)'), 'legacy label')
+  await app.stop()
+})
+
+test('VIEW-22/NOTI-06: overlap tasks include CONFIRMED and show exact Hanoi time', async () => {
+  const items = [baseViewing({ id: 8, visitAt: '2026-11-16T03:00:00Z', status: 'CONFIRMED', statusLabel: 'Đã xác nhận' })]
+  fakeFetch([{ prefix: '/dashboard', method: 'GET', handler: () => ok(baseDashboard({ overlappingViewings: { count: 1, items } })) }])
+  const app = await mountHome({ user: BOSS_USER })
+  await until(() => app.container.textContent.includes('Lịch hẹn trùng giờ'), 'overlap task')
+  assert.ok(app.container.textContent.includes('10:00'))
+  assert.ok(app.container.textContent.includes('Đã xác nhận'))
   await app.stop()
 })
 

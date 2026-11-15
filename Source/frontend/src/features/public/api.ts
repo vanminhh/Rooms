@@ -133,16 +133,6 @@ export interface PublicRoomsQuery {
   limit?: number
 }
 
-export interface PublicViewingInput {
-  roomId: number
-  guestName: string
-  guestPhone: string
-  visitDate: string
-  timeSlot: 'MORNING' | 'AFTERNOON' | 'EVENING'
-  note?: string
-  website?: string
-}
-
 export const publicQueryKeys = {
   locations: ['public', 'locations'] as const,
   filters: ['public', 'filters'] as const,
@@ -174,8 +164,4 @@ export function getPublicRoom(id: number): Promise<PublicRoomDetail> {
 
 export function getPublicBuilding(id: number): Promise<PublicBuildingDetail> {
   return apiRequest<PublicBuildingDetail>(`/public/buildings/${id}`)
-}
-
-export function createPublicViewing(input: PublicViewingInput): Promise<{ received: true }> {
-  return apiRequest<{ received: true }>('/public/viewings', { method: 'POST', body: input })
 }

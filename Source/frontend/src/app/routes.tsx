@@ -1,3 +1,4 @@
+import { GuestViewingPage } from '../pages/guest/GuestViewingPage'
 import type { RouteObject } from 'react-router'
 import { PublicLayout } from '../layouts/PublicLayout'
 import { TenantLayout } from '../layouts/TenantLayout'
@@ -86,6 +87,7 @@ export const routes: RouteObject[] = [
       children: [
         { index: true, element: <GuestHomePage /> },
         { path: 'tai-khoan', element: <GuestAccountPage /> },
+        { path: 'lich-hen/:id', element: <GuestViewingPage /> },
       ],
     }],
   },

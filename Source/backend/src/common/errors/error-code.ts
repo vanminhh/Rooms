@@ -16,6 +16,7 @@ export enum ErrorCode {
   MAIL_UNAVAILABLE = 'MAIL_UNAVAILABLE',
   MANAGER_MAX_2_BUILDINGS = 'MANAGER_MAX_2_BUILDINGS',
   ROOM_NOT_AVAILABLE = 'ROOM_NOT_AVAILABLE',
+  VIEWING_TIME_TAKEN = 'VIEWING_TIME_TAKEN',
   CONTRACT_TERM_TOO_SHORT = 'CONTRACT_TERM_TOO_SHORT',
   DEPOSIT_NOT_PAID = 'DEPOSIT_NOT_PAID',
   INVOICE_NOT_UNPAID = 'INVOICE_NOT_UNPAID',
@@ -61,6 +62,7 @@ export const ERRORS: Record<ErrorCode, { status: number; message: string }> = {
     message: 'Mỗi quản lý chỉ phụ trách tối đa 2 tòa',
   },
   [ErrorCode.ROOM_NOT_AVAILABLE]: { status: 409, message: 'Phòng không còn trống' },
+  [ErrorCode.VIEWING_TIME_TAKEN]: { status: 409, message: 'Giờ này đã hết chỗ hoặc trùng lịch ở tòa khác, vui lòng chọn giờ khác' },
   [ErrorCode.CONTRACT_TERM_TOO_SHORT]: {
     status: 400,
     message: 'Thời hạn hợp đồng tối thiểu 3 tháng',

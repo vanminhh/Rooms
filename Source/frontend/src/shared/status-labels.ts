@@ -2,7 +2,7 @@
 export type StatusTone = 'available' | 'occupied' | 'reserved' | 'maintenance'
 
 export type RoomStatus = 'Đang thuê' | 'Đã cọc' | 'Bảo trì' | 'Trống'
-export type ViewingStatus = 'NEW' | 'CONFIRMED' | 'WON' | 'LOST' | 'CANCELLED'
+export type ViewingStatus = 'NEW' | 'CONFIRMED' | 'DONE' | 'WON' | 'LOST' | 'CANCELLED'
 export type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUPERSEDED'
 
 // Room status is derived by the BE (G-08); the FE shows it and never recomputes it from contracts.
@@ -14,8 +14,9 @@ export const roomStatusLabels: Record<RoomStatus, { label: string; tone: StatusT
 }
 
 export const viewingStatusLabels: Record<ViewingStatus, string> = {
-  NEW: 'Mới',
+  NEW: 'Chờ xác nhận',
   CONFIRMED: 'Đã xác nhận',
+  DONE: 'Đã xem',
   WON: 'Đã chốt',
   LOST: 'Không thành',
   CANCELLED: 'Đã hủy',

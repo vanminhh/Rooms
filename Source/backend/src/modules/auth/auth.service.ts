@@ -1,5 +1,6 @@
 import { mailLocale, type Lang } from '../../common/i18n/locale.js';
-import { MAILS } from '../../common/i18n/mails.js';
+import { emailTemplate } from '../mailer/email-templates.js';
+import { sendWithRetry } from '../mailer/send-mail.js';
 import {
   BadRequestException,
   ConflictException,
@@ -363,10 +364,10 @@ export class AuthService {
         },
       });
     });
-    await this.mailer.send({
+    await sendWithRetry(this.mailer, {
       to: user.email,
-      ...MAILS.resetLink(user.locale, `${process.env.APP_URL}/quen-mat-khau?token=${token}`),
-    });
+      ...await emailTemplate(this.prisma, 'passwordReset', user.locale, { url: `${process.env.APP_URL}/quen-mat-khau?token=${token}` }),
+    }, `password-reset/${sha256Hex(token)}`);
   }
 
   // AUTH-07, AUTH-T3 (Q4). Revokes every session of the user (spec section 3.4 of the plan).

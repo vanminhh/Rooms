@@ -101,11 +101,11 @@ test('FE-EX-06: GuestLayout links to Lịch hẹn, Tài khoản and Tìm phòng,
 })
 
 test('VIEW-20, FE-EX-06: /toi shows the empty state with a "Tìm phòng" link to /phong', async () => {
-  fakeFetch([])
+  fakeFetch([{ prefix: '/me/viewings', handler: () => ok([], { page: 1, limit: 20, total: 0 }) }])
   const { GuestHomePage } = mod('pages/guest/GuestHomePage.tsx')
   const app = await mountPage('/toi', React.createElement(GuestHomePage), guestUser)
   assert.ok(text(app.container).includes('Lịch hẹn của tôi'))
-  assert.ok(text(app.container).includes('Bạn chưa có lịch hẹn xem phòng nào.'))
+  await until(() => text(app.container).includes('Bạn chưa có lịch hẹn xem phòng nào.'), 'empty owner list')
   const link = find(app.container, n => n.tagName === 'A' && n.textContent === 'Tìm phòng')[0]
   assert.equal(link.attributes.href, '/phong')
   await app.stop()

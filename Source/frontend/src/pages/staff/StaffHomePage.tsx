@@ -5,7 +5,7 @@ import { useAuth } from '../../app/auth-context'
 import { useBuildingSelection } from '../../features/buildings/building-selection'
 import { getDashboard } from '../../features/dashboard/api'
 import type { DashboardView } from '../../features/dashboard/api'
-import { formatDate } from '../../shared/formatters'
+import { viewingTime } from '../../features/viewings/time'
 import '../../features/dashboard/dashboard.css'
 
 // NOTI-06 / VIEW-07: every NEW viewing counts (Q-P6-2); the list shows at most 5 of them.
@@ -16,7 +16,7 @@ function NewViewingsCard({ data }: { data: DashboardView['newViewings'] }) {
       ? <p className="rooms-empty">Chưa có việc nào hôm nay</p>
       : <>
         <p>{data.count} lịch hẹn mới</p>
-        <ul>{data.items.map(item => <li key={item.id}>{item.guestName} · {item.roomCode} · {formatDate(item.visitDate)} · {item.timeSlotLabel}</li>)}</ul>
+        <ul>{data.items.map(item => <li key={item.id}>{item.guestName} · {item.roomCode} · {viewingTime(item, 'vi')}{item.overdue ? ' · Quá giờ, chưa xác nhận' : ''}{item.overlap ? ' · Trùng giờ' : ''}</li>)}</ul>
       </>}
     <Link to="/ql/lich-hen">Xem tất cả lịch hẹn</Link>
   </section>
@@ -50,6 +50,11 @@ export function StaffHomePage() {
         </div>
         : <div className="dashboard-cards">
           <NewViewingsCard data={dashboard.data.newViewings} />
+          {dashboard.data.overlappingViewings?.count > 0 && <section className="dashboard-card">
+            <h3>Lịch hẹn trùng giờ</h3><p>{dashboard.data.overlappingViewings.count} lịch cần sắp xếp lại</p>
+            <ul>{dashboard.data.overlappingViewings.items.map(item => <li key={item.id}>{item.guestName} · {item.roomCode} · {viewingTime(item, 'vi')} · {item.statusLabel}</li>)}</ul>
+            <Link to="/ql/lich-hen">Xem tất cả lịch hẹn</Link>
+          </section>}
           {dashboard.data.pendingPrices !== null && <PendingPricesCard data={dashboard.data.pendingPrices} />}
         </div>}
   </>

@@ -8,7 +8,7 @@ const here = dirname(fileURLToPath(import.meta.url))
 const publicDomPath = existsSync(join(here, 'public-dom.mjs'))
   ? join(here, 'public-dom.mjs')
   : join(here, '..', '..', '..', '..', 'tests', 'p2', 'public-dom.mjs')
-const { dispatch, fakeDocument, find, loadModule, mount, until, wait } = await import(pathToFileURL(publicDomPath).href)
+const { dispatch, fakeDocument, fakeFetch, ok, find, loadModule, mount, until, wait } = await import(pathToFileURL(publicDomPath).href)
 
 const require = createRequire(import.meta.url)
 const React = require('react')
@@ -44,6 +44,8 @@ const baseRoom = overrides => ({
 })
 
 async function renderRoom(room) {
+  fakeFetch([{ prefix: '/public/rooms', handler: () => ok([]) }])
+  const { QueryClient, QueryClientProvider } = require('@tanstack/react-query')
   const view = React.createElement(RoomDetailView, {
     room,
     statusBadge: React.createElement('span', null, 'Đang trống'),
@@ -54,7 +56,7 @@ async function renderRoom(room) {
     formatMoney: value => `${value.toLocaleString('vi-VN')} đ`,
   })
   const router = createMemoryRouter([{ path: '/phong/:id', element: view }], { initialEntries: ['/phong/10'] })
-  return mount(React.createElement(RouterProvider, { router }))
+  return mount(React.createElement(QueryClientProvider, { client: new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } }) }, React.createElement(RouterProvider, { router })))
 }
 
 const buttonsByLabel = (container, prefix) => find(container, node => node.tagName === 'BUTTON' && (node.getAttribute('aria-label') ?? '').startsWith(prefix))
@@ -168,12 +170,11 @@ test('UI-23: share and copy failure shows a useful error', async () => {
   await app.stop()
 })
 
-test('UI-23 · VIEW-01: the real viewing form is present in the shared detail view', async () => {
+test('UI-23 · VIEW-01: the shared detail view offers a calendar and account sign-in gate', async () => {
   const app = await renderRoom(baseRoom())
-  assert.ok(find(app.container, node => node.tagName === 'FORM' && (node.attributes.class ?? '').includes('public-viewing')).length === 1)
-  assert.ok(app.container.textContent.includes('Họ và tên'))
-  assert.ok(app.container.textContent.includes('Số điện thoại'))
-  assert.ok(app.container.textContent.includes('Gửi yêu cầu xem phòng'))
+  await until(() => app.container.textContent.includes('Đăng nhập để đặt lịch'), 'booking gate')
+  assert.ok(find(app.container, n => n.attributes?.class === 'viewing-calendar').length)
+  assert.ok(!app.container.textContent.includes('Họ và tên'))
   await app.stop()
 })
 

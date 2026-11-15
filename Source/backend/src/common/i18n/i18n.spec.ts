@@ -36,9 +36,9 @@ describe('LOC-02/04/06: language boundaries', () => {
     expect(translateField('Tên người nhập', 'en')).toBe('Tên người nhập');
     expect(translateField('constructor', 'en')).toBe('constructor');
   });
-  it('LOC-02: field catalog covers exactly the five in-scope sources (OQ-2 excludes old viewing DTO)', () => {
+  it('LOC-02: field catalog covers auth, public rooms and the EX-6 account viewing endpoints', () => {
     const found = new Set<string>();
-    for (const path of ['common/errors/validation.ts', 'common/pagination.ts', 'modules/auth/dto/auth.dto.ts', 'modules/auth/auth.service.ts', 'modules/rooms/dto/public-rooms.dto.ts']) {
+    for (const path of ['common/errors/validation.ts', 'common/pagination.ts', 'modules/auth/dto/auth.dto.ts', 'modules/auth/auth.service.ts', 'modules/rooms/dto/public-rooms.dto.ts', 'modules/viewings/dto/viewings.dto.ts', 'modules/viewings/viewing-time.ts', 'modules/viewings/viewing-validation.ts']) {
       const source = ts.createSourceFile(path, readFileSync(`src/${path}`, 'utf8'), ts.ScriptTarget.Latest, true);
       const visit = (node: ts.Node) => {
         if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || ts.isTemplateExpression(node)) {

@@ -13,6 +13,7 @@ import { ErrorCode } from '../../common/errors/error-code.js';
 import { pageParams, paginated } from '../../common/pagination.js';
 import type { AuthUser } from '../../common/guards/auth.decorators.js';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
+import { lockViewingMapping } from '../../common/viewings/viewing-lock.js';
 import { syncRoomPrices } from '../pricing/room-price-sync.js';
 import { assertBuildingPatchFields } from './building-write.guard.js';
 import { assertAssignableManager } from './manager-assignment.js';
@@ -139,6 +140,7 @@ export class BuildingsService {
     let row: BuildingRecord;
     try {
       row = await this.prisma.$transaction(async (tx) => {
+      if (dto.managerId !== undefined || dto.isActive !== undefined) await lockViewingMapping(tx, true);
       await tx.$queryRaw<Array<{ id: number }>>`SELECT id FROM buildings WHERE id = ${id} FOR UPDATE`;
       const current = await tx.building.findUnique({
         where: { id },

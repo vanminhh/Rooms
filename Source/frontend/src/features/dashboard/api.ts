@@ -6,6 +6,7 @@ import type { ViewingView } from '../viewings/api'
 // Mirrors dashboard.service.ts in the BE (NOTI-06). pendingPrices is null for a manager (PRC-11, Boss only).
 export interface DashboardView {
   newViewings: { count: number; items: ViewingView[] }
+  overlappingViewings: { count: number; items: ViewingView[] }
   pendingPrices: { count: number; rooms: number; ratePlans: number } | null
 }
 

@@ -148,13 +148,13 @@ function mountCard(viewing) {
   return mount(React.createElement(QueryClientProvider, { client: newClient() }, React.createElement(ViewingCard, { viewing })))
 }
 
-test('A9/VIEW-05: a CONFIRMED (open) viewing shows a disabled "Chốt" button next to "Không thành", aria-describedby -> #won-hint-<id> with the Phase-3 hint text; clicking it sends no request', async () => {
+test('A9/VIEW-05: a CONFIRMED (open) viewing shows a disabled "Chốt" button without direct "Không thành", aria-describedby -> #won-hint-<id> with the Phase-3 hint text; clicking it sends no request', async () => {
   const calls = fakeFetch([])
   const app = await mountCard(baseViewing({ id: 7, status: 'CONFIRMED' }))
   const chot = buttonByText(app.container, 'Chốt')
   assert.ok(chot, 'CONFIRMED card must show a "Chốt" button')
   assert.ok(chot.disabled === true || chot.hasAttribute('disabled'), '"Chốt" must be disabled')
-  assert.ok(buttonByText(app.container, 'Không thành'), '"Chốt" must sit next to "Không thành"')
+  assert.equal(buttonByText(app.container, 'Không thành'), undefined, 'EX-7: only DONE can become LOST')
   assert.equal(chot.getAttribute('aria-describedby'), 'won-hint-7')
   const hint = find(app.container, n => n.getAttribute('id') === 'won-hint-7')[0]
   assert.ok(hint, 'no element with id won-hint-7')

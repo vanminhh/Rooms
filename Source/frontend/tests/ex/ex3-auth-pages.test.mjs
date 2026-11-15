@@ -92,12 +92,13 @@ test('AUTH-09, AUTH-12, LOC-01: guest email stays read-only in English; tenant a
 })
 
 test('LOC-01, LOC-04, VIEW-20: guest and tenant home translate fixed copy and preserve the user name', async () => {
+  fakeFetch([{ prefix: '/me/viewings', handler: () => ok([], { page: 1, limit: 20, total: 0 }) }])
   const { GuestHomePage } = mod('pages/guest/GuestHomePage.tsx')
   const { TenantHomePage } = mod('pages/tenant/TenantHomePage.tsx')
   const app = await page(React.createElement(React.Fragment, null, React.createElement(GuestHomePage), React.createElement(TenantHomePage)), { user: guest })
   try {
     assert.match(app.container.textContent, /My viewings/)
-    assert.match(app.container.textContent, /You have no room viewings yet/)
+    await until(() => app.container.textContent.includes('You have no room viewings yet'), 'empty list')
     assert.match(app.container.textContent, /Find a room/)
     assert.match(app.container.textContent, /Hello, Đỗ Thị Khách/)
   } finally { await app.stop() }
@@ -115,7 +116,7 @@ test('AUTH-11, AUTH-12, AUTH-13, UI-05, LOC-02: English signup to verification k
   const { GuestHomePage } = mod('pages/guest/GuestHomePage.tsx')
   const app = await page(React.createElement(RegisterPage), { url: '/dang-ky', routes: [
     React.createElement(Route, { key: 'verify', path: '/xac-minh-email', element: React.createElement(VerifyEmailPage) }),
-    React.createElement(Route, { key: 'home', path: '/toi', element: React.createElement(GuestHomePage) }),
+    React.createElement(Route, { key: 'home', path: '/toi', element: React.createElement('p', null, 'My viewings') }),
   ] })
   try {
     for (const [name, value] of Object.entries({ fullName: guest.fullName, phone: guest.phone, email: guest.email, password: '12345678' })) fill(app.container, byName(app.container, name), value)

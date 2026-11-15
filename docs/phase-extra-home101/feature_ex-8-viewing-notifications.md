@@ -29,11 +29,11 @@ Out: any new kind of email, announcements and tenant emails (Phase 5), SMS and Z
 
 ## Tasks
 
-- [ ] **BE-EX-28** ⏸ Provider adapter: a `MailerService` implementation for Resend (owner 12/11/2026, Q-14), used when its `MAIL_*` keys are set (suggested names: `MAIL_PROVIDER=resend`, `MAIL_API_KEY`, `MAIL_FROM`; check the names `env.ts` already uses). Read Resend's current API documentation first and take the request shape and error codes from it, not from memory; otherwise the console mailer in development and test, and in production a send fails (the sign-up answers `MAIL_UNAVAILABLE`, AUTH-13). If the provider needs an SDK package, stop and ask the owner before installing; prefer a plain HTTPS call when the provider's API allows it. Add the key names to `.env.example` with empty values; the owner fills `.env`.
+- [x] **BE-EX-28** ⏸ Provider adapter: a `MailerService` implementation for Resend (owner 12/11/2026, Q-14), used when its `MAIL_*` keys are set (suggested names: `MAIL_PROVIDER=resend`, `MAIL_API_KEY`, `MAIL_FROM`; check the names `env.ts` already uses). Read Resend's current API documentation first and take the request shape and error codes from it, not from memory; otherwise the console mailer in development and test, and in production a send fails (the sign-up answers `MAIL_UNAVAILABLE`, AUTH-13). If the provider needs an SDK package, stop and ask the owner before installing; prefer a plain HTTPS call when the provider's API allows it. Add the key names to `.env.example` with empty values; the owner fills `.env`.
   Done when: unit tests with the provider's HTTP call faked (success, provider error, timeout); the app boots with and without the keys; no key is logged.
-- [ ] **BE-EX-29** Templates (NOTI-08, LOC-06): `emailCode` (`vi`, `en`), `passwordReset` (existing; add `en`), `viewingNew` (to staff, `vi`), `viewingConfirmed` (to the guest, `vi`, `en`) in `settings.email_templates`, with defaults in code when a key is missing. Times in Hà Nội time, dates `dd/mm/yyyy`, no internal ids, and the building's public contact in the guest emails.
+- [x] **BE-EX-29** Templates (NOTI-08, LOC-06): `emailCode` (`vi`, `en`), `passwordReset` (existing; add `en`), `viewingNew` (to staff, `vi`), `viewingConfirmed` (to the guest, `vi`, `en`) in `settings.email_templates`, with defaults in code when a key is missing. Times in Hà Nội time, dates `dd/mm/yyyy`, no internal ids, and the building's public contact in the guest emails.
   Done when: template tests in both languages with the values of the spec; a missing template key falls back to the default.
-- [ ] **BE-EX-30** ⏸ Live check with the owner: with the owner's keys in `.env`, send each of the four emails once to an address the owner names and confirm they arrive and are not marked as spam; write the provider's setup steps (domain records, sender address, daily limits of the plan) in `docs/phase-extra-home101/email-setup.md`. `npm run lint`, `test`, `build`.
+- [!] **BE-EX-30** ⏸ Live check with the owner: with the owner's keys in `.env`, send each of the four emails once to an address the owner names and confirm they arrive and are not marked as spam; write the provider's setup steps (domain records, sender address, daily limits of the plan) in `docs/phase-extra-home101/email-setup.md`. `npm run lint`, `test`, `build`.
   Done when: the owner confirms the four emails arrived; all checks pass with real output quoted.
 
 ## Questions for the owner
@@ -43,4 +43,10 @@ Out: any new kind of email, announcements and tenant emails (Phase 5), SMS and Z
 
 ## Issues log
 
-<!-- When a task is [!], add: date · task ID · what failed · what is needed -->
+- 15/11/2026 · BE-EX-30 [!] · awaiting owner Resend configuration and named recipients; real arrival/spam confirmation and current HTTP/Postgres verification remain outstanding.
+
+## Resumption checkpoint — 15/11/2026
+
+BE-EX-28/29 are implemented and isolated checks pass: 47/47 tests (31 templates, 12 provider/retry, 4 module selection/boot). Review found missing mandatory template placeholders; 14 failing cases proved it before the fix, all now pass, and the same reviewer approved the fix. The owner chose real email even in development when all MAIL_* values are configured; Q-14/AUTH-13 are updated. No env file was edited.
+
+BE-EX-30 is blocked pending the owner's verified sender/domain, private configuration and named test recipients. Configuration presence check: all three MAIL_* values absent; no live email sent. Setup and four-message acceptance: [email-setup.md](email-setup.md). Full backend test cannot be marked green: 1047 pass / 759 HTTP EACCES failures on 1806 tests. Backend lint/build pass (0 errors, 4 existing lint warnings). Full reviewer report and hand-check commands: [checkpoint report](CHECKPOINT-2026-11-15-resume.md).

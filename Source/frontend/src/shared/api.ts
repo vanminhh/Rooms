@@ -61,6 +61,7 @@ export function listPath(path: string, query: Record<string, QueryValue>): strin
 
 // Module variables only: the access token lives in memory, never in browser storage.
 let accessToken: string | null = null
+let sessionRevision = 0
 let handlers: AuthHandlers = {}
 let refreshing: Promise<string> | null = null
 let language: 'vi' | 'en' = 'vi'
@@ -78,13 +79,15 @@ export function forceLanguage(next: 'vi' | 'en' | null) {
 
 export function setAccessToken(token: string | null) {
   accessToken = token
+  sessionRevision += 1
+  refreshing = null
 }
 
 export function setAuthHandlers(next: AuthHandlers) {
   handlers = next
 }
 
-async function send<T>(path: string, method: Method, body: unknown, token: string | null, idempotencyKey?: string): Promise<Envelope<T>> {
+async function send<T>(path: string, method: Method, body: unknown, token: string | null, idempotencyKey?: string, revision = sessionRevision): Promise<Envelope<T>> {
   const headers: Record<string, string> = { Accept: 'application/json', 'Accept-Language': forcedLanguage ?? language }
   if (body !== undefined) headers['Content-Type'] = 'application/json'
   if (token) headers.Authorization = `Bearer ${token}`
@@ -102,7 +105,9 @@ async function send<T>(path: string, method: Method, body: unknown, token: strin
     throw new ApiError({ code: 'NETWORK_ERROR', message: t('common.apiGeneric', undefined, messageLang(path)), status: 0 })
   }
 
+  assertSession(revision, path)
   const json: unknown = await response.json().catch(() => null)
+  assertSession(revision, path)
   const envelope: { data?: T; meta?: ListMeta; error?: { code: string; message: string; fields?: Record<string, string> } } =
     typeof json === 'object' && json !== null ? json : {}
   if (response.ok && 'data' in envelope) return { data: envelope.data as T, meta: envelope.meta }
@@ -120,43 +125,51 @@ function isUnauthorized(error: unknown): boolean {
 }
 
 function signOutAndThrow(error: unknown): never {
-  accessToken = null
+  setAccessToken(null)
   handlers.onSignedOut?.()
   throw error
 }
 
-// One shared refresh: the refresh cookie rotates on every call, so a second call would invalidate the first.
+function assertSession(revision: number, path: string): void {
+  if (revision !== sessionRevision) throw new ApiError({ code: 'SESSION_CHANGED', status: 0,
+    message: t('common.apiGeneric', undefined, messageLang(path)) })
+}
+
+// Share refresh only within one login session. Late work must never replace the next account's token.
 export function refreshAccessToken(): Promise<string> {
   if (!refreshing) {
-    refreshing = send<{ accessToken: string }>('/auth/refresh', 'POST', undefined, null)
+    const revision = sessionRevision
+    const pending = send<{ accessToken: string }>('/auth/refresh', 'POST', undefined, null, undefined, revision)
       .then(({ data }) => {
+        assertSession(revision, '/auth/refresh')
         accessToken = data.accessToken
         return data.accessToken
-      })
-      .finally(() => {
-        refreshing = null
-      })
+      }).finally(() => { if (refreshing === pending) refreshing = null })
+    refreshing = pending
   }
   return refreshing
 }
 
 async function request<T>(path: string, options: { method?: Method; body?: unknown; idempotencyKey?: string } = {}): Promise<Envelope<T>> {
   const { method = 'GET', body, idempotencyKey } = options
-  const sentToken = accessToken
+  const sentToken = accessToken, revision = sessionRevision
   try {
-    return await send<T>(path, method, body, sentToken, idempotencyKey)
+    return await send<T>(path, method, body, sentToken, idempotencyKey, revision)
   } catch (error) {
-    // A wrong-password login is a 401 too; only an expired session triggers a refresh.
+    assertSession(revision, path)
     if (!isUnauthorized(error) || !sentToken || path === '/auth/login') throw error
     try {
-      // Skip the refresh when another request already rotated the token while this one was in flight.
+      // Another request may already have refreshed this same session.
       if (accessToken === sentToken) await refreshAccessToken()
     } catch {
+      assertSession(revision, path)
       signOutAndThrow(error)
     }
+    assertSession(revision, path)
     try {
-      return await send<T>(path, method, body, accessToken, idempotencyKey)
+      return await send<T>(path, method, body, accessToken, idempotencyKey, revision)
     } catch (retryError) {
+      assertSession(revision, path)
       if (isUnauthorized(retryError)) signOutAndThrow(retryError)
       throw retryError
     }

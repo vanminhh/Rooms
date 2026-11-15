@@ -1,125 +1,111 @@
-import { useRef, useState } from 'react'
-import type { FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { FormError, RoomsButton, TextField } from '../../components'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link } from 'react-router'
+import { FormError, RoomsButton, Spinner, TextField } from '../../components'
+import { useAuth } from '../../app/auth-context'
+import { ApiError } from '../../shared/api'
 import { applyApiError } from '../../shared/form-errors'
-import { createPublicViewing } from './api'
-import { TIME_SLOTS, hanoiToday, maxVisitDate, startedSlots, timeSlotLabels, viewingFormSchema } from './viewing-schema'
-import type { ViewingFormValues } from './viewing-schema'
+import { useI18n } from '../../shared/i18n'
+import { useValidationLanguage } from '../auth/useValidationLanguage'
+import { bookViewing, getViewingTimes, invalidateViewings, type OwnViewingView } from '../viewings/api'
+import { hourInstant, plusDays, todayHanoi, viewingTime } from '../viewings/time'
+import { ViewingContacts } from '../viewings/ViewingContacts'
+import { ViewingCalendar } from './ViewingCalendar'
+import { viewingFormSchema, type ViewingFormValues } from './viewing-schema'
 import './public.css'
 import './booking-panel.css'
 
-function addVisitDays(day: string, days: number): string {
-  return new Date(Date.parse(`${day}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10)
+// Changing account or room discards the previous account's success/data; changing language preserves the form.
+export function ViewingForm(props: { roomId: number; roomCode?: string }) {
+  const { user } = useAuth()
+  return <BookingForm key={`${props.roomId}:${user?.id ?? 'anonymous'}`} {...props} />
 }
-
-// Booking form of /phong/:id (FE-P2-17). The success screen is the same for a saved and a honeypot submission (VIEW-12).
-export function ViewingForm({ roomId, roomCode }: { roomId: number; roomCode?: string }) {
-  const [sent, setSent] = useState(false)
-  const [formError, setFormError] = useState('')
+function BookingForm({ roomId, roomCode }: { roomId: number; roomCode?: string }) {
+  const { user, status, retry } = useAuth()
+  const { t, lang } = useI18n()
+  const queryClient = useQueryClient()
   const sending = useRef(false)
-  const visitDateInput = useRef<HTMLInputElement | null>(null)
-  const today = hanoiToday()
-  const tomorrow = addVisitDays(today, 1)
-  // After the last slot has started (VIEW-08), today has nothing left to book.
-  const todayClosed = startedSlots(today).length === TIME_SLOTS.length
-  const { control, register, handleSubmit, setError, setValue, formState: { errors, isSubmitting } } = useForm<ViewingFormValues>({
-    resolver: zodResolver(viewingFormSchema),
-    defaultValues: { guestName: '', guestPhone: '', visitDate: '', note: '', website: '' },
+  const [sent, setSent] = useState<OwnViewingView | null>(null)
+  const [formError, setFormError] = useState('')
+  const [day, setDay] = useState('')
+  const signedIn = user?.role === 'GUEST' || user?.role === 'TENANT'
+  const needsEmail = user?.role === 'TENANT' && !user.email
+  const from = todayHanoi(), to = plusDays(from, 30)
+  const times = useQuery({
+    queryKey: ['viewing-times', signedIn ? user.id : 'anonymous', roomId, from, to],
+    queryFn: () => getViewingTimes(roomId, from, to, signedIn), enabled: status === 'ready',
+    staleTime: signedIn ? 0 : 60_000, refetchInterval: 60_000,
   })
-  const visitDate = useWatch({ control, name: 'visitDate' })
-  const started = startedSlots(visitDate)
-  const visitDateRegistration = register('visitDate')
+  const schema = useMemo(() => viewingFormSchema(t), [t])
+  const { control, register, handleSubmit, trigger, setError, setValue, formState: { errors, isSubmitting } } = useForm<ViewingFormValues>({
+    resolver: zodResolver(schema), defaultValues: { visitAt: '', note: '' },
+  })
+  const visitAt = useWatch({ control, name: 'visitAt' })
+  useValidationLanguage(lang, errors, trigger)
+  const days = times.data ?? []
+  const hours = days.find(d => d.date === day)?.hours ?? []
+  useEffect(() => {
+    if (visitAt && times.data && !times.data.some(d => d.hours.includes(visitAt) && Date.parse(visitAt) > Date.now())) setValue('visitAt', '')
+  }, [times.data, visitAt, setValue])
 
-  function openVisitDatePicker() {
-    const input = visitDateInput.current
-    if (!input) return
-    if (typeof input.showPicker === 'function') {
-      try {
-        input.showPicker()
-        return
-      } catch {
-        // Some browsers expose showPicker() but reject it; focusing keeps the control usable.
-      }
-    }
-    input.focus()
-  }
-
-  async function onSubmit({ note, website, ...values }: ViewingFormValues) {
+  async function submit(values: ViewingFormValues) {
+    if (!signedIn || needsEmail) return
     setFormError('')
+    if (!hours.includes(values.visitAt) || Date.parse(values.visitAt) <= Date.now()) {
+      setError('visitAt', { type: 'validate', message: t('viewing.chooseHour') }); return
+    }
     try {
-      await createPublicViewing({ roomId, ...values, ...(note ? { note } : {}), ...(website ? { website } : {}) })
-      setSent(true)
+      const result = await bookViewing({ roomId, ...values })
+      setSent(result)
+      await invalidateViewings(queryClient)
     } catch (error) {
-      setFormError(applyApiError(error, setError, ['guestName', 'guestPhone', 'visitDate', 'timeSlot', 'note']))
+      setFormError(applyApiError(error, setError, ['visitAt', 'note'], lang))
+      if (error instanceof ApiError && error.code === 'VIEWING_TIME_TAKEN') await times.refetch()
     }
   }
-
-  // Guard at the submit event: a second submit must not start another handleSubmit run, because its
-  // isSubmitting:false would overwrite the state of the first one while its request is still pending (UI-09).
-  async function submitForm(event: FormEvent<HTMLFormElement>) {
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (sending.current) return
     sending.current = true
-    try {
-      await handleSubmit(onSubmit)(event)
-    } finally {
-      sending.current = false
-    }
+    try { await handleSubmit(submit)(event) } finally { sending.current = false }
   }
-
-  if (sent) return <div className="public-viewing public-viewing-success" role="status">
-    <p><strong>Đã nhận yêu cầu xem phòng.</strong> Quản lý sẽ gọi lại để xác nhận lịch hẹn.</p>
-    <p className="public-hint">Gửi yêu cầu chưa giữ chỗ phòng.</p>
-  </div>
-
-  const submitLabel = roomCode ? `Xác nhận đặt lịch xem phòng ${roomCode}` : 'Gửi yêu cầu xem phòng'
-
-  return <form className="public-viewing public-booking-form" noValidate onSubmit={event => void submitForm(event)}>
-    <section className="public-booking-section" aria-labelledby="viewing-date-title">
-      <div className="public-booking-section-heading">
-        <h3 id="viewing-date-title">Chọn ngày xem phòng</h3>
-        {visitDate && <span>{new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit' }).format(new Date(`${visitDate}T00:00:00+07:00`))}</span>}
-      </div>
-      <div className="public-date-shortcuts" role="group" aria-label="Chọn nhanh ngày xem">
-        <button type="button" aria-pressed={visitDate === today} disabled={todayClosed} aria-describedby={todayClosed ? 'viewing-today-closed' : undefined}
-          onClick={() => setValue('visitDate', today, { shouldValidate: true })}>Hôm nay</button>
-        <button type="button" aria-pressed={visitDate === tomorrow} onClick={() => setValue('visitDate', tomorrow, { shouldValidate: true })}>Ngày mai</button>
-        <button type="button" aria-pressed={Boolean(visitDate && visitDate !== today && visitDate !== tomorrow)} onClick={openVisitDatePicker}>Chọn ngày khác</button>
-      </div>
-      <TextField label="Ngày muốn xem" type="date" min={todayClosed ? tomorrow : today} max={maxVisitDate()} aria-describedby="viewing-visit-date-hint"
-        error={errors.visitDate?.message} {...visitDateRegistration}
-        ref={element => { visitDateInput.current = element; visitDateRegistration.ref(element) }} />
-      <p id="viewing-visit-date-hint" className="public-hint">Chọn trong 30 ngày tới, theo giờ Hà Nội</p>
-      {todayClosed && <p id="viewing-today-closed" className="public-hint">Hôm nay đã hết buổi xem, vui lòng chọn từ ngày mai.</p>}
-    </section>
-
-    <fieldset className="public-slots" aria-describedby={errors.timeSlot ? 'viewing-time-slot-error' : undefined}>
-      <legend>Chọn buổi xem</legend>
-      <div className="public-slot-grid">
-        {TIME_SLOTS.map(slot => {
-          const isStarted = started.includes(slot)
-          return <label key={slot} className="public-slot">
-            <input type="radio" value={slot} disabled={isStarted} {...register('timeSlot')} />
-            <span>{timeSlotLabels[slot]}</span>
-            {isStarted && <small>Đã bắt đầu</small>}
-          </label>
-        })}
-      </div>
-      {errors.timeSlot && <p id="viewing-time-slot-error" className="rooms-field-error">{errors.timeSlot.message}</p>}
-    </fieldset>
-
-    <div className="public-booking-fields">
-      <TextField label="Họ và tên" autoComplete="name" error={errors.guestName?.message} {...register('guestName')} />
-      <TextField label="Số điện thoại" type="tel" inputMode="tel" autoComplete="tel" error={errors.guestPhone?.message} {...register('guestPhone')} />
-      <TextField label="Lời nhắn (không bắt buộc)" error={errors.note?.message} {...register('note')} />
-    </div>
-    {/* Honeypot (VIEW-02): hidden from people and from the tab order; bots that fill it get the same success screen. */}
-    <div hidden aria-hidden="true">
-      <input tabIndex={-1} autoComplete="off" {...register('website')} />
-    </div>
-    <FormError>{formError}</FormError>
-    <RoomsButton type="submit" disabled={isSubmitting}>{isSubmitting ? 'Đang gửi…' : submitLabel}</RoomsButton>
-  </form>
+  if (sent) return <section className="public-viewing public-viewing-success" role="status">
+    <h3>{t('viewing.success')}</h3>
+    <p>{t('viewing.room', { code: sent.roomCode })} · {viewingTime(sent, lang)}</p>
+    <ViewingContacts contact={sent.contact} bossContact={sent.bossContact} />
+    <Link className="rooms-button rooms-button--primary" to={`/toi/lich-hen/${sent.id}`}>{t('viewing.detailLink')}</Link>
+  </section>
+  return <section className="public-viewing">
+    <h3>{t('viewing.title')}{roomCode ? ` · ${roomCode}` : ''}</h3>
+    <p className="public-booking-form-intro">{t('viewing.intro')}</p>
+    {status === 'error' ? <><FormError>{t('common.genericError')}</FormError><RoomsButton onClick={retry}>{t('common.retry')}</RoomsButton></>
+      : times.isPending ? <Spinner block label={t('common.loading')} />
+      : times.isError ? <><FormError>{times.error.message}</FormError><RoomsButton onClick={() => void times.refetch()}>{t('common.retry')}</RoomsButton></>
+      : <>
+        <ViewingCalendar days={days} selectedDay={day} disabled={isSubmitting} onSelectDay={next => { setDay(next); setValue('visitAt', '') }} />
+        <form className="public-booking-form" noValidate onSubmit={onSubmit}>
+          <fieldset className="viewing-hours" disabled={isSubmitting}><legend>{t('viewing.hour')}</legend>
+            {!day ? <p>{t('viewing.chooseDay')}</p> : <>
+              {!hours.length && <p>{t('viewing.noHours')}</p>}
+              <div className="viewing-hours-grid">{Array.from({ length: 12 }, (_, i) => {
+                const hour = i + 8, instant = hourInstant(day, hour)
+                return <RoomsButton key={hour} type="button" variant="outline" disabled={!hours.includes(instant)}
+                  aria-pressed={visitAt === instant} onClick={() => setValue('visitAt', instant, { shouldValidate: true })}>{String(hour).padStart(2, '0')}:00</RoomsButton>
+              })}</div>
+            </>}
+            <FormError>{errors.visitAt?.message}</FormError>
+          </fieldset>
+          {status === 'ready' && !user ? <Link className="rooms-button rooms-button--primary" to={`/dang-nhap?next=${encodeURIComponent(`/phong/${roomId}`)}`}>{t('viewing.login')}</Link>
+            : !signedIn ? <p>{t('viewing.staffGate')}</p>
+            : needsEmail ? <><p>{t('viewing.tenantEmail')}</p><Link className="rooms-button rooms-button--outline" to="/toi/tai-khoan">{t('viewing.addEmail')}</Link></>
+            : <>
+              <TextField label={t('viewing.note')} placeholder={t('viewing.notePlaceholder')} disabled={isSubmitting} error={errors.note?.message} {...register('note')} />
+              <FormError>{formError}</FormError>
+              <RoomsButton type="submit" disabled={isSubmitting}>{t('viewing.submit')}{isSubmitting && <Spinner label={t('common.loading')} />}</RoomsButton>
+            </>}
+        </form>
+      </>}
+  </section>
 }

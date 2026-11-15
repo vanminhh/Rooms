@@ -1,3 +1,4 @@
+import { viewingDay } from '../../features/viewings/time'
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { FormError, RoomsButton, SectionHeading, Spinner, TextField } from '../../components'
@@ -20,7 +21,7 @@ const LIST_LIMIT = 100
 // The BE sorts by visit date then slot (VIEW-03), so grouping by first appearance keeps that order.
 function groupByDate(rows: ViewingView[]): [string, ViewingView[]][] {
   const days = new Map<string, ViewingView[]>()
-  for (const row of rows) days.set(row.visitDate, [...(days.get(row.visitDate) ?? []), row])
+  for (const row of rows) days.set(viewingDay(row), [...(days.get(viewingDay(row)) ?? []), row])
   return [...days]
 }
 

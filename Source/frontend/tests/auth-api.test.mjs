@@ -498,3 +498,36 @@ test('UI-05: only matched fields with an API message and fully matched fields st
   const error = new api.ApiError({ code: 'VALIDATION_FAILED', message: 'Dữ liệu không hợp lệ', status: 400, fields: { phone: 'Số điện thoại không hợp lệ' } })
   assert.equal(formErrors.applyApiError(error, setError, ['phone']), 'Dữ liệu không hợp lệ')
 })
+for (const method of ['GET', 'POST']) test(`AUTH-T2/SCOPE-03: stale ${method} must not retry under a different account`, async () => {
+  const { api } = load()
+  api.setAccessToken('account-a')
+  let release
+  const blocked = new Promise(resolve => { release = resolve })
+  const calls = fakeFetch(async () => { await blocked; return fail(401, 'UNAUTHORIZED', 'Expired') })
+  const request = api.apiRequest('/me/viewings', { method, ...(method === 'POST' ? { body: { roomId: 7, visitAt: '2026-11-16T03:00:00Z' } } : {}) })
+  api.setAccessToken('account-b'); release()
+  await assert.rejects(request, error => error.code === 'SESSION_CHANGED')
+  assert.equal(calls.length, 1)
+})
+test('AUTH-T2/SCOPE-03: late successful owner data is discarded after account switch', async () => {
+  const { api } = load(); api.setAccessToken('account-a')
+  let release; const blocked = new Promise(resolve => { release = resolve })
+  fakeFetch(async () => { await blocked; return ok({ id: 8 }) })
+  const request = api.apiRequest('/me/viewings/8')
+  api.setAccessToken('account-b'); release()
+  await assert.rejects(request, error => error.code === 'SESSION_CHANGED')
+})
+test('AUTH-T2: an old refresh cannot overwrite the new account token or sign it out', async () => {
+  const { api } = load(); api.setAccessToken('account-a')
+  let release; const blocked = new Promise(resolve => { release = resolve }); let signedOut = 0
+  api.setAuthHandlers({ onSignedOut: () => signedOut++ })
+  const calls = fakeFetch(async call => {
+    if (call.url.endsWith('/auth/refresh')) { await blocked; return ok({ accessToken: 'old-refresh' }) }
+    return ok({ id: 2 })
+  })
+  const refresh = api.refreshAccessToken()
+  api.setAccessToken('account-b'); release()
+  await assert.rejects(refresh, error => error.code === 'SESSION_CHANGED')
+  await api.apiRequest('/auth/me')
+  assert.equal(calls.at(-1).headers.Authorization, 'Bearer account-b'); assert.equal(signedOut, 0)
+})

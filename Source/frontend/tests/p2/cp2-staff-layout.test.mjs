@@ -47,9 +47,9 @@ test('ROOM-05, KIT-06: roomStatusLabels maps the 4 derived statuses to the kit\'
   })
 })
 
-test('VIEW-10: viewingStatusLabels has the 5 exact Vietnamese labels', () => {
+test('VIEW-10: viewingStatusLabels has the 6 exact Vietnamese labels', () => {
   assert.deepEqual(statusLabels.viewingStatusLabels, {
-    NEW: 'Mới', CONFIRMED: 'Đã xác nhận', WON: 'Đã chốt', LOST: 'Không thành', CANCELLED: 'Đã hủy',
+    NEW: 'Chờ xác nhận', CONFIRMED: 'Đã xác nhận', DONE: 'Đã xem', WON: 'Đã chốt', LOST: 'Không thành', CANCELLED: 'Đã hủy',
   })
 })
 
