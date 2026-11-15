@@ -35,6 +35,8 @@ Read this before the first task of any part. Each line is a mistake that really 
 
 ## Commands and environment
 
+- For resend.dev smoke checks, use the exact account email returned by the provider; a Gmail address with an uppercase initial received 403 while its lowercase form received 200 [BE-EX-30, 15/11/2026].
+- Distinguish a direct provider smoke check from app integration: the managed terminal could not resolve Resend, and importing compiled NestJS in node_repl failed on module interop; HTTPS in that runtime proved credentials only [BE-EX-30, 15/11/2026].
 - On this machine the dev DB settings are in `Source/backend/.env` and `Source/.env` does not exist, so `npm run test:e2e` stops with "../.env: not found"; run `node --env-file=.env ./node_modules/vitest/vitest.mjs run --config ./vitest.config.e2e.ts` from `Source/backend` [BE-EX-06, 12/11/2026].
 - `npm run test:e2e` reads `Source/.env` (the dev database). Without `DATABASE_URL` it fails before connecting and leaves a `FAILED_CLEANUP` log with empty ids [BE-P2-09, 03/11/2026].
 - The dev database is slow (about 0.8 s per query): the e2e suite takes minutes and needs the long `testTimeout` already set; do not lower it [BE-P2-29..35, 05/11/2026].

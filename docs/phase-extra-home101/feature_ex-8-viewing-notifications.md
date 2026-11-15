@@ -34,15 +34,21 @@ Out: any new kind of email, announcements and tenant emails (Phase 5), SMS and Z
 - [x] **BE-EX-29** Templates (NOTI-08, LOC-06): `emailCode` (`vi`, `en`), `passwordReset` (existing; add `en`), `viewingNew` (to staff, `vi`), `viewingConfirmed` (to the guest, `vi`, `en`) in `settings.email_templates`, with defaults in code when a key is missing. Times in Hà Nội time, dates `dd/mm/yyyy`, no internal ids, and the building's public contact in the guest emails.
   Done when: template tests in both languages with the values of the spec; a missing template key falls back to the default.
 - [!] **BE-EX-30** ⏸ Live check with the owner: with the owner's keys in `.env`, send each of the four emails once to an address the owner names and confirm they arrive and are not marked as spam; write the provider's setup steps (domain records, sender address, daily limits of the plan) in `docs/phase-extra-home101/email-setup.md`. `npm run lint`, `test`, `build`.
+  Current checkpoint (16/11/2026): owner-reported manual checks passed for all four flows. Full backend verification remains blocked by the recorded HTTP environment errors; Inbox/Spam placement was not separately specified. Do not repeat the accepted manual checks without a new issue or mark the full suite green from this confirmation.
   Done when: the owner confirms the four emails arrived; all checks pass with real output quoted.
 
 ## Questions for the owner
 
 - Q-14 (spec): đã trả lời 12/11/2026 – dùng Resend. Chủ dự án tạo tài khoản, xác thực tên miền gửi và điền `MAIL_*` trước BE-EX-30.
-- Q-EX8-2 (BE-EX-29): địa chỉ người gửi và tên hiển thị của thư (ví dụ "ROOMS <no-reply@…>")?
+- Q-EX8-2 (BE-EX-29): local test sender is `Rooms <onboarding@resend.dev>`; the final private-domain sender remains pending before sending to other recipients.
 
 ## Issues log
 
+- 16/11/2026 · BE-EX-30 [!] · owner explicitly confirmed both remaining viewing-email flows passed. Together with the earlier sign-up and password-recovery reports, manual acceptance is 4/4. The remaining gate is automated backend verification, with Inbox/Spam placement not separately specified. No new runtime test or code change was performed for this documentation update.
+- 15/11/2026 · BE-EX-30 [!] · owner replied "ok rùi" after the password-recovery test instructions. Record the manual password-recovery check as passed, alongside registration. Both viewing emails, Inbox/Spam placement and HTTP/Postgres checks remain outstanding.
+- 15/11/2026 · BE-EX-30 [!] · after the sign-up guidance, the owner reported the registration test passed. Record this as an owner-verified manual sign-up check. Password recovery, new-viewing and viewing-confirmation emails, Inbox/Spam placement and HTTP/Postgres checks remain outstanding.
+- 15/11/2026 · BE-EX-30 [!] · owner confirmed receipt of the diagnostic email. Inbox versus Spam was not specified. Four application mail flows and current HTTP/Postgres verification remain outstanding; this receipt does not complete BE-EX-30.
+- 15/11/2026 · BE-EX-30 [!] · local MAIL_* configured and owner-named recipient tested: Resend accepted one diagnostic email (HTTP 200). Owner Inbox/Spam confirmation, four application mail flows and current HTTP/Postgres verification remain outstanding. The direct API smoke check does not establish end-to-end application delivery.
 - 15/11/2026 · BE-EX-30 [!] · awaiting owner Resend configuration and named recipients; real arrival/spam confirmation and current HTTP/Postgres verification remain outstanding.
 
 ## Resumption checkpoint — 15/11/2026

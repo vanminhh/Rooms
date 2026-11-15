@@ -10,5 +10,7 @@ export default defineConfig({
     include: ['**/*.spec.ts'],
     // Applied drafts keep their old copies here; the code they tested is already in src/.
     exclude: [...configDefaults.exclude, 'artifact_BE/approved/**'],
+    // Vitest reads the developer's .env; without this a test that builds AppModule would mail through the real provider (Q-14).
+    env: { MAIL_PROVIDER: '' },
   },
 });
