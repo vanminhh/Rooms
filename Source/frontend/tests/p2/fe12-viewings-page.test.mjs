@@ -13,6 +13,19 @@ async function card(over={},response=()=>ok({...row,status:'CONFIRMED'})){
  return {...app,calls,client}
 }
 const submit=app=>dispatch(app.container,find(app.container,n=>n.tagName==='FORM')[0],'submit')
+
+test('VIEW-09/16a: staff reschedule warns before an explicit acknowledged retry',async()=>{
+ const app=await card({},call=>JSON.parse(call.body).acceptOverlap?ok(row):fail(409,'VIEWING_OVERLAP_WARNING','Trùng lịch của khách',{visitAt:'Khách có lịch ở tòa thuộc quận khác'}))
+ try{
+  dispatch(app.container,buttonByText(app.container,'Đổi ngày/giờ'),'click');await wait(20)
+  const next=`${plusDays(todayHanoi(),2)}T11:00`;fill(app.container,byName(app.container,'visitAt'),next);submit(app)
+  await until(()=>buttonByText(app.container,'Vẫn đổi giờ'),'reschedule warning')
+  assert.equal(app.calls.length,1)
+  dispatch(app.container,buttonByText(app.container,'Vẫn đổi giờ'),'click')
+  await until(()=>app.calls.length===2,'reschedule accepted')
+  assert.deepEqual(JSON.parse(app.calls[1].body),{visitAt:`${next}:00+07:00`,acceptOverlap:true})
+ }finally{await app.stop()}
+})
 after(()=>{setTimeout(()=>process.exit(process.exitCode??0),100).unref()})
 for(const [button,via] of [['Xác nhận','PHONE'],['Gửi email xác nhận','EMAIL']])for(const visitAt of [at,past])test(`VIEW-15/15a: ${via} ${visitAt===at?'future':'late'} uses confirm endpoint`,async()=>{
  const app=await card({visitAt})

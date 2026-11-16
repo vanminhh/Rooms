@@ -35,3 +35,20 @@ for(const [code,status] of [['VIEWING_TIME_TAKEN',409],['OUT_OF_SCOPE',403]])tes
  const app=await setup(()=>fail(status,code,code))
  try{dispatch(app.container,find(app.container,n=>n.tagName==='FORM')[0],'submit');await until(()=>app.container.textContent.includes(code),'error');assert.equal(app.saved(),0);assert.equal(byName(app.container,'guestName').value,'Khách A')}finally{await app.stop()}
 })
+
+test('VIEW-03/16a: manual overlap requires an explicit retry with the same payload', async () => {
+ const app=await setup(call=>JSON.parse(call.body).acceptOverlap ? ok({id:1}) : fail(409,'VIEWING_OVERLAP_WARNING','Cùng giờ ở tòa khác',{visitAt:'Lưu ý di chuyển giữa hai quận'}))
+ try {
+  dispatch(app.container,find(app.container,n=>n.tagName==='FORM')[0],'submit')
+  await until(()=>buttonByText(app.container,'Vẫn đặt'),'manual warning')
+  assert.equal(app.saved(),0)
+  dispatch(app.container,buttonByText(app.container,'Chọn giờ khác'),'click');await wait(15)
+  assert.equal(app.calls.filter(c=>c.method==='POST').length,1)
+  dispatch(app.container,find(app.container,n=>n.tagName==='FORM')[0],'submit')
+  await until(()=>buttonByText(app.container,'Vẫn đặt'),'manual warning again')
+  dispatch(app.container,buttonByText(app.container,'Vẫn đặt'),'click')
+  await until(()=>app.saved()===1,'manual accepted')
+  const posts=app.calls.filter(c=>c.method==='POST').map(c=>JSON.parse(c.body))
+  assert.deepEqual(posts[2],{...posts[1],acceptOverlap:true})
+ } finally {await app.stop()}
+})

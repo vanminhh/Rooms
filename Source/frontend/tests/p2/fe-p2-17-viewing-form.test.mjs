@@ -37,6 +37,78 @@ async function choose(app) {
   dispatch(app.container, buttonByText(app.container, '10:00'), 'click'); await wait(10)
 }
 const submit = app => dispatch(app.container, find(app.container, n => n.tagName === 'FORM')[0], 'submit')
+const dialog = app => find(app.container, n => n.attributes?.role === 'dialog')[0]
+
+test('VIEW-14/UI-08: success opens a popup, closing retains the result and moves focus to it', async () => {
+  const app = await setup()
+  try {
+    await choose(app); submit(app)
+    await until(() => dialog(app), 'success popup')
+    assert.match(dialog(app).textContent, /Quản lý tòa sẽ liên hệ với bạn/)
+    assert.match(dialog(app).textContent, /A101/)
+    assert.match(dialog(app).textContent, /0911111111/)
+    assert.ok(buttonByText(app.container, 'Xem lịch hẹn'))
+    dispatch(app.container, buttonByText(app.container, 'Đóng'), 'click')
+    await until(() => !dialog(app), 'popup closed')
+    const result = find(app.container, n => n.attributes?.role === 'status' && n.textContent.includes('Đặt lịch thành công'))[0]
+    assert.ok(result)
+    assert.equal(document.activeElement, result)
+    assert.equal(find(app.container, n => n.attributes?.href === '/toi/lich-hen/81').length, 1)
+  } finally { await app.stop() }
+})
+
+test('VIEW-16a: warning can be dismissed; only Vẫn đặt resends the unchanged request once with acknowledgement', async () => {
+  const text = 'Khách đã có lịch xem ở tòa thuộc quận khác vào cùng giờ. Vui lòng cân nhắc thời gian di chuyển trước khi tiếp tục.'
+  const app = await setup({ response: async call => {
+    if (JSON.parse(call.body).acceptOverlap) { await wait(40); return ok(saved) }
+    return fail(409, 'VIEWING_OVERLAP_WARNING', 'Cần xác nhận', { visitAt: text })
+  } })
+  try {
+    await choose(app); fill(app.container, byName(app.container, 'note'), 'giữ nội dung'); submit(app)
+    await until(() => dialog(app), 'overlap warning')
+    assert.match(dialog(app).textContent, /quận khác/)
+    assert.doesNotMatch(app.container.textContent, /Đặt lịch thành công/)
+    assert.equal(byName(app.container, 'note').hasAttribute('disabled'), true)
+    dispatch(app.container, buttonByText(app.container, 'Chọn giờ khác'), 'click')
+    await until(() => !dialog(app), 'warning dismissed')
+    assert.equal(app.calls.filter(c => c.method === 'POST').length, 1)
+    assert.equal(byName(app.container, 'note').value, 'giữ nội dung')
+    submit(app); await until(() => dialog(app), 'warning again')
+    const confirm = buttonByText(app.container, 'Vẫn đặt')
+    dispatch(app.container, confirm, 'click'); dispatch(app.container, confirm, 'click')
+    await until(() => app.container.textContent.includes('Đặt lịch thành công.'), 'saved after acknowledgement')
+    const posts = app.calls.filter(c => c.method === 'POST').map(c => JSON.parse(c.body))
+    assert.equal(posts.length, 3)
+    assert.deepEqual(posts[2], { ...posts[1], acceptOverlap: true })
+    assert.equal('acceptOverlap' in posts[1], false)
+  } finally { await app.stop() }
+})
+
+test('VIEW-16a/16: an accepted retry can still fail capacity and never shows success', async () => {
+  const app = await setup({ response: call => JSON.parse(call.body).acceptOverlap
+    ? fail(409, 'VIEWING_TIME_TAKEN', 'Giờ vừa hết chỗ')
+    : fail(409, 'VIEWING_OVERLAP_WARNING', 'Cùng giờ ở tòa khác') })
+  try {
+    await choose(app); submit(app); await until(() => dialog(app), 'warning')
+    dispatch(app.container, buttonByText(app.container, 'Vẫn đặt'), 'click')
+    await until(() => app.container.textContent.includes('Giờ vừa hết chỗ'), 'hard error')
+    assert.equal(dialog(app), undefined)
+    assert.doesNotMatch(app.container.textContent, /Đặt lịch thành công/)
+    assert.equal(app.calls.filter(c => c.method === 'POST').length, 2)
+  } finally { await app.stop() }
+})
+
+test('VIEW-16a/LOC-01: English warning actions and success popup are translated', async () => {
+  const app = await setup({ lang: 'en', response: call => JSON.parse(call.body).acceptOverlap ? ok(saved)
+    : fail(409, 'VIEWING_OVERLAP_WARNING', 'Another building at this time', { visitAt: 'Please consider travel time.' }) })
+  try {
+    await choose(app); submit(app); await until(() => dialog(app), 'English warning')
+    assert.ok(buttonByText(app.container, 'Choose another time'))
+    dispatch(app.container, buttonByText(app.container, 'Book anyway'), 'click')
+    await until(() => dialog(app)?.textContent.includes('building manager will contact you'), 'English success')
+    assert.ok(buttonByText(app.container, 'Close'))
+  } finally { await app.stop() }
+})
 after(() => { setStoredLang('vi'); setTimeout(() => process.exit(process.exitCode ?? 0), 100).unref() })
 
 test('VIEW-01/21: anonymous uses public availability and a sign-in link returning to the same room', async () => {

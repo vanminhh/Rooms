@@ -124,9 +124,15 @@ describe('BE-EX-24 real viewing transactions, no seed', () => {
     expect(results.map(r => r.status)).toEqual([201, 201]);
     expect(new Set((await openAt(buildings[0], 12)).map(r => r.guestPhone)).size).toBe(3);
   });
-  it('VIEW-16: same phone races across buildings with different managers: only one succeeds', async () => {
+  it('VIEW-16a: same phone races across buildings: one saves, the other warns and needs acknowledgement', async () => {
     const guest = await user();
-    oneWinner(await Promise.all([book(guest.token, rooms[0][0], 13), manual(rooms[2][0], guest.phone, 13)]), 'VIEWING_TIME_TAKEN');
+    const results = await Promise.all([book(guest.token, rooms[0][0], 13), manual(rooms[2][0], guest.phone, 13)]);
+    oneWinner(results, 'VIEWING_OVERLAP_WARNING');
+    const retry = results[0].status === 409
+      ? await api('post', '/me/viewings', guest.token, { roomId: rooms[0][0], visitAt: at(13), acceptOverlap: true })
+      : await api('post', '/viewings', boss, { roomId: rooms[2][0], guestName: `[E2E ${run.runId}] Manual`, guestPhone: guest.phone, visitAt: at(13), acceptOverlap: true });
+    expect(retry.status).toBe(201);
+    expect(await prisma.viewing.count({ where: { guestPhone: guest.phone, visitAt: new Date(at(13)), status: 'NEW' } })).toBe(2);
   });
   it('VIEW-16: same responsible races across buildings with different phones: only one succeeds', async () => {
     const a = await user(), b = await user();

@@ -1,6 +1,6 @@
 import { viewingOverlapIds, type ViewingHold } from './viewing-capacity.js';
 
-const base: ViewingHold = { id: 1, buildingId: 10, responsibleId: 2, guestPhone: '0911111111', visitAt: new Date('2026-11-16T03:00:00Z'), status: 'NEW' };
+const base: ViewingHold = { id: 1, buildingId: 10, district: 'Cầu Giấy', responsibleId: 2, guestPhone: '0911111111', visitAt: new Date('2026-11-16T03:00:00Z'), status: 'NEW' };
 const hold = (id: number, extra: Partial<ViewingHold> = {}): ViewingHold => ({ ...base, id, ...extra });
 
 describe('VIEW-22 actual overlaps', () => {
@@ -14,8 +14,8 @@ describe('VIEW-22 actual overlaps', () => {
   it('current responsible at two buildings flags both, including CONFIRMED', () => {
     expect([...viewingOverlapIds([hold(1), hold(2, { buildingId: 20, status: 'CONFIRMED' })])]).toEqual([1, 2]);
   });
-  it('same phone in different buildings flags both even with different managers', () => {
-    expect([...viewingOverlapIds([hold(1), hold(2, { buildingId: 30, responsibleId: 3 })])]).toEqual([1, 2]);
+  it('VIEW-16a/22: allowed guest overlaps with different managers are not hard conflicts', () => {
+    expect([...viewingOverlapIds([hold(1), hold(2, { buildingId: 30, responsibleId: 3 })])]).toEqual([]);
   });
   it('unrelated manager/phone, another hour, closed and legacy rows are ignored', () => {
     expect([...viewingOverlapIds([hold(1), hold(2, { buildingId: 30, responsibleId: 3, guestPhone: '0922222222' }),

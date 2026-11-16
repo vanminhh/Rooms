@@ -149,11 +149,11 @@ describe('VIEW-21 availability', () => {
     expect(Object.keys(publicHours[0]).sort()).toEqual(['date', 'hours']);
     expect(JSON.stringify(publicHours)).not.toMatch(/phone|name|email|userId|responsible/i);
   });
-  it('VIEW-16/21: a phone in another building is excluded privately even with another manager', async () => {
+  it('VIEW-16a/21: guest overlap stays selectable privately when the manager is different', async () => {
     const { db, service } = setupViewings(); db.add({ roomId: 301, guestPhone: '0900000004' });
     const range = { from: '2026-11-16', to: '2026-11-16' };
     expect((await service.times(101, range))[0].hours).toContain(HOUR);
-    expect((await service.times(101, range, GUEST))[0].hours).not.toContain(HOUR);
+    expect((await service.times(101, range, GUEST))[0].hours).toContain(HOUR);
   });
   it.each([['2026-02-30', '2026-03-02'], ['2026-11-17', '2026-11-16'], ['2026-11-15', '2026-12-16']])('VIEW-21: invalid range %s..%s is refused', async (from, to) => {
     const { service } = setupViewings(); await expect(service.times(101, { from, to })).rejects.toMatchObject({ status: 400 });

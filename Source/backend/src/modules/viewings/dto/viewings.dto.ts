@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsIn, IsInt, IsOptional, IsString, Length, Matches, Max, MaxLength, Min, ValidateIf } from 'class-validator';
+import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Length, Matches, Max, MaxLength, Min, ValidateIf } from 'class-validator';
 import { PaginationQuery } from '../../../common/pagination.js';
 import type { ViewingStatus } from '../viewings.types.js';
 
@@ -9,6 +9,10 @@ const VIEWING_STATUSES = ['NEW', 'CONFIRMED', 'DONE', 'WON', 'LOST', 'CANCELLED'
 const WHEN_SENT = (_dto: object, value: unknown) => value !== undefined;
 
 export class BookViewingDto {
+  @ValidateIf(WHEN_SENT)
+  @IsBoolean({ message: 'Giá trị đồng ý trùng lịch không hợp lệ' })
+  acceptOverlap?: boolean;
+
   @Type(() => Number)
   @IsInt({ message: 'Mã phòng không hợp lệ' })
   @Min(1, { message: 'Mã phòng không hợp lệ' })
@@ -36,6 +40,10 @@ export class CreateViewingDto extends BookViewingDto {
 }
 
 export class UpdateViewingDto {
+  @ValidateIf(WHEN_SENT)
+  @IsBoolean({ message: 'Giá trị đồng ý trùng lịch không hợp lệ' })
+  acceptOverlap?: boolean;
+
   @ValidateIf(WHEN_SENT)
   @IsIn(VIEWING_STATUSES, { message: 'Trạng thái không hợp lệ' })
   status?: ViewingStatus;

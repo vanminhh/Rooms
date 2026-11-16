@@ -6,6 +6,8 @@ Read this before the first task of any part. Each line is a mistake that really 
 
 ## Tests and expected values
 
+- Keep translated validation literals in the files scanned by the field-catalog test; adding warning copy in reservations made the exact catalog check fail until it moved to VIEWING_FIELDS [BE-EX-24, 16/11/2026].
+- Compare fake-DOM element identity with a boolean assertion and a short message; strict equality on different cyclic DOM objects stalled formatting the expected failure [FE-EX-27, 16/11/2026].
 - The custom kit loader in `auth-login-flow.test.mjs` must include every new component used by a layout; omitting `LanguageSwitch` made unrelated auth flows fail with an invalid React element [FE-EX-09, 13/11/2026].
 - Never invent an expected value. Take it from the spec or the provider's documentation and name the source in the test. A planner once wrote a Cloudinary signature hash that was partly made up [BE-P2-07, 01/11/2026].
 - Adding an error code breaks the count test in `Source/backend/src/app.setup.spec.ts`; update it in the same change [BE-P2-02, 01/11/2026].
@@ -35,6 +37,8 @@ Read this before the first task of any part. Each line is a mistake that really 
 
 ## Commands and environment
 
+- Inspect every selected Vitest file for HTTP hooks before an offline-only run; `common/i18n/i18n.spec.ts` mixed unit assertions with two Supertest cases and attempted loopback requests despite the owner's no-HTTP instruction (both EACCES) [FE-EX-27, 16/11/2026].
+- In Windows PowerShell, pipe multiline Node scripts through a literal here-string to stdin; native argument handling stripped JavaScript quotes from a `node -e` command and blocked manual QA startup [FE-EX-27, 16/11/2026].
 - For resend.dev smoke checks, use the exact account email returned by the provider; a Gmail address with an uppercase initial received 403 while its lowercase form received 200 [BE-EX-30, 15/11/2026].
 - Distinguish a direct provider smoke check from app integration: the managed terminal could not resolve Resend, and importing compiled NestJS in node_repl failed on module interop; HTTPS in that runtime proved credentials only [BE-EX-30, 15/11/2026].
 - On this machine the dev DB settings are in `Source/backend/.env` and `Source/.env` does not exist, so `npm run test:e2e` stops with "../.env: not found"; run `node --env-file=.env ./node_modules/vitest/vitest.mjs run --config ./vitest.config.e2e.ts` from `Source/backend` [BE-EX-06, 12/11/2026].
@@ -58,6 +62,7 @@ Read this before the first task of any part. Each line is a mistake that really 
 
 ## Working with the plan
 
+- Check a modal's ancestor stacking contexts and explicit return-focus target; a sticky booking card left the header above its dialog, and disabling the opener before the effect lost focus restoration [FE-EX-27, 16/11/2026].
 - When a shared module gains an import, update every hand-written test loader that compiles it (`auth-api`, `cp4-data-api`, auth guards/schemas); these tests failed only after the full suite ran [FE-EX-10, 13/11/2026].
 - A public page can render Vietnamese through a shared kit component even when its own source scan is clean; include the rendered component in the scan and test its English labels [FE-EX-10, 13/11/2026].
 - A React TSX file exporting both a component and shared functions fails the Fast Refresh lint rule; put functions in a TS module and re-export through a barrel [FE-EX-08, 13/11/2026].

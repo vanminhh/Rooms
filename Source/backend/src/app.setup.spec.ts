@@ -772,6 +772,7 @@ const EXPECTED: [string, number, string][] = [
   ['MANAGER_MAX_2_BUILDINGS', 409, 'Mỗi quản lý chỉ phụ trách tối đa 2 tòa'],
   ['ROOM_NOT_AVAILABLE', 409, 'Phòng không còn trống'],
   ['VIEWING_TIME_TAKEN', 409, 'Giờ này đã hết chỗ hoặc trùng lịch ở tòa khác, vui lòng chọn giờ khác'],
+  ['VIEWING_OVERLAP_WARNING', 409, 'Khách đã có lịch xem ở tòa khác vào cùng giờ'],
   ['CONTRACT_TERM_TOO_SHORT', 400, 'Thời hạn hợp đồng tối thiểu 3 tháng'],
   ['DEPOSIT_NOT_PAID', 409, 'Hóa đơn cọc chưa được thanh toán'],
   ['INVOICE_NOT_UNPAID', 409, 'Hóa đơn không ở trạng thái chờ thanh toán'],
@@ -789,9 +790,9 @@ const EXPECTED: [string, number, string][] = [
 ];
 
 describe('01-architecture#error-codes: ErrorCode and ERRORS table', () => {
-  it('01-architecture: ErrorCode has exactly 30 members including VIEWING_TIME_TAKEN (EX-6), value = name', () => {
+  it('01-architecture: ErrorCode has exactly 31 members including VIEWING_OVERLAP_WARNING (VIEW-16a), value = name', () => {
     const members = Object.entries(ErrorCode);
-    expect(members).toHaveLength(30);
+    expect(members).toHaveLength(31);
     expect(members.every(([k, v]) => k === v)).toBe(true);
     expect(Object.keys(ErrorCode).sort()).toEqual(EXPECTED.map((e) => e[0]).sort());
   });

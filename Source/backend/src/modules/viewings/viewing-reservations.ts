@@ -6,6 +6,7 @@ import type { AuthUser } from '../../common/guards/auth.decorators.js';
 import { publicRoomWhere } from '../../common/rooms/public-room.js';
 import { lockViewingKey } from '../../common/viewings/viewing-lock.js';
 import { canBookViewing, type ViewingHold } from './viewing-capacity.js';
+import { VIEWING_FIELDS } from './viewing-validation.js';
 
 export const VIEWING_ROOM_INCLUDE = {
   building: { include: { manager: true } },
@@ -47,11 +48,12 @@ export async function viewingHolds(tx: Prisma.TransactionClient, from: Date | un
   const rows = await tx.viewing.findMany({
     where: { status: { in: ['NEW', 'CONFIRMED'] }, visitAt: { not: null, gte: from, lte: to } },
     select: { id: true, guestPhone: true, status: true, visitAt: true, room: {
-      select: { buildingId: true, building: { select: { manager: { select: { id: true, isActive: true } } } } },
+      select: { buildingId: true, building: { select: { district: true, manager: { select: { id: true, isActive: true } } } } },
     } },
   });
   return rows.map(row => ({ id: row.id, guestPhone: row.guestPhone, status: row.status, visitAt: row.visitAt,
-    buildingId: row.room.buildingId, responsibleId: row.room.building.manager?.isActive ? row.room.building.manager.id : bossId }));
+    buildingId: row.room.buildingId, district: row.room.building.district,
+    responsibleId: row.room.building.manager?.isActive ? row.room.building.manager.id : bossId }));
 }
 
 export async function lockViewingOccupancy(tx: Prisma.TransactionClient, room: ReservationRoom, phone: string) {
@@ -63,10 +65,16 @@ export async function lockViewingOccupancy(tx: Prisma.TransactionClient, room: R
   return { bossId, responsible };
 }
 
-export async function reserveViewingHour(tx: Prisma.TransactionClient, room: ReservationRoom, phone: string, at: Date, excludeId?: number): Promise<void> {
+export async function reserveViewingHour(tx: Prisma.TransactionClient, room: ReservationRoom, phone: string, at: Date, excludeId?: number, acceptOverlap = false): Promise<void> {
   const { bossId, responsible } = await lockViewingOccupancy(tx, room, phone);
   const holds = await viewingHolds(tx, at, at, bossId);
   if (!canBookViewing(holds, { buildingId: room.buildingId, responsibleId: responsible, guestPhone: phone, visitAt: at, excludeId })) {
     throw new ConflictException(ErrorCode.VIEWING_TIME_TAKEN);
+  }
+  const overlaps = holds.filter(row => row.id !== excludeId && row.buildingId !== room.buildingId && row.guestPhone === phone);
+  if (overlaps.length && acceptOverlap !== true) {
+    const district = room.building.district.trim().toLowerCase();
+    const differentDistrict = overlaps.some(row => row.district.trim().toLowerCase() !== district);
+    throw new ConflictException({ code: ErrorCode.VIEWING_OVERLAP_WARNING, fields: { visitAt: differentDistrict ? VIEWING_FIELDS.overlapDistrict : VIEWING_FIELDS.overlap } });
   }
 }

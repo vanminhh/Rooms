@@ -4,7 +4,7 @@ import type { I18nValue } from '../../shared/i18n'
 type Translate = I18nValue['t']
 
 // Messages copy the BE DTO text, so the client shows the same words as the API (A4, G-04).
-const phoneRule = (t: Translate) => z.string().regex(/^0[0-9]{9}$/, t('auth.validation.phone'))
+const phoneRule = (t: Translate) => z.string().trim().regex(/^0[0-9]{9}$/, t('auth.validation.phone'))
 const newPasswordRule = (t: Translate) => z.string().min(8, t('auth.validation.passwordLength'))
 const confirmError = (t: Translate) => ({ message: t('auth.validation.confirmPassword'), path: ['confirmPassword'] })
 

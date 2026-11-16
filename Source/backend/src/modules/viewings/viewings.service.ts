@@ -78,7 +78,7 @@ export class ViewingsService {
       if (account.role === 'TENANT' && !account.email) viewingFieldError('email', VIEWING_FIELDS.tenantEmail);
       const room = await viewingRoom(tx, dto.roomId, true);
       if (await tx.viewing.findFirst({ where: { userId: actor.id, roomId: dto.roomId, status: { in: [...OPEN] } }, select: { id: true } })) throw conflict();
-      await reserveViewingHour(tx, room, account.phone, new Date(dto.visitAt));
+      await reserveViewingHour(tx, room, account.phone, new Date(dto.visitAt), undefined, dto.acceptOverlap);
       // Use the same instant for the quota window and createdAt, even if lock waits cross Hanoi midnight.
       const createdAt = new Date();
       const today = todayHanoi(createdAt);
@@ -102,7 +102,7 @@ export class ViewingsService {
       const room = await viewingRoom(tx, dto.roomId, false);
       assertViewingScope(actor, room);
       if (!room.isActive) throw conflict();
-      await reserveViewingHour(tx, room, dto.guestPhone, new Date(dto.visitAt));
+      await reserveViewingHour(tx, room, dto.guestPhone, new Date(dto.visitAt), undefined, dto.acceptOverlap);
       return tx.viewing.create({ data: { roomId: dto.roomId, userId: null, guestName: dto.guestName,
         guestPhone: dto.guestPhone, visitAt: checkVisitAt(dto.visitAt), visitDate: null, timeSlot: null,
         note: dto.note, source: 'MANUAL', status: 'NEW', handledById: actor.id }, include: VIEWING_INCLUDE });
@@ -147,7 +147,7 @@ export class ViewingsService {
         if (dto.status === 'CANCELLED' && !dto.note?.trim()) viewingFieldError('note', VIEWING_FIELDS.cancellation);
         if (dto.status === 'LOST' && !dto.outcomeNote?.trim()) viewingFieldError('outcomeNote', VIEWING_FIELDS.outcome);
       }
-      if (dto.visitAt !== undefined) await reserveViewingHour(tx, room, current.guestPhone, at, id);
+      if (dto.visitAt !== undefined) await reserveViewingHour(tx, room, current.guestPhone, at, id, dto.acceptOverlap);
       else await lockViewingOccupancy(tx, room, current.guestPhone);
       const data: Prisma.ViewingUncheckedUpdateManyInput = { handledById: actor.id };
       if (dto.visitAt !== undefined) Object.assign(data, { visitAt: checkVisitAt(dto.visitAt), visitDate: null, timeSlot: null });

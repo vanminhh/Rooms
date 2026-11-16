@@ -78,10 +78,11 @@ describe('BE-EX-19 account bookings', () => {
     await service.book(GUEST, { roomId: 102, visitAt: HOUR });
     await expect(service.book({ ...GUEST, id: 5, role: 'TENANT' }, { roomId: 103, visitAt: HOUR })).rejects.toMatchObject({ response: expect.objectContaining({ message: 'VIEWING_TIME_TAKEN' }) });
   });
-  it.each([201, 301])('VIEW-16: guest cannot book a different building (room %s), even with another manager', async roomId => {
+  it.each([201, 301])('VIEW-16/16a: room %s refuses responsible overlap or requests guest acknowledgement', async roomId => {
     const { service } = setup();
     await service.book(GUEST, { roomId: 101, visitAt: HOUR });
-    await expect(service.book(GUEST, { roomId, visitAt: HOUR })).rejects.toMatchObject({ status: 409 });
+    await expect(service.book(GUEST, { roomId, visitAt: HOUR })).rejects.toMatchObject({ status: 409, response: roomId === 201
+      ? { message: 'VIEWING_TIME_TAKEN' } : { code: 'VIEWING_OVERLAP_WARNING' } });
   });
   it('VIEW-16: responsible person cannot be at two buildings; independent manager is available', async () => {
     const { db, service } = setup(); db.add({ roomId: 201 });

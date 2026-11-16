@@ -98,6 +98,8 @@
 }
 
 /* EX-7: compact calendar uses the existing kit palette and real, keyboard-accessible buttons. */
+/* A sticky card forms a stacking context; its open modal must also cover the public header. */
+.rooms-theme .public-detail-aside.public-booking-card:has(.rooms-dialog-backdrop) { z-index: 900; }
 .rooms-theme .viewing-calendar-heading { display: grid; grid-template-columns: 44px 1fr 44px; gap: 6px; align-items: center; text-align: center; }
 .rooms-theme .viewing-calendar-heading .rooms-button { padding: 0; min-height: 44px; }
 .rooms-theme .viewing-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; margin-top: 12px; }

@@ -2,6 +2,15 @@ import assert from 'node:assert/strict'
 import test, { after } from 'node:test'
 import { loadModule, draftFirst, fakeFetch, ok } from '../p2/public-dom.mjs'
 const mod = p => loadModule(draftFirst(`src/${p}`))
+
+test('VIEW-16a: only explicit acknowledgement is forwarded by all three write APIs', async () => {
+  const calls = fakeFetch([{ prefix: '/', handler: () => ok({}) }])
+  const api = mod('features/viewings/api.ts')
+  await api.bookViewing({ roomId: 7, visitAt: '2026-11-16T03:00:00Z', acceptOverlap: true, userId: 99 })
+  await api.createViewing({ roomId: 7, guestName: 'Khách', guestPhone: '0900000004', visitAt: '2026-11-16T03:00:00Z', acceptOverlap: true })
+  await api.updateViewing(8, { visitAt: '2026-11-16T03:00:00Z', acceptOverlap: true })
+  for (const call of calls) { assert.equal(JSON.parse(call.body).acceptOverlap, true); assert.equal('userId' in JSON.parse(call.body), false) }
+})
 after(() => { setTimeout(() => process.exit(process.exitCode ?? 0), 100).unref() })
 test('VIEW-10: six labels use the owner-approved Vietnamese texts', () => {
   assert.deepEqual(mod('shared/status-labels.ts').viewingStatusLabels, { NEW: 'Chờ xác nhận', CONFIRMED: 'Đã xác nhận', DONE: 'Đã xem', WON: 'Đã chốt', LOST: 'Không thành', CANCELLED: 'Đã hủy' })

@@ -7,6 +7,7 @@ Module: `auth` + `src/common/guards`. Tables: `users`, `sessions`, `password_res
 ## Rules
 
 - **AUTH-01** Login with `phone` + `password`. No role selector. Wrong phone or password returns the same error (`INVALID_CREDENTIALS`, 401, "Số điện thoại hoặc mật khẩu không đúng").
+  Owner feedback 16/11/2026: auth forms (login, sign-up and password recovery) trim leading/trailing whitespace from the phone before G-04 validation and submission. Embedded whitespace, missing digits and non-digits remain invalid. Password characters are preserved exactly. The API still receives and validates the canonical 10-digit phone.
 - **AUTH-02** Inactive users cannot log in (`ACCOUNT_LOCKED`, 403, "Tài khoản đã bị khóa. Liên hệ quản lý.").
 - **AUTH-03** Passwords hashed with argon2id. Minimum 8 characters.
 - **AUTH-04** Login rate limit: 5 failures per phone per 15 minutes → 429. Also [ASSUMPTION A-08] 20 failures per IP per 15 minutes → 429, checked before the password check and counted in memory like the phone limit (DEP-02, DEP-04); a successful login does not reset the IP count. Reason: every attempt costs one argon2 check, even for an unknown phone (AUTH-01), so a flood spread over many phones would bypass the phone limit and exhaust the server. The IP limit is higher than the phone limit because the tenants of one building often share one Wi-Fi IP.

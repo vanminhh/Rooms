@@ -18,6 +18,7 @@ export const ERRORS_EN: Record<ErrorCode, string> = {
   MANAGER_MAX_2_BUILDINGS: 'A manager can manage at most 2 buildings',
   ROOM_NOT_AVAILABLE: 'This room is no longer available',
   VIEWING_TIME_TAKEN: 'This time is full or conflicts with a viewing at another building. Please choose another time',
+  VIEWING_OVERLAP_WARNING: 'The guest already has a viewing at another building at this time',
   CONTRACT_TERM_TOO_SHORT: 'The minimum contract term is 3 months',
   DEPOSIT_NOT_PAID: 'The deposit invoice has not been paid',
   INVOICE_NOT_UNPAID: 'The invoice is not awaiting payment',
@@ -35,6 +36,9 @@ export const ERRORS_EN: Record<ErrorCode, string> = {
 };
 
 export const FIELDS_EN: Record<string, string> = {
+  'Giá trị đồng ý trùng lịch không hợp lệ': 'Invalid viewing overlap acknowledgement',
+  'Khách đã có lịch xem ở tòa khác vào cùng giờ. Bạn có muốn tiếp tục?': 'The guest already has a viewing at another building at this time. Do you want to continue?',
+  'Khách đã có lịch xem ở tòa thuộc quận khác vào cùng giờ. Vui lòng cân nhắc thời gian di chuyển trước khi tiếp tục.': 'The guest already has a viewing in another district at this time. Please consider travel time before continuing.',
   'Trường này không được phép gửi lên': 'This field is not allowed',
   'Trang không hợp lệ': 'Invalid page',
   'Số dòng mỗi trang phải từ 1 đến 100': 'The number of rows per page must be between 1 and 100',

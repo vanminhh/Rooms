@@ -358,6 +358,16 @@ test('AUTH-01: ticking "Ghi nhớ đăng nhập" sends remember:true', async () 
   await app.stop()
 })
 
+test('AUTH-01/G-04: phone whitespace is trimmed in the login request and the user reaches their home', async () => {
+  const app = await mount('/dang-nhap')
+  try {
+    await fillAndSubmit(app, { phone: ' \t0900000002 \u00a0', password: 'matkhau123' })
+    await until(() => loginCalls(app).length === 1, 'normalized login request')
+    assert.deepEqual(loginCalls(app)[0].body, { phone: '0900000002', password: 'matkhau123', remember: false })
+    await until(() => app.path() === '/ql', 'successful normalized login')
+  } finally { await app.stop() }
+})
+
 test('AUTH-01: wrong password shows the API message in a role="alert" block, stays on the page, keeps the typed phone', async () => {
   const app = await mount('/dang-nhap')
   await fillAndSubmit(app, { phone: '0900000002', password: 'sai-mat-khau' })

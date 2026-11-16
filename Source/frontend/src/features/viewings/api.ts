@@ -25,13 +25,13 @@ export interface ViewingListQuery {
 export function listViewings(query: ViewingListQuery = {}) {
   return apiRequestPage<ViewingView>(listPath('/viewings', { ...query, buildingId: buildingIdQuery(query.buildingId) }))
 }
-export function createViewing(input: { roomId: number; guestName: string; guestPhone: string; visitAt: string; note?: string }) {
-  const { roomId, guestName, guestPhone, visitAt, note } = input
-  return apiRequest<ViewingView>('/viewings', { method: 'POST', body: { roomId, guestName, guestPhone, visitAt, note } })
+export function createViewing(input: { roomId: number; guestName: string; guestPhone: string; visitAt: string; note?: string; acceptOverlap?: boolean }) {
+  const { roomId, guestName, guestPhone, visitAt, note, acceptOverlap } = input
+  return apiRequest<ViewingView>('/viewings', { method: 'POST', body: { roomId, guestName, guestPhone, visitAt, note, acceptOverlap } })
 }
-export function updateViewing(id: number, input: { status?: ViewingStatus; outcomeNote?: string; visitAt?: string; note?: string }) {
-  const { status, outcomeNote, visitAt, note } = input
-  return apiRequest<ViewingView>(`/viewings/${id}`, { method: 'PATCH', body: { status, outcomeNote, visitAt, note } })
+export function updateViewing(id: number, input: { status?: ViewingStatus; outcomeNote?: string; visitAt?: string; note?: string; acceptOverlap?: boolean }) {
+  const { status, outcomeNote, visitAt, note, acceptOverlap } = input
+  return apiRequest<ViewingView>(`/viewings/${id}`, { method: 'PATCH', body: { status, outcomeNote, visitAt, note, acceptOverlap } })
 }
 export function confirmViewing(id: number, via: 'PHONE' | 'EMAIL') {
   return apiRequest<ViewingView>(`/viewings/${id}/confirm`, { method: 'POST', body: { via } })
@@ -39,9 +39,9 @@ export function confirmViewing(id: number, via: 'PHONE' | 'EMAIL') {
 export function getViewingTimes(roomId: number, from: string, to: string, signedIn: boolean) {
   return apiRequest<ViewingDay[]>(`/${signedIn ? 'me' : 'public'}/rooms/${roomId}/viewing-times?${new URLSearchParams({ from, to })}`)
 }
-export function bookViewing(input: { roomId: number; visitAt: string; note?: string }) {
-  const { roomId, visitAt, note } = input
-  return apiRequest<OwnViewingView>('/me/viewings', { method: 'POST', body: { roomId, visitAt, note } })
+export function bookViewing(input: { roomId: number; visitAt: string; note?: string; acceptOverlap?: boolean }) {
+  const { roomId, visitAt, note, acceptOverlap } = input
+  return apiRequest<OwnViewingView>('/me/viewings', { method: 'POST', body: { roomId, visitAt, note, acceptOverlap } })
 }
 export function listOwnViewings(page = 1) {
   return apiRequestPage<OwnViewingView>(listPath('/me/viewings', { page, limit: 20 }))

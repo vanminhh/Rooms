@@ -70,7 +70,8 @@ class FakeElement extends FakeNode {
   querySelectorAll(selector) {
     const tag = selector.toUpperCase()
     const out = []
-    const walk = n => { n.childNodes.forEach(c => { if (c.nodeType === 1) { if (c.tagName === tag) out.push(c); walk(c) } }) }
+    const matches = c => selector === 'button, a[href]' ? c.tagName === 'BUTTON' || (c.tagName === 'A' && c.hasAttribute('href')) : c.tagName === tag
+    const walk = n => { n.childNodes.forEach(c => { if (c.nodeType === 1) { if (matches(c)) out.push(c); walk(c) } }) }
     walk(this)
     return out
   }

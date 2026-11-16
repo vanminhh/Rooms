@@ -110,8 +110,25 @@ const okLogin = { phone: '0900000004', password: 'a', remember: false }
 
 test('G-04: loginSchema accepts 10 digits starting with 0 and rejects other phone shapes with "Số điện thoại không hợp lệ"', () => {
   assert.deepEqual(loginIssues(okLogin), [])
-  for (const bad of ['090000000', '09000000044', '1900000004', '09000a0004', ' 0900000004', '0900000004 ', '']) {
+  for (const bad of ['090000000', '09000000044', '1900000004', '09000a0004', '09000 00004', ' 090000000 ', '   ', '']) {
     assert.deepEqual(loginIssues({ ...okLogin, phone: bad }), ['phone: Số điện thoại không hợp lệ'], JSON.stringify(bad))
+  }
+})
+
+test('AUTH-01/07/11, G-04: auth forms trim outer phone whitespace before validation and preserve passwords', () => {
+  const schemas = compile('../src/features/auth/schemas.ts', { zod: createRequire(import.meta.url)('zod') })
+  const translate = (key, params) => t(key, params, 'vi')
+  const input = { ...okLogin, fullName: 'Khách thử', email: 'guest@example.test', password: ' secret123 ' }
+  for (const name of ['loginSchema', 'forgotSchema', 'registerSchema']) {
+    const schema = schemas[name](translate)
+    for (const phone of ['0900000004 ', ' 0900000004', '\t 0900000004 \u00a0']) {
+      const parsed = schema.parse({ ...input, phone })
+      assert.equal(parsed.phone, '0900000004', `${name}: canonical phone`)
+      if ('password' in parsed) assert.equal(parsed.password, input.password, `${name}: password stays exact`)
+    }
+    for (const phone of ['09000 00004', '09000\t00004', '   ', ' 09000a0004 ']) {
+      assert.equal(schema.safeParse({ ...input, phone }).success, false, `${name}: malformed phone ${JSON.stringify(phone)}`)
+    }
   }
 })
 
@@ -160,7 +177,7 @@ test('AUTH-03/AUTH-07: resetPasswordSchema has the same 7/8 boundary and the sam
 
 test('AUTH-07/G-04: forgotSchema uses the same phone boundary as login (10 digits starting with 0)', () => {
   assert.deepEqual(issuesOf(forgotSchema, { phone: '0900000004' }), [])
-  for (const bad of ['090000000', '09000000044', '1900000004', '09000a0004', ' 0900000004', '']) {
+  for (const bad of ['090000000', '09000000044', '1900000004', '09000a0004', '09000 00004', '   ', '']) {
     assert.deepEqual(issuesOf(forgotSchema, { phone: bad }), ['phone: Số điện thoại không hợp lệ'], JSON.stringify(bad))
   }
 })

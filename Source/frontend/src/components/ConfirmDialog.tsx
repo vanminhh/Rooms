@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef } from 'react'
-import type { KeyboardEvent, ReactNode } from 'react'
+import type { KeyboardEvent, ReactNode, RefObject } from 'react'
 import { RoomsButton } from './Button'
 import { Spinner } from './FormFields'
 
@@ -11,23 +11,24 @@ export type ConfirmDialogProps = {
   cancelLabel?: string
   pendingLabel?: string
   pending?: boolean
+  returnFocusRef?: RefObject<HTMLElement | null>
   onConfirm(): void
   onClose(): void
 }
 
 // Modal: Tab stays inside the dialog, Escape closes it, focus returns to the opener.
 // Confirm uses aria-disabled (not disabled) so it keeps focus while pending; extra clicks are ignored.
-export function ConfirmDialog({ open, title, description, confirmLabel, cancelLabel = 'Hủy', pendingLabel = 'Đang xử lý', pending = false, onConfirm, onClose }: ConfirmDialogProps) {
+export function ConfirmDialog({ open, title, description, confirmLabel, cancelLabel = 'Hủy', pendingLabel = 'Đang xử lý', pending = false, returnFocusRef, onConfirm, onClose }: ConfirmDialogProps) {
   const titleId = useId()
   const descriptionId = useId()
   const dialogRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!open) return
-    const opener = document.activeElement
+    const opener = returnFocusRef?.current ?? document.activeElement
     dialogRef.current?.querySelector<HTMLButtonElement>('button')?.focus()
     return () => { if (opener instanceof HTMLElement) opener.focus() }
-  }, [open])
+  }, [open, returnFocusRef])
 
   if (!open) return null
 
@@ -38,9 +39,10 @@ export function ConfirmDialog({ open, title, description, confirmLabel, cancelLa
       return
     }
     if (event.key !== 'Tab') return
-    const buttons = event.currentTarget.querySelectorAll<HTMLButtonElement>('button')
-    const first = buttons[0]
-    const last = buttons[buttons.length - 1]
+    const focusable = [...event.currentTarget.querySelectorAll<HTMLElement>('button, a[href]')]
+      .filter(element => !element.hasAttribute('disabled'))
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
     if (event.shiftKey && document.activeElement === first) {
       event.preventDefault()
       last.focus()

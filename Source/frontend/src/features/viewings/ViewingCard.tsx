@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { FormError, RoomsButton, Spinner, StatusBadge, TextField } from '../../components'
+import { ConfirmDialog, FormError, RoomsButton, Spinner, StatusBadge, TextField } from '../../components'
 import { ApiError } from '../../shared/api'
 import { applyApiError } from '../../shared/form-errors'
 import { TextAreaField } from '../buildings/fields'
@@ -38,21 +38,36 @@ function OutcomePanel({ status, pending, onSave, onCancel }: { status: 'LOST' | 
 }
 function ReschedulePanel({ viewing, pending, onSave, onCancel }: { viewing: ViewingView; pending: boolean; onSave(input: ViewingUpdate): Promise<void>; onCancel(): void }) {
   const [formError, setFormError] = useState('')
+  const sending = useRef(false)
+  const formRef = useRef<HTMLFormElement>(null)
+  const [overlap, setOverlap] = useState<{ values: RescheduleFormValues; message: string } | null>(null)
   const { register, handleSubmit, setError, formState: { errors } } = useForm<RescheduleFormValues>({
     resolver: zodResolver(rescheduleFormSchema),
     defaultValues: { visitAt: viewing.visitAt ? new Date(Date.parse(viewing.visitAt) + 7 * 3600_000).toISOString().slice(0, 16) : '' },
   })
-  async function submit(values: RescheduleFormValues) {
+  async function submit(values: RescheduleFormValues, acceptOverlap?: boolean) {
+    if (sending.current) return
+    sending.current = true
     setFormError('')
-    try { await onSave({ visitAt: `${values.visitAt}:00+07:00` }) }
-    catch (error) { setFormError(applyApiError(error, setError, ['visitAt'])) }
+    setOverlap(null)
+    try { await onSave({ visitAt: `${values.visitAt}:00+07:00`, acceptOverlap }) }
+    catch (error) {
+      if (error instanceof ApiError && error.code === 'VIEWING_OVERLAP_WARNING') {
+        setOverlap({ values: { ...values }, message: error.fields?.visitAt ?? error.message })
+      } else setFormError(applyApiError(error, setError, ['visitAt']))
+    } finally { sending.current = false }
   }
-  return <form noValidate className="viewings-panel" onSubmit={handleSubmit(submit)}>
+  const locked = pending || !!overlap
+  return <><form ref={formRef} tabIndex={-1} noValidate inert={!!overlap} className="viewings-panel" onSubmit={event => { if (overlap) { event.preventDefault(); return }; void handleSubmit(values => submit(values))(event) }}>
     <p>Thống nhất giờ mới với khách qua điện thoại trước khi lưu.</p>
-    <TextField label="Giờ xem (Hà Nội)" type="datetime-local" step={3600} min={`${todayHanoi()}T08:00`} max={`${plusDays(todayHanoi(), 30)}T19:00`} disabled={pending} error={errors.visitAt?.message} {...register('visitAt')} />
+    <TextField label="Giờ xem (Hà Nội)" type="datetime-local" step={3600} min={`${todayHanoi()}T08:00`} max={`${plusDays(todayHanoi(), 30)}T19:00`} disabled={locked} error={errors.visitAt?.message} {...register('visitAt')} />
     <FormError>{formError}</FormError>
-    <div className="viewings-actions"><RoomsButton type="submit" disabled={pending}>Lưu{pending && <Spinner label="Đang xử lý" />}</RoomsButton><RoomsButton type="button" variant="outline" disabled={pending} onClick={onCancel}>Quay lại</RoomsButton></div>
+    <div className="viewings-actions"><RoomsButton type="submit" disabled={locked}>Lưu{pending && <Spinner label="Đang xử lý" />}</RoomsButton><RoomsButton type="button" variant="outline" disabled={locked} onClick={onCancel}>Quay lại</RoomsButton></div>
   </form>
+  <ConfirmDialog open={!!overlap} returnFocusRef={formRef} title="Lưu ý lịch xem cùng giờ" description={overlap?.message ?? ''}
+    confirmLabel="Vẫn đổi giờ" cancelLabel="Chọn giờ khác"
+    onConfirm={() => { if (overlap) void submit(overlap.values, true) }} onClose={() => setOverlap(null)} />
+  </>
 }
 export function ViewingCard({ viewing }: { viewing: ViewingView }) {
   const client = useQueryClient(), sending = useRef(false)

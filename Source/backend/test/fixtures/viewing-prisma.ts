@@ -28,9 +28,9 @@ export function viewingPrisma() {
     { id: 5, role: 'TENANT', phone: '0900000005', fullName: 'Tenant', email: 'tenant@example.test' },
   ].map(u => ({ isActive: true, mustChangePassword: false, emailVerifiedAt: NOW, locale: 'vi', ...u }));
   const buildings = [
-    { id: 10, managerId: 2, name: 'Tòa A' },
-    { id: 20, managerId: 2, name: 'Tòa B' },
-    { id: 30, managerId: 3, name: 'Tòa C' },
+    { id: 10, managerId: 2, name: 'Tòa A', district: 'Cầu Giấy' },
+    { id: 20, managerId: 2, name: 'Tòa B', district: 'Cầu Giấy' },
+    { id: 30, managerId: 3, name: 'Tòa C', district: 'Đống Đa' },
   ].map(b => ({ isActive: true, address: 'Hà Nội', ...b }));
   const rooms: any[] = [101, 102, 103, 104, 105, 201, 301].map(id => ({
     id, code: `P${id}`, buildingId: id < 200 ? 10 : id < 300 ? 20 : 30,

@@ -3,7 +3,7 @@ import { canBookViewing, type ViewingHold } from './viewing-capacity.js';
 const at = new Date('2026-11-16T03:00:00Z');
 const target = { buildingId: 10, responsibleId: 2, guestPhone: '0900000009', visitAt: at };
 const hold = (id: number, overrides: Partial<ViewingHold> = {}): ViewingHold => ({
-  id, buildingId: 10, responsibleId: 2, guestPhone: `090000000${id}`, visitAt: at, status: 'NEW', ...overrides,
+  id, buildingId: 10, district: 'Cầu Giấy', responsibleId: 2, guestPhone: `090000000${id}`, visitAt: at, status: 'NEW', ...overrides,
 });
 
 describe('VIEW-16: three guests per building/hour with cross-building exclusion', () => {
@@ -22,8 +22,8 @@ describe('VIEW-16: three guests per building/hour with cross-building exclusion'
   it('VIEW-16: responsible person cannot be at another building', () => {
     expect(canBookViewing([hold(1, { buildingId: 20 })], target)).toBe(false);
   });
-  it('VIEW-16: guest cannot be at another building even with a different responsible person', () => {
-    expect(canBookViewing([hold(1, { buildingId: 20, responsibleId: 3, guestPhone: target.guestPhone })], target)).toBe(false);
+  it('VIEW-16a/21: another building for the guest is selectable when hard limits pass', () => {
+    expect(canBookViewing([hold(1, { buildingId: 20, responsibleId: 3, guestPhone: target.guestPhone })], target)).toBe(true);
   });
   it('VIEW-16: unrelated guest and manager at another building do not interfere', () => {
     expect(canBookViewing([hold(1, { buildingId: 20, responsibleId: 3 })], target)).toBe(true);
