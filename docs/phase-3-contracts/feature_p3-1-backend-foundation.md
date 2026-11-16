@@ -25,11 +25,12 @@ Out: every contract route (P3-2..P3-5), any frontend change.
 
 ## Tasks
 
-- [ ] **BE-P3-01** Period helper in `src/common/date/` (BIL-01..04, BIL-22, D-40, D-41, CON-03): `end_date` = start + N months − 1 day with the month clamp; periods cut at every 1st of a month; whether a period is partial; the prorated amount (days ÷ days of that month) rounded half up to the đồng (A-21); the due date of a monthly invoice = the 9th of its billing month (BIL-08). Business dates only (G-02). No library.
+- [x] **BE-P3-01** Period helper in `src/common/date/` (BIL-01..04, BIL-22, D-40, D-41, CON-03): `end_date` = start + N months − 1 day with the month clamp; periods cut at every 1st of a month; whether a period is partial; the prorated amount (days ÷ days of that month) rounded half up to the đồng (A-21); the due date of a monthly invoice = the 9th of its billing month (BIL-08). Business dates only (G-02). No library.
   Done when: tests `BIL-01: …`, `BIL-02: …` and `BIL-22: …` with the exact dates and amounts of the spec, a move-in on the 1st (no partial month), a leap-year case in 2028 (29/02), `BIL-03` (a renewal continues the months without a gap), and `BIL-04` (no period after `end_date`).
-- [ ] **BE-P3-02** CCCD encryption (CON-04, D-17): AES-256-GCM with a random IV per value, key from `CCCD_KEY` (32 bytes, base64); `last4` helper; decrypt only where a later task needs it. `CCCD_KEY` becomes required at start like `NODE_ENV` (owner 16/11/2026, Q-P3-4, DEP-05): missing or wrong length → the app refuses to start with a clear message; add it to `.env.example` with an empty value.
+- [x] **BE-P3-02** CCCD encryption (CON-04, D-17): AES-256-GCM with a random IV per value, key from `CCCD_KEY` (32 bytes, base64); `last4` helper; decrypt only where a later task needs it. `CCCD_KEY` becomes required at start like `NODE_ENV` (owner 16/11/2026, Q-P3-4, DEP-05): missing or wrong length → the app refuses to start with a clear message; add it to `.env.example` with an empty value.
   Done when: tests: round trip, two encryptions of the same number differ, a tampered value fails, a wrong-length key is refused; `env.spec.ts` updated (it currently says a missing `CCCD_KEY` does not throw); the key never appears in a log.
-- [ ] **BE-P3-03** ⏸ Migration for private assets (D-37, `02-database.md` "Planned changes"): ask the owner before creating the file and again before applying it to the dev database. Also the plan's choice for the now unused `contracts.billing_day` (drop, or fix to 1; dropping needs the owner's OK) and the matching change to the dev seed (`HD000001` uses billing day 15). The signed scan and the two CCCD photos store a verified Cloudinary asset id (and whatever the signed URL needs, decided in the plan) instead of a URL; the plan says what happens to `signed_scan_url`, `id_front_url`, `id_back_url` (they are empty today). Add DB-check scenarios for the new rules and keep every existing one (DB-07).
+- [x] **BE-P3-03** ⏸ Migration for private assets (D-37, D-40, `02-database.md` "Planned changes"): replace the three legacy URL columns with verified Cloudinary asset IDs and remove `contracts.billing_day` and its CHECK (owner approved option A on 16/11/2026). Update the dev seed and add DB-check scenarios while keeping the existing ones (DB-07). Applying the migration to the dev database requires separate approval.
+  Applied to dev with owner approval (Q-P3-6) on 16/11/2026. The owner's PowerShell showed `scan=0, front=0, back=0` before deploy and `Database schema is up to date!` after it. The offline DB checker passed 88/88 and the seed passed 39/39.
   Done when: `prisma migrate diff` shows only these changes; `node prisma/check-constraints.mjs . prisma` passes every scenario (report the count); `seed.spec.ts` passes. Stop and report BE-P3-01..03.
 - [ ] **BE-P3-04** Private uploads (FILE-01, FILE-02, D-37): purposes `CONTRACT_SCAN` (jpg, png, webp, pdf) and `ID_PHOTO` (jpg, png, webp), both with `contractId` in the caller's scope, signed as `type = authenticated` in folder `contracts/<buildingId>/<contractId>`; a verify step by asset id like `verifyRoomImage` but expecting `authenticated`; one helper that returns a signed delivery URL valid ≤ 5 minutes. `ROOM_IMAGE` stays unchanged.
   Done when: tests: a contract of another building → `OUT_OF_SCOPE`; a public asset or an asset outside the contract folder is refused; the signed URL expires within 5 minutes; the existing `ROOM_IMAGE` specs still pass.
@@ -43,7 +44,17 @@ Out: every contract route (P3-2..P3-5), any frontend change.
 Đã trả lời 16/11/2026:
 
 - Q-P3-4 (BE-P3-02): thiếu `CCCD_KEY` thì app không khởi động.
+- Q-P3-5 (BE-P3-03, D-37, D-40): chủ dự án duyệt phương án A để sửa schema và tạo file migration. Việc chạy migration trên DB dev cần duyệt riêng.
+- Q-P3-6 (BE-P3-03): chủ dự án duyệt chạy migration `20261116000000_private_contract_assets` trên DB dev sau khi xác nhận lịch sử migration và cả ba cột URL cũ đều có 0 giá trị.
 
 ## Issues log
+
+- 16/11/2026 · BE-P3-03 · Dùng PowerShell của chủ dự án để xác minh ba cột URL cũ và áp dụng migration. Prisma báo schema DB dev đã cập nhật. Điểm dừng BE-P3-01..03 chờ chủ dự án commit.
+
+- 16/11/2026 · BE-P3-03 · Chủ dự án duyệt áp dụng trên DB dev. Truy vấn đọc qua cả `DIRECT_URL` và `DATABASE_URL` gặp `PrismaClientInitializationError`. Kiểm tra DNS trả `ENOTFOUND` cho hai endpoint Supabase và các tên miền đối chứng. Cần kết nối từ máy có đường tới DB dev để kiểm lịch sử và số đếm trước khi chạy migration.
+
+- 16/11/2026 · BE-P3-03 · Phương án A đã qua kiểm tra offline. Việc chạy trên DB dev chờ chủ dự án duyệt và xác minh số lượng URL cũ. Lượt đọc trả `PrismaClientInitializationError` do kết nối mạng tới DB không thành công.
+
+- 16/11/2026 · BE-P3-03 · Schema/migration creation and billing_day drop require owner approval; dev DB URL-column counts could not be read from this environment. Proceed offline only after approval and keep a migration guard against non-null legacy URLs.
 
 <!-- When a task is [!], add: date · task ID · what failed · what is needed -->

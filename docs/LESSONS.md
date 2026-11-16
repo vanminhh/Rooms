@@ -6,6 +6,7 @@ Read this before the first task of any part. Each line is a mistake that really 
 
 ## Tests and expected values
 
+- When removing an INSERT column, check each VALUES tuple that reuses the column list through `.replace(...)`. The renewal scenario retained two `billing_day` values and failed before checking the renewal constraint [BE-P3-03, 16/11/2026].
 - Keep translated validation literals in the files scanned by the field-catalog test; adding warning copy in reservations made the exact catalog check fail until it moved to VIEWING_FIELDS [BE-EX-24, 16/11/2026].
 - Compare fake-DOM element identity with a boolean assertion and a short message; strict equality on different cyclic DOM objects stalled formatting the expected failure [FE-EX-27, 16/11/2026].
 - The custom kit loader in `auth-login-flow.test.mjs` must include every new component used by a layout; omitting `LanguageSwitch` made unrelated auth flows fail with an invalid React element [FE-EX-09, 13/11/2026].
@@ -37,6 +38,7 @@ Read this before the first task of any part. Each line is a mistake that really 
 
 ## Commands and environment
 
+- Load and validate the backend `.env` before importing `AppModule`, which registers scheduled jobs based on `NODE_ENV`; a static import made the new startup-order test fail on the full suite [BE-P3-02, 16/11/2026].
 - Inspect every selected Vitest file for HTTP hooks before an offline-only run; `common/i18n/i18n.spec.ts` mixed unit assertions with two Supertest cases and attempted loopback requests despite the owner's no-HTTP instruction (both EACCES) [FE-EX-27, 16/11/2026].
 - In Windows PowerShell, pipe multiline Node scripts through a literal here-string to stdin; native argument handling stripped JavaScript quotes from a `node -e` command and blocked manual QA startup [FE-EX-27, 16/11/2026].
 - For resend.dev smoke checks, use the exact account email returned by the provider; a Gmail address with an uppercase initial received 403 while its lowercase form received 200 [BE-EX-30, 15/11/2026].

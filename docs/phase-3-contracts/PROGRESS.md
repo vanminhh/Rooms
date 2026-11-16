@@ -10,8 +10,8 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 
 | Phần | Trạng thái | Điểm dừng gần nhất đã xong | Commit | Việc tiếp theo | Ghi chú |
 |---|---|---|---|---|---|
-| P3-0 Chủ dự án chuẩn bị | chưa làm | – | – | `CCCD_KEY` vào `.env`; mẫu hợp đồng (Q-15) | Q-P3-1..4 đã trả lời 16/11/2026; `CCCD_KEY` chặn P3-1 |
-| P3-1 BE nền | chưa làm | – | – | BE-P3-01 | cần `CCCD_KEY` |
+| P3-0 Chủ dự án chuẩn bị | đang làm | – | – | Giữ bản sao an toàn của `CCCD_KEY`; mẫu hợp đồng (Q-15) sau | Đã tạo khóa mới trong `.env` local theo yêu cầu chủ dự án, không dùng khóa đã gửi vào chat; cấu hình `NODE_ENV=development` |
+| P3-1 BE nền | chờ commit | BE-P3-01..03 | – | Chủ dự án commit điểm dừng, sau đó BE-P3-04 | DB dev đã áp dụng BE-P3-03. Prisma Client đã đồng bộ |
 | P3-2 BE tạo hợp đồng | chưa làm | – | – | BE-P3-07 | cần P3-1 |
 | P3-3 BE ký + cọc | chưa làm | – | – | BE-P3-13 | cần P3-2 |
 | P3-4 BE dọn vào + hủy | chưa làm | – | – | BE-P3-20 | cần P3-3 |
@@ -23,6 +23,20 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 ## Nhật ký điểm dừng
 
 Mới nhất ở trên. Mỗi dòng: `ngày · phần · task vừa xong · kết quả kiểm tra (số thật) · việc còn treo`.
+
+- 16/11/2026 · P3-1 ⏸ BE-P3-01..03 · PowerShell của chủ dự án xác nhận `scan=0, front=0, back=0`, áp dụng `20261116000000_private_contract_assets`, rồi Prisma báo `Database schema is up to date!`. Đã sinh lại Prisma Client 6.19.3 và kiểm đủ 3 asset ID mới, bỏ đúng 4 trường cũ. DB checker 88/88, backend tập trung 79/79 (gồm seed 39/39), lint 0 lỗi/4 cảnh báo cũ, build exit 0 · chờ chủ dự án commit trước BE-P3-04
+
+- 16/11/2026 · P3-1 trước khi áp dụng BE-P3-03 · Ảnh PowerShell của chủ dự án cho thấy `npx prisma migrate status` kết nối được DB dev, thấy 8 file migration và chỉ `20261116000000_private_contract_assets` đang chờ. Lượt đếm URL từ terminal agent vẫn lỗi mạng · cần số đếm 0/0/0 và kết quả deploy trên máy chủ dự án
+
+- 16/11/2026 · P3-1 áp dụng BE-P3-03 · Chủ dự án duyệt DB dev. File SQL khớp SHA-256 của bản đã kiểm thử. Thử đọc lịch sử qua `DIRECT_URL` (5432) và `DATABASE_URL` (6543) đều gặp `PrismaClientInitializationError`. DNS trả `ENOTFOUND` cho cả hai endpoint và hai tên miền đối chứng. Chưa đọc được lịch sử hay số lượng URL. DB dev chưa chạy migration từ phiên này · Tiếp tục từ máy kết nối được DB dev. Kiểm chỉ có BE-P3-03 chờ áp dụng và cả ba số đếm URL đều bằng 0
+
+- 16/11/2026 · P3-1 ⏸ trước khi áp dụng BE-P3-03 · Đã tạo migration theo phương án A, cập nhật schema, constraints và seed. Prisma validate qua, diff chỉ có 4 cột bỏ và 3 cột thêm, DB checker 88/88 (82 ca cũ và 6 ca mới), seed 39/39, backend offline 864/864, lint 0 lỗi/4 cảnh báo cũ, build exit 0. PostgreSQL nhúng chạy lại 7 migration cũ rồi migration mới, xác minh rollback riêng cho 3 cột URL và giữ các ràng buộc liên quan. Reviewer DUYỆT · DB dev chưa chạy migration. Lượt đọc DB gặp lỗi kết nối, chờ duyệt Q-P3-6 và xác minh ba cột URL cũ trống
+
+- 16/11/2026 · P3-1 xác minh BE-P3-01..02 · 40/40 test tập trung, 864/864 test không dùng HTTP (61 file), lint 0 lỗi và 4 cảnh báo cũ, build exit 0. Kiểm tra chạy với `.env` dev và thứ tự nạp `NODE_ENV` đều qua. Reviewer độc lập DUYỆT sau sửa thứ tự import `AppModule`. Lượt test đầy đủ trong terminal này trước sửa thứ tự import ghi 1.075/1.836 và gặp `connect EACCES 127.0.0.1` · chờ duyệt BE-P3-03
+
+- 16/11/2026 · P3-1 ⏸ trước BE-P3-03 · BE-P3-01..02 xong: period helper, AES-256-GCM CCCD, startup env; 40/40 test tập trung, `npm run test` 1836/1836 (92 file), lint 0 lỗi/4 cảnh báo cũ, build OK; `.env` local có khóa mới và NODE_ENV, Git bỏ qua; kiểm đọc DB dev trả PrismaClientInitializationError, không đổi dữ liệu; chưa tạo migration/seed/e2e · chờ đồng ý bỏ `billing_day`, thay ba cột URL và tạo migration; xin phép riêng trước khi áp dụng DB
+
+- 16/11/2026 · P3-1 tiền kiểm · git sạch lúc bắt đầu; đọc mục Before you start, viết `plans/P3-1/PLAN.md`; kiểm tra `Source/backend/.env` chưa có `CCCD_KEY` nên chưa bắt đầu BE-P3-01; không chạy test/migration/seed · chờ chủ dự án điền khóa và đồng ý lựa chọn schema trước bước BE-P3-03
 
 - 16/11/2026 · kế hoạch · rà lần cuối spec và file task theo D-35..D-42 trước khi làm Phase 3: ảnh đồng hồ thành tùy chọn ở chốt chỉ số và quyết toán (MTR-11, 30-frontend, settlement); danh sách chốt chỉ số có từ 00:05 mùng 1 (MTR-09); "Việc hôm nay" báo đỏ từ mùng 2 (NOTI-06); dòng Phase 4 của roadmap ghi kỳ theo tháng, hạn mùng 9, mail báo Boss; CLAUDE.md, AGENTS.md, spec README trỏ D-35..D-42; P3-2 bỏ `billing_day`, P3-6 hiện ngày kết thúc trên form · chỉ tài liệu · sẵn sàng giao P3-1 khi có `CCCD_KEY`
 

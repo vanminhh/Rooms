@@ -9,6 +9,8 @@ const full = {
   DIRECT_URL: 'postgresql://u:p@h:5432/db',
   JWT_SECRET: 'x'.repeat(40),
   APP_URL: 'http://localhost:5173',
+  NODE_ENV: 'test',
+  CCCD_KEY: Buffer.alloc(32, 9).toString('base64'),
 };
 
 const src = (rel: string) =>
@@ -24,24 +26,44 @@ function messageOf(env: NodeJS.ProcessEnv): string {
 }
 
 describe('BE-LOGIN-03: validateEnv', () => {
-  it('BE-LOGIN-03: REQUIRED_ENV is exactly DATABASE_URL, DIRECT_URL, JWT_SECRET, APP_URL (P10)', () => {
-    expect([...REQUIRED_ENV]).toEqual(['DATABASE_URL', 'DIRECT_URL', 'JWT_SECRET', 'APP_URL']);
+  it('BE-P3-02 / DEP-05: NODE_ENV and CCCD_KEY are required at startup', () => {
+    expect([...REQUIRED_ENV]).toEqual(['DATABASE_URL', 'DIRECT_URL', 'JWT_SECRET', 'APP_URL', 'NODE_ENV', 'CCCD_KEY']);
   });
 
-  it('BE-LOGIN-03: empty env throws the exact Vietnamese message with all 4 names', () => {
+  it('BE-P3-02: empty env names every missing variable without values', () => {
     expect(() => validateEnv({})).toThrow(
       new Error(
-        'Thiếu biến môi trường: DATABASE_URL, DIRECT_URL, JWT_SECRET, APP_URL (xem ../.env)',
+        'Thiếu biến môi trường: DATABASE_URL, DIRECT_URL, JWT_SECRET, APP_URL, NODE_ENV, CCCD_KEY (xem ../.env)',
       ),
     );
     // toThrow(new Error(..)) compares message only; make the exact text explicit too
     expect(messageOf({})).toBe(
-      'Thiếu biến môi trường: DATABASE_URL, DIRECT_URL, JWT_SECRET, APP_URL (xem ../.env)',
+      'Thiếu biến môi trường: DATABASE_URL, DIRECT_URL, JWT_SECRET, APP_URL, NODE_ENV, CCCD_KEY (xem ../.env)',
     );
   });
 
-  it('BE-LOGIN-03: CCCD_KEY, BANK_WEBHOOK_SECRET, CLOUDINARY_URL, MAIL_FROM missing does not throw (D3)', () => {
+  it('BE-P3-02: BANK_WEBHOOK_SECRET, CLOUDINARY_URL, MAIL_FROM remain optional', () => {
     expect(() => validateEnv({ ...full })).not.toThrow();
+  });
+
+  it('BE-P3-02: missing CCCD_KEY or NODE_ENV prevents startup', () => {
+    expect(messageOf({ ...full, CCCD_KEY: '' })).toBe('Thiếu biến môi trường: CCCD_KEY (xem ../.env)');
+    expect(messageOf({ ...full, NODE_ENV: '' })).toBe('Thiếu biến môi trường: NODE_ENV (xem ../.env)');
+  });
+
+  it('BE-P3-02 / DEP-05: NODE_ENV accepts only development, test or production', () => {
+    for (const value of ['development', 'test', 'production']) {
+      expect(() => validateEnv({ ...full, NODE_ENV: value })).not.toThrow();
+    }
+    expect(messageOf({ ...full, NODE_ENV: 'preview' })).toMatch(/NODE_ENV/);
+  });
+
+  it('BE-P3-02: CCCD_KEY is strictly base64 of exactly 32 bytes and errors never include the value', () => {
+    for (const value of [Buffer.alloc(31).toString('base64'), Buffer.alloc(33).toString('base64'), 'secret-invalid']) {
+      const message = messageOf({ ...full, CCCD_KEY: value });
+      expect(message).toContain('CCCD_KEY');
+      expect(message).not.toContain(value);
+    }
   });
 
   it('BE-LOGIN-03: only DATABASE_URL missing names DATABASE_URL and not DIRECT_URL', () => {
@@ -105,6 +127,8 @@ describe('BE-LOGIN-03: validateEnv', () => {
       process.env.DIRECT_URL = 'postgresql://u:TOPSECRET@h/db';
       process.env.JWT_SECRET = full.JWT_SECRET;
       process.env.APP_URL = full.APP_URL;
+      process.env.NODE_ENV = full.NODE_ENV;
+      process.env.CCCD_KEY = full.CCCD_KEY;
       let message = '';
       try {
         validateEnv();
@@ -180,15 +204,19 @@ describe('BE-LOGIN-01 / BE-LOGIN-03: wiring in main.ts, app.module.ts, package.j
     expect(pkg.devDependencies).not.toHaveProperty('@nestjs/observe');
   });
 
-  it('BE-LOGIN-03: main.ts loads Source/.env, then validates env, then creates the app (order)', () => {
+  it('BE-P3-02 / DEP-05: main.ts loads and validates env before the scheduler is configured (PRC-06)', () => {
     const main = src('../main.ts');
-    expect(main).toContain("existsSync('../.env')");
-    const load = main.indexOf('loadEnvFile');
+    const load = main.indexOf("process.loadEnvFile('.env')");
+    const loadLegacy = main.indexOf("process.loadEnvFile('../.env')");
     const validate = main.indexOf('validateEnv()');
+    const loadApp = main.indexOf("await import('./app.module.js')");
     const create = main.indexOf('NestFactory.create');
     expect(load).toBeGreaterThan(-1);
-    expect(validate).toBeGreaterThan(load);
-    expect(create).toBeGreaterThan(validate);
+    expect(loadLegacy).toBeGreaterThan(load);
+    expect(validate).toBeGreaterThan(loadLegacy);
+    expect(main).not.toMatch(/from ['"]\.\/app\.module\.js['"]/);
+    expect(loadApp).toBeGreaterThan(validate);
+    expect(create).toBeGreaterThan(loadApp);
   });
 
   it('BE-LOGIN-05: main.ts enables shutdown hooks', () => {

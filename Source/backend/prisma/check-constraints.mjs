@@ -31,8 +31,8 @@ INSERT INTO rooms (id, building_id, code, floor, area_m2, price, updated_at) VAL
   (3, 2, '101', 1, 20, 2200000, now());
 INSERT INTO services (id, building_id, name, unit) VALUES
   (1, 1, 'Wifi', 'ROOM'), (2, 1, 'Gửi xe máy', 'VEHICLE'), (3, 2, 'Wifi', 'ROOM');
-INSERT INTO contracts (id, code, building_id, room_id, tenant_id, start_date, term_months, end_date, billing_day, rent, deposit, status, created_by_id, updated_at) VALUES
-  (1, 'HD000001', 1, 1, 4, '2026-09-15', 6, '2027-03-14', 15, 2500000, 2500000, 'HOLD', 2, now());
+INSERT INTO contracts (id, code, building_id, room_id, tenant_id, start_date, term_months, end_date, rent, deposit, status, created_by_id, updated_at) VALUES
+  (1, 'HD000001', 1, 1, 4, '2026-09-15', 6, '2027-03-14', 2500000, 2500000, 'HOLD', 2, now());
 INSERT INTO invoices (id, contract_id, type, period_no, issue_date, due_date, total, status, updated_at) VALUES
   (1, 1, 'DEPOSIT', 0, '2026-09-10', '2026-09-15', 2500000, 'UNPAID', now());
 INSERT INTO invoice_lines (invoice_id, kind, label, quantity, unit_price, amount) VALUES
@@ -42,7 +42,7 @@ SELECT setval(pg_get_serial_sequence(t, 'id'), 100)
   FROM unnest(ARRAY['users','buildings','rooms','services','contracts','invoices','announcements']) AS t;
 `);
 
-const C = `INSERT INTO contracts (code, building_id, room_id, tenant_id, start_date, term_months, end_date, billing_day, rent, deposit, status, created_by_id, updated_at) VALUES`;
+const C = `INSERT INTO contracts (code, building_id, room_id, tenant_id, start_date, term_months, end_date, rent, deposit, status, created_by_id, updated_at) VALUES`;
 const OTP = `INSERT INTO email_otps (email, code_hash, expires_at)`;
 const IDEM = `INSERT INTO pricing_idempotency_keys (actor_id, key, route, request_hash, status_code, response_json, expires_at)`;
 
@@ -71,7 +71,7 @@ const cases = [
   ['Tài khoản', 'Ngôn ngữ ngoài vi/en (AUTH-15)', `UPDATE users SET locale = 'fr' WHERE id = 6`, 'users_locale'],
   ['Tài khoản', 'Ngôn ngữ mặc định là vi (AUTH-15)', `INSERT INTO users (id, role, phone, full_name, password_hash, updated_at) VALUES (50,'GUEST','0900000050','K','x',now()); DO $$ BEGIN IF (SELECT locale FROM users WHERE id=50) <> 'vi' THEN RAISE EXCEPTION 'locale khác vi'; END IF; END $$`, 'ok'],
   ['Tòa', 'Gán khách có tài khoản làm quản lý tòa (SCOPE-05)', `UPDATE buildings SET manager_id = 6 WHERE id = 3`, 'BUILDING_MANAGER_ROLE'],
-  ['Hợp đồng', 'Khách có tài khoản đứng tên hợp đồng (CON-07: BE đổi sang TENANT trước)', `${C} ('HD9',1,2,6,'2026-11-01',3,'2027-01-31',1,2400000,0,'HOLD',2,now())`, 'CONTRACT_TENANT_ROLE'],
+  ['Hợp đồng', 'Khách có tài khoản đứng tên hợp đồng (CON-07: BE đổi sang TENANT trước)', `${C} ('HD9',1,2,6,'2026-11-01',3,'2027-01-31',2400000,0,'HOLD',2,now())`, 'CONTRACT_TENANT_ROLE'],
   ['Mã email', 'Hai mã chưa dùng cho cùng email (AUTH-13)', `${OTP} VALUES ('khach@example.com','h1',now()+interval '5 minutes'),('khach@example.com','h2',now()+interval '5 minutes')`, 'email_otps_one_active'],
   ['Mã email', 'Mã cũ đã bị thay, mã mới chưa dùng', `${OTP.replace(', expires_at', ', expires_at, used_at')} VALUES ('khach@example.com','h1',now(),now()),('khach@example.com','h2',now()+interval '5 minutes',NULL)`, 'ok'],
   ['Mã email', 'Email sai định dạng (AUTH-13)', `${OTP} VALUES ('12345','h1',now())`, 'email_otps_email_format'],
@@ -90,17 +90,43 @@ const cases = [
   ['Giá', 'Bảng giá dịch vụ thiếu dịch vụ', `INSERT INTO rate_plans (building_id, kind, effective_from, proposed_by_id) VALUES (1,'SERVICE','2026-11-01',2)`, 'rate_plans_service_iff'],
   ['Giá', 'Hai đề xuất giá điện cùng chờ duyệt', `INSERT INTO rate_plans (building_id, kind, effective_from, proposed_by_id) VALUES (1,'ELECTRIC','2026-11-01',2),(1,'ELECTRIC','2026-12-01',2)`, 'rate_plans_one_pending'],
   ['Giá', 'Bảng giá dịch vụ dùng dịch vụ của tòa khác', `INSERT INTO rate_plans (building_id, kind, service_id, effective_from, proposed_by_id) VALUES (1,'SERVICE',3,'2026-11-01',2)`, 'rate_plans_service_id_building_id_fkey'],
-  ['Hợp đồng', 'Hợp đồng 2 tháng', `${C} ('HD9',1,2,5,'2026-11-01',2,'2026-12-31',1,2400000,0,'HOLD',2,now())`, 'contracts_term_min_3'],
-  ['Hợp đồng', 'Hợp đồng thứ hai cho phòng đang giữ chỗ', `${C} ('HD9',1,1,5,'2026-11-01',3,'2027-01-31',1,2500000,0,'HOLD',2,now())`, 'contracts_one_open_per_room'],
-  ['Hợp đồng', 'Phòng của tòa 1 nhưng ghi tòa 2', `${C} ('HD9',2,2,5,'2026-11-01',3,'2027-01-31',1,2400000,0,'HOLD',2,now())`, 'contracts_room_id_building_id_fkey'],
-  ['Hợp đồng', 'Người ký là tài khoản quản lý', `${C} ('HD9',1,2,3,'2026-11-01',3,'2027-01-31',1,2400000,0,'HOLD',2,now())`, 'CONTRACT_TENANT_ROLE'],
+  ['Hợp đồng', 'Hợp đồng 2 tháng', `${C} ('HD9',1,2,5,'2026-11-01',2,'2026-12-31',2400000,0,'HOLD',2,now())`, 'contracts_term_min_3'],
+  ['Hợp đồng', 'Hợp đồng thứ hai cho phòng đang giữ chỗ', `${C} ('HD9',1,1,5,'2026-11-01',3,'2027-01-31',2500000,0,'HOLD',2,now())`, 'contracts_one_open_per_room'],
+  ['Hợp đồng', 'Phòng của tòa 1 nhưng ghi tòa 2', `${C} ('HD9',2,2,5,'2026-11-01',3,'2027-01-31',2400000,0,'HOLD',2,now())`, 'contracts_room_id_building_id_fkey'],
+  ['Hợp đồng', 'Người ký là tài khoản quản lý', `${C} ('HD9',1,2,3,'2026-11-01',3,'2027-01-31',2400000,0,'HOLD',2,now())`, 'CONTRACT_TENANT_ROLE'],
   ['Hợp đồng', 'Chuyển Hiệu lực khi chưa ghi ngày vào ở', `UPDATE contracts SET status='ACTIVE', signed_at=now() WHERE id=1`, 'contracts_active_ready'],
-  ['Hợp đồng', 'Hợp đồng cũ kết thúc rồi cho thuê lại phòng', `UPDATE contracts SET status='ENDED' WHERE id=1; ${C} ('HD9',1,1,5,'2027-03-15',6,'2027-09-14',15,2500000,0,'HOLD',2,now())`, 'ok'],
-  ['Hợp đồng', 'Một người thuê thêm phòng thứ hai', `${C} ('HD9',1,2,4,'2026-11-01',3,'2027-01-31',1,2400000,0,'HOLD',2,now())`, 'ok'],
-  ['Hợp đồng', 'Hai hợp đồng cùng gia hạn từ một hợp đồng cũ', `UPDATE contracts SET status='ENDED' WHERE id=1; ${C.replace('code,', 'code, previous_contract_id,')} ('HD8',1,1,1,4,'2027-03-15',3,'2027-06-14',15,2500000,0,'HOLD',2,now()); ${C.replace('code,', 'code, previous_contract_id,')} ('HD9',1,1,2,4,'2026-11-01',3,'2027-01-31',1,2400000,0,'HOLD',2,now())`, 'contracts_previous_contract_id_key'],
+  ['Hợp đồng', 'Hợp đồng cũ kết thúc rồi cho thuê lại phòng', `UPDATE contracts SET status='ENDED' WHERE id=1; ${C} ('HD9',1,1,5,'2027-03-15',6,'2027-09-14',2500000,0,'HOLD',2,now())`, 'ok'],
+  ['Hợp đồng', 'Một người thuê thêm phòng thứ hai', `${C} ('HD9',1,2,4,'2026-11-01',3,'2027-01-31',2400000,0,'HOLD',2,now())`, 'ok'],
+  ['Hợp đồng', 'Hai hợp đồng cùng gia hạn từ một hợp đồng cũ',
+    `UPDATE contracts SET status='ENDED' WHERE id=1;
+     ${C.replace('code,', 'code, previous_contract_id,')} ('HD8',1,1,1,4,'2027-03-15',3,'2027-06-14',2500000,0,'HOLD',2,now());
+     ${C.replace('code,', 'code, previous_contract_id,')} ('HD9',1,1,2,4,'2026-11-01',3,'2027-01-31',2400000,0,'HOLD',2,now())`, 'contracts_previous_contract_id_key'],
   ['Hợp đồng', 'Chọn dịch vụ của tòa khác', `INSERT INTO contract_services VALUES (1,3,1)`, 'contract_services_service_id_building_id_fkey'],
   ['Hợp đồng', 'Chọn dịch vụ cùng tòa', `INSERT INTO contract_services VALUES (1,1,1)`, 'ok'],
   ['Hợp đồng', 'Hai người ký trên một hợp đồng', `INSERT INTO occupants (contract_id, full_name, is_signer, move_in_date) VALUES (1,'A',true,'2026-09-15'),(1,'B',true,'2026-09-15')`, 'occupants_one_signer'],
+  ['Hợp đồng', 'CON-06 / D-37: từ chối ID bản scan rỗng',
+    "UPDATE contracts SET signed_scan_asset_id = '' WHERE id = 1", 'contracts_signed_scan_asset_id_nonblank'],
+  ['Hợp đồng', 'CON-16 / D-37: từ chối ID ảnh mặt trước chỉ có dấu cách',
+    "INSERT INTO occupants (contract_id, full_name, move_in_date, id_front_asset_id) VALUES (1,'A','2026-09-15','  ')", 'occupants_id_front_asset_id_nonblank'],
+  ['Hợp đồng', 'CON-16 / D-37: từ chối ID ảnh mặt sau chỉ có ký tự tab',
+    "INSERT INTO occupants (contract_id, full_name, move_in_date, id_back_asset_id) VALUES (1,'A','2026-09-15',chr(9))", 'occupants_id_back_asset_id_nonblank'],
+  ['Hợp đồng', 'D-37: lưu được ID của bản scan và cả hai ảnh CCCD',
+    `UPDATE contracts SET signed_scan_asset_id = 'scan-asset-id' WHERE id = 1;
+     INSERT INTO occupants (contract_id, full_name, move_in_date, id_front_asset_id, id_back_asset_id)
+       VALUES (1,'A','2026-09-15','front-asset-id','back-asset-id')`, 'ok'],
+  ['Hợp đồng', 'D-37: cho phép để trống các ID khi chưa tải tài liệu lên',
+    `UPDATE contracts SET signed_scan_asset_id = NULL WHERE id = 1;
+     INSERT INTO occupants (contract_id, full_name, move_in_date, id_front_asset_id, id_back_asset_id)
+       VALUES (1,'A','2026-09-15',NULL,NULL)`, 'ok'],
+  ['Hợp đồng', 'D-37 / D-40: đã bỏ các cột URL cũ và billing_day',
+    `DO $$ BEGIN
+       IF EXISTS (
+         SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND (
+           (table_name = 'contracts' AND column_name IN ('signed_scan_url', 'billing_day'))
+           OR (table_name = 'occupants' AND column_name IN ('id_front_url', 'id_back_url'))
+         )
+       ) THEN RAISE EXCEPTION 'legacy contract columns still exist'; END IF;
+     END $$`, 'ok'],
   ['Xe', 'Xe gửi theo dịch vụ của tòa khác', `INSERT INTO vehicles (contract_id, building_id, service_id, plate, type, registered_at) VALUES (1,1,3,'29A12345','MOTORBIKE','2026-09-15')`, 'vehicles_service_id_building_id_fkey'],
   ['Xe', 'Một biển số đang gửi ở hai nơi', `INSERT INTO vehicles (contract_id, building_id, service_id, plate, type, registered_at) VALUES (1,1,2,'29A12345','MOTORBIKE','2026-09-15'),(1,1,2,'29A12345','MOTORBIKE','2026-09-16')`, 'vehicles_plate_active'],
   ['Xe', 'Biển số cũ đã ngừng gửi, đăng ký lại', `INSERT INTO vehicles (contract_id, building_id, service_id, plate, type, registered_at, is_active, removed_at) VALUES (1,1,2,'29A12345','MOTORBIKE','2026-09-15',false,'2026-10-01'),(1,1,2,'29A12345','MOTORBIKE','2026-10-02',true,NULL)`, 'ok'],

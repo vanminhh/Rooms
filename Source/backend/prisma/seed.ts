@@ -215,7 +215,7 @@ export async function seed(prisma: PrismaClient): Promise<void> {
     }
   }
 
-  // Active contract shaped like BIL-01 / BIL-09 (dates as given there). deposit 0: no deposit invoice (CON-10).
+  // D-40 / CON-08: this sample uses calendar-month billing and has no deposit invoice.
   const cg01 = buildingId.CG01;
   const room203 = roomId['CG01/203'];
   const contract = await prisma.contract.upsert({
@@ -223,7 +223,7 @@ export async function seed(prisma: PrismaClient): Promise<void> {
     update: {},
     create: {
       code: 'HD000001', buildingId: cg01, roomId: room203, tenantId: userId.tenant,
-      startDate: START_DATE, termMonths: 6, endDate: day('2027-03-14'), billingDay: 15,
+      startDate: START_DATE, termMonths: 6, endDate: day('2027-03-14'),
       rent: 2_500_000, deposit: 0, status: 'ACTIVE',
       signedAt: new Date('2026-09-14T10:00:00+07:00'), movedInAt: new Date('2026-09-15T09:00:00+07:00'),
       createdById: userId.manager1,

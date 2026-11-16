@@ -235,7 +235,6 @@ const MODELS: Record<string, Model> = {
       'startDate',
       'termMonths',
       'endDate',
-      'billingDay',
       'rent',
       'deposit',
       'createdById',
@@ -245,7 +244,7 @@ const MODELS: Record<string, Model> = {
       previousContractId: null,
       terms: null,
       pdfUrl: null,
-      signedScanUrl: null,
+      signedScanAssetId: null,
       signedAt: null,
       movedInAt: null,
       moveOutNoticeDate: null,
@@ -266,7 +265,6 @@ const MODELS: Record<string, Model> = {
       fk(db, 'user', { id: r.createdById });
       oneOf(r.status, ['HOLD', 'ACTIVE', 'ENDED', 'CANCELLED'], 'status');
       ensure(r.termMonths >= 3, 'contracts_term_min_3');
-      ensure(r.billingDay >= 1 && r.billingDay <= 31, 'contracts_billing_day');
       ensure(r.endDate.getTime() > r.startDate.getTime(), 'contracts_dates');
       ensure(r.rent > 0 && r.deposit >= 0, 'contracts_money');
       ensure(
@@ -301,8 +299,8 @@ const MODELS: Record<string, Model> = {
       dateOfBirth: null,
       idNumberEnc: null,
       idNumberLast4: null,
-      idFrontUrl: null,
-      idBackUrl: null,
+      idFrontAssetId: null,
+      idBackAssetId: null,
       isSigner: false,
       moveOutDate: null,
     },
@@ -971,7 +969,7 @@ describe('BE-LOGIN-06: seed (in-memory Prisma)', { timeout: 120_000 }, () => {
   describe('contract HD000001', () => {
     const contract = (): Row => db.t.contract[0];
 
-    it('BIL-01 / CON-03 / DB-B1: HD000001 at CG01 room 203, 15/09/2026 for 6 months ends 14/03/2027, billing day 15, rent = room price, deposit 0, ACTIVE', () => {
+    it('D-40 / CON-03 / DB-B1: HD000001 keeps its original term, room price and ACTIVE status', () => {
       expect(db.t.contract).toHaveLength(1);
       const c = contract();
       const r203 = roomOf('CG01', '203');
@@ -984,7 +982,8 @@ describe('BE-LOGIN-06: seed (in-memory Prisma)', { timeout: 120_000 }, () => {
       expect(c.startDate.toISOString()).toBe(midnightUtc('2026-09-15'));
       expect(c.termMonths).toBe(6);
       expect(c.endDate.toISOString()).toBe(midnightUtc('2027-03-14'));
-      expect(c.billingDay).toBe(15);
+      expect(c).not.toHaveProperty('billingDay');
+      expect(c).toHaveProperty('signedScanAssetId', null);
       expect(c.rent).toBe(2_500_000);
       expect(c.rent).toBe(r203.price);
       expect(c.deposit).toBe(0);
@@ -1004,8 +1003,8 @@ describe('BE-LOGIN-06: seed (in-memory Prisma)', { timeout: 120_000 }, () => {
         phone: '0900000004',
         idNumberEnc: null,
         idNumberLast4: null,
-        idFrontUrl: null,
-        idBackUrl: null,
+        idFrontAssetId: null,
+        idBackAssetId: null,
       });
       expect(signers[0].fullName).toBe(user('0900000004').fullName);
       expect(signers[0].moveInDate.toISOString()).toBe(midnightUtc('2026-09-15'));

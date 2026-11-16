@@ -475,13 +475,12 @@ model Contract {
   startDate           DateTime       @map("start_date") @db.Date // ngày vào ở
   termMonths          Int            @map("term_months")
   endDate             DateTime       @map("end_date") @db.Date
-  billingDay          Int            @map("billing_day") // 1–31, ngày thu hằng tháng
   rent                Int
   deposit             Int
   status              ContractStatus @default(HOLD)
   terms               String?
   pdfUrl              String?        @map("pdf_url")
-  signedScanUrl       String?        @map("signed_scan_url")
+  signedScanAssetId   String?        @map("signed_scan_asset_id")
   signedAt            DateTime?      @map("signed_at") @db.Timestamptz
   movedInAt           DateTime?      @map("moved_in_at") @db.Timestamptz
   moveOutNoticeDate   DateTime?      @map("move_out_notice_date") @db.Date
@@ -535,8 +534,8 @@ model Occupant {
   dateOfBirth  DateTime? @map("date_of_birth") @db.Date
   idNumberEnc  String?   @map("id_number_enc") // số CCCD đã mã hóa ở BE (AES-GCM)
   idNumberLast4 String?  @map("id_number_last4") @db.Char(4) // để hiển thị/tra cứu
-  idFrontUrl   String?   @map("id_front_url") // ảnh CCCD lưu Cloudinary chế độ riêng tư
-  idBackUrl    String?   @map("id_back_url")
+  idFrontAssetId String? @map("id_front_asset_id")
+  idBackAssetId  String? @map("id_back_asset_id")
   isSigner     Boolean   @default(false) @map("is_signer")
   moveInDate   DateTime  @map("move_in_date") @db.Date
   moveOutDate  DateTime? @map("move_out_date") @db.Date

@@ -53,11 +53,12 @@ ALTER TABLE rate_tiers ADD CONSTRAINT rate_tiers_values CHECK (tier_no >= 1 AND 
 ALTER TABLE viewings ADD CONSTRAINT viewings_phone_vn CHECK (guest_phone ~ '^0[0-9]{9}$');
 
 ALTER TABLE contracts ADD CONSTRAINT contracts_term_min_3 CHECK (term_months >= 3);
-ALTER TABLE contracts ADD CONSTRAINT contracts_billing_day CHECK (billing_day BETWEEN 1 AND 31);
 ALTER TABLE contracts ADD CONSTRAINT contracts_dates CHECK (end_date > start_date);
 ALTER TABLE contracts ADD CONSTRAINT contracts_money CHECK (rent > 0 AND deposit >= 0);
 ALTER TABLE contracts ADD CONSTRAINT contracts_active_ready CHECK (status <> 'ACTIVE' OR (signed_at IS NOT NULL AND moved_in_at IS NOT NULL));
 ALTER TABLE contracts ADD CONSTRAINT contracts_not_self_renewal CHECK (previous_contract_id IS DISTINCT FROM id);
+ALTER TABLE contracts ADD CONSTRAINT contracts_signed_scan_asset_id_nonblank
+  CHECK (signed_scan_asset_id IS NULL OR signed_scan_asset_id ~ '[^[:space:]]');
 -- Mỗi phòng tối đa 1 hợp đồng đang giữ chỗ hoặc đang hiệu lực
 CREATE UNIQUE INDEX contracts_one_open_per_room ON contracts (room_id) WHERE status IN ('HOLD', 'ACTIVE');
 
@@ -74,6 +75,10 @@ CREATE TRIGGER contracts_tenant_check BEFORE INSERT OR UPDATE OF tenant_id ON co
 
 CREATE UNIQUE INDEX occupants_one_signer ON occupants (contract_id) WHERE is_signer;
 ALTER TABLE occupants ADD CONSTRAINT occupants_dates CHECK (move_out_date IS NULL OR move_out_date >= move_in_date);
+ALTER TABLE occupants ADD CONSTRAINT occupants_id_front_asset_id_nonblank
+  CHECK (id_front_asset_id IS NULL OR id_front_asset_id ~ '[^[:space:]]');
+ALTER TABLE occupants ADD CONSTRAINT occupants_id_back_asset_id_nonblank
+  CHECK (id_back_asset_id IS NULL OR id_back_asset_id ~ '[^[:space:]]');
 
 CREATE UNIQUE INDEX vehicles_plate_active ON vehicles (plate) WHERE is_active;
 ALTER TABLE vehicles ADD CONSTRAINT vehicles_removed CHECK (is_active OR removed_at IS NOT NULL);
