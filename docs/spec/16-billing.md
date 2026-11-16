@@ -21,29 +21,36 @@ Module: `billing`. Tables: `invoices`, `invoice_lines`, `payments`, `settlements
 
 ## Periods
 
+Changed 16/11/2026 (owner, D-40, D-41): periods are calendar months for every contract, partial first and last months prorated. Before, each contract had its own billing day = its move-in day.
+
 ```
 clamp(y, m, d)  = date(y, m, min(d, daysInMonth(y, m)))
-D(k)            = clamp(year/month of start_date + k months, billing_day)     k = 0..N, D(0) = start_date
-period k        = [D(k−1), D(k) − 1 day]                                       k = 1..N
-end_date        = D(N) − 1 day                                                 N = term_months
-billing date k  = D(k)   → cron creates the DRAFT for period k at 00:05 (or the next run, up to D(k) + 7 days)
+T               = term_months
+end_date        = clamp(year/month of start_date + T months, day of start_date) − 1 day
+points          = start_date, every 1st of a month strictly after start_date and ≤ end_date, end_date + 1   (in order: p(0) < p(1) < … < p(N))
+period k        = [p(k−1), p(k) − 1 day]                                       k = 1..N   (N = number of periods)
+billing date k  = p(k), the 1st of the next month (or end_date + 1 for the last period)
+                  → cron creates the DRAFT for period k at 00:05 (or the next run, up to p(k) + 7 days)
+period k is partial when it does not cover its whole calendar month; then every fixed amount is
+  amount × days(period k) ÷ days(that calendar month), rounded to the đồng (D-41, A-21)
 ```
 
-- **BIL-01** Example: start 15/09/2026, 6 months → periods 15/09–14/10, …, 15/02–14/03/2027; `end_date` 14/03/2027; invoice for period 1 on 15/10/2026.
-- **BIL-02** Example: start 31/01/2027, 3 months, billing_day 31 → D = 31/01, 28/02, 31/03, 30/04; periods 31/01–27/02, 28/02–30/03, 31/03–29/04; `end_date` 29/04/2027.
-- **BIL-03** Renewal keeps `billing_day`; its `start_date` = old `end_date` + 1 = old D(N), so the cycle continues without a gap.
+- **BIL-01** Example (move-in on the 1st, so no partial month): start 01/09/2026, 6 months → periods 01/09–30/09, 01/10–31/10, …, 01/02–28/02/2027; `end_date` 28/02/2027; invoice for period 1 issued on 01/10/2026, due 09/10/2026.
+- **BIL-02** Example: start 31/01/2027, 3 months → `end_date` 29/04/2027 (31/04 does not exist, so 30/04 − 1); periods 31/01–31/01 (partial: 1 of 31 days), February, March, 01/04–29/04 (partial: 29 of 30 days). With rent 2.500.000: period 1 rent 80.645, periods 2 and 3 rent 2.500.000, period 4 rent 2.416.667.
+- **BIL-03** A renewal's `start_date` = old `end_date` + 1, so the calendar months continue without a gap; when the old contract ended inside a month, the renewal starts with the rest of that month (partial).
+- **BIL-22** Example: start 20/03/2027, 6 months → `end_date` 19/09/2027; periods 20/03–31/03 (12 of 31 days: rent 967.742), April to August (five full months), 01/09–19/09 (19 of 30 days: rent 1.583.333). A move-in on the 1st has no partial first month.
 - **BIL-04** No period exists beyond `end_date` (D-13).
 
 ## Cron
 
 The job runs at 00:05 daily **and at app start** (D-21, owner 04/11/2026): the server can be off at 00:05 (deploy, restart, crash), and a run that only looks at "today" would lose that day's invoices and renewals for good.
 
-- **BIL-05** For each `ACTIVE` contract with some k in 1..N where **today − 7 days ≤ D(k) ≤ today** and no non-cancelled MONTHLY invoice for k → create `DRAFT` (period_no = k, the dates of period k, never the run date). Idempotent through the partial unique index; a unique violation from a parallel run counts as "already created", not as an error.
-  - A period whose D(k) is more than 7 days ago and still has no invoice is **not** created automatically. The job's summary line counts these periods, and they show in "Việc hôm nay" (NOTI-06), where staff create them with "Tạo hóa đơn kỳ này" (BIL-21).
+- **BIL-05** For each `ACTIVE` contract with some k in 1..N where **today − 7 days ≤ p(k) ≤ today** and no non-cancelled MONTHLY invoice for k → create `DRAFT` (period_no = k, the dates of period k, never the run date). Idempotent through the partial unique index; a unique violation from a parallel run counts as "already created", not as an error.
+  - A period whose billing date p(k) is more than 7 days ago and still has no invoice is **not** created automatically. The job's summary line counts these periods, and they show in "Việc hôm nay" (NOTI-06), where staff create them with "Tạo hóa đơn kỳ này" (BIL-21).
 - **BIL-06** Then, in the same run, for each signed renewal whose `start_date` ≤ today and whose previous contract is still `ACTIVE`: old contract → `ENDED` (`ended_at`), new → `ACTIVE` (`moved_in_at` = its `start_date`), copy occupants and active vehicles (CON-18, CON-19). No 7-day limit here, so a missed switch, or a renewal signed after its `start_date`, is switched by the next run [ASSUMPTION A-09]. BIL-05 runs first, so the old contract's period-N DRAFT exists before it ends.
 - **BIL-21** "Tạo hóa đơn kỳ này" (owner 04/11/2026, Q-05): `POST /contracts/:id/monthly-invoices` `{ periodNo }` by staff in scope creates the `DRAFT` for a period that BIL-05 did not create. Allowed only when:
   - the contract is `ACTIVE`, or `ENDED` without a settlement (ended by a renewal switch, BIL-06);
-  - 1 ≤ `periodNo` ≤ N and D(`periodNo`) ≤ today;
+  - 1 ≤ `periodNo` ≤ N and p(`periodNo`) ≤ today;
   - the period has no non-cancelled MONTHLY invoice.
 
   Otherwise `CONFLICT_STATE` (`VALIDATION_FAILED` for a `periodNo` outside 1..N). The DRAFT is the same as BIL-05's (dates of period k, never today's) and then follows the normal readings and issue flow (MTR-09, BIL-08). Audit log `invoice.create_missed` (G-10).
@@ -51,7 +58,7 @@ The job runs at 00:05 daily **and at app start** (D-21, owner 04/11/2026): the s
 
 ## Calculation (issue)
 
-For MONTHLY period k, rates = approved plans effective at `period_start` (RATE-04). Counts are taken at `period_start` so that approved changes apply from the next period:
+For MONTHLY period k, rates = approved plans effective at `period_start` (RATE-04). In a partial period (D-41) every fixed line (rent, ROOM, PERSON and VEHICLE services) keeps its quantity and uses the prorated unit price; electricity and water use the readings as usual. Counts are taken at `period_start` so that approved changes apply from the next period:
 - occupants counted: `move_in_date ≤ period_start` and (`move_out_date` null or `> period_start`);
 - vehicles counted: `registered_at ≤ period_start` and (`removed_at` null or `> period_start`).
 
@@ -66,8 +73,8 @@ For MONTHLY period k, rates = approved plans effective at `period_start` (RATE-0
 | `PARKING` per VEHICLE service | vehicles of that service | service price |
 
 - **BIL-07** `amount = quantity × unit_price` per line; `total` = sum. `meta` stores opening/closing readings and dates.
-- **BIL-08** <a id="issue"></a>Issue: status `UNPAID`, `issue_date` = today, `due_date` = today + `buildings.due_days`. Notify tenant (in-app + email) with VietQR.
-- **BIL-09** Worked example (must be a unit test): start 15/09/2026, rent 2.500.000, readings electric 1.284 → 1.368, water 6 m³ PER_M3 at 15.000, Wifi (ROOM) 100.000, Rác (PERSON) 30.000 × 2, 1 motorbike 100.000, seed tiers → 2.500.000 + 150.000 + 119.000 + 90.000 + 100.000 + 60.000 + 100.000 = **3.119.000 đ**, due 20/10/2026 with `due_days` 5.
+- **BIL-08** <a id="issue"></a>Issue: status `UNPAID`, `issue_date` = today, `due_date` = the 9th of the month the invoice belongs to after its period (the billing month); unpaid after the 9th it is overdue (D-40). Managers enter the readings so that invoices go out on the 1st. Notify tenant (in-app + email) with VietQR.
+- **BIL-09** Worked example (must be a unit test; the BIL-01 contract, so no partial month): start 01/09/2026, rent 2.500.000, readings electric 1.284 → 1.368, water 6 m³ PER_M3 at 15.000, Wifi (ROOM) 100.000, Rác (PERSON) 30.000 × 2, 1 motorbike 100.000, seed tiers → 2.500.000 + 150.000 + 119.000 + 90.000 + 100.000 + 60.000 + 100.000 = **3.119.000 đ**, issued 01/10/2026, due 09/10/2026.
 
 ## VietQR
 
@@ -75,7 +82,7 @@ For MONTHLY period k, rates = approved plans effective at `period_start` (RATE-0
 
 ## Manual payment
 
-- **BIL-11** `POST /invoices/:id/payment` `{ method: CASH|BANK_TRANSFER|CARD|OTHER, paidAt?, note? }` by staff in scope. Amount is always the invoice total (no partial, D-10). DB trigger sets PAID. Errors: `INVOICE_NOT_UNPAID`, `PAYMENT_AMOUNT_MISMATCH`. Notify tenant "Đã nhận tiền".
+- **BIL-11** `POST /invoices/:id/payment` `{ method: CASH|BANK_TRANSFER|CARD|OTHER, paidAt?, note? }` by staff in scope. Amount is always the invoice total (no partial, D-10). DB trigger sets PAID. Errors: `INVOICE_NOT_UNPAID`, `PAYMENT_AMOUNT_MISMATCH`. Notify tenant "Đã nhận tiền". Phase 3 (D-35) builds this route for `DEPOSIT` invoices only; any other type returns `CONFLICT_STATE` until Phase 4, and the tenant notice waits for the inbox of Phase 5.
 
 ## Reissue
 
@@ -83,7 +90,7 @@ For MONTHLY period k, rates = approved plans effective at `period_start` (RATE-0
 
 ## Settlement
 
-<a id="settlement"></a>`POST /contracts/:id/settlement?dryRun=true|false` `{ moveOutDate, finalReadings: { electric, water, photos }, damages, depositForfeit, note }`. `dryRun=true` returns the breakdown without writing. Allowed on ACTIVE contracts. (HOLD cancellation uses CON-12.)
+<a id="settlement"></a>`POST /contracts/:id/settlement?dryRun=true|false` `{ moveOutDate, finalReadings: { electric, water, photos? }, damages, depositForfeit, note }` (photos optional, D-38). `dryRun=true` returns the breakdown without writing. Allowed on ACTIVE contracts. (HOLD cancellation uses CON-12.)
 
 - **BIL-13** j = the period containing `moveOutDate` (j = N if `moveOutDate` ≥ `end_date`).
 - **BIL-14** `last_period_amount` = everything not yet issued up to `moveOutDate`, never charging anything twice:
@@ -91,10 +98,10 @@ For MONTHLY period k, rates = approved plans effective at `period_start` (RATE-0
   - utilities from the last issued closing reading to the final reading (tiers on that kWh), if the final reading is later;
   - any DRAFT (period j or earlier) is cancelled with reason "Gộp vào thanh lý" and its charges are computed here instead.
   Example: an expired contract already invoiced for period N, settled 10 days later → only utilities of those 10 days.
-- **BIL-15** `remaining_rent` = rent × (N − j) if `moveOutDate` < `end_date`, else 0. Utilities and services are not charged for those periods [ASSUMPTION A-01].
+- **BIL-15** `remaining_rent` = the rent of every period after j (a partial last period prorated, D-41) if `moveOutDate` < `end_date`, else 0. Utilities and services are not charged for those periods [ASSUMPTION A-01].
 - **BIL-16** `previous_debt` = sum of UNPAID invoice totals of this contract (deposit invoice excluded); those invoices become `SETTLED` with `settlement_id`.
 - **BIL-17** `deposit` = the deposit actually paid on this contract chain (renewals carry it). `net = deposit − last_period_amount − remaining_rent − previous_debt − damages − deposit_forfeit` (DB CHECK).
-- **BIL-18** net < 0 → `FINAL` invoice, UNPAID, due today + `due_days`, lines: the period-j lines, `REMAINING_RENT` (qty N − j, unit rent), one `PREVIOUS_DEBT` per settled invoice, `DAMAGE`, `DEPOSIT_FORFEIT`, and `DEPOSIT_OFFSET` (qty 1, unit −deposit). Sum = −net. net ≥ 0 → no invoice; refund = net, staff records `refund_paid_at` when paid out.
+- **BIL-18** net < 0 → `FINAL` invoice, UNPAID, due today + `due_days`, lines: the period-j lines, one `REMAINING_RENT` line per remaining period (qty 1, unit = that period's rent), one `PREVIOUS_DEBT` per settled invoice, `DAMAGE`, `DEPOSIT_FORFEIT`, and `DEPOSIT_OFFSET` (qty 1, unit −deposit). Sum = −net. net ≥ 0 → no invoice; refund = net, staff records `refund_paid_at` when paid out.
 - **BIL-19** Same transaction: final readings, settlement row, contract `ENDED` + `ended_at`, occupants `move_out_date`, vehicles inactive, room back to "Trống", tenant account deactivated if no other HOLD/ACTIVE contract (sessions revoked), audit log, tenant notification.
 - **BIL-20** Stays after `end_date` are not charged automatically [ASSUMPTION A-06]; staff may add them as damages with a note.
 
@@ -113,16 +120,18 @@ For MONTHLY period k, rates = approved plans effective at `period_start` (RATE-0
 ## Acceptance
 
 - [ ] BIL-09 example computes 3.119.000 đ with the listed lines.
-- [ ] Period dates for BIL-01 and BIL-02 match exactly (unit test on the date helper, including leap year 2028).
+- [ ] Period dates and amounts for BIL-01, BIL-02 and BIL-22 match exactly (unit test on the date helper, including leap year 2028).
 - [ ] Cron run twice on the same day creates one DRAFT.
-- [ ] BIL-05 catch-up: server off from 23:50 14/10 to 01:00 15/10/2026 → the start-up run creates the period-1 DRAFT of the BIL-01 contract with period 15/09–14/10.
-- [ ] BIL-05 catch-up: no run on 15/10 and 16/10 → the run on 17/10 creates that DRAFT once; running again creates nothing.
+- [ ] BIL-05 catch-up: server off from 23:50 30/09 to 01:00 01/10/2026 → the start-up run creates the period-1 DRAFT of the BIL-01 contract with period 01/09–30/09.
+- [ ] BIL-05 catch-up: no run on 01/10 and 02/10 → the run on 03/10 creates that DRAFT once; running again creates nothing.
 - [ ] BIL-05 limit: a period whose billing date was 8 days ago with no invoice is not created; it is counted in the summary line and shown in "Việc hôm nay".
-- [ ] BIL-21: server off from 14/10 to 25/10/2026 → no automatic DRAFT for period 1 of the BIL-01 contract; "Việc hôm nay" shows it red; "Tạo hóa đơn kỳ này" creates it with period 15/09–14/10; pressing again → `CONFLICT_STATE`.
+- [ ] BIL-21: server off from 30/09 to 11/10/2026 → no automatic DRAFT for period 1 of the BIL-01 contract; "Việc hôm nay" shows it red; "Tạo hóa đơn kỳ này" creates it with period 01/09–30/09; pressing again → `CONFLICT_STATE`.
 - [ ] BIL-21: `periodNo` whose billing date is in the future → `CONFLICT_STATE`; a manager of another building → `OUT_OF_SCOPE`.
 - [ ] A-10: settlement of a contract with a missing period → `CONFLICT_STATE`; after the button creates it, settlement works.
 - [ ] BIL-06 catch-up: a renewal whose switch day was missed is switched by the next run, after the old contract's period-N DRAFT was created.
-- [ ] Rate change effective 20/10 leaves the 15/10–14/11 period on the old rate.
-- [ ] Occupant added on 20/10 is first counted in the period starting 15/11.
-- [ ] Early move-out on 25/11/2026 for BIL-01 contract (deposit 2.500.000): j = 3, remaining_rent = 3 × 2.500.000, net negative → FINAL invoice total = −net.
+- [ ] Rate change effective 20/10 leaves the October period (01/10–31/10) on the old rate; November uses the new one (D-09).
+- [ ] Occupant added on 20/10 is first counted in the period starting 01/11.
+- [ ] A move-in on 20/03 is charged 12/31 of the rent and of each fixed service in its first invoice, issued 01/04 (D-41).
+- [ ] An invoice unpaid at the end of the 9th shows "Quá hạn" from the 10th (D-40).
+- [ ] Early move-out on 25/11/2026 for BIL-01 contract (deposit 2.500.000): j = 3 (November), remaining_rent = 3 × 2.500.000 (December to February), net negative → FINAL invoice total = −net.
 - [ ] Reissue keeps exactly one non-cancelled invoice for the period.

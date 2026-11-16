@@ -55,6 +55,9 @@ The EX-1, EX-5 and EX-6 changes below are implemented and included in the owner-
 | EX-5 | `buildings` | **No migration.** `amenities` stays one jsonb array: an item in the fixed list is a code, any other item is old free text; the API splits them (`amenities` and `legacyAmenities`) and a save keeps the old text until staff clear it (BLD-08) | BLD-08 |
 | EX-6 | `viewings` | Add only `user_id Int null` (owner FK users, ON DELETE RESTRICT), `visit_at timestamptz null`, and status `DONE`; make `visit_date`/`time_slot` nullable; CHECK exact time or both legacy fields; indexes `(user_id, created_at)` and `(visit_at, status)`; partial unique `(user_id, room_id)` for non-null owner and NEW/CONFIRMED. Keep existing rows unchanged. No confirmation/cancellation metadata columns or enums. Guest cancellation clears existing `handled_by_id`; staff sets it. Capacity and cross-building checks are BE transactions, not additional schema | VIEW-01, VIEW-02a, VIEW-04, VIEW-08, VIEW-15, VIEW-16, VIEW-18 |
 | Phase 3 | `contracts` | trigger "tenant is TENANT" stays; the BE switches a `GUEST` to `TENANT` in the same transaction before the insert | CON-07 |
+| Phase 3 | `contracts`, `occupants` | the signed scan and the two CCCD photos are private Cloudinary assets (D-37): store their verified asset ids instead of URLs (the exact columns and what happens to `signed_scan_url`, `id_front_url`, `id_back_url` are fixed in the part's PLAN.md; ask the owner before the migration) | CON-06, CON-16 |
+| Phase 3 | `viewings` | who pressed "Đã gọi" and when, for the viewings cancelled by a deposit (D-39); ask the owner before the migration | VIEW-06 |
+| Phase 3 | `contracts` | `billing_day` is no longer used: every period is a calendar month (D-40). Whether to drop the column or fix it to 1 is decided in P3-1's PLAN.md; dropping needs the owner's OK before the migration | CON-03 |
 | Phase 5 | `requests` | repair review: rating 1–5, comment, time, hidden reason; only on `INCIDENT` in `CLOSED` | REQ-09 |
 
 ## Enforced by DB (the BE still validates first and returns a friendly code)
@@ -69,7 +72,7 @@ Latest recorded `check-constraints.mjs` result: **82/82** on 15/11/2026 (not rer
 - **DB-B4** `invoices.total` = sum of its lines. Tiers ascend by `up_to`, last tier `up_to = null`.
 - **DB-B5** `contract_services` only reference services with unit ROOM or PERSON; `vehicles.service_id` only unit VEHICLE.
 - **DB-B6** Active occupants ≤ `rooms.max_occupants`. When changing a room's limit, count occupants of ACTIVE contracts with `move_in_date <= today` and `move_out_date IS NULL OR move_out_date >= today`, using the business date in `Asia/Ho_Chi_Minh`. An occupant whose move-out date is today still counts through that day. The BE checks and updates the room in one transaction; a lower limit returns 409 `CONFLICT_STATE` (owner 04/11/2026; CON-13).
-- **DB-B7** Renewal `start_date` = previous `end_date` + 1 day and `billing_day` = previous `billing_day`.
+- **DB-B7** Renewal `start_date` = previous `end_date` + 1 day (periods are calendar months, D-40).
 - **DB-B8** Building scope and tenant ownership on every read and write.
 - **DB-B9** CCCD photo URLs are signed per request and expire in ≤ 5 minutes; each view writes `audit_logs` (`occupant.view_id`).
 

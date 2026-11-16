@@ -65,7 +65,7 @@ One git repo at the root. The frontend UI is built only from the kit in `Source/
 
 ## Status
 
-Phase 1 · Foundation, Phase 2 · Rooms and **Phase Extra · Home101 are complete**. The owner accepted EX-6/7/8/9 and the phone-whitespace, booking-success and overlap-warning fixes on 16/11/2026. Acceptance record: `docs/phase-extra-home101/ex-9-qa-checklist.md`; history: `docs/phase-extra-home101/PROGRESS.md`. Latest recorded frontend: 864/864, lint/build pass; backend after option B: 169/169 offline, lint/build pass. The host baseline before B is 1806/1806 and e2e 54/54; do not relabel it as a new post-B run. Latest recorded DB checker: 82/82 (15/11/2026). Next: **Phase 3 · Contracts** (`docs/spec/01-architecture.md#roadmap`).
+Phase 1 · Foundation, Phase 2 · Rooms and **Phase Extra · Home101 are complete**. The owner accepted EX-6/7/8/9 and the phone-whitespace, booking-success and overlap-warning fixes on 16/11/2026. Acceptance record: `docs/phase-extra-home101/ex-9-qa-checklist.md`; history: `docs/phase-extra-home101/PROGRESS.md`. Latest recorded frontend: 864/864, lint/build pass; backend after option B: 169/169 offline, lint/build pass. The host baseline before B is 1806/1806 and e2e 54/54; do not relabel it as a new post-B run. Latest recorded DB checker: 82/82 (15/11/2026). Next: **Phase 3 · Contracts**, in progress: parts, order and decisions D-35..D-42 in `docs/phase-3-contracts/README.md`; state per part in `docs/phase-3-contracts/PROGRESS.md`.
 
 ## Rules that apply everywhere
 

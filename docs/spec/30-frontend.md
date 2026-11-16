@@ -44,9 +44,9 @@ The public, guest and tenant layouts have the language switch "Tiếng Việt / 
 
 | Route | Page | Spec |
 |---|---|---|
-| `/thue` | Tổng quan: before move-in → deposit invoice + move-in date; after → invoice to pay, next billing date, unread notifications, open requests, 6-period electric/water bar chart | |
-| `/thue/hoa-don`, `/thue/hoa-don/:id` | Hóa đơn: list (unpaid/overdue first); detail with lines, tier lines, readings + photos, VietQR image + content `TT{id}` with copy button, auto-refresh status on focus, "Báo lỗi thanh toán" | BIL-10, REQ-07 |
-| `/thue/hop-dong`, `/thue/hop-dong/:id` | Hợp đồng: current + past contracts; term progress; deposit; PDF; occupants (CCCD last 4 only); vehicles (read-only); buttons "Báo trả phòng", "Xin gia hạn", "Cập nhật người ở", "Cập nhật xe" | CON, REQ-03 |
+| `/thue` | Tổng quan: before move-in → deposit invoice with VietQR and content `TT{id}` (copy button) + move-in date; after → contract summary. From Phase 4: invoice to pay, next billing date; from Phase 5: unread notifications, open requests, 6-period electric/water bar chart. Room switcher when the tenant has several contracts | D-35, BIL-10 |
+| `/thue/hoa-don`, `/thue/hoa-don/:id` | Hóa đơn: list (unpaid/overdue first); detail with lines, tier lines, readings (with the photo when one was attached, D-38), VietQR image + content `TT{id}` with copy button, auto-refresh status on focus, "Báo lỗi thanh toán" | BIL-10, REQ-07 |
+| `/thue/hop-dong`, `/thue/hop-dong/:id` | Hợp đồng: current + past contracts; term progress; deposit; print page (CON-22); signed scan (CON-16); occupants (CCCD last 4 only); vehicles (read-only). The buttons "Báo trả phòng", "Xin gia hạn", "Cập nhật người ở", "Cập nhật xe" come with requests in Phase 5 | CON, REQ-03 |
 | `/thue/yeu-cau`, `/thue/yeu-cau/:id` | Yêu cầu và sự cố: list by type; create incident with photos; status timeline; "Đã sửa xong" / "Chưa ổn" | REQ |
 | `/thue/thong-bao` | Thông báo: inbox, unread dot, mark all read | NOTI-01 |
 | `/thue/tai-khoan` | Tài khoản: change password, email | AUTH-09 |
@@ -59,8 +59,8 @@ The public, guest and tenant layouts have the language switch "Tiếng Việt / 
 | `/ql/toa-nha`, `/ql/toa-nha/:id` | Tòa nhà: manager edits amenities/description; Boss creates, assigns manager, services, locks (confirm dialog: manager will be unassigned, N open viewings) | BLD, SVC |
 | `/ql/phong` | Phòng: floor grid colored by derived status, "Hiện phòng đã khóa"; create/edit, photos; "Đề xuất giá", "Quá hạn" + "Đề xuất lại" | ROOM, PRC-01, PRC-07 |
 | `/ql/lich-hen` | Lịch hẹn: list by date/hour, manual add, call/Zalo. NEW offers "Xác nhận" and "Gửi email xác nhận" (owner email required), including late confirmation; no method/time metadata. After start, open NEW/CONFIRMED has two outcome buttons: "Đã xem" (DONE directly) and "Hủy" (CANCELLED, note required). No no-show button. Edit time after phone agreement, with VIEW-16 capacity checks. Marks "Quá giờ, chưa xác nhận" and actual cross-building/capacity "Trùng giờ", not valid same-building groups. DONE may become LOST with note; "Chốt" opens contract creation from Phase 3 | VIEW-04, VIEW-09, VIEW-15..18, VIEW-22 |
-| `/ql/hop-dong`, `/ql/hop-dong/:id` | Hợp đồng (also the tenant list): wizard create → PDF → upload scan → show temp password once → move-in readings; occupants with CCCD photos; vehicles; services; reset password; renew; cancel; settlement with dry-run preview | CON, BIL-13..19 |
-| `/ql/chi-so` | Chốt chỉ số: mobile-first list of due drafts, number inputs, camera upload, abnormal warning | MTR |
+| `/ql/hop-dong`, `/ql/hop-dong/:id` | Hợp đồng (also the tenant list): wizard create → print page (CON-22) → upload scan → show temp password once → record the deposit (confirm dialog with the amount, UI-04) → move-in readings; occupants with CCCD photos; vehicles; services; reset password; cancel (with the deposit kept and the refund shown before confirming). Renew (Phase 5) and the move-out settlement with dry-run preview (Phase 4) come later | CON, D-35, BIL-10, BIL-11 |
+| `/ql/chi-so` | Chốt chỉ số: mobile-first list of due drafts from the 1st, number inputs, optional photo (D-38), abnormal warning; rooms still missing after the 1st marked red (D-42) | MTR, NOTI-10 |
 | `/ql/hoa-don`, `/ql/hoa-don/:id` | Hóa đơn: filters; record manual payment (method picker, confirm dialog with amount); reissue; remind; escalate payment issue | BIL-11, BIL-12 |
 | `/ql/don-gia` | Đơn giá: current rates per building (tier ladder), history, propose change, proposal status | RATE |
 | `/ql/yeu-cau` | Yêu cầu và sự cố: 3-column board (Chờ / Đang xử lý / Hoàn thành); approve/reject change requests; record cost | REQ |

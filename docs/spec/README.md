@@ -48,4 +48,4 @@ Phase 1 (Foundation), Phase 2 (Rooms) and **Phase Extra (Home101) are complete**
 
 Recorded verification: frontend **864/864**, lint/build pass; backend after option B **169/169 offline**, lint/build pass; host baseline before B **1806/1806** and dev e2e **54/54**; DB checker **82/82** on 15/11/2026. The owner's acceptance is recorded separately from test output, without inventing a new HTTP/e2e run.
 
-Next: **Phase 3 · Contracts**. Contract workflows, billing and operations remain in their roadmap phases. Phase 1/2 history stays in `docs/phase-1-foundation/` and `docs/phase-2-rooms/`. Roadmap: [01-architecture.md#roadmap](01-architecture.md#roadmap).
+Next: **Phase 3 · Contracts** (owner decisions D-35..D-42, 16/11/2026: deposit loop, print page, private scan, meters without photos, "Đã gọi" task, calendar-month billing, late-readings email); parts and progress in `docs/phase-3-contracts/`. Contract workflows, billing and operations remain in their roadmap phases. Phase 1/2 history stays in `docs/phase-1-foundation/` and `docs/phase-2-rooms/`. Roadmap: [01-architecture.md#roadmap](01-architecture.md#roadmap).

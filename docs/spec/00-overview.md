@@ -37,7 +37,7 @@ Boss → Manager (≤ 2 buildings) → Building (address, district, ward in Hà 
 | Giữ chỗ | hold (signed or not, before move-in) | `HOLD` |
 | Hiệu lực | active (moved in) | `ACTIVE` |
 | Ngày vào ở | move-in date, contract start | `start_date` |
-| Ngày thu | billing day (day of month) | `billing_day` |
+| Ngày thu | billing date: the 1st of each month (D-40) | – |
 | Kỳ | billing period | `period_no`, `period_start`, `period_end` |
 | Cọc | deposit | `deposit`, invoice type `DEPOSIT` |
 | Hóa đơn | invoice | `invoices` |
@@ -78,7 +78,7 @@ Boss → Manager (≤ 2 buildings) → Building (address, district, ward in Hà 
 | D-02 | Replaced 12/11/2026 by D-25: there is a public sign-up page. Before: no sign-up, accounts only at contract signing |
 | D-03 | Contract minimum term is 3 months, chosen in whole months |
 | D-04 | Deposit is paid at signing through a `DEPOSIT` invoice with VietQR (or recorded manually) |
-| D-05 | Billing cycle anchors on the move-in date. **Postpaid**: each period's invoice charges rent + utilities + services of the period just lived |
+| D-05 | Billing by calendar month (D-40): every period runs from the 1st to the last day of the month, and a partial first or last month is prorated (D-41). **Postpaid**: each period's invoice charges rent + utilities + services of the month just lived. Before 16/11/2026 the cycle anchored on each move-in date |
 | D-06 | Every room has its own electric and water meter. Electricity is tiered per building. Water is per m³ or per person, chosen per building |
 | D-07 | Services are chosen per contract. Parking is per vehicle; each vehicle type is its own service with its own price |
 | D-08 | Contract rent is locked to the approved room price at creation. Renewal keeps the old rent |
@@ -89,7 +89,7 @@ Boss → Manager (≤ 2 buildings) → Building (address, district, ward in Hà 
 | D-13 | A contract must be renewed or terminated before its end date. No invoice is created for a period beyond the end date; an unresolved expired contract is flagged red |
 | D-14 | Moving out early still charges rent until the contract end date, deducted from the deposit; any extra deposit kept is decided by the manager |
 | D-15 | Repair cost of incidents is always paid by the owner; it is recorded for reports |
-| D-16 | Contract PDF is generated from a template, signed on paper, scan uploaded |
+| D-16 | Contract is printed from a template, signed on paper, scan uploaded (the "PDF" is the browser's print / save as PDF of the filled template, D-36) |
 | D-17 | Occupants' CCCD number (encrypted) and both-side photos (private) are stored for residence registration |
 | D-18 | Each building has at most 1 manager; each manager at most 2 buildings |
 | D-19 | Database: PostgreSQL on Neon or Supabase, Prisma 6, integer auto-increment ids |
@@ -114,6 +114,19 @@ Decisions D-23..D-34 come from the Home101 brief (`docs/home101-adoption-brief.m
 | D-33 | Q-H101-11: no review of viewings. Only the "service at home" is reviewed, which in Rooms is the repair of an incident, by the tenant (REQ-09, Phase 5; details Q-13) |
 | D-34 | Q-H101-12, revised: two emails only. (1) Every new booking is emailed at once to the building's manager (to Boss when the building has no active manager or the manager has no email) with the guest's name, phone and email, the room, the building and the time, so the manager can call without opening the site. (2) The confirmation email the manager sends to the guest with a button (D-30). No inbox for guests, no reminders, no SMS or Zalo (VIEW-15, VIEW-19, NOTI-08; D-20 unchanged) |
 
+Decisions D-35..D-37: owner 16/11/2026, before Phase 3 (`docs/phase-3-contracts/README.md`).
+
+| # | Decision |
+|---|---|
+| D-35 | Phase 3 covers the whole deposit loop: the `DEPOSIT` invoice with VietQR (BIL-10), staff recording the deposit by hand (BIL-11, `DEPOSIT` invoices only until Phase 4), move-in with the first meter readings (CON-10), and cancelling a HOLD contract after the deposit was paid with its settlement (CON-12). The bank webhook, monthly invoices, periodic readings and the move-out settlement stay in Phase 4 |
+| D-36 | No PDF library: the contract is a print page of the filled `settings.contract_template`; staff and the tenant print it or save it as PDF from the browser (replaces the "PDF" of D-16; `GET /contracts/:id/pdf` becomes the print page, CON-22) |
+| D-37 | The signed contract scan is private like the CCCD photos: a Cloudinary authenticated asset, shown only through a signed URL valid ≤ 5 minutes, to staff in scope and to the contract's tenant (CON-06, CON-16) |
+| D-38 | Meters need no photo (Q-P3-2): every meter is outside the room, the manager reads it himself at the end of each month (D-40) and checks it again on site if needed; tenants never declare readings (CON-10, MTR-07) |
+| D-39 | The task "call the guests whose viewing was cancelled by a deposit" stays in "Việc hôm nay" until staff press "Đã gọi" (Q-P3-1, VIEW-06) |
+| D-40 | Calendar-month billing for the whole chain (Q-16, owner 16/11/2026): every period runs from the 1st to the last day of the month; there is no billing-day setting. Managers enter every reading in time for the invoices to be issued on the **1st** of the next month; the invoice is due on the **9th**, and an invoice not paid by the end of the 9th is overdue (from the 10th). The 10th is the date by which managers must have collected every room |
+| D-41 | Partial months (owner 16/11/2026): a contract still ends exactly `term_months` after the move-in date (`end_date` = start + N months − 1 day). The first month (move-in → end of that month) and the last month (1st → `end_date`) are prorated: amount × days in the period ÷ days of that calendar month (28–31). Rent and every fixed service (ROOM, PERSON, VEHICLE) are prorated the same way; electricity and water follow the readings |
+| D-42 | Late readings (owner 16/11/2026): if by the end of the 1st some invoices are still waiting for readings, the system emails Boss the list every day at 08:00 from the 2nd to the 10th; after the 10th it stops emailing and the rooms stay red in "Việc hôm nay" for the manager to handle; tenants see nothing until the invoice is issued (NOTI-10) |
+
 ## Assumptions (not yet confirmed — implement, keep easy to change)
 
 - **A-01** [ASSUMPTION] On early move-out, services (wifi, rác, parking) are charged in full for the current period; remaining periods charge rent only.
@@ -132,6 +145,7 @@ Decisions D-23..D-34 come from the Home101 brief (`docs/home101-adoption-brief.m
 - **A-14** [ASSUMPTION] Responsibility changes preserve open viewings. Mark "Trùng giờ" for current cross-building conflicts of a responsible person or guest, or a building/hour exceeding 3 distinct guests; several guests/rooms in one building within capacity are valid (VIEW-22).
 - **A-15** [ASSUMPTION] A manager's email is used as typed by the manager, without a verification step; only guests verify their email (AUTH-12, VIEW-19).
 - **A-18** [ASSUMPTION] At contract creation, when the signer's phone already has a guest account, the staff member (who is with the signer) confirms on the form that the account is the signer's before it is reused; if the signer says it is not theirs, the contract is not created and Boss sorts out the account (CON-07). The owner had no preference on 12/11/2026.
+- **A-21** [ASSUMPTION] A prorated amount is rounded to the nearest đồng, half up, once per line (G-01).
 - **A-16** [ASSUMPTION] A tenant keeps role `TENANT` after all their contracts ended: they still read past contracts and invoices and use the guest area (D-26, CON-12).
 - **A-17** [ASSUMPTION] Repair review: 1–5 stars + optional comment, once per incident, editable for 7 days, read by staff in scope only; hiding a comment needs a reason. These are the values the brief proposed for viewing reviews, reused for repairs (REQ-09, Q-13).
 
@@ -151,3 +165,5 @@ Decisions D-23..D-34 come from the Home101 brief (`docs/home101-adoption-brief.m
 - **Q-12** Answered by the owner (12/11/2026, revised the same day): viewings start on the hour from 8:00 to 19:00 every day, so the last one ends at 20:00; managers do not enter days off (VIEW-08, D-29).
 - **Q-13** [OPEN] Confirm D-33 and A-17: is the repair of an incident the only thing reviewed, with the values of A-17?
 - **Q-14** Answered by the owner (12/11/2026), clarified 15/11/2026: use Resend whenever `MAIL_PROVIDER=resend`, `MAIL_API_KEY` and `MAIL_FROM` are all configured, including local development. The owner creates the account, verifies the sending domain and fills `MAIL_*`. Without complete configuration, development/test use the console mailer; production sends fail with `MAIL_UNAVAILABLE` instead of silently logging. Sign-up codes, password links, the new-booking email and the confirmation email all go through it (AUTH-13, NOTI-07).
+- **Q-15** [OPEN] The real contract text (D-36): the owner sends it later. Until then `settings.contract_template` holds a draft whose print page says "BẢN NHÁP – chưa dùng để ký"; do not sign real contracts with it.
+- **Q-16** Answered by the owner (16/11/2026): calendar-month billing, invoices issued on the 1st, due on the 9th; the manager reads every meter at the end of the month, so MTR-10 holds (D-40, D-41).
