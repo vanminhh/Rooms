@@ -1,5 +1,7 @@
 # Phase Extra · Part 8 – Real emails: provider and templates (BE-EX-28..30)
 
+**Owner acceptance — 16/11/2026:** EX-6, EX-7, EX-8 and EX-9 were explicitly accepted as OK, including the phone-whitespace fix, success popup and overlap warning. Tasks below are closed on that owner sign-off and the existing verification record. This is not a new agent-run HTTP/e2e, browser or DB result. Consolidated evidence: [ex-9-qa-checklist.md](ex-9-qa-checklist.md). Earlier pending entries remain historical.
+
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` error/blocked (write the reason on the line below the task).
 Rules: mark `[~]` when you start a task, `[x]` only after its "Done when" is verified. Do tasks in order. Work on the main files as in root `CLAUDE.md` "Change workflow": stop at every ⏸ checkpoint, report, and continue only after the owner says they verified and committed. Ask before every deleted file and new dependency. All parts and their order: [README.md](README.md). Read [LESSONS.md](../LESSONS.md) before the first task. At every ⏸ stop, before you report: update your row and add a log line in [PROGRESS.md](PROGRESS.md), and add to `LESSONS.md` any mistake that cost a retry.
 
@@ -33,8 +35,8 @@ Out: any new kind of email, announcements and tenant emails (Phase 5), SMS and Z
   Done when: unit tests with the provider's HTTP call faked (success, provider error, timeout); the app boots with and without the keys; no key is logged.
 - [x] **BE-EX-29** Templates (NOTI-08, LOC-06): `emailCode` (`vi`, `en`), `passwordReset` (existing; add `en`), `viewingNew` (to staff, `vi`), `viewingConfirmed` (to the guest, `vi`, `en`) in `settings.email_templates`, with defaults in code when a key is missing. Times in Hà Nội time, dates `dd/mm/yyyy`, no internal ids, and the building's public contact in the guest emails.
   Done when: template tests in both languages with the values of the spec; a missing template key falls back to the default.
-- [!] **BE-EX-30** ⏸ Live check with the owner: with the owner's keys in `.env`, send each of the four emails once to an address the owner names and confirm they arrive and are not marked as spam; write the provider's setup steps (domain records, sender address, daily limits of the plan) in `docs/phase-extra-home101/email-setup.md`. `npm run lint`, `test`, `build`.
-  Current checkpoint (16/11/2026): the owner-reported four-flow checks passed. Project-host results in PROGRESS.md are accepted evidence: unit 1806/1806 (89 files), lint 0 errors, build OK, dev e2e 54/54 (7 files, viewings 11/11), no leftover records from that run. The earlier HTTP/e2e blocker is resolved. Setup documentation exists. The only remaining acceptance detail is the task's explicit requirement that the four messages were not marked as spam; the owner has not separately reported this. Keep [!] until that answer is recorded; do not request new sends or rerun tests. Both Vitest configs keep MAIL_PROVIDER: '' unchanged.
+- [x] **BE-EX-30** ⏸ Live check with the owner: with the owner's keys in `.env`, send each of the four emails once to an address the owner names and confirm they arrive and are not marked as spam; write the provider's setup steps (domain records, sender address, daily limits of the plan) in `docs/phase-extra-home101/email-setup.md`. `npm run lint`, `test`, `build`.
+  Closing checkpoint (16/11/2026): owner accepted EX-8 in full after the earlier no-spam question was listed. BE-EX-30 is closed on that confirmation; the four deliveries and existing host checks remain the evidence. No further email sends or test reruns, and no separate inbox screenshot or new counts are claimed. Both Vitest configs keep MAIL_PROVIDER: ''.
   Done when: the owner confirms the four emails arrived; all checks pass with real output quoted.
 
 ## Questions for the owner
@@ -57,3 +59,7 @@ Out: any new kind of email, announcements and tenant emails (Phase 5), SMS and Z
 BE-EX-28/29 are implemented and isolated checks pass: 47/47 tests (31 templates, 12 provider/retry, 4 module selection/boot). Review found missing mandatory template placeholders; 14 failing cases proved it before the fix, all now pass, and the same reviewer approved the fix. The owner chose real email even in development when all MAIL_* values are configured; Q-14/AUTH-13 are updated. No env file was edited.
 
 BE-EX-30 is blocked pending the owner's verified sender/domain, private configuration and named test recipients. Configuration presence check: all three MAIL_* values absent; no live email sent. Setup and four-message acceptance: [email-setup.md](email-setup.md). Full backend test cannot be marked green: 1047 pass / 759 HTTP EACCES failures on 1806 tests. Backend lint/build pass (0 errors, 4 existing lint warnings). Full reviewer report and hand-check commands: [checkpoint report](CHECKPOINT-2026-11-15-resume.md).
+
+## Final closure — 16/11/2026
+
+Owner accepted this part. The prior blockers are closed by that acceptance; historical logs are preserved with their original scope. No fresh per-case output was supplied with the confirmation. Code was already committed at c5adfde; this follow-up only updates acceptance documents. See [EX-9 ledger](ex-9-qa-checklist.md) for the known test counts, scope exclusions and next phase.

@@ -32,7 +32,7 @@ The explicit env-file is needed on this checkout because the actual env file is 
 
 ## Four-message acceptance check
 
-Owner update, 16/11/2026: all four application flows have owner-reported manual acceptance. The project-host verification entry in PROGRESS.md also confirms unit 1806/1806 (89 files), lint 0 errors, build OK and dev e2e 54/54 (7 files, including 11 viewings cases), with no leftover records from that run. This resolves the earlier automated-verification blocker. Only the explicit no-spam detail in BE-EX-30 remains to be confirmed; no new send or test rerun is requested. Both Vitest configs retain MAIL_PROVIDER: ''.
+Owner update, 16/11/2026: all four application flows have owner-reported manual acceptance. The project-host verification entry in PROGRESS.md also confirms unit 1806/1806 (89 files), lint 0 errors, build OK and dev e2e 54/54 (7 files, including 11 viewings cases), with no leftover records from that run. This resolves the earlier automated-verification blocker. The owner subsequently accepted EX-8 in full on 16/11/2026, closing the outstanding no-spam acceptance detail; no new send or test rerun is requested. Both Vitest configs retain MAIL_PROVIDER: ''.
 
 Use only addresses the owner has named for this check. Setting keys does not authorize sending tests to real guests or managers. Keep the mailer faked for automated tests.
 
@@ -62,10 +62,9 @@ An incomplete template falls back to the default; it must not silently send a co
 
 Checked against [Resend pricing](https://resend.com/pricing) on 15/11/2026: the transactional Free plan lists 100 emails/day and 3,000/month. Confirm the actual plan and remaining quota in your dashboard before the live check. Sign-up codes, recovery links and both viewing emails share that quota.
 
-## Pending owner inputs
+## Later rollout inputs
 
 - Verified sending domain and final sender address (Q-EX8-2) when sending to recipients other than the account owner; local test MAIL_* and recipient are already configured/identified.
-- Inbox versus Spam placement of the diagnostic email; receipt is already confirmed by the owner.
-- Inbox/Spam placement for the application messages was not separately reported. All four manual application-flow checks were confirmed by the owner on 16/11/2026; they do not need to be requested again without a new issue.
+- EX-8 was accepted in full by the owner on 16/11/2026 after the remaining Inbox/Spam item was listed. Record this as owner acceptance, not as a new inbox inspection by the agent; do not request the same check or send again without a new issue.
 
-The earlier resumption checkpoint sent no live email. The subsequent owner-authorized smoke check sent one diagnostic email accepted by Resend and received by the owner. By 16/11/2026, all four application flows and project-host automatic checks have passed. BE-EX-30 remains open only for the task's explicit no-spam confirmation; the full backend suite is no longer blocked.
+The earlier resumption checkpoint sent no live email. The subsequent owner-authorized smoke check sent one diagnostic email accepted by Resend and received by the owner. By 16/11/2026, all four application flows and project-host automatic checks have passed. BE-EX-30 is closed by the owner's subsequent full EX-8 acceptance. These host test counts predate the guest-overlap change; its later evidence is distinguished in ex-9-qa-checklist.md.

@@ -4,7 +4,7 @@ Ngày cập nhật: 16/11/2026. Trạng thái: **chờ kiểm lại bản sửa 
 
 **Quyết định 16/11/2026:** Q-EX7-03 đã chọn B: cùng khách được đặt hai tòa cùng giờ sau cảnh báo và bấm tiếp tục; khác quận có lời nhắc di chuyển. Người phụ trách và sức chứa vẫn chặn. Đã bổ sung popup thành công. Q-EX7-02 đã xác định là dấu cách ở SĐT: form đăng nhập/đăng ký/quên mật khẩu tự bỏ khoảng trắng đầu/cuối, mật khẩu giữ nguyên.
 
-## Bằng chứng đã có và phạm vi còn lại
+## Bằng chứng tại thời điểm chuẩn bị checklist
 
 - Backend trên máy chủ dự án trước bản sửa, nhật ký 16/11/2026: unit **1806/1806, 89 file**; lint **0 lỗi**; build **OK**; e2e DB dev **54/54, 7 file**, gồm **11 ca viewings**. Cleanup không để lại bản ghi của lượt chạy. Đây không phải bằng chứng cho luật B mới. Kết quả mới và sai sót chọn nhầm hai ca HTTP bị EACCES được ghi riêng trong [checkpoint](CHECKPOINT-2026-11-16-booking-feedback.md); không chạy lại HTTP/e2e trong hướng dẫn này.
 - Hai Vitest config giữ nguyên `MAIL_PROVIDER: ''` tại commit `8164721`. Cấu hình này chỉ áp dụng khi chạy test; không tự tắt Resend của backend đang phục vụ trình duyệt.
@@ -15,7 +15,7 @@ Nguồn kỳ vọng: `docs/spec/13-viewings.md` (VIEW-01/02/02a/03/04/07/08/09/1
 
 ## Kiểm lại lỗi SĐT — 16/11/2026
 
-Trạng thái: **CHƯA KIỂM trên trình duyệt thật**. F5 frontend, dùng tài khoản thử có mật khẩu đúng:
+Trạng thái: **OK theo xác nhận riêng của chủ dự án ngày 16/11/2026**. F5 frontend, dùng tài khoản thử có mật khẩu đúng:
 
 1. Nhập đúng SĐT rồi thêm vài dấu cách ở cuối → đăng nhập phải thành công.
 2. Đăng xuất, thử có dấu cách cả đầu và cuối SĐT → vẫn đăng nhập được.
@@ -156,14 +156,14 @@ Những ca không tạo được với dữ liệu/quyền hiện có phải ghi
 
 ## Phiếu kết quả và điểm dừng ⏸
 
-| Nhóm | Trạng thái ban đầu | Bằng chứng chủ dự án bổ sung |
+| Nhóm | Nghiệm thu cuối | Phạm vi chi tiết của nhóm |
 |---|---|---|
-| 0 — hai phiên, dữ liệu, email ghi log | CHƯA KIỂM | Tòa/phòng, ngày/giờ, quota, B/C |
-| D1–D5 — công khai, sức chứa | CHƯA KIỂM | Giờ sau khách 1/2/3, lỗi khách 4 |
-| D6–D8, M1–M2 — WEB/MANUAL, đặt hai phòng | CHƯA KIỂM | Link G1/G2, hai cỡ màn, danh sách của G |
-| X1-X4 - khác tòa, cảnh báo/đồng ý | CHƯA KIỂM | Có/thiếu B/C, quận, G3, quay lại/đồng ý, MANUAL/đổi giờ, focus và cleanup |
-| S1–S8 — xác nhận, đổi giờ, hủy/trả chỗ | CHƯA KIỂM | Trạng thái và thời điểm P4 được chuyển sang T |
-| L1–L4 — quá giờ | CHƯA KIỂM | Giờ thật, link L-EMAIL, các chuyển trạng thái |
-| U1–U5 — hiển thị/khôi phục/dọn lịch | CHƯA KIỂM | Desktop/360, lỗi còn lại, lịch QA còn mở |
+| 0 — hai phiên, dữ liệu, email ghi log | NT theo xác nhận EX-7/EX-9 của chủ dự án | Tòa/phòng, ngày/giờ, quota, B/C |
+| D1–D5 — công khai, sức chứa | NT theo xác nhận EX-7/EX-9 của chủ dự án | Giờ sau khách 1/2/3, lỗi khách 4 |
+| D6–D8, M1–M2 — WEB/MANUAL, đặt hai phòng | NT theo xác nhận EX-7/EX-9 của chủ dự án | Link G1/G2, hai cỡ màn, danh sách của G |
+| X1-X4 - khác tòa, cảnh báo/đồng ý | NT theo xác nhận EX-7/EX-9 của chủ dự án | Có/thiếu B/C, quận, G3, quay lại/đồng ý, MANUAL/đổi giờ, focus và cleanup |
+| S1–S8 — xác nhận, đổi giờ, hủy/trả chỗ | NT theo xác nhận EX-7/EX-9 của chủ dự án | Trạng thái và thời điểm P4 được chuyển sang T |
+| L1–L4 — quá giờ | NT theo xác nhận EX-7/EX-9 của chủ dự án | Giờ thật, link L-EMAIL, các chuyển trạng thái |
+| U1–U5 — hiển thị/khôi phục/dọn lịch | NT theo xác nhận EX-7/EX-9 của chủ dự án | Desktop/360, lỗi còn lại, lịch QA còn mở |
 
-Sau mỗi nhóm, báo `ID OK` hoặc `ID LỖI: thao tác → thực tế; kỳ vọng…`, có thể kèm ảnh che thông tin riêng. Dừng tại nhóm đang kiểm; phiên hướng dẫn nối tiếp từ kết quả đó. FE-EX-27 chỉ đóng khi có đủ bằng chứng; không tự đánh dấu các nhóm còn trống.
+Xác nhận cuối của chủ dự án đóng các nhóm ở mức nghiệm thu EX-7/EX-9. Không bổ sung link lịch, giờ thử, ảnh hoặc kết quả từng thao tác chưa được cung cấp. Ba sửa mới có xác nhận riêng là SĐT, popup thành công và cảnh báo trùng giờ. Xem [hồ sơ EX-9](ex-9-qa-checklist.md); FE-EX-27 đã đóng, không cần lặp lại checklist nếu không phát sinh lỗi mới.

@@ -1,5 +1,7 @@
 # ⏸ Booking feedback — phương án B, 16/11/2026
 
+**Final owner acceptance, 16/11/2026:** EX-6/7/8/9 and the three fixes (phone whitespace, success popup, overlap warning) are accepted as OK. The earlier pending notes below are historical. Code is committed at c5adfde; final ledger: [ex-9-qa-checklist.md](ex-9-qa-checklist.md). No additional runtime test output is claimed from this confirmation.
+
 Chủ dự án chọn B cho Q-EX7-03: cùng khách được đặt hai tòa cùng giờ sau cảnh báo và xác nhận tiếp tục. Đã triển khai backend/frontend/spec và popup thành công. Chờ chủ dự án kiểm tay desktop/360 px rồi commit; agent không commit.
 
 ## Phạm vi và trạng thái

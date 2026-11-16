@@ -1,4 +1,4 @@
-# Phase Extra – tiến trình
+# Phase Extra — hoàn thành ngày 16/11/2026
 
 File này để người hoặc agent mới vào biết ngay đang ở đâu. Trạng thái từng task vẫn nằm trong file task của phần (`[ ]` / `[~]` / `[x]` / `[!]`); ở đây chỉ ghi theo **điểm dừng ⏸**.
 
@@ -6,24 +6,28 @@ File này để người hoặc agent mới vào biết ngay đang ở đâu. Tr
 
 Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở ⏸, chờ chủ dự án kiểm chứng) · `xong` · `kẹt` (ghi lý do).
 
+**Nghiệm thu cuối:** chủ dự án xác nhận EX-6/7/8/9 và ba sửa mới đều OK ngày 16/11/2026. Phase Extra đã đóng; tiếp theo Phase 3 · Hợp đồng. Mã nguồn hiện ở `c5adfde`, git sạch trước khi cập nhật tài liệu đóng phase. [Hồ sơ EX-9](ex-9-qa-checklist.md) phân biệt nghiệm thu owner với số liệu test đã có.
+
 ## Bảng tổng
 
 | Phần | Trạng thái | Điểm dừng gần nhất đã xong | Commit | Việc tiếp theo | Ghi chú |
 |---|---|---|---|---|---|
-| EX-0 Chủ dự án chuẩn bị | đang làm | MAIL_* đã cấu hình; owner xác nhận đã nhận email thử (15/11/2026) | – | tên miền/sender riêng khi gửi cho người khác; Q-08 video, Q-13 | Inbox/Spam chưa được xác định; TENANT option B và Q-EX4-1/Q-EX6-1..4 đã chốt |
-| EX-1 Tài khoản khách (BE) | chờ duyệt | ⏸ BE-EX-09 (kiểm tra cuối) | đã commit hết (git log 13/11/2026) | – | seed khách `0900000006` đã chạy trên DB dev qua e2e cũ; plan: `plans/EX-1/PLAN.md` |
-| EX-2 Tài khoản khách (FE) | chờ duyệt | ⏸ FE-EX-07; owner báo test đăng ký OK (15/11/2026) | đã commit hết (git log 13/11/2026) | – | xác nhận thủ công của owner trong ngữ cảnh đăng ký; chưa coi là nghiệm thu toàn bộ tài khoản/guest shell; plan: không có |
-| EX-3 Việt + Anh | xong | CP-6 FE-EX-13: chủ dự án xác nhận đã kiểm chứng và chốt | CP-5 `12e3135`; CP-4 `e95efad` | – | form lịch mới đã vào từ điển ở EX-7 |
-| EX-4 Màn chào | xong | FE-EX-16/17: ảnh tĩnh, accessibility, kiểm tra cuối đạt | FE-EX-14 `d3c77c9`; phần sau chưa commit | owner commit cùng nhóm đã cho làm liên tục | video chưa có: giao ảnh tĩnh theo Q-08 |
-| EX-5 Bộ lọc phòng | chờ duyệt | ⏸ FE-EX-21 (cả part) | đã commit hết (git log 13/11/2026) | – | plan: `plans/EX-5/PLAN.md` |
-| EX-6 Lịch xem (BE) | đang làm | ⏸ Luật B đã triển khai; offline 169/169, lint 0 lỗi/4 cảnh báo cũ, build OK; reviewer DUYỆT sau sửa FE | `8164721` giữ an toàn mailer test; chưa commit bản sửa | host xác nhận lại HTTP/e2e cho luật B; BE-EX-19/20/21/24 [~] | host 1806/54 đã đóng luật cũ; lần chọn nhầm hai ca HTTP bị EACCES được ghi trong checkpoint, không chạy e2e/DB |
-| EX-7 Lịch xem (FE) | chờ commit | ⏸ Booking phương án B + popup; đã sửa auth bỏ khoảng trắng đầu/cuối SĐT. Full FE 864/864, lint/build exit 0 | - | owner kiểm auth và booking desktop/360 theo checklist; Q-EX7-02/03 đã rõ | FE-EX-27 [~] chờ manual; [checkpoint](CHECKPOINT-2026-11-16-booking-feedback.md), [checklist](FE-EX-27-MANUAL-CHECKLIST.md); reviewer booking DUYỆT, auth là sửa chuẩn hóa form |
-| EX-8 Gửi email thật | đang làm | 4/4 luồng email owner báo OK; tự động host 16/11 unit 1806/1806, e2e 54/54, lint 0 lỗi, build OK | `8164721` giữ MAIL_PROVIDER rỗng trong hai test config | BE-EX-30 chỉ còn xác nhận bốn thư không vào Spam theo mô tả task | không còn blocker HTTP/e2e; không yêu cầu gửi lại bốn thư; [email-setup.md](email-setup.md) |
-| EX-9 QA | chưa làm | – | – | QA-EX-01 | cần tất cả |
+| EX-0 Chủ dự án chuẩn bị | xong trong phạm vi local/dev | MAIL_* và email thử đã có; EX-8/EX-9 được nghiệm thu | đã có trong code/config hiện tại | sender/tên miền riêng khi rollout; Q-13 thuộc Phase 5 | ảnh tĩnh đã được chấp nhận; không yêu cầu gửi lại email |
+| EX-1 Tài khoản khách (BE) | xong | các task đã hoàn tất; tổng kết cùng nghiệm thu EX-9 | đã commit, có trong c5adfde | – | plan: plans/EX-1/PLAN.md |
+| EX-2 Tài khoản khách (FE) | xong | đăng ký/khôi phục đã xác nhận trước; tổng kết cùng EX-9 | đã commit, có trong c5adfde | – | sửa SĐT đầu/cuối đã được owner xác nhận riêng |
+| EX-3 Việt + Anh | xong | owner đã chốt CP-6 FE-EX-13; nghiệm thu cuối EX-9 | đã commit, có trong c5adfde | – | bản dịch mới của booking đã có |
+| EX-4 Màn chào | xong | bản ảnh tĩnh/accessibility được chấp nhận; nghiệm thu cuối EX-9 | đã commit, có trong c5adfde | video chỉ khi bổ sung ở lượt nâng cấp riêng | không còn gate video cho bản local đã nghiệm thu |
+| EX-5 Bộ lọc phòng | xong | các task đã hoàn tất; tổng kết cùng nghiệm thu EX-9 | đã commit, có trong c5adfde | – | plan: plans/EX-5/PLAN.md |
+| EX-6 Lịch xem (BE) | xong | owner nghiệm thu EX-6 ngày 16/11; BE-EX-19/20/21/24 đã đóng | code c5adfde; tài liệu chốt chờ commit | – | hậu B: offline169/169; baseline host1806/54 trước B; không có output HTTP/e2e mới kèm xác nhận |
+| EX-7 Lịch xem (FE) | xong | owner nghiệm thu EX-7 và xác nhận riêng SĐT/popup/cảnh báo đều OK; FE-EX-27 đã đóng | code c5adfde; tài liệu chốt chờ commit | – | FE864/864, lint/build đạt; [checklist](FE-EX-27-MANUAL-CHECKLIST.md) |
+| EX-8 Gửi email thật | xong | owner nghiệm thu EX-8 đầy đủ ngày 16/11; BE-EX-30 đã đóng | code c5adfde; tài liệu chốt chờ commit | sender riêng trước rollout | 4/4 luồng đã nhận; đóng gate Spam theo xác nhận owner, không gửi lại |
+| EX-9 QA | xong | owner nghiệm thu EX-9 ngày 16/11; QA-EX-01..06 đã đóng | tài liệu chốt chờ commit | Phase 3 · Hợp đồng | [hồ sơ nghiệm thu](ex-9-qa-checklist.md), không chạy lại test/DB khi ghi nhận |
 
 ## Nhật ký điểm dừng
 
 Mới nhất ở trên. Mỗi dòng: `ngày · phần · task vừa xong · kết quả kiểm tra (số thật) · việc còn treo`.
+
+- 16/11/2026 · ⏸ ĐÓNG PHASE EXTRA · chủ dự án xác nhận “mấy phần 6,7,8,9, kia đã nghiệm thu là ok nhé”, cùng xác nhận riêng SĐT, popup thành công và cảnh báo trùng giờ đều OK. Đóng BE-EX-19/20/21/24, FE-EX-23..27, BE-EX-30, QA-EX-01..06 theo nghiệm thu owner; tổng kết các phần EX-1..5 đã hoàn tất. Git đầu lượt sạch, HEAD c5adfde. Tổng hợp ex-9-qa-checklist.md (41 tiêu chí từ spec, ghi rõ mục ngoài Phase Extra); cập nhật task/progress/manual/email setup/root Status/spec để bỏ trạng thái đang chờ triển khai. Giữ đúng bằng chứng: FE864/864; BE hậu B169/169 offline; host baseline1806/1806 và e2e54/54 trước B; DB82/82 ngày15/11; không suy ra lượt HTTP/e2e mới hoặc log chi tiết từng ca từ lời nghiệm thu. Cleanup giữ bằng chứng host lượt cũ sạch và bản ghi Phase2 cũ được owner chấp nhận giữ; không chạy cleanup mới. Chỉ sửa tài liệu, không test ứng dụng/HTTP/e2e, không gửi email, không migration/seed/env/config/dependency/source/commit/push. Kiểm tài liệu đạt: 17 file Markdown, 103 liên kết nội bộ hợp lệ, task EX-6..9 đều đóng và Status root/spec nhất quán; git diff --check exit0. Không giả định nghiệp vụ mới. Phase tiếp theo: 3 · Hợp đồng. Commit gợi ý: `docs(qa): close Phase Extra after owner acceptance (BE-EX-24/30, FE-EX-27, QA-EX-01..06)`.
 
 - 16/11/2026 · ⏸ FE-EX-27 / Q-EX7-02 · owner xác định lỗi dấu cách cuối ở SĐT đăng nhập. Sửa một quy tắc phone dùng chung ở schemas.ts: trim đầu/cuối trước kiểm G-04; áp dụng login/register/forgot, giữ nguyên password và từ chối khoảng trắng giữa số. Hai regression mới đỏ trước sửa (0/2), sau sửa full FE 864/864, 0 fail/skip, 157260.7201ms; lint sạch, build exit0/737 modules (cảnh báo chunk có sẵn), diff --check exit0. Kiểm payload bằng fake fetch, không HTTP/e2e hoặc gửi thư thật trong lượt auth này; không sửa backend/DB/env/config, không migrate/seed/commit. Đã đồng bộ AUTH-01, đóng câu hỏi Q-EX7-02, thêm kiểm tay AUTH và phụ lục checkpoint. Chưa kiểm trình duyệt thật; owner F5 rồi thử SĐT đúng có dấu cách cuối. Không giả định nghiệp vụ mới. Commit gợi ý: `fix(auth): trim phone whitespace before validation (FE-EX-27, AUTH-01/07/11, G-04)`.
 

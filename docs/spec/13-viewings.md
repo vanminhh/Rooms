@@ -2,7 +2,6 @@
 
 Module: `viewings`. Table: `viewings` (new columns planned, [02-database.md](02-database.md#planned-changes)).
 
-> Changed 12/11/2026; revised by the owner on 14/11/2026 before applying viewing_hours: simplified status/metadata, capacity per building, and multiple rooms per guest. Follow-up clarification on 15/11/2026: count the same phone once across WEB/MANUAL; overdue NEW may become DONE directly. Phase 2 still uses the old public form until EX-6/EX-7 are implemented together.
 
 ## Flow
 

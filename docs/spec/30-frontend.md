@@ -15,7 +15,6 @@ Route guard: not logged in → `/dang-nhap?next=...`; wrong role → own home (A
 
 The public, guest and tenant layouts have the language switch "Tiếng Việt / English" (LOC-03, UI-12).
 
-> Changed 12/11/2026 (owner, D-23..D-34): the entry screen, sign-up, the guest area, the room filters, the booking panel and the staff viewing page below are built in Phase Extra; until then the pages work as Phase 1 and 2 left them.
 
 ## Pages (36)
 

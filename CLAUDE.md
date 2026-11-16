@@ -65,7 +65,7 @@ One git repo at the root. The frontend UI is built only from the kit in `Source/
 
 ## Status
 
-Phase 1 · Foundation is done (30/10/2026): the 3 roles log in and land in their layout, scope guard, first migration and seed, UI kit with form pieces; task lists and QA in `docs/phase-1-foundation/`. Phase 2 · Rooms is done (06/11/2026): buildings, services, managers, rooms and images, pricing with Boss approval and the 01:00 price job, public pages, viewings, "Việc hôm nay"; task lists, QA checklist and production notes in `docs/phase-2-rooms/`. On 12/11/2026 the owner changed the spec after the Home101 brief (`docs/home101-adoption-brief.md`, decisions D-23..D-34): the Phase 1 and 2 code is fixed in **Phase Extra** (`docs/phase-extra-home101/README.md`, in progress – the real state per part is in `docs/phase-extra-home101/PROGRESS.md`), and Phase 3 and 5 rules were amended in the spec. Next: Phase Extra (its part EX-1 comes before Phase 3), then **3 · Contracts** (`docs/spec/01-architecture.md#roadmap`).
+Phase 1 · Foundation, Phase 2 · Rooms and **Phase Extra · Home101 are complete**. The owner accepted EX-6/7/8/9 and the phone-whitespace, booking-success and overlap-warning fixes on 16/11/2026. Acceptance record: `docs/phase-extra-home101/ex-9-qa-checklist.md`; history: `docs/phase-extra-home101/PROGRESS.md`. Latest recorded frontend: 864/864, lint/build pass; backend after option B: 169/169 offline, lint/build pass. The host baseline before B is 1806/1806 and e2e 54/54; do not relabel it as a new post-B run. Latest recorded DB checker: 82/82 (15/11/2026). Next: **Phase 3 · Contracts** (`docs/spec/01-architecture.md#roadmap`).
 
 ## Rules that apply everywhere
 
@@ -92,7 +92,7 @@ npm run lint
 npm run test:components   # UI kit tests, must stay green
 
 # database rule check (Source/backend) – see docs/spec/02-database.md
-node prisma/check-constraints.mjs . prisma   # every scenario must pass (the checker prints the count: 66/66 on 13/11/2026)
+node prisma/check-constraints.mjs . prisma   # latest recorded: 82/82 on 15/11/2026; use the actual count of each run
 ```
 
 ## Definition of done

@@ -4,7 +4,7 @@ Nguồn: [home101-adoption-brief.md](../home101-adoption-brief.md) (`BRIEF-H101-
 
 **Phạm vi.** Phase Extra chỉ sửa những gì Phase 1, Phase 2 và đợt UI đã xây theo luật cũ. Phase 3 trở đi chưa làm nên chỉ sửa spec tại chỗ (mục 8).
 
-**Trạng thái:** đã chia thành 9 phần, mỗi phần một file task `feature_ex-*.md` (mục 5). Tiến trình thật: [PROGRESS.md](PROGRESS.md).
+**Trạng thái: HOÀN THÀNH — chủ dự án nghiệm thu ngày 16/11/2026.** EX-6/7/8/9 và ba sửa mới được xác nhận OK; các phần trước đã triển khai và được tổng kết cùng EX-9. Hồ sơ: [ex-9-qa-checklist.md](ex-9-qa-checklist.md), lịch sử: [PROGRESS.md](PROGRESS.md). Tiếp theo: **Phase 3 · Hợp đồng**.
 
 **Sửa đổi cùng ngày 12/11/2026.** Sau lượt trả lời đầu, chủ dự án đổi lại bốn điểm để không tốn phí SMS và để khách đặt được ngay: xác minh tài khoản bằng **email** (không SMS, không Zalo); khung giờ theo **từng giờ** chọn trên lịch; đặt xong là **giữ chỗ ngay**, quản lý gọi điện hoặc gửi email để xác nhận; **bỏ** đề xuất giờ hai chiều, hộp thư và nhắc lịch cho khách. Bảng dưới đây là bản cuối. Phần EX-1 đã làm theo bản đầu (mã SMS) nên có thêm ba task chuyển sang email.
 
@@ -18,7 +18,7 @@ Nguồn: [home101-adoption-brief.md](../home101-adoption-brief.md) (`BRIEF-H101-
 | Q-H101-04 Danh tính | Một tài khoản liên tục từ khách sang người thuê và sau khi rời đi | D-26 |
 | Q-H101-05 Ngôn ngữ | Việt + Anh cho trang công khai, khu khách, khu người thuê; nhân sự và hợp đồng tiếng Việt; chỉ VND | D-27 |
 | Q-H101-06 Đặt lịch | Xem phòng không cần đăng nhập. GUEST đặt bằng email đã xác minh; TENANT cần email nhưng không cần xác minh (B, 15/11/2026). Lịch cũ và lịch nhân sự nhập tay không gắn vào tài khoản nào | D-28 |
-| Q-H101-07 Giờ hẹn | Giờ tròn 8:00–19:00, cả tuần, tương lai đến ngày 30. Tối đa 3 khách khác số điện thoại/tòa/giờ, tính chung WEB/MANUAL; cùng khách thêm phòng cùng tòa không chiếm thêm chỗ. Khách hoặc người phụ trách không giữ hai tòa cùng giờ; một lịch mở/tài khoản/phòng; tối đa 3 lượt WEB/tài khoản/ngày | D-29 |
+| Q-H101-07 Giờ hẹn | Giờ tròn 8:00–19:00, cả tuần, tương lai đến ngày 30. Tối đa 3 khách khác số điện thoại/tòa/giờ, tính chung WEB/MANUAL; cùng khách thêm phòng cùng tòa không chiếm thêm chỗ. Người phụ trách không giữ hai tòa cùng giờ; cùng khách được tiếp tục sau cảnh báo VIEW-16a (B, 16/11/2026); một lịch mở/tài khoản/phòng; tối đa 3 lượt WEB/tài khoản/ngày | D-29 |
 | Q-H101-08 Xác nhận / hủy | Đặt thành công giữ chỗ ngay và hiện liên hệ. Nhân sự xác nhận PHONE/EMAIL, được xác nhận muộn; không lưu phương thức/thời điểm xác nhận. Sau giờ bắt đầu, NEW/CONFIRMED → DONE hoặc CANCELLED; khách không đến dùng Hủy, không NO_SHOW. Khách tự hủy trước giờ; đổi giờ thống nhất qua điện thoại | D-30 |
 | Q-H101-09 Điều phối | Quản lý tòa tự dẫn xem (Boss khi tòa không có quản lý). **Không** có tài khoản người dẫn xem riêng, **không** điều phối theo khu vực / kỹ năng / giờ rảnh | D-31 |
 | Q-H101-10 Bộ lọc | Diện tích, số người, tầng, tiện ích tòa, ban công, cửa sổ, nuôi thú cưng, loại phòng. Không lọc theo nội thất | D-32 |
@@ -97,7 +97,7 @@ Mỗi phần có các điểm dừng ⏸: làm tới đó thì dừng, báo cáo
 | EX-3 | Đa ngôn ngữ: từ điển Việt / Anh cho trang công khai, auth, khu khách; nút đổi ngôn ngữ trong kit; BE trả lỗi theo `Accept-Language` | Phase 1, 2, UI | EX-2 | có thể cần một gói i18n (planner đánh giá) |
 | EX-4 | Màn chào: lớp phủ 3 lựa chọn, ghi nhớ, "Chọn lại", video + ảnh tĩnh | UI | EX-3 | – |
 | EX-5 | Bộ lọc phòng: thuộc tính phòng, danh mục tiện ích, form nhân sự, `/public/rooms` + `/public/filters`, giao diện lọc ở `/phong` | Phase 2 | – | migration `rooms` |
-| EX-6 | BE lịch xem: đặt theo tài khoản, giờ theo từng giờ, tối đa 3 khách/tòa/giờ và không trùng hai tòa cho khách/người phụ trách, giờ còn trống, xác nhận bằng gọi điện hoặc email không lưu cách/thời điểm, `DONE` hoặc hủy, email báo lịch mới; bỏ `POST /public/viewings` | Phase 2 | EX-1 | migration `viewings` |
+| EX-6 | BE lịch xem: đặt theo tài khoản, giờ theo từng giờ, tối đa 3 khách/tòa/giờ, chặn người phụ trách hai tòa cùng giờ và cảnh báo khách trước khi cho tiếp tục, giờ còn trống, xác nhận bằng gọi điện hoặc email không lưu cách/thời điểm, `DONE` hoặc hủy, email báo lịch mới; bỏ `POST /public/viewings` | Phase 2 | EX-1 | migration `viewings` |
 | EX-7 | FE lịch xem: lịch chọn ngày giờ ở `/phong/:id`, màn hình đặt thành công, `/toi`, `/toi/lich-hen/:id`, trang `/ql/lich-hen` mới, thẻ "Việc hôm nay" | Phase 2 | EX-2, EX-6 | – |
 | EX-8 | Gửi email thật: nối dịch vụ gửi email, mẫu thư (mã xác minh, lịch mới, xác nhận lịch) | Phase 1, 2 | EX-6, tài khoản Resend của chủ dự án | không cần gói mới nếu gọi thẳng API HTTPS của Resend |
 | EX-9 | QA: kiểm tay, hồi quy Phase 1–2, kiểm DB, chốt Phase Extra | – | tất cả | – |
@@ -187,10 +187,10 @@ Mỗi migration: hỏi chủ dự án trước, chỉ thêm cột / bảng / gi�
 | Đánh giá buổi xem phòng, đánh giá công khai | Không làm (D-33) | |
 | Ngoại tệ, chủ nhà bên ngoài, bán dịch vụ, Premium | Không làm (D-23, D-27, mục 6 của brief) | |
 
-## 9. Phần chủ dự án phải làm
+## 9. Chuẩn bị rollout hoặc phase tiếp theo
 
-- Trả lời Q-08, Q-13 và bốn câu Q-EX (mục 2).
+- Các câu Q-EX đã chốt; bản ảnh tĩnh thay video đã được chấp nhận. Q-13 thuộc Phase 5. Các mục rollout dưới đây không mở lại nghiệm thu Phase Extra local/dev.
 - Tạo tài khoản Resend, xác thực tên miền gửi (thêm các bản ghi DNS Resend yêu cầu), tạo khóa API và điền `MAIL_*` vào `.env` (không ai khác điền file này). Gói miễn phí có giới hạn số thư mỗi ngày: mỗi lượt đăng ký và mỗi lượt đặt lịch đều tốn một thư, nên xem giới hạn hiện hành trên trang giá của Resend trước khi lên production.
 - Bảo các quản lý điền email trong trang tài khoản của họ; quản lý chưa có email thì thư báo lịch mới sẽ về Boss.
-- Cung cấp video nền của Rooms (và ảnh tĩnh nếu muốn khác ảnh trang chủ hiện tại).
+- Nếu muốn thay bản ảnh tĩnh đã nghiệm thu, cung cấp video nền Rooms để thực hiện ở một lượt nâng cấp riêng.
 - Duyệt chữ tiếng Anh của trang công khai trước khi lên production (KIT-13 áp dụng cho cả bản dịch khẩu hiệu).

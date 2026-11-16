@@ -45,7 +45,7 @@ Source files (verified): [schema.prisma](../../Source/backend/prisma/schema.pris
 
 ## Planned changes
 
-Not in `schema.prisma` yet. They follow the decisions of 12/11/2026 (D-25..D-33). Each one is a schema change, so the owner is asked before each migration (root `CLAUDE.md`, rule 7); exact column names are fixed in the part's `PLAN.md`. Every change adds its scenarios to `check-constraints.mjs`.
+The EX-1, EX-5 and EX-6 changes below are implemented and included in the owner-accepted Phase Extra (16/11/2026); the table retains their planning history. Phase 3/5 entries remain future work. Applied migration evidence is in `docs/phase-extra-home101/PROGRESS.md`. Future schema changes still require approval before application, and every change adds scenarios to `check-constraints.mjs`.
 
 | Part | Table | Change | Rule |
 |---|---|---|---|
@@ -59,7 +59,7 @@ Not in `schema.prisma` yet. They follow the decisions of 12/11/2026 (D-25..D-33)
 
 ## Enforced by DB (the BE still validates first and returns a friendly code)
 
-All 50 scenarios in `check-constraints.mjs` pass: second Boss; bad/duplicate phone; 3rd building for a manager; tenant as manager; delete building with rooms; duplicate room code; 2 pending price proposals; service rate without service; cross-building service rate; contract < 3 months; 2 open contracts per room; room/building mismatch; manager as signer; ACTIVE without move-in; re-rent after end (allowed); tenant with 2 rooms (allowed); 2 renewals from 1 contract; cross-building contract service; 2 signers; cross-building vehicle; duplicate active plate; re-register removed plate (allowed); 2 readings same day; meter replacement without old value; 2 invoices same period; cancel + reissue (allowed); cancel without reason; issue without due date; wrong line amount; negative unit price; underpayment; exact payment sets PAID; second payment; webhook payment without transaction; valid webhook (allowed); duplicate webhook; matched transaction without invoice; wrong settlement math; negative net without final invoice; positive net (allowed); 2 pending move-out/renew; incident APPROVED; cost on non-incident; announcement to other building's room; duplicate notification.
+Latest recorded `check-constraints.mjs` result: **82/82** on 15/11/2026 (not rerun during documentation closure). The original coverage includes: second Boss; bad/duplicate phone; 3rd building for a manager; tenant as manager; delete building with rooms; duplicate room code; 2 pending price proposals; service rate without service; cross-building service rate; contract < 3 months; 2 open contracts per room; room/building mismatch; manager as signer; ACTIVE without move-in; re-rent after end (allowed); tenant with 2 rooms (allowed); 2 renewals from 1 contract; cross-building contract service; 2 signers; cross-building vehicle; duplicate active plate; re-register removed plate (allowed); 2 readings same day; meter replacement without old value; 2 invoices same period; cancel + reissue (allowed); cancel without reason; issue without due date; wrong line amount; negative unit price; underpayment; exact payment sets PAID; second payment; webhook payment without transaction; valid webhook (allowed); duplicate webhook; matched transaction without invoice; wrong settlement math; negative net without final invoice; positive net (allowed); 2 pending move-out/renew; incident APPROVED; cost on non-incident; announcement to other building's room; duplicate notification.
 
 ## Enforced only by BE (each MUST have a unit test)
 

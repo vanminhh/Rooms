@@ -1,8 +1,7 @@
 # 10 · Auth, roles, scope
 
-Module: `auth` + `src/common/guards`. Tables: `users`, `sessions`, `password_reset_tokens`, and the table of email codes (planned, [02-database.md](02-database.md#planned-changes)).
+Module: `auth` + `src/common/guards`. Tables: `users`, `sessions`, `password_reset_tokens`, and the table of email codes ([02-database.md](02-database.md#planned-changes)).
 
-> Changed 12/11/2026 (owner, D-25, D-26, D-27, final text of the same day): AUTH-06, AUTH-10 and SCOPE-03 are amended, AUTH-11..15 and SCOPE-05 are new. Phase 1 built the old rules; the code follows the new ones after Phase Extra parts EX-1 and EX-2. No SMS or Zalo code is used: the first version of AUTH-11..13 (SMS code) is replaced by an email code.
 
 ## Rules
 
