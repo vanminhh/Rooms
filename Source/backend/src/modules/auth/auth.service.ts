@@ -12,7 +12,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Prisma, Role, type User } from '@prisma/client';
-import { hashPassword, verifyPassword } from '../../common/crypto/password.js';
+import { hashPassword, PENDING_TENANT_PASSWORD_HASH, verifyPassword } from '../../common/crypto/password.js';
 import { randomToken, sha256Hex } from '../../common/crypto/token.js';
 import { ErrorCode } from '../../common/errors/error-code.js';
 import type { AuthUser } from '../../common/guards/auth.decorators.js';
@@ -100,9 +100,10 @@ export class AuthService {
     const attemptAt = Date.now();
     this.loginLimiter.record(phone, attemptAt);
     const user = await this.prisma.user.findUnique({ where: { phone } });
-    // Unknown phone still pays for one argon2 verify, so the reply time does not reveal it (AUTH-01).
-    const matches = await verifyPassword(user?.passwordHash ?? (await this.getDummyHash()), password);
-    if (!user || !matches) throw new UnauthorizedException(ErrorCode.INVALID_CREDENTIALS);
+    // Unknown phones and pending tenants pay for one Argon2 verify (AUTH-01, CON-07).
+    const pending = user?.passwordHash === PENDING_TENANT_PASSWORD_HASH;
+    const matches = await verifyPassword(user && !pending ? user.passwordHash : await this.getDummyHash(), password);
+    if (!user || pending || !matches) throw new UnauthorizedException(ErrorCode.INVALID_CREDENTIALS);
     // Right password on a locked account: not counted, so take back this attempt only (Q2d).
     if (!user.isActive) {
       this.loginLimiter.remove(phone, attemptAt);
@@ -180,10 +181,19 @@ export class AuthService {
   ): Promise<{ accessToken: string; user: Me; session: IssuedSession }> {
     const user = await this.prisma.user.findUnique({ where: { phone: dto.phone } });
     if (!user || !isUnverifiedGuest(user) || !user.email) throw new BadRequestException(ErrorCode.OTP_INVALID);
-    const codeId = await this.otp.check(user.email, dto.code);
+    const email = user.email;
+    const codeId = await this.otp.check(email, dto.code);
     if (!user.isActive) throw new ForbiddenException(ErrorCode.ACCOUNT_LOCKED);
-    const now = new Date();
     const session = await this.prisma.$transaction(async (tx) => {
+      // AUTH-12 / CON-07: the account may be replaced or promoted while the code is checked.
+      await this.otp.lock(tx, `phone:${dto.phone}`);
+      await this.otp.lock(tx, `email:${email}`);
+      const current = await tx.user.findUnique({ where: { phone: dto.phone } });
+      if (!current || current.id !== user.id || current.email !== email || !isUnverifiedGuest(current)) {
+        throw new BadRequestException(ErrorCode.OTP_INVALID);
+      }
+      if (!current.isActive) throw new ForbiddenException(ErrorCode.ACCOUNT_LOCKED);
+      const now = new Date();
       await this.otp.markUsed(tx, codeId, now);
       await tx.user.update({ where: { id: user.id }, data: { emailVerifiedAt: now } });
       return this.startSession(tx, user.id, false, userAgent, now);

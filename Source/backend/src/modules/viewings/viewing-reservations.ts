@@ -13,7 +13,9 @@ export const VIEWING_ROOM_INCLUDE = {
 } satisfies Prisma.RoomInclude;
 export type ReservationRoom = Prisma.RoomGetPayload<{ include: typeof VIEWING_ROOM_INCLUDE }>;
 
-export function assertViewingScope(actor: AuthUser, room: ReservationRoom): void {
+export function assertViewingScope(actor: AuthUser, room: {
+  building: { managerId: number | null; isActive: boolean; manager: { isActive: boolean } | null };
+}): void {
   if (actor.role === 'BOSS') return;
   if (actor.role !== 'MANAGER') throw new ForbiddenException(ErrorCode.FORBIDDEN);
   if (!room.building.isActive || room.building.managerId !== actor.id || !room.building.manager?.isActive) {

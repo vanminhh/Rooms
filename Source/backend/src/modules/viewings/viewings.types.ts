@@ -12,6 +12,7 @@ export interface ViewingView {
   guestName: string;
   guestPhone: string;
   guestEmail: string | null;
+  guestAccount?: { fullName: string; phone: string };
   visitAt: string | null;
   visitDate: string | null;
   timeSlot: TimeSlot | null;

@@ -31,7 +31,7 @@ const hanoiMidnight = (day: Date) => new Date(day.getTime() - HANOI_OFFSET_MS);
 const conflict = () => new ConflictException(ErrorCode.CONFLICT_STATE);
 
 export const VIEWING_INCLUDE = {
-  user: { select: { email: true, locale: true } },
+  user: { select: { email: true, locale: true, fullName: true, phone: true } },
   room: { select: { code: true, buildingId: true, isActive: true, underMaintenance: true,
     building: { select: { name: true, address: true, isActive: true, manager: {
       select: { id: true, isActive: true, email: true, contactPhone: true, zaloUrl: true, facebookUrl: true },
@@ -45,6 +45,9 @@ export function toView(row: ViewingRecord, overlap = false): ViewingView {
   return {
     id: row.id, roomId: row.roomId, roomCode: row.room.code, buildingId: row.room.buildingId,
     buildingName: row.room.building.name, guestName: row.guestName, guestPhone: row.guestPhone,
+    ...(row.source === 'WEB' && row.user ? {
+      guestAccount: { fullName: row.user.fullName, phone: row.user.phone },
+    } : {}),
     guestEmail: row.user?.email ?? null, visitAt: row.visitAt?.toISOString() ?? null,
     visitDate: row.visitDate ? formatDateOnly(row.visitDate) : null, timeSlot,
     timeSlotLabel: timeSlot === null ? null : TIME_SLOT_LABELS[timeSlot], note: row.note,

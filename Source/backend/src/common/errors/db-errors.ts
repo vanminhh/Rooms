@@ -5,6 +5,15 @@ export interface DbErrorMapping {
   fields?: Record<string, string>;
 }
 
+// The service supplies the table context when Prisma reports a column instead of an index name.
+export function isUniqueOn(error: unknown, ...names: string[]): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+  const { code, meta } = error as { code?: unknown; meta?: { target?: unknown } };
+  if (code !== 'P2002') return false;
+  const targets: unknown[] = Array.isArray(meta?.target) ? meta.target : [meta?.target];
+  return targets.length === 1 && names.some(name => name === targets[0]);
+}
+
 // Keys: constraint, index and trigger names from prisma/constraints.sql and the init migration.
 // Trigger messages start with the key ("MANAGER_MAX_2_BUILDINGS: ..."). The [ASSUMPTION] wordings are from the plan.
 export const DB_ERROR_MAP: Record<string, DbErrorMapping> = {

@@ -33,6 +33,10 @@ const hashCode = (email: string, code: string) => sha256Hex(`${email}:${code}`);
 // Start of the current calendar day in Asia/Ho_Chi_Minh, as an instant (owner 12/11/2026: the day resets at 00:00).
 export const hanoiDayStart = (now: Date): Date => new Date(todayHanoi(now).getTime() - HANOI_OFFSET_MS);
 
+export async function lockOtpKey(tx: Tx, key: string): Promise<void> {
+  await tx.$queryRaw`SELECT 1 AS ok FROM pg_advisory_xact_lock(hashtext(${`otp:${key}`}))`;
+}
+
 @Injectable()
 export class OtpService {
   // In memory, one instance only (DEP-02); the per-email day limit is counted in email_otps and survives a restart.
@@ -52,7 +56,7 @@ export class OtpService {
 
   /** Serializes every count-then-write on one key until the transaction ends. Always lock a phone before an email. */
   async lock(tx: Tx, key: string): Promise<void> {
-    await tx.$queryRaw`SELECT 1 AS ok FROM pg_advisory_xact_lock(hashtext(${`otp:${key}`}))`;
+    await lockOtpKey(tx, key);
   }
 
   /** Stores a new code (the older unused one stops working). Throws 429 over the day limit or before 60 s. */

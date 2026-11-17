@@ -11,8 +11,8 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 | Phần | Trạng thái | Điểm dừng gần nhất đã xong | Commit | Việc tiếp theo | Ghi chú |
 |---|---|---|---|---|---|
 | P3-0 Chủ dự án chuẩn bị | đang làm | – | – | Giữ bản sao an toàn của `CCCD_KEY`; mẫu hợp đồng (Q-15) sau | Đã tạo khóa mới trong `.env` local theo yêu cầu chủ dự án, không dùng khóa đã gửi vào chat; cấu hình `NODE_ENV=development` |
-| P3-1 BE nền | chờ commit | BE-P3-04..06 | `084c019` (BE-P3-01..03) | Chủ dự án commit BE-P3-04..06, sau đó tới BE-P3-07 (P3-2) | Chủ dự án xác nhận unit suite và e2e `POST /files/sign` đều pass |
-| P3-2 BE tạo hợp đồng | chưa làm | – | – | BE-P3-07 | cần P3-1 |
+| P3-1 BE nền | xong | BE-P3-04..06 | `eb8cf64` | P3-2 | Chủ dự án xác nhận unit suite và e2e `POST /files/sign` đều pass |
+| P3-2 BE tạo hợp đồng | chờ commit | BE-P3-07..09 | – | Chủ dự án commit, sau đó tới BE-P3-10 | 1916/1916 test đạt trên máy dự án · reviewer DUYỆT phần mã · [Checkpoint](plans/P3-2/CHECKPOINT-1.md) |
 | P3-3 BE ký + cọc | chưa làm | – | – | BE-P3-13 | cần P3-2 |
 | P3-4 BE dọn vào + hủy | chưa làm | – | – | BE-P3-20 | cần P3-3 |
 | P3-5 BE người ở + xe | chưa làm | – | – | BE-P3-23 | cần P3-4 (cùng module) |
@@ -24,6 +24,9 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 
 Mới nhất ở trên. Mỗi dòng: `ngày · phần · task vừa xong · kết quả kiểm tra (số thật) · việc còn treo`.
 
+- 17/11/2026 · P3-2 ⏸ BE-P3-07..09 · Ảnh kết quả trên máy dự án xác nhận 96/96 file và 1916/1916 test đạt, thời lượng 104,96 giây · chờ chủ dự án commit
+- 17/11/2026 · P3-2 ⏸ BE-P3-07..09 · Áp dụng 1A, 2C, 3B, 4A. Tạo HOLD, xử lý người ký, tài khoản và lịch trong một giao dịch. Reviewer DUYỆT sau hai bản sửa auth và quyền tòa. Lint 0 lỗi/4 cảnh báo cũ, build exit 0, 86/86 test tập trung, 8/8 ca HTTP tạo hợp đồng. PostgreSQL nhúng xác nhận chỉ mục chống trùng và rollback. Bộ test chuẩn 1156/1916, 760 lỗi đều `connect EACCES 127.0.0.1`. Chạy cả 96 file qua HTTP trong bộ nhớ đạt 1916/1916 · chờ chủ dự án kiểm chứng và commit
+- 17/11/2026 · P3-2 · Xác nhận P3-1 đã commit `eb8cf64`. Lập kế hoạch BE-P3-07..12. DB checker offline 88/88 từ `schema.prisma` hiện tại · chờ chủ dự án chốt Q-P3-8..11 cho mốc BE-P3-07..09
 - 17/11/2026 · P3-1 ⏸ BE-P3-04..06 · Chủ dự án xác nhận `npm run test` và e2e `test/files.e2e-spec.ts` đều pass trên máy dự án · chờ chủ dự án commit
 - 16/11/2026 · P3-1 ⏸ BE-P3-04..06 · Bắt đầu từ commit `084c019`. Upload riêng tư ký loại tải, thư mục, mục đích và `overwrite=false`. Kiểm theo asset ID, link tối đa 300 giây. Đăng ký `ContractsModule`, đối chiếu bảng 29 mã lỗi với 31 mã đã có. Reviewer DUYỆT sau khi sửa dùng chéo mục đích. Mã cuối lint 0 lỗi/4 cảnh báo cũ, build exit 0, 86/86 test tập trung và 6/6 ca HTTP với transport trong bộ nhớ. Unit suite đạt 1107/1867, 760 lỗi loopback `EACCES` và e2e TCP 0/6 cùng lỗi · chờ unit suite và e2e trên máy chủ dự án
 

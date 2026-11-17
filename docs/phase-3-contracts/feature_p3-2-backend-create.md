@@ -26,12 +26,13 @@ Out: signing, the deposit invoice and the temporary password (P3-3), move-in and
 
 ## Tasks
 
-- [ ] **BE-P3-07** `POST /contracts` (CON-01..03): validation of every input of CON-01; the room must be public-eligible except the "no open contract" check, which is left to the DB index (`ROOM_NOT_AVAILABLE`); `rooms.price` null → `PRICE_NOT_APPROVED`; `rent` = current room price (D-08); `end_date` with the P3-1 helper (exactly `termMonths` after the start, D-41; no billing day of its own, D-40); `deposit` defaults to the room price; services must be ROOM or PERSON services of the same building (D-07, DB-B5); `code` = `HD` + id padded to 6, set in the same transaction; manager scope (SCOPE-02).
+- [x] **BE-P3-07** `POST /contracts` (CON-01..03): validation of every input of CON-01; the room must be public-eligible except the "no open contract" check, which is left to the DB index (`ROOM_NOT_AVAILABLE`); `rooms.price` null → `PRICE_NOT_APPROVED`; `rent` = current room price (D-08); `end_date` with the P3-1 helper (D-41; no billing day of its own, D-40); `deposit` defaults to the room price; services must be active ROOM or PERSON services of the same building with an approved rate on the move-in date (D-07, DB-B5); `code` = `HD` + id padded to 6, set in the same transaction; manager scope (SCOPE-02).
   Done when: tests `CON-01..03: …` including a 2-month term (`CONTRACT_TERM_TOO_SHORT`), a service of another building, a room with a HOLD contract, a manager of another building (`OUT_OF_SCOPE`), and two parallel creations for one room where exactly one succeeds.
-- [ ] **BE-P3-08** Tenant account at creation (CON-07 "create", D-26, A-18): look up by the signer's phone; none → TENANT inactive with an unusable password; TENANT → reuse; GUEST with a verified email → only when the request carries the staff confirmation of A-18, then role becomes `TENANT` in the same transaction before the contract insert (DB trigger); without the confirmation → `PHONE_TAKEN` and the response shows the account's name and email for the form; GUEST never verified → treated as none (name, email replaced, unusable password); MANAGER/BOSS → `PHONE_TAKEN`; an account locked by staff → refused with "Tài khoản của số này đang bị khóa".
+- [x] **BE-P3-08** Tenant account at creation (CON-07 "create", D-26, A-18): look up by the signer's phone; none → TENANT inactive with an unusable password; TENANT → reuse; GUEST with a verified email → only when the request carries the staff confirmation of A-18, then role becomes `TENANT` in the same transaction before the contract insert (DB trigger); without the confirmation → `PHONE_TAKEN` and the response shows the account's name and email for the form; GUEST never verified → treated as none (name, email replaced, unusable password); MANAGER/BOSS → `PHONE_TAKEN`; an account locked by staff → refused with "Tài khoản của số này đang bị khóa".
   Done when: one test per branch named `CON-07: …`; the reused guest keeps its password hash, viewings and `locale`; audit `user.role_change` written (AUD-01).
-- [ ] **BE-P3-09** ⏸ Signer and side effects (CON-04, CON-05, VIEW-05, VIEW-06): the signer is the first occupant (`is_signer`, `move_in_date = startDate`, CCCD encrypted with `last4`); with `viewingId`, the viewing must be CONFIRMED or DONE for the same room and becomes `WON` with `contract_id`; every other NEW/CONFIRMED viewing of the room becomes `CANCELLED` with note "Phòng đã có người đặt cọc"; audit `contract.create`; all in one transaction.
+- [x] **BE-P3-09** ⏸ Signer and side effects (CON-04, CON-05, VIEW-05, VIEW-06): the signer is the first occupant (`is_signer`, `move_in_date = startDate`, CCCD encrypted with `last4`); with `viewingId`, the viewing must be CONFIRMED or DONE for the same room and becomes `WON` with `contract_id`; every other NEW/CONFIRMED viewing of the room becomes `CANCELLED` with note "Phòng đã có người đặt cọc"; audit `contract.create`; all in one transaction.
   Done when: acceptance-style tests: creating from viewing A sets A `WON` and cancels B of the same room, and leaves a viewing of another room untouched; a NEW viewing as `viewingId` is refused; a failure in any step leaves no contract, no account change and no viewing change. Stop and report BE-P3-07..09.
+  Verified in the focused tests, real Node HTTP parser cases and Prisma/PGlite. Full results and review are in [checkpoint 1](plans/P3-2/CHECKPOINT-1.md).
 - [ ] **BE-P3-10** `GET /contracts?buildingId&status&q&page` (also the tenant list; `q` matches name, phone, room code) and `GET /contracts/:id` (contract, room, building, tenant, occupants with CCCD last 4 only, vehicles, services, deposit invoice summary when it exists). Staff in scope only.
   Done when: tests for scope, search, paging (`meta`), and that no response carries an encrypted CCCD value or a password field.
 - [ ] **BE-P3-11** ⏸ "Việc hôm nay" (NOTI-06, VIEW-06, D-39): a group of viewings cancelled by a deposit, for the person responsible, listed until staff press "Đã gọi". Migration: who pressed and when on `viewings` (ask the owner before creating and before applying; add DB-check scenarios). `POST /viewings/:id/called` for staff in scope, only on a viewing cancelled by a deposit, pressing twice changes nothing.
@@ -41,10 +42,21 @@ Out: signing, the deposit invoice and the temporary password (P3-3), move-in and
 
 ## Questions for the owner
 
+Đã trả lời 17/11/2026
+
+- **Q-P3-8 (1A)** Tạo hợp đồng trước, bổ sung ảnh CCCD riêng tư trong P3-5.
+- **Q-P3-9 (2C)** Chỉ lựa chọn dịch vụ đang hoạt động, cùng tòa, theo phòng hoặc theo người và có giá hiệu lực tại ngày vào ở.
+- **Q-P3-10 (3B)** Cho phép “Chốt” khi nhân sự xác nhận người ký khác chủ lịch online. Hợp đồng thuộc người ký và lịch giữ tài khoản đặt lịch ban đầu.
+- **Q-P3-11 (4A)** Phạm vi hiện tại là khách Việt, trường số giấy tờ tùy chọn chỉ nhận CCCD 12 chữ số.
+
 Đã trả lời 16/11/2026:
 
 - Q-P3-1 (BE-P3-11): việc "gọi khách bị hủy lịch" ở lại "Việc hôm nay" tới khi nhân sự bấm "Đã gọi" (D-39).
 
 ## Issues log
+
+- 17/11/2026 · BE-P3-07..09 · Đã đóng Q-P3-8..11. Reviewer DUYỆT phần mã sau khi sửa đăng nhập tài khoản chờ ký và kiểm quyền tòa. TCP chuẩn vướng 760 lỗi loopback, cả bộ đạt 1916/1916 với HTTP trong bộ nhớ. Prisma/PGlite kiểm chỉ mục HOLD và rollback trong một phiên. Kiểm đa kết nối tại BE-P3-12.
+
+- 17/11/2026 · BE-P3-07..09 · CON-01 liệt kê ảnh khi tạo nhưng FILE-01 cần hợp đồng có sẵn. Quy tắc chọn dịch vụ, định dạng giấy tờ và “Chốt” cho người ký khác chủ lịch cần quyết định ở Q-P3-8..11. Đã lập [kế hoạch](plans/P3-2/PLAN.md) và kiểm baseline DB offline 88/88 sau khi tạo lại bản SQL từ Prisma hiện tại.
 
 <!-- When a task is [!], add: date · task ID · what failed · what is needed -->

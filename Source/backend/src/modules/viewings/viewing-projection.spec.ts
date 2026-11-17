@@ -19,4 +19,15 @@ describe('BE-EX-18 / migration-compatible viewing projection', () => {
     expect(toView({ ...legacy, visitDate: null, timeSlot: null, visitAt: new Date('2026-11-15T03:00:00Z'), status: 'DONE' }))
       .toMatchObject({ visitDate: null, timeSlot: null, timeSlotLabel: null, visitAt: '2026-11-15T03:00:00.000Z', status: 'DONE', statusLabel: 'Đã xem' });
   });
+  it('VIEW-05: staff can distinguish the current WEB owner from the booking snapshot when choosing the signer', () => {
+    const row = {
+      ...legacy, userId: 9, status: 'CONFIRMED' as const,
+      user: { fullName: 'Khách Hiện Tại', phone: '0912345678', email: 'guest@example.test', locale: 'vi' },
+    };
+    expect(toView(row)).toMatchObject({
+      guestName: 'Khách', guestPhone: '0900000006',
+      guestAccount: { fullName: 'Khách Hiện Tại', phone: '0912345678' },
+    });
+    expect(toView(legacy)).not.toHaveProperty('guestAccount');
+  });
 });

@@ -26,6 +26,9 @@ Read this before the first task of any part. Each line is a mistake that really 
 
 ## Backend rules that reviewers had to catch
 
+- Route a pending tenant's unusable password marker through the same Argon2 work as an unknown phone. The marker alone made failed logins for newly created accounts faster [BE-P3-08, 17/11/2026].
+- Recheck the guest under the phone and email locks before consuming an OTP and creating a session. Contract creation could replace the account after the old snapshot passed the code check [BE-P3-08, 17/11/2026].
+- For contract creation, apply both the request's building scope and the current assignment under the viewing mapping lock. Checking only current assignment let a request acquire newly granted scope mid-flight [BE-P3-07, 17/11/2026].
 - Bind the private upload purpose in the Cloudinary signature and verify it using provider metadata. Shared folder and JPG support let a CCCD photo pass as a contract scan before the purpose prefix was checked [BE-P3-04, 16/11/2026].
 - A limit that is counted and then written must be safe under parallel requests (lock or conditional update), with a test that really runs requests in parallel. Parallel wrong logins bypassed AUTH-04 [BE-LOGIN-12, 29/10/2026].
 - An endpoint that must not reveal whether an account exists needs the same body **and** the same work for both cases; the forgot-password timing revealed accounts [BE-LOGIN-18, 29/10/2026].
