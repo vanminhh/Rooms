@@ -25,6 +25,10 @@ export function roomImageFolder(buildingId: number, roomId: number): string {
   return `rooms/${buildingId}/${roomId}`;
 }
 
+export function contractAssetFolder(buildingId: number, contractId: number): string {
+  return `contracts/${buildingId}/${contractId}`;
+}
+
 export function deliveryUrl(cloudName: string, publicId: string, version: number, format: string): string {
   return `https://res.cloudinary.com/${cloudName}/image/upload/v${version}/${publicId}.${format}`;
 }

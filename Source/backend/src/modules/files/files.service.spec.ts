@@ -1,8 +1,8 @@
+import { createHash } from 'node:crypto';
 import { BadRequestException, ForbiddenException, InternalServerErrorException, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { signRoomImageUpload, verifyRoomImage } from './files.service.js';
+import { signContractUpload, signedContractAssetUrl, signRoomImageUpload, verifyContractAsset, verifyRoomImage } from './files.service.js';
 import { signParams } from './cloudinary.js';
-import type { SignUploadDto } from './dto/sign.dto.js';
 
 const env = { CLOUDINARY_URL: 'cloudinary://test-key:test-secret@rooms-demo' };
 const image = {
@@ -30,11 +30,145 @@ function cloudinaryResponse(body: unknown, status = 200): Response {
 
 afterEach(() => vi.unstubAllGlobals());
 
+const contract = { id: 42, buildingId: 7 };
+const contractDb = (row: typeof contract | null = contract) => ({
+  contract: { findUnique: vi.fn().mockResolvedValue(row) },
+});
+const privateImage = {
+  assetId: 'contract-asset-id',
+  publicId: 'contracts/7/42/contract-scan-fixture',
+  version: 1730612345,
+  format: 'pdf',
+};
+const privateMetadata = {
+  asset_id: privateImage.assetId,
+  public_id: privateImage.publicId,
+  version: privateImage.version,
+  format: 'pdf',
+  resource_type: 'image',
+  type: 'authenticated',
+  asset_folder: 'contracts/7/42',
+};
+
+describe('BE-P3-04: private contract assets', () => {
+  const now = new Date('2026-11-03T03:04:05.750Z');
+
+  it.each([
+    ['CONTRACT_SCAN', 'jpg,png,webp,pdf', 'contract-scan-', [7]],
+    ['ID_PHOTO', 'jpg,png,webp', 'id-photo-', null],
+  ] as const)('FILE-01 / D-37: signs authenticated fields and purpose for %s', async (purpose, formats, prefix, buildingIds) => {
+    const db = contractDb();
+    const signed = await signContractUpload(db as never, { buildingIds: buildingIds ? [...buildingIds] : null }, purpose, 42, env, now);
+    const timestamp = Math.floor(now.getTime() / 1_000);
+    expect(signed.publicId).toMatch(new RegExp('^' + prefix + '[a-f0-9-]{36}$'));
+    const signature = createHash('sha1')
+      .update(`allowed_formats=${formats}&folder=contracts/7/42&overwrite=false&public_id=${signed.publicId}&timestamp=${timestamp}&type=authenticatedtest-secret`)
+      .digest('hex');
+    expect(signed).toEqual({
+      cloudName: 'rooms-demo', apiKey: 'test-key',
+      uploadUrl: 'https://api.cloudinary.com/v1_1/rooms-demo/image/upload',
+      folder: 'contracts/7/42', type: 'authenticated', allowedFormats: formats, timestamp, signature,
+      publicId: signed.publicId, overwrite: false,
+    });
+    expect(db.contract.findUnique).toHaveBeenCalledWith({
+      where: { id: 42 }, select: { id: true, buildingId: true },
+    });
+  });
+
+  it('FILE-01 / SCOPE-02: enforces building scope and refuses a missing contract', async () => {
+    await expect(signContractUpload(contractDb() as never, { buildingIds: [9] }, 'ID_PHOTO', 42, env, now))
+      .rejects.toMatchObject({ status: 403, response: { message: 'OUT_OF_SCOPE' } });
+    await expect(signContractUpload(contractDb(null) as never, { buildingIds: null }, 'CONTRACT_SCAN', 42, env, now))
+      .rejects.toMatchObject({ status: 404, response: { message: 'NOT_FOUND' } });
+  });
+
+  it('FILE-01: missing Cloudinary configuration gives UPLOAD_NOT_CONFIGURED', async () => {
+    const db = contractDb();
+    await expect(signContractUpload(db as never, { buildingIds: null }, 'ID_PHOTO', 42, {}, now))
+      .rejects.toMatchObject({ status: 503, response: { message: 'UPLOAD_NOT_CONFIGURED' } });
+    expect(db.contract.findUnique).not.toHaveBeenCalled();
+  });
+
+  it('FILE-02 / CON-06: verifies an authenticated PDF by asset ID and returns the ID for storage', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(cloudinaryResponse(privateMetadata));
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(verifyContractAsset(contractDb() as never, 42, 'CONTRACT_SCAN', privateImage, env))
+      .resolves.toBe(privateImage.assetId);
+    expect(fetchMock).toHaveBeenCalledExactlyOnceWith(
+      'https://api.cloudinary.com/v1_1/rooms-demo/resources/contract-asset-id',
+      expect.objectContaining({
+        method: 'GET', headers: { authorization: 'Basic ' + Buffer.from('test-key:test-secret').toString('base64') },
+      }),
+    );
+  });
+
+  it.each([
+    ['type', 'upload'], ['type', 'private'], ['resource_type', 'raw'],
+    ['asset_id', 'wrong-id'], ['public_id', 'contracts/7/43/scan'],
+    ['asset_folder', 'contracts/9/42'], ['version', 1730612346], ['format', 'png'],
+  ])('FILE-02 / D-37: rejects mismatched private asset metadata %s=%s', async (field, value) => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(cloudinaryResponse({ ...privateMetadata, [field]: value })));
+    await expect(verifyContractAsset(contractDb() as never, 42, 'CONTRACT_SCAN', privateImage, env))
+      .rejects.toMatchObject({ status: 400, response: { code: 'VALIDATION_FAILED' } });
+  });
+
+  it.each([
+    ['ID_PHOTO', 'CONTRACT_SCAN', 'id-photo', 'contract-scan'],
+    ['CONTRACT_SCAN', 'ID_PHOTO', 'contract-scan', 'id-photo'],
+  ] as const)('CON-06 / CON-16: rejects an image uploaded for %s when verified as %s', async (_uploadedAs, requestedAs, uploadedPrefix, requestedPrefix) => {
+    const upload = {
+      ...privateImage, format: 'jpg', publicId: 'contracts/7/42/' + uploadedPrefix + '-fixture',
+    };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(cloudinaryResponse({
+      ...privateMetadata, format: 'jpg', public_id: upload.publicId,
+    })));
+    await expect(verifyContractAsset(contractDb() as never, 42, requestedAs, upload, env))
+      .rejects.toMatchObject({ status: 400, response: { code: 'VALIDATION_FAILED' } });
+    const spoofed = { ...upload, publicId: 'contracts/7/42/' + requestedPrefix + '-fixture' };
+    await expect(verifyContractAsset(contractDb() as never, 42, requestedAs, spoofed, env))
+      .rejects.toMatchObject({ status: 400, response: { code: 'VALIDATION_FAILED' } });
+  });
+
+  it.each([
+    ['CONTRACT_SCAN', { ...privateImage, publicId: 'contracts/7/43/scan' }, 'publicId'],
+    ['CONTRACT_SCAN', { ...privateImage, publicId: 'contracts/7/42/extra/scan' }, 'publicId'],
+    ['CONTRACT_SCAN', { ...privateImage, publicId: 'contracts/7/42/scan' }, 'publicId'],
+    ['CONTRACT_SCAN', { ...privateImage, assetId: '..' }, 'assetId'],
+    ['CONTRACT_SCAN', { ...privateImage, version: 0 }, 'version'],
+    ['ID_PHOTO', privateImage, 'format'],
+  ] as const)('FILE-02 / D-37: rejects invalid %s metadata before requesting Cloudinary (%j)', async (purpose, input, field) => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(verifyContractAsset(contractDb() as never, 42, purpose, input, env))
+      .rejects.toMatchObject({ status: 400, response: { code: 'VALIDATION_FAILED', fields: { [field]: expect.any(String) } } });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('CON-16 / D-37: signs the expiry and immutable asset ID in an inline download URL valid for at most 300 seconds', () => {
+    const { url, expiresAt } = signedContractAssetUrl(privateImage.assetId, env, now);
+    const parsed = new URL(url);
+    const timestamp = Math.floor(now.getTime() / 1_000);
+    const expiry = timestamp + 300;
+    expect(parsed.origin + parsed.pathname).toBe('https://api.cloudinary.com/v1_1/rooms-demo/asset/download');
+    expect(Object.fromEntries(parsed.searchParams)).toEqual({
+      asset_id: privateImage.assetId,
+      api_key: 'test-key',
+      timestamp: String(timestamp),
+      expires_at: String(expiry),
+      signature: createHash('sha1')
+        .update(`asset_id=contract-asset-id&expires_at=${expiry}&timestamp=${timestamp}test-secret`)
+        .digest('hex'),
+    });
+    expect(expiresAt).toBe(new Date(expiry * 1_000).toISOString());
+    expect(Date.parse(expiresAt) - now.getTime()).toBeLessThanOrEqual(300_000);
+  });
+});
+
 describe('FILE-01 / SCOPE-02: signed room image upload', () => {
   // Prisma room lookup is the only outside edge; the real signer and scope checks run directly.
   const uploadEnv = { CLOUDINARY_URL: 'cloudinary://test-key:test-secret@rooms-demo' };
   const now = new Date('2026-11-03T03:04:05.000Z');
-  const dto: SignUploadDto = { purpose: 'ROOM_IMAGE', roomId: 42 };
+  const dto = { purpose: 'ROOM_IMAGE', roomId: 42 };
   const roomDb = (room: { id: number; buildingId: number; isActive: boolean } | null) => ({
     room: { findFirst: vi.fn().mockResolvedValue(room) },
   }) as never;

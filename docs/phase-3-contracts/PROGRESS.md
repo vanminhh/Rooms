@@ -11,7 +11,7 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 | Phần | Trạng thái | Điểm dừng gần nhất đã xong | Commit | Việc tiếp theo | Ghi chú |
 |---|---|---|---|---|---|
 | P3-0 Chủ dự án chuẩn bị | đang làm | – | – | Giữ bản sao an toàn của `CCCD_KEY`; mẫu hợp đồng (Q-15) sau | Đã tạo khóa mới trong `.env` local theo yêu cầu chủ dự án, không dùng khóa đã gửi vào chat; cấu hình `NODE_ENV=development` |
-| P3-1 BE nền | chờ commit | BE-P3-01..03 | – | Chủ dự án commit điểm dừng, sau đó BE-P3-04 | DB dev đã áp dụng BE-P3-03. Prisma Client đã đồng bộ |
+| P3-1 BE nền | chờ commit | BE-P3-04..06 | `084c019` (BE-P3-01..03) | Chủ dự án commit BE-P3-04..06, sau đó tới BE-P3-07 (P3-2) | Chủ dự án xác nhận unit suite và e2e `POST /files/sign` đều pass |
 | P3-2 BE tạo hợp đồng | chưa làm | – | – | BE-P3-07 | cần P3-1 |
 | P3-3 BE ký + cọc | chưa làm | – | – | BE-P3-13 | cần P3-2 |
 | P3-4 BE dọn vào + hủy | chưa làm | – | – | BE-P3-20 | cần P3-3 |
@@ -23,6 +23,9 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 ## Nhật ký điểm dừng
 
 Mới nhất ở trên. Mỗi dòng: `ngày · phần · task vừa xong · kết quả kiểm tra (số thật) · việc còn treo`.
+
+- 17/11/2026 · P3-1 ⏸ BE-P3-04..06 · Chủ dự án xác nhận `npm run test` và e2e `test/files.e2e-spec.ts` đều pass trên máy dự án · chờ chủ dự án commit
+- 16/11/2026 · P3-1 ⏸ BE-P3-04..06 · Bắt đầu từ commit `084c019`. Upload riêng tư ký loại tải, thư mục, mục đích và `overwrite=false`. Kiểm theo asset ID, link tối đa 300 giây. Đăng ký `ContractsModule`, đối chiếu bảng 29 mã lỗi với 31 mã đã có. Reviewer DUYỆT sau khi sửa dùng chéo mục đích. Mã cuối lint 0 lỗi/4 cảnh báo cũ, build exit 0, 86/86 test tập trung và 6/6 ca HTTP với transport trong bộ nhớ. Unit suite đạt 1107/1867, 760 lỗi loopback `EACCES` và e2e TCP 0/6 cùng lỗi · chờ unit suite và e2e trên máy chủ dự án
 
 - 16/11/2026 · P3-1 ⏸ BE-P3-01..03 · PowerShell của chủ dự án xác nhận `scan=0, front=0, back=0`, áp dụng `20261116000000_private_contract_assets`, rồi Prisma báo `Database schema is up to date!`. Đã sinh lại Prisma Client 6.19.3 và kiểm đủ 3 asset ID mới, bỏ đúng 4 trường cũ. DB checker 88/88, backend tập trung 79/79 (gồm seed 39/39), lint 0 lỗi/4 cảnh báo cũ, build exit 0 · chờ chủ dự án commit trước BE-P3-04
 

@@ -32,14 +32,21 @@ Out: every contract route (P3-2..P3-5), any frontend change.
 - [x] **BE-P3-03** ⏸ Migration for private assets (D-37, D-40, `02-database.md` "Planned changes"): replace the three legacy URL columns with verified Cloudinary asset IDs and remove `contracts.billing_day` and its CHECK (owner approved option A on 16/11/2026). Update the dev seed and add DB-check scenarios while keeping the existing ones (DB-07). Applying the migration to the dev database requires separate approval.
   Applied to dev with owner approval (Q-P3-6) on 16/11/2026. The owner's PowerShell showed `scan=0, front=0, back=0` before deploy and `Database schema is up to date!` after it. The offline DB checker passed 88/88 and the seed passed 39/39.
   Done when: `prisma migrate diff` shows only these changes; `node prisma/check-constraints.mjs . prisma` passes every scenario (report the count); `seed.spec.ts` passes. Stop and report BE-P3-01..03.
-- [ ] **BE-P3-04** Private uploads (FILE-01, FILE-02, D-37): purposes `CONTRACT_SCAN` (jpg, png, webp, pdf) and `ID_PHOTO` (jpg, png, webp), both with `contractId` in the caller's scope, signed as `type = authenticated` in folder `contracts/<buildingId>/<contractId>`; a verify step by asset id like `verifyRoomImage` but expecting `authenticated`; one helper that returns a signed delivery URL valid ≤ 5 minutes. `ROOM_IMAGE` stays unchanged.
+- [x] **BE-P3-04** Private uploads (FILE-01, FILE-02, D-37): purposes `CONTRACT_SCAN` (jpg, png, webp, pdf) and `ID_PHOTO` (jpg, png, webp), both with `contractId` in the caller's scope, signed as `type = authenticated` in folder `contracts/<buildingId>/<contractId>`; a verify step by asset id like `verifyRoomImage` but expecting `authenticated`; one helper that returns a signed delivery URL valid ≤ 5 minutes. `ROOM_IMAGE` stays unchanged.
+  The signature binds a purpose-prefixed `public_id` and `overwrite=false`. Verification checks the provider's public ID and refuses cross-purpose assets. The focused file tests and six in-process HTTP cases passed.
   Done when: tests: a contract of another building → `OUT_OF_SCOPE`; a public asset or an asset outside the contract folder is refused; the signed URL expires within 5 minutes; the existing `ROOM_IMAGE` specs still pass.
-- [ ] **BE-P3-05** Empty `contracts` module registered in `AppModule`, and the error codes Phase 3 needs that are not in `error-code.ts` yet (check the spec table first; `ROOM_NOT_AVAILABLE`, `DEPOSIT_NOT_PAID`, `PRICE_NOT_APPROVED`, `METER_VALUE_DECREASED` already exist). Update the module-list and error-count tests in the same change (LESSONS).
+- [x] **BE-P3-05** Empty `contracts` module registered in `AppModule`, and the error codes Phase 3 needs that are not in `error-code.ts` yet (check the spec table first; `ROOM_NOT_AVAILABLE`, `DEPOSIT_NOT_PAID`, `PRICE_NOT_APPROVED`, `METER_VALUE_DECREASED` already exist). Update the module-list and error-count tests in the same change (LESSONS).
+  The module and its wiring check are in place. All 29 architecture table codes are among the 31 existing enum members. The owner confirmed the full `npm run test` suite passed on the project machine.
   Done when: `npm run test` passes with the updated counts.
-- [ ] **BE-P3-06** ⏸ `npm run lint`, `npm run test`, `npm run build`; e2e if a route changed (command in `LESSONS.md`). Run the reviewer on the uncommitted changes and put its full report in the checkpoint report.
+- [x] **BE-P3-06** ⏸ `npm run lint`, `npm run test`, `npm run build`; e2e if a route changed (command in `LESSONS.md`). Run the reviewer on the uncommitted changes and put its full report in the checkpoint report.
+  Lint (0 errors, 4 existing warnings), build (exit 0), 86 focused tests, and six in-process HTTP cases passed. The reviewer returned DUYỆT. The owner confirmed the full suite and `test/files.e2e-spec.ts` passed on the project machine on 17/11/2026.
   Done when: all pass with real output quoted; list the `[ASSUMPTION]`s used.
 
 ## Questions for the owner
+
+Đã trả lời 17/11/2026:
+
+- Q-P3-7 (BE-P3-05..06): chủ dự án xác nhận `npm run test` và `node ./node_modules/vitest/vitest.mjs run --config ./vitest.config.e2e.ts test/files.e2e-spec.ts` đều pass trên máy dự án.
 
 Đã trả lời 16/11/2026:
 
@@ -48,6 +55,10 @@ Out: every contract route (P3-2..P3-5), any frontend change.
 - Q-P3-6 (BE-P3-03): chủ dự án duyệt chạy migration `20261116000000_private_contract_assets` trên DB dev sau khi xác nhận lịch sử migration và cả ba cột URL cũ đều có 0 giá trị.
 
 ## Issues log
+
+- 17/11/2026 · BE-P3-05..06 · Đã chốt mốc kiểm tra bằng xác nhận hai lệnh pass trên máy dự án. Chờ chủ dự án commit.
+
+- 16/11/2026 · BE-P3-05..06 · `npm run test` đạt 1107/1867, cả 760 lỗi đều là loopback `EACCES`. Sáu ca e2e gặp cùng lỗi. Sáu ca tương ứng qua Node HTTP và Nest với transport trong bộ nhớ đều qua. Cần kết quả hai lệnh chuẩn trên máy chủ dự án.
 
 - 16/11/2026 · BE-P3-03 · Dùng PowerShell của chủ dự án để xác minh ba cột URL cũ và áp dụng migration. Prisma báo schema DB dev đã cập nhật. Điểm dừng BE-P3-01..03 chờ chủ dự án commit.
 

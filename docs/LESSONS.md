@@ -26,6 +26,7 @@ Read this before the first task of any part. Each line is a mistake that really 
 
 ## Backend rules that reviewers had to catch
 
+- Bind the private upload purpose in the Cloudinary signature and verify it using provider metadata. Shared folder and JPG support let a CCCD photo pass as a contract scan before the purpose prefix was checked [BE-P3-04, 16/11/2026].
 - A limit that is counted and then written must be safe under parallel requests (lock or conditional update), with a test that really runs requests in parallel. Parallel wrong logins bypassed AUTH-04 [BE-LOGIN-12, 29/10/2026].
 - An endpoint that must not reveal whether an account exists needs the same body **and** the same work for both cases; the forgot-password timing revealed accounts [BE-LOGIN-18, 29/10/2026].
 - Map a unique-constraint error (Prisma `P2002`, check `meta.target`) to the friendly code; do not let it become a 500 [BE-P2-11, 03/11/2026].
@@ -38,6 +39,7 @@ Read this before the first task of any part. Each line is a mistake that really 
 
 ## Commands and environment
 
+- Set `NODE_ENV=test` before importing `AppModule` in an e2e spec that can load the dev `.env`. The price-sync job started against the files fixture with `NODE_ENV=development` [BE-P3-06, 16/11/2026].
 - Load and validate the backend `.env` before importing `AppModule`, which registers scheduled jobs based on `NODE_ENV`; a static import made the new startup-order test fail on the full suite [BE-P3-02, 16/11/2026].
 - Inspect every selected Vitest file for HTTP hooks before an offline-only run; `common/i18n/i18n.spec.ts` mixed unit assertions with two Supertest cases and attempted loopback requests despite the owner's no-HTTP instruction (both EACCES) [FE-EX-27, 16/11/2026].
 - In Windows PowerShell, pipe multiline Node scripts through a literal here-string to stdin; native argument handling stripped JavaScript quotes from a `node -e` command and blocked manual QA startup [FE-EX-27, 16/11/2026].

@@ -9,11 +9,12 @@ import { RoomsModule } from './modules/rooms/rooms.module.js';
 import { PricingModule } from './modules/pricing/pricing.module.js';
 import { ViewingsModule } from './modules/viewings/viewings.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
+import { ContractsModule } from './modules/contracts/contracts.module.js';
 
 // Cron (PRC-06 job) runs outside tests only.
 const scheduleImports = process.env.NODE_ENV === 'test' ? [] : [ScheduleModule.forRoot()];
 
 @Module({
-  imports: [PrismaModule, AuthModule, SettingsModule, FilesModule, BuildingsModule, RoomsModule, PricingModule, ViewingsModule, NotificationsModule, ...scheduleImports],
+  imports: [PrismaModule, AuthModule, SettingsModule, FilesModule, BuildingsModule, RoomsModule, PricingModule, ViewingsModule, NotificationsModule, ContractsModule, ...scheduleImports],
 })
 export class AppModule {}
