@@ -16,8 +16,10 @@ const READERS = {
     .map((r) => ({ id: r.id, isActive: r.status === 'PENDING' })),
   rate_plans: async (db, where) => (await db.ratePlan.findMany({ where, select: { id: true, status: true } }))
     .map((r) => ({ id: r.id, isActive: r.status === 'PENDING' })),
-  viewings: async (db, where) => (await db.viewing.findMany({ where, select: { id: true, status: true } }))
-    .map((r) => ({ id: r.id, isActive: r.status === 'NEW' || r.status === 'CONFIRMED' })),
+  viewings: async (db, where) => (await db.viewing.findMany({
+    where, select: { id: true, status: true, calledAt: true, depositCancelledByContractId: true },
+  })).map((r) => ({ id: r.id, isActive: r.status === 'NEW' || r.status === 'CONFIRMED'
+    || (r.depositCancelledByContractId !== null && r.calledAt === null) })),
 };
 
 // Rows named [E2E that may be in no log (report only).

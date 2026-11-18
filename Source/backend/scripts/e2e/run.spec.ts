@@ -3,8 +3,8 @@ import { mkdtempSync, rmSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
-  e2eServiceName, uniqueBuildingCode, uniquePhone, cleanupRun, linkedRows, planCleanup,
-  skippedReport, E2eRun, readAllLogs, readLogs, E2E_TABLES, LINKED_TITLE,
+  e2eServiceName, uniqueBuildingCode, uniquePhone, cleanupRun, cleanupContractRun, linkedRows, planCleanup,
+  skippedReport, E2eRun, readAllLogs, readLogs, E2E_TABLES, LINKED_TITLE, CLEANUP_NOTE,
   type E2eRunLog, type E2eCleanupDb, type SkippedRow, type CleanupFacts,
 } from './run.js';
 
@@ -27,6 +27,7 @@ function makeLog(ids: Partial<E2eRunLog['ids']>, status: E2eRunLog['status'] = '
 interface FakeContractRow {
   id: number; code: string; roomId: number; buildingId: number; tenantId: number; createdById: number;
   viewingId: number | null; invoices: number;
+  depositCancelledViewings?: number[];
 }
 interface FakeContractServiceRow { serviceId: number; contractCode: string }
 
@@ -45,6 +46,10 @@ function fakeCleanupDb(contracts: FakeContractRow[], services: FakeContractServi
         const v = (val as { id: { in: number[] } }).id.in;
         return c.viewingId !== null && v.includes(c.viewingId);
       }
+      if (key === 'depositCancelledViewings') {
+        const ids = (val as unknown as { some: { id: { in: number[] } } }).some.id.in;
+        return c.depositCancelledViewings?.some(id => ids.includes(id)) ?? false;
+      }
       const inList = (val as { in: number[] }).in;
       const rowVal = (c as unknown as Record<string, number>)[key];
       return inList.includes(rowVal);
@@ -52,6 +57,9 @@ function fakeCleanupDb(contracts: FakeContractRow[], services: FakeContractServi
       id: c.id, code: c.code, roomId: c.roomId, buildingId: c.buildingId,
       tenantId: c.tenantId, createdById: c.createdById,
       viewing: c.viewingId !== null ? { id: c.viewingId } : null,
+      depositCancelledViewings: (c.depositCancelledViewings ?? []).filter(id =>
+        args.where.OR.some(cond => (cond.depositCancelledViewings as { some: { id: { in: number[] } } } | undefined)?.some.id.in.includes(id)),
+      ).map(id => ({ id })),
       _count: { invoices: c.invoices },
     }));
   });
@@ -199,6 +207,49 @@ describe('CP-7 cleanupRun', () => {
       return true;
     });
     expect(serviceSpy).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('BE-P3-12 cleanup with contract fixtures', () => {
+  it('VIEW-06: a cancelled viewing linked to a contract outside this run remains protected', async () => {
+    const log = makeLog({ viewings: [4, 5] });
+    const { db, calls } = fakeCleanupDb([
+      { id: 100, code: 'HD000100', roomId: 99, buildingId: 99, tenantId: 99, createdById: 99, viewingId: null,
+        depositCancelledViewings: [4, 90], invoices: 1 },
+    ]);
+    expect(await cleanupRun(db, log)).toEqual([{ table: 'viewings', id: 4, reason: 'hợp đồng HD000100 + 1 hóa đơn' }]);
+    expect(calls.updateMany[0].args).toMatchObject({ where: { id: { in: [5] } } });
+  });
+
+  it('G-05/D-39: retire unsigned, invoice-free HOLD fixtures and clear their call tasks together', async () => {
+    const log = { ...makeLog({ rooms: [1], buildings: [2], users: [3, 4], services: [5], viewings: [6] }),
+      kind: 'contracts' as const, buildingCodes: ['E2TEST'] };
+    const { db } = fakeCleanupDb([]);
+    const updateContract = vi.fn(async () => ({ count: 1 }));
+    const updateViewing = vi.fn(async () => ({ count: 1 }));
+    const tx = { ...db, contract: { ...db.contract, updateMany: updateContract }, viewing: { ...db.viewing, updateMany: updateViewing } } as unknown as E2eCleanupDb;
+    db.contract.findMany.mockImplementationOnce(async () => [{ id: 7, createdById: 3 }]).mockImplementationOnce(async () => [{ id: 7 }]);
+
+    expect(await cleanupContractRun(tx, log)).toEqual([]);
+    expect(updateContract).toHaveBeenCalledWith({ where: expect.objectContaining({
+      id: 7, status: 'HOLD', terms: '[E2E 20261101T1200-TEST] Contract fixture', buildingId: { in: [2] }, roomId: { in: [1] },
+      signedAt: null, invoices: { none: {} }, createdById: { in: [3, 4] }, tenantId: { in: [3, 4] },
+    }), data: { status: 'CANCELLED', cancelReason: CLEANUP_NOTE } });
+    expect(updateViewing).toHaveBeenCalledWith({
+      where: { id: { in: [6] }, depositCancelledByContractId: 7, calledAt: null },
+      data: { calledById: 3, calledAt: expect.any(Date) },
+    });
+    expect(db.contract.findMany.mock.calls[2][0].where).toMatchObject({ id: { notIn: [7] } });
+  });
+
+  it('G-05: normal cleanup still protects an open contract in an interrupted contract run', async () => {
+    const log = { ...makeLog({ rooms: [1] }), kind: 'contracts' as const };
+    const { db, calls } = fakeCleanupDb([
+      { id: 7, code: 'HD000007', roomId: 1, buildingId: 2, tenantId: 3, createdById: 4, viewingId: null, invoices: 0 },
+    ]);
+    db.contract.findMany.mockImplementationOnce(async () => []); // The contract has not been retired by the test hook.
+    expect(await cleanupRun(db, log)).toEqual([{ table: 'rooms', id: 1, reason: 'hợp đồng HD000007' }]);
+    expect(calls.updateMany).toEqual([]);
   });
 });
 

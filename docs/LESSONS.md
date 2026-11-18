@@ -46,6 +46,7 @@ Read this before the first task of any part. Each line is a mistake that really 
 
 - When a backend test stops in `beforeAll` while builds run concurrently, rerun that file alone with a process-local `--hookTimeout` before diagnosing assertion failures. The isolated HTTP test reached the expected loopback restriction, and the same file passed with in-memory HTTP [BE-P3-11, 18/11/2026].
 - When the full backend run hits Vitest's per-test limit, retry the affected files with `--maxWorkers=1` and a process-local `--testTimeout` before diagnosing the assertion. The password and Prisma suites passed in isolation after six cases hit the five-second limit [BE-P3-11, 18/11/2026].
+- Keep list and apply on the same cleanup policy. Retire owned HOLD fixtures in the E2E hook with the viewing mapping and room locks before checking linked rows and deactivating fixtures [BE-P3-12, 18/11/2026].
 - Set `NODE_ENV=test` before importing `AppModule` in an e2e spec that can load the dev `.env`. The price-sync job started against the files fixture with `NODE_ENV=development` [BE-P3-06, 16/11/2026].
 - Load and validate the backend `.env` before importing `AppModule`, which registers scheduled jobs based on `NODE_ENV`; a static import made the new startup-order test fail on the full suite [BE-P3-02, 16/11/2026].
 - Inspect every selected Vitest file for HTTP hooks before an offline-only run; `common/i18n/i18n.spec.ts` mixed unit assertions with two Supertest cases and attempted loopback requests despite the owner's no-HTTP instruction (both EACCES) [FE-EX-27, 16/11/2026].

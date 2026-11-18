@@ -4,7 +4,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { randomBytes, randomInt } from 'node:crypto';
 import { join } from 'node:path';
-import type { PrismaClient } from '@prisma/client';
+import type { Prisma, PrismaClient } from '@prisma/client';
 
 export type E2eTable = 'buildings' | 'rooms' | 'services' | 'users'
                      | 'room_prices' | 'rate_plans' | 'viewings' | 'room_images';
@@ -16,6 +16,7 @@ export const E2E_TABLES: readonly E2eTable[] = [
 export interface E2eRunLog {
   runId: string; startedAt: string; endedAt: string | null;
   status: 'RUNNING' | 'CLEANED' | 'FAILED_CLEANUP';
+  kind?: 'contracts';
   buildingCodes: string[]; ids: Record<E2eTable, number[]>;
 }
 
@@ -43,6 +44,10 @@ export function newRunId(now: Date = new Date(), rand: () => string = () => rand
 
 export function e2eName(runId: string, what: string): string {
   return `[E2E ${runId}] ${what}`;
+}
+
+export function contractFixtureTerms(runId: string): string {
+  return e2eName(runId, 'Contract fixture');
 }
 
 // services.name is VARCHAR(50): too long throws, it is never cut.
@@ -109,7 +114,7 @@ export class E2eRun {
   private readonly file: string;
 
   // An existing log for this runId is loaded, not overwritten (cleanup.mjs finishes old runs this way).
-  constructor(runId: string = newRunId(), dir: string = RUNS_DIR) {
+  constructor(runId: string = newRunId(), dir: string = RUNS_DIR, kind?: E2eRunLog['kind']) {
     this.runId = runId;
     this.file = logPath(runId, dir);
     mkdirSync(dir, { recursive: true });
@@ -117,7 +122,7 @@ export class E2eRun {
       ? (JSON.parse(readFileSync(this.file, 'utf8')) as E2eRunLog)
       : {
           runId, startedAt: new Date().toISOString(), endedAt: null,
-          status: 'RUNNING', buildingCodes: [], ids: emptyIds(),
+          status: 'RUNNING', kind, buildingCodes: [], ids: emptyIds(),
         };
     this.save();
   }
@@ -175,21 +180,65 @@ export interface SkippedRow { table: E2eTable; id: number; reason: string }
 
 export const LINKED_TITLE = 'Có hợp đồng/hóa đơn liên kết – không xử lý';
 
-// Two read queries only. Called by cleanupRun and by the list mode of cleanup.mjs, so both agree.
+function contractFixtureWhere(log: E2eRunLog): Prisma.ContractWhereInput {
+  const prefix = e2eName(log.runId, '');
+  return {
+    terms: contractFixtureTerms(log.runId),
+    buildingId: { in: log.ids.buildings }, building: { name: { startsWith: prefix }, code: { in: log.buildingCodes } },
+    roomId: { in: log.ids.rooms },
+    createdById: { in: log.ids.users }, createdBy: { fullName: { startsWith: prefix } },
+    tenantId: { in: log.ids.users }, tenant: { fullName: { startsWith: prefix } },
+    previousContractId: null, nextContract: null,
+    signedAt: null, movedInAt: null, signedScanAssetId: null, invoices: { none: {} },
+    services: { every: { serviceId: { in: log.ids.services } } },
+    OR: [{ viewing: null }, { viewing: { id: { in: log.ids.viewings } } }],
+    depositCancelledViewings: { every: { id: { in: log.ids.viewings } } },
+  };
+}
+
+// BE-P3-12 / G-05. The test's transaction locks the fixture rooms before this step.
+// Keep the contract, signer, service links and audit history.
+export async function cleanupContractRun(tx: E2eCleanupDb, log: E2eRunLog): Promise<SkippedRow[]> {
+  if (log.kind !== 'contracts') throw new Error('Expected a contracts e2e run');
+  const where = { ...contractFixtureWhere(log), status: 'HOLD' as const };
+  const contracts = await tx.contract.findMany({ where, select: { id: true, createdById: true } });
+  for (const contract of contracts) {
+    const result = await tx.contract.updateMany({
+      where: { ...where, id: contract.id }, data: { status: 'CANCELLED', cancelReason: CLEANUP_NOTE },
+    });
+    if (result.count !== 1) throw new Error(`Contract fixture ${contract.id} changed during cleanup`);
+    await tx.viewing.updateMany({
+      where: { id: { in: log.ids.viewings }, depositCancelledByContractId: contract.id, calledAt: null },
+      data: { calledById: contract.createdById, calledAt: new Date() },
+    });
+  }
+  return cleanupRun(tx, log);
+}
+
+// Called by cleanupRun and by the list mode of cleanup.mjs, so both agree.
 // A viewing counts as linked through the contract that holds it, even if that contract is outside the log.
 export async function linkedRows(
   db: Pick<PrismaClient, 'contract' | 'contractService'>, log: E2eRunLog,
 ): Promise<SkippedRow[]> {
   const { rooms, buildings, users, services, viewings } = log.ids;
+  const retired = log.kind === 'contracts' ? await db.contract.findMany({
+    where: {
+      ...contractFixtureWhere(log), status: 'CANCELLED', cancelReason: CLEANUP_NOTE,
+      AND: { depositCancelledViewings: { none: { calledAt: null } } },
+    }, select: { id: true },
+  }) : [];
+  const protectedContract = retired.length === 0 ? {} : { id: { notIn: retired.map(contract => contract.id) } };
   const contracts = await db.contract.findMany({
-    where: { OR: [
+    where: { ...protectedContract, OR: [
       { roomId: { in: rooms } }, { buildingId: { in: buildings } },
       { tenantId: { in: users } }, { createdById: { in: users } },
       { viewing: { id: { in: viewings } } },
+      { depositCancelledViewings: { some: { id: { in: viewings } } } },
     ] },
     select: {
       id: true, code: true, roomId: true, buildingId: true, tenantId: true, createdById: true,
-      viewing: { select: { id: true } }, _count: { select: { invoices: true } },
+      viewing: { select: { id: true } }, depositCancelledViewings: { where: { id: { in: viewings } }, select: { id: true } },
+      _count: { select: { invoices: true } },
     },
   });
   const found = new Map<string, { table: E2eTable; id: number; reasons: string[] }>();
@@ -207,9 +256,10 @@ export async function linkedRows(
     if (users.includes(c.tenantId)) link('users', c.tenantId, reason);
     if (users.includes(c.createdById)) link('users', c.createdById, reason);
     if (c.viewing && viewings.includes(c.viewing.id)) link('viewings', c.viewing.id, reason);
+    for (const viewing of c.depositCancelledViewings) link('viewings', viewing.id, reason);
   }
   const serviceLinks = await db.contractService.findMany({
-    where: { serviceId: { in: services } }, select: { serviceId: true, contract: { select: { code: true } } },
+    where: { serviceId: { in: services }, contract: protectedContract }, select: { serviceId: true, contract: { select: { code: true } } },
   });
   for (const s of serviceLinks) link('services', s.serviceId, `hợp đồng ${s.contract.code}`);
   return [...found.values()].map((row) => ({ table: row.table, id: row.id, reason: row.reasons.join('; ') }));

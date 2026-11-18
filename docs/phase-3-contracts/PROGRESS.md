@@ -12,7 +12,7 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 |---|---|---|---|---|---|
 | P3-0 Chủ dự án chuẩn bị | đang làm | – | – | Giữ bản sao an toàn của `CCCD_KEY`; mẫu hợp đồng (Q-15) sau | Đã tạo khóa mới trong `.env` local theo yêu cầu chủ dự án, không dùng khóa đã gửi vào chat; cấu hình `NODE_ENV=development` |
 | P3-1 BE nền | xong | BE-P3-04..06 | `eb8cf64` | P3-2 | Chủ dự án xác nhận unit suite và e2e `POST /files/sign` đều pass |
-| P3-2 BE tạo hợp đồng | chờ commit | BE-P3-11 · API “Đã gọi” và nhóm “Việc hôm nay” | `56fabd0` (migration BE-P3-11) | Commit API/dashboard, sau đó BE-P3-12 | [Checkpoint BE-P3-11](plans/P3-2/CHECKPOINT-BE-P3-11.md) · reviewer DUYỆT |
+| P3-2 BE tạo hợp đồng | kẹt | BE-P3-11 · API “Đã gọi” và nhóm “Việc hôm nay” | `5c56d06` (BE-P3-11) | Chạy bộ E2E và cleanup list trên máy kết nối DB dev | [Checkpoint BE-P3-12](plans/P3-2/CHECKPOINT-BE-P3-12.md) · reviewer DUYỆT, DB dev `P1001` |
 | P3-3 BE ký + cọc | chưa làm | – | – | BE-P3-13 | cần P3-2 |
 | P3-4 BE dọn vào + hủy | chưa làm | – | – | BE-P3-20 | cần P3-3 |
 | P3-5 BE người ở + xe | chưa làm | – | – | BE-P3-23 | cần P3-4 (cùng module) |
@@ -24,6 +24,7 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 
 Mới nhất ở trên. Mỗi dòng: `ngày · phần · task vừa xong · kết quả kiểm tra (số thật) · việc còn treo`.
 
+- 18/11/2026 · P3-2 ⏸ BE-P3-12 · Xác nhận commit `5c56d06`, thêm 4 ca E2E hợp đồng và dọn dữ liệu thử trong giao dịch. Reviewer Codex DUYỆT sau khi bổ sung khóa và xác minh cleanup. Build đạt, lint 0 lỗi/4 cảnh báo cũ, bộ backend qua HTTP trong bộ nhớ 1938/1938, runner cuối 37/37, DB checker 97/97, E2E PostgreSQL nhúng 4/4, nhật ký thử `CLEANED`. DB dev `P1001` chặn E2E và cleanup list trước lúc ghi dữ liệu · chờ kết quả trên máy dự án.
 - 18/11/2026 · P3-2 ⏸ BE-P3-11 · Xác nhận commit migration `56fabd0`, hoàn tất API “Đã gọi” và nhóm việc chờ gọi. Reviewer Codex DUYỆT. Backend build exit 0, lint 0 lỗi/4 cảnh báo cũ, 230/230 test tập trung, DB checker 97/97. PostgreSQL nhúng xác nhận luồng tạo HOLD, phân công và việc gọi lặp. Suite qua HTTP trong bộ nhớ đạt 1929/1935, sáu ca cũ quá thời gian 5 giây. Hai tệp đó chạy riêng đạt 18/18. Ca TCP chuẩn gặp `EACCES` · chờ chủ dự án commit, rồi BE-P3-12.
 - 18/11/2026 · P3-2 ⏸ migration BE-P3-11 đã áp dụng · Ảnh PowerShell trên máy dự án xác nhận `20261118000000_viewing_deposit_calls` đã áp dụng thành công, Prisma báo `9 migrations found` và `Database schema is up to date!`, sau đó sinh Prisma Client 6.19.3 · chờ chủ dự án commit, rồi làm API “Đã gọi” và nhóm “Việc hôm nay”.
 - 18/11/2026 · P3-2 ⏸ áp dụng migration BE-P3-11 · Chủ dự án đã duyệt DB dev. Lượt kiểm lịch sử trả `P1001`, DNS của `DIRECT_URL` và `DATABASE_URL` đều trả `ENOTFOUND`. Bước deploy còn chờ máy kết nối được DB dev. Giữ cùng lượt triển khai migration và backend ghi liên kết hủy lịch.
