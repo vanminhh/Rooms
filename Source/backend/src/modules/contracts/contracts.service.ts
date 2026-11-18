@@ -7,6 +7,7 @@ import { formatDateOnly, parseDateOnly, todayHanoi } from '../../common/date/tod
 import { isUniqueOn } from '../../common/errors/db-errors.js';
 import { ErrorCode } from '../../common/errors/error-code.js';
 import type { AuthUser } from '../../common/guards/auth.decorators.js';
+import { pageParams, paginated } from '../../common/pagination.js';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
 import { publicRoomWhere } from '../../common/rooms/public-room.js';
 import { scopeWhere } from '../../common/scope/scope.js';
@@ -14,6 +15,7 @@ import { lockViewingMapping } from '../../common/viewings/viewing-lock.js';
 import { AuditService } from '../audit/audit.service.js';
 import { assertViewingScope } from '../viewings/viewing-reservations.js';
 import { resolveContractTenant } from './contract-tenant.js';
+import type { ContractsQueryDto } from './dto/contracts-query.dto.js';
 import type { CreateContractDto } from './dto/create-contract.dto.js';
 
 const CONTRACT_SUMMARY = {
@@ -22,15 +24,112 @@ const CONTRACT_SUMMARY = {
   tenant: { select: { id: true, fullName: true, phone: true, email: true } },
 } satisfies Prisma.ContractSelect;
 
+// CON-16: read only the fields that can be returned by the staff detail endpoint.
+const CONTRACT_DETAIL = {
+  ...CONTRACT_SUMMARY,
+  terms: true, signedAt: true, movedInAt: true,
+  occupants: {
+    orderBy: [{ isSigner: 'desc' }, { id: 'asc' }],
+    select: {
+      id: true, fullName: true, phone: true, dateOfBirth: true,
+      isSigner: true, idNumberLast4: true, moveInDate: true, moveOutDate: true,
+    },
+  },
+  vehicles: {
+    orderBy: { id: 'asc' },
+    select: { id: true, plate: true, type: true, serviceId: true, isActive: true, registeredAt: true, removedAt: true },
+  },
+  services: {
+    orderBy: { serviceId: 'asc' },
+    select: { service: { select: { id: true, name: true, unit: true } } },
+  },
+  invoices: {
+    where: { type: 'DEPOSIT' }, orderBy: { id: 'desc' }, take: 1,
+    select: { id: true, status: true, total: true, issueDate: true, dueDate: true },
+  },
+} satisfies Prisma.ContractSelect;
+
+function toContractSummary(contract: Prisma.ContractGetPayload<{ select: typeof CONTRACT_SUMMARY }>) {
+  return {
+    ...contract,
+    startDate: formatDateOnly(contract.startDate),
+    endDate: formatDateOnly(contract.endDate),
+    createdAt: contract.createdAt.toISOString(),
+  };
+}
+
+const dateOnlyOrNull = (date: Date | null) => date === null ? null : formatDateOnly(date);
+
 const fieldError = (field: string, message: string) =>
   new BadRequestException({ code: ErrorCode.VALIDATION_FAILED, fields: { [field]: message } });
+
+function assertStaff(actor: AuthUser): void {
+  if (actor.role !== 'BOSS' && actor.role !== 'MANAGER') throw new ForbiddenException(ErrorCode.FORBIDDEN);
+}
 
 @Injectable()
 export class ContractsService {
   constructor(private readonly prisma: PrismaService, private readonly audit: AuditService) {}
 
+  async list(actor: AuthUser, query: ContractsQueryDto) {
+    assertStaff(actor);
+    const { buildingId, status } = query;
+    if (buildingId !== undefined && actor.buildingIds !== null && !actor.buildingIds.includes(buildingId)) {
+      throw new ForbiddenException(ErrorCode.OUT_OF_SCOPE);
+    }
+    // Prisma uses LIKE for contains. Search for the user's literal text.
+    const keyword = query.q?.trim().replace(/[\\%_]/g, '\\$&');
+    const where: Prisma.ContractWhereInput = {
+      ...scopeWhere(actor),
+      ...(buildingId === undefined ? {} : { buildingId }),
+      ...(status === undefined ? {} : { status }),
+      ...(keyword ? { OR: [
+        { tenant: { fullName: { contains: keyword, mode: 'insensitive' } } },
+        { tenant: { phone: { contains: keyword } } },
+        { room: { code: { contains: keyword, mode: 'insensitive' } } },
+      ] } : {}),
+    };
+    const { page, limit, skip, take } = pageParams(query);
+    const direction = query.sort === 'createdAt' ? 'asc' : 'desc';
+    const total = await this.prisma.contract.count({ where });
+    const rows = skip >= total ? [] : await this.prisma.contract.findMany({
+      where, select: CONTRACT_SUMMARY, skip, take, orderBy: [{ createdAt: direction }, { id: direction }],
+    });
+    return paginated(rows.map(toContractSummary), page, limit, total);
+  }
+
+  async get(actor: AuthUser, id: number) {
+    assertStaff(actor);
+    const contract = await this.prisma.contract.findUnique({
+      where: { id, ...scopeWhere(actor) },
+      select: CONTRACT_DETAIL,
+    });
+    if (!contract) {
+      const exists = actor.buildingIds !== null &&
+        await this.prisma.contract.findUnique({ where: { id }, select: { id: true } });
+      if (exists) throw new ForbiddenException(ErrorCode.OUT_OF_SCOPE);
+      throw new NotFoundException(ErrorCode.NOT_FOUND);
+    }
+    const { terms, signedAt, movedInAt, occupants, vehicles, services, invoices: [depositInvoice], ...summary } = contract;
+    return {
+      ...toContractSummary(summary),
+      terms, signedAt: signedAt?.toISOString() ?? null, movedInAt: movedInAt?.toISOString() ?? null,
+      occupants: occupants.map(occupant => ({
+        ...occupant, dateOfBirth: dateOnlyOrNull(occupant.dateOfBirth),
+        moveInDate: formatDateOnly(occupant.moveInDate), moveOutDate: dateOnlyOrNull(occupant.moveOutDate),
+      })),
+      vehicles: vehicles.map(vehicle => ({
+        ...vehicle, registeredAt: formatDateOnly(vehicle.registeredAt), removedAt: dateOnlyOrNull(vehicle.removedAt),
+      })),
+      services: services.map(({ service }) => service),
+      depositInvoice: depositInvoice ? {
+        ...depositInvoice, issueDate: dateOnlyOrNull(depositInvoice.issueDate), dueDate: dateOnlyOrNull(depositInvoice.dueDate),
+      } : null,
+    };
+  }
+
   async create(actor: AuthUser, dto: CreateContractDto, ip?: string) {
-    if (actor.role !== 'BOSS' && actor.role !== 'MANAGER') throw new ForbiddenException(ErrorCode.FORBIDDEN);
+    assertStaff(actor);
     const today = todayHanoi();
     const startDate = parseDateOnly(dto.startDate);
     if (!startDate || startDate < today) throw fieldError('startDate', 'Ngày vào ở phải từ hôm nay trở đi');
@@ -121,8 +220,7 @@ export class ContractsService {
         cancelledViewingIds: cancelled.map(viewing => viewing.id),
       }, ip, tx);
 
-      return { ...contract, startDate: formatDateOnly(startDate), endDate: formatDateOnly(endDate),
-        createdAt: contract.createdAt.toISOString() };
+      return toContractSummary(contract);
     });
   }
 

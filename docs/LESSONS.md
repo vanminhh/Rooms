@@ -26,6 +26,8 @@ Read this before the first task of any part. Each line is a mistake that really 
 
 ## Backend rules that reviewers had to catch
 
+- Reject NUL in text search DTOs before Prisma. PostgreSQL rejects U+0000 in text parameters even though the value passes string validation [BE-P3-10, 17/11/2026].
+- Match the Prisma SELECT in fixtures when a shared serializer reads dates from the returned row. The POST smoke fixture needed its selected dates before exercising the new serializer [BE-P3-10, 17/11/2026].
 - Route a pending tenant's unusable password marker through the same Argon2 work as an unknown phone. The marker alone made failed logins for newly created accounts faster [BE-P3-08, 17/11/2026].
 - Recheck the guest under the phone and email locks before consuming an OTP and creating a session. Contract creation could replace the account after the old snapshot passed the code check [BE-P3-08, 17/11/2026].
 - For contract creation, apply both the request's building scope and the current assignment under the viewing mapping lock. Checking only current assignment let a request acquire newly granted scope mid-flight [BE-P3-07, 17/11/2026].

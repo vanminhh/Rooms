@@ -33,14 +33,17 @@ Out: signing, the deposit invoice and the temporary password (P3-3), move-in and
 - [x] **BE-P3-09** ⏸ Signer and side effects (CON-04, CON-05, VIEW-05, VIEW-06): the signer is the first occupant (`is_signer`, `move_in_date = startDate`, CCCD encrypted with `last4`); with `viewingId`, the viewing must be CONFIRMED or DONE for the same room and becomes `WON` with `contract_id`; every other NEW/CONFIRMED viewing of the room becomes `CANCELLED` with note "Phòng đã có người đặt cọc"; audit `contract.create`; all in one transaction.
   Done when: acceptance-style tests: creating from viewing A sets A `WON` and cancels B of the same room, and leaves a viewing of another room untouched; a NEW viewing as `viewingId` is refused; a failure in any step leaves no contract, no account change and no viewing change. Stop and report BE-P3-07..09.
   Verified in the focused tests, real Node HTTP parser cases and Prisma/PGlite. Full results and review are in [checkpoint 1](plans/P3-2/CHECKPOINT-1.md).
-- [ ] **BE-P3-10** `GET /contracts?buildingId&status&q&page` (also the tenant list; `q` matches name, phone, room code) and `GET /contracts/:id` (contract, room, building, tenant, occupants with CCCD last 4 only, vehicles, services, deposit invoice summary when it exists). Staff in scope only.
+- [x] **BE-P3-10** `GET /contracts?buildingId&status&q&page` (also the tenant list; `q` matches name, phone, room code) and `GET /contracts/:id` (contract, room, building, tenant, occupants with CCCD last 4 only, vehicles, services, deposit invoice summary when it exists). Staff in scope only.
   Done when: tests for scope, search, paging (`meta`), and that no response carries an encrypted CCCD value or a password field.
+  Verified via the HTTP suite and real Prisma queries on embedded PostgreSQL. See [checkpoint BE-P3-10](plans/P3-2/CHECKPOINT-BE-P3-10.md) for the test counts and reviewer report.
 - [ ] **BE-P3-11** ⏸ "Việc hôm nay" (NOTI-06, VIEW-06, D-39): a group of viewings cancelled by a deposit, for the person responsible, listed until staff press "Đã gọi". Migration: who pressed and when on `viewings` (ask the owner before creating and before applying; add DB-check scenarios). `POST /viewings/:id/called` for staff in scope, only on a viewing cancelled by a deposit, pressing twice changes nothing.
   Done when: `dashboard.service.spec.ts` covers the group for a manager and for Boss (buildings without an active manager); a called viewing leaves the list; another building → `OUT_OF_SCOPE`; DB check passes every scenario (report the count).
 - [ ] **BE-P3-12** ⏸ `npm run lint`, `npm run test`, `npm run build`, e2e (add a contracts e2e file for create + VIEW-05/06 on the dev DB with the existing e2e runner and cleanup). Run the reviewer on the uncommitted changes and put its full report in the checkpoint report.
   Done when: all pass with real output quoted; `cleanup.mjs` in list mode shows no row left by this run; list the `[ASSUMPTION]`s used (A-18).
 
 ## Questions for the owner
+
+- BE-P3-11 (D-39, VIEW-06): duyệt **tạo** migration thêm `called_by_id`, `called_at` và `deposit_cancelled_by_contract_id` theo [đề xuất](plans/P3-2/CHECKPOINT-BE-P3-10.md#đề-xuất-be-p3-11-cần-chủ-dự-án-duyệt). Duyệt áp dụng DB là bước sau kiểm tra offline.
 
 Đã trả lời 17/11/2026
 
@@ -54,6 +57,8 @@ Out: signing, the deposit invoice and the temporary password (P3-3), move-in and
 - Q-P3-1 (BE-P3-11): việc "gọi khách bị hủy lịch" ở lại "Việc hôm nay" tới khi nhân sự bấm "Đã gọi" (D-39).
 
 ## Issues log
+
+- 17/11/2026 · BE-P3-10 · Đã chặn NUL trong từ khóa trước Prisma và kiểm rõ danh sách trường API được phép đọc. 11 ca HTTP GET qua TCP gặp lỗi loopback trong phiên này. Cả bộ backend đạt 1927/1927 qua HTTP trong bộ nhớ, truy vấn Prisma/PGlite đạt và reviewer DUYỆT.
 
 - 17/11/2026 · BE-P3-07..09 · Đã đóng Q-P3-8..11. Reviewer DUYỆT phần mã sau khi sửa đăng nhập tài khoản chờ ký và kiểm quyền tòa. TCP chuẩn vướng 760 lỗi loopback, cả bộ đạt 1916/1916 với HTTP trong bộ nhớ. Prisma/PGlite kiểm chỉ mục HOLD và rollback trong một phiên. Kiểm đa kết nối tại BE-P3-12.
 
