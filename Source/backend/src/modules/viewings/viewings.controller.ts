@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Patch, Post, Query } from '@nestjs/common';
 import { CurrentUser, type AuthUser, Roles } from '../../common/guards/auth.decorators.js';
 import type { Paginated } from '../../common/pagination.js';
 import { ConfirmViewingDto, CreateViewingDto, UpdateViewingDto, ViewingIdParamsDto, ViewingsQueryDto } from './dto/viewings.dto.js';
@@ -14,6 +14,13 @@ export class ViewingsController {
   @Post(':id/confirm')
   confirm(@CurrentUser() user: AuthUser, @Param() params: ViewingIdParamsDto, @Body() dto: ConfirmViewingDto): Promise<ViewingView> {
     return this.viewings.confirm(user, params.id, dto);
+  }
+
+  @Roles('BOSS', 'MANAGER')
+  @Post(':id/called')
+  @HttpCode(200)
+  markCalled(@CurrentUser() user: AuthUser, @Param() params: ViewingIdParamsDto): Promise<ViewingView> {
+    return this.viewings.markCalled(user, params.id);
   }
 
   @Roles('BOSS', 'MANAGER')

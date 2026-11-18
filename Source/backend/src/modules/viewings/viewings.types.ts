@@ -22,6 +22,8 @@ export interface ViewingView {
   status: ViewingStatus;
   statusLabel: string;
   handledById: number | null;
+  calledById: number | null;
+  calledAt: string | null;
   outcomeNote: string | null;
   overdue: boolean;
   overlap: boolean;

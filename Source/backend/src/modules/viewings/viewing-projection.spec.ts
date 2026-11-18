@@ -5,6 +5,7 @@ const legacy: ViewingRecord = {
   guestName: 'Khách', guestPhone: '0900000006',
   visitDate: new Date('2026-11-15T00:00:00Z'), timeSlot: 'AFTERNOON',
   status: 'NEW', source: 'WEB', note: null, handledById: null, outcomeNote: null, contractId: null,
+  calledById: null, calledAt: null, depositCancelledByContractId: null,
   createdAt: new Date('2026-11-14T00:00:00Z'), updatedAt: new Date('2026-11-14T00:00:00Z'),
   user: null,
   room: { code: '201', buildingId: 1, isActive: true, underMaintenance: false,

@@ -69,7 +69,8 @@ export function viewingPrisma() {
     data = Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined));
     const row = { id: nextId++, roomId: 101, userId: null, guestName: 'Khách', guestPhone: '0911111111',
       visitAt: new Date(HOUR), visitDate: null, timeSlot: null, status: 'NEW', source: 'MANUAL',
-      note: null, outcomeNote: null, handledById: null, contractId: null, createdAt: new Date(), updatedAt: new Date(), ...data };
+      note: null, outcomeNote: null, handledById: null, contractId: null, createdAt: new Date(), updatedAt: new Date(),
+      calledById: null, calledAt: null, depositCancelledByContractId: null, ...data };
     rows.push(row); return row;
   }
   const prisma: any = {

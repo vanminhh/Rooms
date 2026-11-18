@@ -12,6 +12,8 @@ describe('BE-EX-19..23 /me and staff HTTP contract', () => {
   let app: INestApplication, tokens: TokenService;
   const db = viewingPrisma();
   beforeAll(async () => {
+    db.prisma.roomPrice = { count: vi.fn(async () => 0) };
+    db.prisma.ratePlan = { count: vi.fn(async () => 0) };
     vi.stubEnv('JWT_SECRET', 'viewing-http-test-only-0123456789abcdef');
     vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(NOW);
     const module = await Test.createTestingModule({ imports: [AppModule] }).overrideProvider(PrismaService).useValue(db.prisma)
@@ -79,5 +81,60 @@ describe('BE-EX-19..23 /me and staff HTTP contract', () => {
   });
   it.each(['0', '-1', 'abc', '2147483648'])('API-03: invalid id %s rejected before reading DB', async id => {
     await request(app.getHttpServer()).get(`/api/v1/me/viewings/${id}`).set('Authorization', await auth(4)).expect(400);
+  });
+
+  it('VIEW-06/D-39: first call removes the dashboard task, keeps the viewing cancelled, and a repeat preserves the record', async () => {
+    const note = 'Phòng đã có người đặt cọc';
+    const row = db.add({ userId: 4, source: 'WEB', status: 'CANCELLED', note, handledById: 1, depositCancelledByContractId: 81 });
+    const manager = await auth(2);
+    const dashboard = () => request(app.getHttpServer()).get('/api/v1/dashboard').set('Authorization', manager).expect(200);
+    const callPath = `/api/v1/viewings/${row.id}/called`;
+    db.prisma.viewing.updateMany.mockClear();
+
+    const before = await dashboard();
+    expect(before.body.data.depositCancelledViewings).toEqual({ count: 1, items: [expect.objectContaining({ id: row.id, calledAt: null })] });
+    const first = await request(app.getHttpServer()).post(callPath).set('Authorization', manager).expect(200);
+    expect(first.body.data).toMatchObject({ id: row.id, status: 'CANCELLED', note, handledById: 1, calledAt: NOW.toISOString(), calledById: 2 });
+    expect((await dashboard()).body.data.depositCancelledViewings).toEqual({ count: 0, items: [] });
+
+    vi.setSystemTime(new Date(NOW.getTime() + 60_000));
+    try {
+      const repeat = await request(app.getHttpServer()).post(callPath).set('Authorization', await auth(1)).expect(200);
+      expect(repeat.body.data).toEqual(first.body.data);
+      expect(db.prisma.viewing.updateMany).toHaveBeenCalledOnce();
+      const own = await request(app.getHttpServer()).get(`/api/v1/me/viewings/${row.id}`).set('Authorization', await auth(4)).expect(200);
+      expect(own.body.data.status).toBe('CANCELLED');
+      for (const key of ['calledAt', 'calledById', 'depositCancelledByContractId']) expect(own.body.data).not.toHaveProperty(key);
+    } finally {
+      vi.setSystemTime(NOW);
+    }
+  });
+
+  it('SCOPE-02/VIEW-06: a manager cannot mark a viewing of another building as called', async () => {
+    const row = db.add({ roomId: 301, status: 'CANCELLED', depositCancelledByContractId: 81 });
+    const response = await request(app.getHttpServer()).post(`/api/v1/viewings/${row.id}/called`).set('Authorization', await auth(2)).expect(403);
+    expect(response.body.error.code).toBe('OUT_OF_SCOPE');
+    expect(row.calledAt).toBeNull();
+  });
+
+  it('SCOPE-01/05: the called endpoint requires a staff account', async () => {
+    const row = db.add({ status: 'CANCELLED', depositCancelledByContractId: 81 });
+    const call = () => request(app.getHttpServer()).post(`/api/v1/viewings/${row.id}/called`);
+    await call().expect(401);
+    for (const id of [4, 5]) {
+      const response = await call().set('Authorization', await auth(id)).expect(403);
+      expect(response.body.error.code).toBe('FORBIDDEN');
+    }
+    expect(row.calledAt).toBeNull();
+  });
+
+  it('VIEW-06/API-04: an ordinary cancellation, even with the same note, cannot be marked as called', async () => {
+    const row = db.add({ status: 'CANCELLED', note: 'Phòng đã có người đặt cọc' });
+    const token = await auth(1);
+    const response = await request(app.getHttpServer()).post(`/api/v1/viewings/${row.id}/called`).set('Authorization', token).expect(409);
+    expect(response.body.error.code).toBe('CONFLICT_STATE');
+    expect(row.calledAt).toBeNull();
+    await request(app.getHttpServer()).post('/api/v1/viewings/0/called').set('Authorization', token).expect(400);
+    await request(app.getHttpServer()).post('/api/v1/viewings/2147483647/called').set('Authorization', token).expect(404);
   });
 });

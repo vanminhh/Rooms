@@ -52,6 +52,9 @@ interface ViewingRow {
   note: string | null;
   source: string;
   handledById: number | null;
+  calledById: number | null;
+  calledAt: Date | null;
+  depositCancelledByContractId: number | null;
   outcomeNote: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -66,6 +69,9 @@ function addRow(rows: ViewingRow[], overrides: Partial<ViewingRow> & { id: numbe
     note: null,
     source: 'WEB',
     handledById: null,
+    calledById: null,
+    calledAt: null,
+    depositCancelledByContractId: null,
     outcomeNote: null,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -93,6 +99,8 @@ function matchRoomWhere(roomWhere: any, roomId: number): boolean {
     const bld = BUILDINGS.get(r.buildingId);
     if (!bld) return false; // ?buildingId of a building that does not exist at all
     if (roomWhere.building.id !== undefined && bld.id !== roomWhere.building.id) return false;
+    if (roomWhere.building.managerId !== undefined && bld.managerId !== roomWhere.building.managerId) return false;
+    if (roomWhere.building.manager?.isActive !== undefined && bld.managerActive !== roomWhere.building.manager.isActive) return false;
     if (roomWhere.building.OR) {
       const ok = roomWhere.building.OR.some((cond: any) =>
         'managerId' in cond ? bld.managerId === cond.managerId : bld.managerId !== null && bld.managerActive === cond.manager.isActive,
@@ -105,6 +113,8 @@ function matchRoomWhere(roomWhere: any, roomId: number): boolean {
 
 function matchWhere(row: ViewingRow, where: any): boolean {
   if (where.status !== undefined && row.status !== where.status) return false;
+  if (where.depositCancelledByContractId?.not === null && row.depositCancelledByContractId === null) return false;
+  if (where.calledAt === null && row.calledAt !== null) return false;
   if (where.room !== undefined && !matchRoomWhere(where.room, row.roomId)) return false;
   if (where.id !== undefined && !where.id.in.includes(row.id)) return false;
   return true;
@@ -115,14 +125,17 @@ function makePrisma(
   roomPriceRows: { status: string; effectiveFrom: Date }[] = [],
   ratePlanRows: { status: string; effectiveFrom: Date }[] = [],
 ) {
-  return {
+  const prisma = {
+    $transaction: vi.fn(async (work: (tx: typeof prisma) => Promise<unknown>) => work(prisma)),
     user: { findFirst: vi.fn(async () => ({ id: 1 })) },
     viewing: {
-      findMany: vi.fn(async ({ where, select }: any) => {
+      count: vi.fn(async ({ where }: any) => viewingRows.filter(r => matchWhere(r, where)).length),
+      findMany: vi.fn(async ({ where, select, orderBy, take }: any) => {
         if (where.visitAt?.not === null) return []; // These historical fixtures have only legacy slots.
         const rows = viewingRows.filter((r) => matchWhere(r, where));
         if (select) return rows.map((r) => ({ id: r.id, visitDate: r.visitDate, timeSlot: r.timeSlot }));
-        return rows.map((r) => ({ ...r, room: roomInclude(r.roomId) }));
+        if (orderBy) rows.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime() || a.id - b.id);
+        return rows.slice(0, take).map((r) => ({ ...r, room: roomInclude(r.roomId) }));
       }),
     },
     roomPrice: {
@@ -138,6 +151,7 @@ function makePrisma(
       ),
     },
   } as any;
+  return prisma;
 }
 
 describe('CP-5 (BE-P2-33) · DashboardService.get — newViewings (VIEW-07, SCOPE-04)', () => {
@@ -305,5 +319,48 @@ describe('CP-5 (BE-P2-33) · DashboardService.get — scope guard on ?buildingId
     const prisma = makePrisma([]);
     const service = new DashboardService(prisma);
     await expect(service.get(MANAGER_10, { buildingId: 10 } as DashboardQueryDto)).resolves.toBeDefined();
+  });
+});
+
+describe('BE-P3-11 · depositCancelledViewings (VIEW-06, NOTI-06, D-39)', () => {
+  const pending = { visitDate: MINUS_30, status: 'CANCELLED', depositCancelledByContractId: 41 };
+
+  it('VIEW-06/D-39: manager counts every unresolved task and gets at most five, earliest bookings first', async () => {
+    const rows: ViewingRow[] = [];
+    for (const id of [6, 5, 4, 3, 2, 1]) addRow(rows, { ...pending, roomId: 101, id, createdAt: TODAY });
+    addRow(rows, { ...pending, roomId: 401, id: 7 });
+    addRow(rows, { ...pending, roomId: 101, id: 8, calledAt: TODAY, calledById: 2 });
+    addRow(rows, { ...pending, roomId: 101, id: 9, depositCancelledByContractId: null, note: 'Phòng đã có người đặt cọc' });
+    const service = new DashboardService(makePrisma(rows));
+
+    const { depositCancelledViewings } = await service.get(MANAGER_10, { buildingId: 10 });
+    expect(depositCancelledViewings.count).toBe(6);
+    expect(depositCancelledViewings.items.map(row => row.id)).toEqual([1, 2, 3, 4, 5]);
+  });
+
+  it('VIEW-06/SCOPE-04: Boss gets only fallback tasks, and buildingId narrows the group', async () => {
+    const rows: ViewingRow[] = [];
+    addRow(rows, { ...pending, roomId: 101, id: 1, createdAt: TODAY });
+    addRow(rows, { ...pending, roomId: 201, id: 2, createdAt: TODAY });
+    addRow(rows, { ...pending, roomId: 301, id: 3, createdAt: TODAY });
+    const service = new DashboardService(makePrisma(rows));
+
+    const { depositCancelledViewings: fallback } = await service.get(BOSS, {});
+    expect(fallback.count).toBe(2);
+    expect(fallback.items.map(row => row.id)).toEqual([2, 3]);
+    const { depositCancelledViewings: filtered } = await service.get(BOSS, { buildingId: 30 });
+    expect(filtered.count).toBe(1);
+    expect(filtered.items.map(row => row.id)).toEqual([3]);
+    expect((await service.get(BOSS, { buildingId: 10 })).depositCancelledViewings).toEqual({ count: 0, items: [] });
+  });
+
+  it('SCOPE-02/04: an inactive manager’s former tasks belong to Boss even with a stale scope', async () => {
+    const rows: ViewingRow[] = [];
+    addRow(rows, { ...pending, roomId: 301, id: 3 });
+    const service = new DashboardService(makePrisma(rows));
+    const formerManager = { ...MANAGER_10, id: 3, buildingIds: [30] };
+
+    expect((await service.get(formerManager, {})).depositCancelledViewings).toEqual({ count: 0, items: [] });
+    expect((await service.get(BOSS, {})).depositCancelledViewings.count).toBe(1);
   });
 });

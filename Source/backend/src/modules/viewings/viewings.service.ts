@@ -53,6 +53,7 @@ export function toView(row: ViewingRecord, overlap = false): ViewingView {
     timeSlotLabel: timeSlot === null ? null : TIME_SLOT_LABELS[timeSlot], note: row.note,
     source: row.source, status: row.status, statusLabel: STATUS_LABELS[row.status],
     handledById: row.handledById, outcomeNote: row.outcomeNote,
+    calledById: row.calledById, calledAt: row.calledAt?.toISOString() ?? null,
     overdue: row.status === 'NEW' && viewingStart(row).getTime() < Date.now(), overlap,
     roomLocked: row.room.isActive === false || row.room.underMaintenance === true || row.room.building.isActive === false,
     createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString(),
@@ -158,6 +159,25 @@ export class ViewingsService {
       if (dto.note !== undefined) data.note = dto.note;
       if (dto.outcomeNote !== undefined) data.outcomeNote = dto.outcomeNote;
       return this.change(tx, current, data);
+    }, TX_OPTIONS);
+    return toView(row);
+  }
+
+  async markCalled(actor: AuthUser, id: number): Promise<ViewingView> {
+    if (actor.role !== 'BOSS' && actor.role !== 'MANAGER') throw new ForbiddenException(ErrorCode.FORBIDDEN);
+
+    const row = await this.prisma.$transaction(async tx => {
+      const current = await this.lockedViewing(tx, id);
+      const room = await viewingRoom(tx, current.roomId, false);
+      if (actor.role === 'MANAGER' && !actor.buildingIds?.includes(room.buildingId)) {
+        throw new ForbiddenException(ErrorCode.OUT_OF_SCOPE);
+      }
+      assertViewingScope(actor, room);
+      if (current.status !== 'CANCELLED' || current.depositCancelledByContractId === null) throw conflict();
+
+      // VIEW-06 / D-39: the row lock makes simultaneous and repeated calls return the first result.
+      if (current.calledAt !== null) return current;
+      return this.change(tx, current, { calledById: actor.id, calledAt: new Date() });
     }, TX_OPTIONS);
     return toView(row);
   }

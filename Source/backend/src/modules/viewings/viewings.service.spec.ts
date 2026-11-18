@@ -14,6 +14,19 @@ export function setup() {
 beforeEach(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(NOW); });
 afterEach(() => vi.useRealTimers());
 
+describe('BE-P3-11 VIEW-06: mark deposit cancellation called', () => {
+  it('SCOPE-02: a manager must have the building both at authentication and under the mapping lock', async () => {
+    const { db, service } = setup();
+    const row = db.add({ status: 'CANCELLED', depositCancelledByContractId: 71 });
+    const denied = { status: 403, response: { message: 'OUT_OF_SCOPE' } };
+
+    await expect(service.markCalled({ ...MANAGER, buildingIds: [] }, row.id)).rejects.toMatchObject(denied);
+    db.buildings[0].managerId = 3;
+    await expect(service.markCalled(MANAGER, row.id)).rejects.toMatchObject(denied);
+    expect(db.prisma.viewing.updateMany).not.toHaveBeenCalled();
+  });
+});
+
 describe('BE-EX-19 account bookings', () => {
   it('VIEW-01/12/14: copies account identity, saves exact hour, returns owner id and public contacts', async () => {
     const { db, service, send } = setup();

@@ -62,6 +62,7 @@ flowchart TD
 | POST | `/viewings` | staff (manual, VIEW-03) |
 | PATCH | `/viewings/:id` | staff – status, note, time (VIEW-04, VIEW-09) |
 | POST | `/viewings/:id/confirm` `{ via: "PHONE" | "EMAIL" }` | staff – VIEW-15 |
+| POST | `/viewings/:id/called` | staff in scope – record the call for a deposit-cancelled viewing, VIEW-06 / D-39 |
 
 Removed: `POST /public/viewings`.
 
@@ -72,6 +73,7 @@ Removed: `POST /public/viewings`.
 - [ ] Booking for a non-public room returns `ROOM_NOT_AVAILABLE`; booking without login is refused (VIEW-01).
 - [ ] The 4th booking of one account in a day returns 429; two parallel bookings of an account that already has 2 today save only one (VIEW-02).
 - [ ] Creating a HOLD contract from viewing A cancels viewing B of the same room (VIEW-06).
+- [ ] A viewing cancelled by a HOLD appears for the responsible staff member until marked “Đã gọi”. Pressing again preserves the first caller and time. Ordinary cancellations are ineligible (VIEW-06, D-39).
 - [ ] A start time in the past, more than 30 days ahead, at 7:00, at 20:00 or at 10:30 is rejected with `fields.visitAt`; 8:00 and 19:00 are accepted (VIEW-08).
 - [ ] PATCH cannot set WON. NEW/CONFIRMED → DONE before start returns CONFLICT_STATE; after start either may become DONE directly. NEW/CONFIRMED → LOST is refused; DONE → LOST requires outcome_note. Staff cancellation requires a note (VIEW-04).
 - [ ] Two guests simultaneously request the last place of a building/hour already holding 2 distinct phones: one succeeds, the other gets VIEWING_TIME_TAKEN. A fourth distinct guest is refused; a second room for an existing phone is allowed without increasing the count (VIEW-16).

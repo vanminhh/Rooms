@@ -4,6 +4,7 @@ import { todayHanoi } from '../../common/date/today.js';
 import { ErrorCode } from '../../common/errors/error-code.js';
 import type { AuthUser } from '../../common/guards/auth.decorators.js';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
+import { scopeWhere } from '../../common/scope/scope.js';
 import { toView, VIEWING_INCLUDE } from '../viewings/viewings.service.js';
 import type { ViewingView } from '../viewings/viewings.types.js';
 import { viewingStart } from '../viewings/viewing-time.js';
@@ -11,10 +12,11 @@ import { viewingOverlapIds } from '../viewings/viewing-capacity.js';
 import { viewingBossId, viewingHolds } from '../viewings/viewing-reservations.js';
 import type { DashboardQueryDto } from './dto/dashboard.dto.js';
 
-// "Việc hôm nay" cards of Phase 2 (NOTI-06): new viewings (VIEW-07) and pending prices (PRC-11).
+// "Việc hôm nay" (NOTI-06).
 export interface DashboardView {
   newViewings: { count: number; items: ViewingView[] };
   overlappingViewings: { count: number; items: ViewingView[] };
+  depositCancelledViewings: { count: number; items: ViewingView[] };
   pendingPrices: { count: number; rooms: number; ratePlans: number } | null;
 }
 
@@ -46,6 +48,7 @@ export class DashboardService {
     return {
       newViewings: await this.newViewings(user, query.buildingId, overlaps),
       overlappingViewings: await this.overlappingViewings(user, query.buildingId, overlaps),
+      depositCancelledViewings: await this.depositCancelledViewings(user, query.buildingId),
       pendingPrices: user.buildingIds === null ? await this.pendingPrices() : null,
     };
   }
@@ -77,6 +80,23 @@ export class DashboardService {
     const rows = await this.prisma.viewing.findMany({ where: { id: { in: [...overlaps] }, room }, include: VIEWING_INCLUDE });
     rows.sort(bySlot);
     return { count: rows.length, items: rows.slice(0, ITEM_LIMIT).map(row => toView(row, true)) };
+  }
+
+  // VIEW-06 / D-39: keep the task with the current responsible person until the call is recorded.
+  private async depositCancelledViewings(user: AuthUser, buildingId: number | undefined): Promise<DashboardView['depositCancelledViewings']> {
+    const room: Prisma.RoomWhereInput = user.role === 'BOSS'
+      ? { building: { id: buildingId, ...WITHOUT_ACTIVE_MANAGER } }
+      : { ...scopeWhere(user), building: { id: buildingId, isActive: true, managerId: user.id, manager: { isActive: true } } };
+    const where: Prisma.ViewingWhereInput = {
+      status: 'CANCELLED', depositCancelledByContractId: { not: null }, calledAt: null, room,
+    };
+    return this.prisma.$transaction(async tx => {
+      const count = await tx.viewing.count({ where });
+      const rows = count === 0 ? [] : await tx.viewing.findMany({
+        where, include: VIEWING_INCLUDE, orderBy: [{ createdAt: 'asc' }, { id: 'asc' }], take: ITEM_LIMIT,
+      });
+      return { count, items: rows.map(row => toView(row)) };
+    }, { isolationLevel: 'RepeatableRead' });
   }
 
   // PRC-11: Boss only; PENDING proposals that are not expired (effective_from today or later).
