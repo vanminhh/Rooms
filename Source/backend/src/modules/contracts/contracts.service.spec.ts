@@ -306,10 +306,11 @@ describe('CON-04..05 / VIEW-05..06: signer and viewing changes', () => {
     await f.create({ ...request, viewingId: 4 });
     expect(f.db.viewings).toMatchObject([
       { id: 4, status: 'WON', contractId: 123, userId: 41, handledById: actor.id },
-      { id: 5, status: 'CANCELLED', note: 'Phòng đã có người đặt cọc', handledById: actor.id },
+      { id: 5, status: 'CANCELLED', note: 'Phòng đã có người đặt cọc', handledById: actor.id, depositCancelledByContractId: 123 },
       { id: 6, status: 'NEW' },
       { id: 7, status: 'LOST' },
     ]);
+    expect(f.db.viewings.filter(viewing => 'depositCancelledByContractId' in viewing).map(viewing => viewing.id)).toEqual([5]);
     expect(f.db.audit).toContainEqual(expect.objectContaining({
       action: 'contract.create', entityId: 123, after: expect.objectContaining({ viewingId: 4, cancelledViewingIds: [5] }),
     }));

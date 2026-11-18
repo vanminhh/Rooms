@@ -212,7 +212,10 @@ export class ContractsService {
       }
       const cancelled = await tx.viewing.updateManyAndReturn({
         where: { roomId: room.id, status: { in: ['NEW', 'CONFIRMED'] } },
-        data: { status: 'CANCELLED', note: 'Phòng đã có người đặt cọc', handledById: actor.id },
+        data: {
+          status: 'CANCELLED', note: 'Phòng đã có người đặt cọc', handledById: actor.id,
+          depositCancelledByContractId: id,
+        },
         select: { id: true },
       });
       await this.audit.log(actor.id, 'contract.create', 'contract', id, undefined, {

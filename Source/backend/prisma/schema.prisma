@@ -200,6 +200,7 @@ model User {
   ratePlansReviewed   RatePlan[]           @relation("RatePlanReviewer")
   viewingsHandled     Viewing[] @relation("ViewingHandler")
   viewingsOwned       Viewing[] @relation("ViewingOwner")
+  viewingsCalled      Viewing[] @relation("ViewingCaller")
   meterReadings       MeterReading[]
   paymentsRecorded    Payment[]
   bankTxHandled       BankTransaction[]
@@ -453,10 +454,16 @@ model Viewing {
   createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz
   updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz
 
+  calledById                   Int?      @map("called_by_id") // VIEW-06: staff who called the guest
+  calledAt                     DateTime? @map("called_at") @db.Timestamptz
+  depositCancelledByContractId Int?      @map("deposit_cancelled_by_contract_id")
+
   room      Room      @relation(fields: [roomId], references: [id], onDelete: Restrict)
   handledBy User?     @relation("ViewingHandler", fields: [handledById], references: [id], onDelete: SetNull)
   user      User?     @relation("ViewingOwner", fields: [userId], references: [id], onDelete: Restrict)
-  contract  Contract? @relation(fields: [contractId], references: [id], onDelete: SetNull)
+  contract  Contract? @relation("ViewingWonContract", fields: [contractId], references: [id], onDelete: SetNull)
+  calledBy  User?     @relation("ViewingCaller", fields: [calledById], references: [id], onDelete: Restrict)
+  depositCancelledByContract Contract? @relation("ViewingDepositCancellation", fields: [depositCancelledByContractId], references: [id], onDelete: Restrict)
 
   @@index([roomId, visitDate])
   @@index([userId, createdAt])
@@ -497,7 +504,7 @@ model Contract {
   createdBy        User              @relation("ContractCreator", fields: [createdById], references: [id], onDelete: Restrict)
   previousContract Contract?         @relation("Renewal", fields: [previousContractId], references: [id], onDelete: Restrict)
   nextContract     Contract?         @relation("Renewal")
-  viewing          Viewing?
+  viewing          Viewing?          @relation("ViewingWonContract")
   services         ContractService[]
   occupants        Occupant[]
   vehicles         Vehicle[]
@@ -505,6 +512,7 @@ model Contract {
   invoices         Invoice[]
   settlement       Settlement?
   requests         Request[]
+  depositCancelledViewings Viewing[] @relation("ViewingDepositCancellation")
 
   @@unique([id, buildingId])
   @@index([tenantId])

@@ -45,6 +45,7 @@ SELECT setval(pg_get_serial_sequence(t, 'id'), 100)
 const C = `INSERT INTO contracts (code, building_id, room_id, tenant_id, start_date, term_months, end_date, rent, deposit, status, created_by_id, updated_at) VALUES`;
 const OTP = `INSERT INTO email_otps (email, code_hash, expires_at)`;
 const IDEM = `INSERT INTO pricing_idempotency_keys (actor_id, key, route, request_hash, status_code, response_json, expires_at)`;
+const VCALL = `INSERT INTO viewings (room_id,guest_name,guest_phone,visit_at,updated_at,status,deposit_cancelled_by_contract_id,called_by_id,called_at) VALUES`;
 
 // [nhóm, tình huống, SQL, kết quả mong đợi: 'ok' hoặc tên ràng buộc/mã lỗi phải xuất hiện]
 const cases = [
@@ -64,6 +65,15 @@ const cases = [
   ['Viewings', 'VIEW-02a: DONE permits another open booking', `INSERT INTO viewings (room_id,user_id,guest_name,guest_phone,visit_at,status,updated_at) VALUES (1,6,'Guest','0900000006','2026-11-15T10:00:00+07:00','DONE',now()),(1,6,'Guest','0900000006','2026-11-16T10:00:00+07:00','NEW',now())`, 'ok'],
   ['Viewings', 'VIEW-02a/16: one account may hold different rooms in the same building and hour', `INSERT INTO viewings (room_id,user_id,guest_name,guest_phone,visit_at,updated_at) VALUES (1,6,'Guest','0900000006','2026-11-15T10:00:00+07:00',now()),(2,6,'Guest','0900000006','2026-11-15T10:00:00+07:00',now())`, 'ok'],
   ['Viewings', 'VIEW-01: owner with viewing history cannot be deleted', `INSERT INTO viewings (room_id,user_id,guest_name,guest_phone,visit_at,updated_at) VALUES (1,6,'Guest','0900000006',now(),now()); DELETE FROM users WHERE id=6`, 'viewings_user_id_fkey'],
+  ['Viewings', 'VIEW-06: ordinary cancellations do not require a contract or call', `${VCALL} (1,'Guest','0900000006',now(),now(),'CANCELLED',NULL,NULL,NULL)`, 'ok'],
+  ['Viewings', 'VIEW-06: a deposit cancellation can be waiting for a call', `${VCALL} (1,'Guest','0900000006',now(),now(),'CANCELLED',1,NULL,NULL)`, 'ok'],
+  ['Viewings', 'VIEW-06: a completed call keeps both actor and time', `${VCALL} (1,'Guest','0900000006',now(),now(),'CANCELLED',1,2,now())`, 'ok'],
+  ['Viewings', 'VIEW-06: reject a caller without a call time', `${VCALL} (1,'Guest','0900000006',now(),now(),'CANCELLED',1,2,NULL)`, 'viewings_called_pair'],
+  ['Viewings', 'VIEW-06: reject a call time without a caller', `${VCALL} (1,'Guest','0900000006',now(),now(),'CANCELLED',1,NULL,now())`, 'viewings_called_pair'],
+  ['Viewings', 'VIEW-06: reject a call on an ordinary cancellation', `${VCALL} (1,'Guest','0900000006',now(),now(),'CANCELLED',NULL,2,now())`, 'viewings_called_requires_deposit_cancellation'],
+  ['Viewings', 'VIEW-06: reject a deposit cancellation marker on an open viewing', `${VCALL} (1,'Guest','0900000006',now(),now(),'CONFIRMED',1,NULL,NULL)`, 'viewings_deposit_cancellation_status'],
+  ['Viewings', 'VIEW-06: reject a nonexistent caller', `${VCALL} (1,'Guest','0900000006',now(),now(),'CANCELLED',1,99999,now())`, 'viewings_called_by_id_fkey'],
+  ['Viewings', 'VIEW-06: reject a nonexistent cancelling contract', `${VCALL} (1,'Guest','0900000006',now(),now(),'CANCELLED',99999,NULL,NULL)`, 'viewings_deposit_cancelled_by_contract_id_fkey'],
 
   ['Tài khoản', 'Thêm Boss thứ hai', `INSERT INTO users (role, phone, full_name, password_hash, updated_at) VALUES ('BOSS','0900000009','B2','x',now())`, 'users_one_boss'],
   ['Tài khoản', 'SĐT sai định dạng', `INSERT INTO users (role, phone, full_name, password_hash, updated_at) VALUES ('TENANT','12345','X','x',now())`, 'users_phone_vn'],

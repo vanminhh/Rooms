@@ -12,7 +12,7 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 |---|---|---|---|---|---|
 | P3-0 Chủ dự án chuẩn bị | đang làm | – | – | Giữ bản sao an toàn của `CCCD_KEY`; mẫu hợp đồng (Q-15) sau | Đã tạo khóa mới trong `.env` local theo yêu cầu chủ dự án, không dùng khóa đã gửi vào chat; cấu hình `NODE_ENV=development` |
 | P3-1 BE nền | xong | BE-P3-04..06 | `eb8cf64` | P3-2 | Chủ dự án xác nhận unit suite và e2e `POST /files/sign` đều pass |
-| P3-2 BE tạo hợp đồng | chờ commit | BE-P3-10 | `2f188e0` (BE-P3-07..09) | Chủ dự án commit BE-P3-10 và duyệt tạo migration BE-P3-11 | [Checkpoint BE-P3-10](plans/P3-2/CHECKPOINT-BE-P3-10.md) · reviewer DUYỆT |
+| P3-2 BE tạo hợp đồng | chờ commit | Migration BE-P3-11 đã áp dụng | `ef40af3` (BE-P3-10) | Commit migration, sau đó làm API “Đã gọi” và nhóm “Việc hôm nay” | [Checkpoint migration BE-P3-11](plans/P3-2/CHECKPOINT-BE-P3-11-MIGRATION.md) |
 | P3-3 BE ký + cọc | chưa làm | – | – | BE-P3-13 | cần P3-2 |
 | P3-4 BE dọn vào + hủy | chưa làm | – | – | BE-P3-20 | cần P3-3 |
 | P3-5 BE người ở + xe | chưa làm | – | – | BE-P3-23 | cần P3-4 (cùng module) |
@@ -24,6 +24,9 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 
 Mới nhất ở trên. Mỗi dòng: `ngày · phần · task vừa xong · kết quả kiểm tra (số thật) · việc còn treo`.
 
+- 18/11/2026 · P3-2 ⏸ migration BE-P3-11 đã áp dụng · Ảnh PowerShell trên máy dự án xác nhận `20261118000000_viewing_deposit_calls` đã áp dụng thành công, Prisma báo `9 migrations found` và `Database schema is up to date!`, sau đó sinh Prisma Client 6.19.3 · chờ chủ dự án commit, rồi làm API “Đã gọi” và nhóm “Việc hôm nay”.
+- 18/11/2026 · P3-2 ⏸ áp dụng migration BE-P3-11 · Chủ dự án đã duyệt DB dev. Lượt kiểm lịch sử trả `P1001`, DNS của `DIRECT_URL` và `DATABASE_URL` đều trả `ENOTFOUND`. Bước deploy còn chờ máy kết nối được DB dev. Giữ cùng lượt triển khai migration và backend ghi liên kết hủy lịch.
+- 18/11/2026 · P3-2 ⏸ trước khi áp dụng migration BE-P3-11 · Đã tạo migration ghi liên kết hợp đồng và người/thời điểm gọi. Luồng tạo HOLD ghi liên kết trong giao dịch hiện có. Reviewer Codex DUYỆT sau khi cập nhật writer và trình tự triển khai. Prisma validate/generate và build đạt, lint 0 lỗi/4 cảnh báo cũ, DB checker 97/97. PostgreSQL nhúng chạy 8 migration cũ và migration mới, kiểm 10 bản ghi lịch sử, 4 ràng buộc, ghi và rollback liên kết qua Prisma. Backend qua HTTP trong bộ nhớ đạt 1927/1927 (97 file). TCP riêng gặp 11 lỗi loopback `EACCES`. Đọc trạng thái DB dev báo `P1001` · chờ duyệt áp dụng và hoàn tất API/dashboard.
 - 17/11/2026 · P3-2 ⏸ BE-P3-10 · Danh sách và chi tiết hợp đồng theo phạm vi tòa. Reviewer DUYỆT, build exit 0, lint 0 lỗi/4 cảnh báo cũ, 57/57 test hợp đồng, 8/8 ca hồi quy HTTP POST. PostgreSQL nhúng kiểm truy vấn thực. Bộ backend qua HTTP trong bộ nhớ đạt 1927/1927 (97 file). 11 ca GET qua TCP chuẩn trong phiên này gặp `connect EACCES 127.0.0.1` · chờ chủ dự án commit và duyệt tạo migration BE-P3-11
 - 17/11/2026 · P3-2 ⏸ BE-P3-07..09 · Ảnh kết quả trên máy dự án xác nhận 96/96 file và 1916/1916 test đạt, thời lượng 104,96 giây · chờ chủ dự án commit
 - 17/11/2026 · P3-2 ⏸ BE-P3-07..09 · Áp dụng 1A, 2C, 3B, 4A. Tạo HOLD, xử lý người ký, tài khoản và lịch trong một giao dịch. Reviewer DUYỆT sau hai bản sửa auth và quyền tòa. Lint 0 lỗi/4 cảnh báo cũ, build exit 0, 86/86 test tập trung, 8/8 ca HTTP tạo hợp đồng. PostgreSQL nhúng xác nhận chỉ mục chống trùng và rollback. Bộ test chuẩn 1156/1916, 760 lỗi đều `connect EACCES 127.0.0.1`. Chạy cả 96 file qua HTTP trong bộ nhớ đạt 1916/1916 · chờ chủ dự án kiểm chứng và commit

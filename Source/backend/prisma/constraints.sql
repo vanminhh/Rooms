@@ -51,6 +51,13 @@ ALTER TABLE rate_tiers ADD CONSTRAINT rate_tiers_values CHECK (tier_no >= 1 AND 
 
 -- ── Khách, hợp đồng ──
 ALTER TABLE viewings ADD CONSTRAINT viewings_phone_vn CHECK (guest_phone ~ '^0[0-9]{9}$');
+-- VIEW-06 / D-39: calls are recorded only on viewings cancelled by a HOLD creation.
+ALTER TABLE viewings
+  ADD CONSTRAINT viewings_called_pair CHECK ((called_by_id IS NULL) = (called_at IS NULL)),
+  ADD CONSTRAINT viewings_deposit_cancellation_status
+    CHECK (deposit_cancelled_by_contract_id IS NULL OR status = 'CANCELLED'),
+  ADD CONSTRAINT viewings_called_requires_deposit_cancellation
+    CHECK (called_at IS NULL OR deposit_cancelled_by_contract_id IS NOT NULL);
 
 ALTER TABLE contracts ADD CONSTRAINT contracts_term_min_3 CHECK (term_months >= 3);
 ALTER TABLE contracts ADD CONSTRAINT contracts_dates CHECK (end_date > start_date);
