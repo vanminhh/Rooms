@@ -32,7 +32,7 @@ Out: payments for any other invoice type, the bank webhook, monthly invoices (Ph
   Done when: tests: totals equal the line, deposit 0 creates nothing, the DB rule "one non-cancelled invoice per contract, type, period" holds.
 - [x] **BE-P3-15** ⏸ VietQR for the deposit invoice (BIL-10, G-09): staff contract detail and the tenant's routes include `vietqr` (bank from `settings.bank_account`, amount = total, content `TT{id}`) and `qrImageUrl`.
   Done when: test with the seed `bank_account`: amount and content match the invoice; no VietQR for a paid or cancelled invoice. Stop and report BE-P3-13..15.
-- [ ] **BE-P3-16** Record the deposit by hand (BIL-11 for `DEPOSIT` only, D-11, API-05): `POST /invoices/:id/payment { method, paidAt?, note? }` by staff in scope, amount = invoice total, `Idempotency-Key` honoured; any other invoice type → `CONFLICT_STATE` until Phase 4; DB trigger errors mapped (`INVOICE_NOT_UNPAID`, `PAYMENT_AMOUNT_MISMATCH`); audit `payment.record`.
+- [x] **BE-P3-16** Record the deposit by hand (BIL-11 for `DEPOSIT` only, D-11, API-05): `POST /invoices/:id/payment { method, paidAt?, note? }` by staff in scope, amount = invoice total, `Idempotency-Key` honoured; any other invoice type → `CONFLICT_STATE` until Phase 4; DB trigger errors mapped (`INVOICE_NOT_UNPAID`, `PAYMENT_AMOUNT_MISMATCH`); audit `payment.record`.
   Done when: tests: two parallel payments → one succeeds, the other `INVOICE_NOT_UNPAID`; the same key twice → same result, one payment row; a manager of another building → `OUT_OF_SCOPE`.
 - [ ] **BE-P3-17** `POST /contracts/:id/reset-password` (AUTH-07, AUTH-T3): staff in scope reset the tenant's password to a new temporary one, returned once, `must_change_password = true`, all sessions revoked; audit (password reset by staff, AUD-01).
   Done when: tests: old sessions stop working; the new password logs in and must be changed; a guest-only account (no contract in scope) → `NOT_FOUND`.
@@ -48,6 +48,7 @@ Out: payments for any other invoice type, the bank webhook, monthly invoices (Ph
 
 ## Issues log
 
+- 19/11/2026 · BE-P3-16 · [Checkpoint BE-P3-16](plans/P3-3/CHECKPOINT-BE-P3-16.md): reviewer DUYỆT, 62/62 test tập trung, build/lint và smoke PostgreSQL nhúng đạt. Bộ backend đầy đủ trên bản mới chưa có kết quả vì automatic approval review chặn telemetry Visual Studio chưa rõ payload; cần chạy `npm run test` trên máy dự án trước nghiệm thu/commit. Không dùng kết quả 1961 test của mốc trước thay kết quả BE-P3-16. E2E dev chờ giai đoạn BE-P3-19.
 - 19/11/2026 · BE-P3-13..15 · Đã giải quyết phần chờ full suite: ảnh chủ dự án xác nhận 99/99 file và 1961/1961 test đạt, 90,01 giây. Checkpoint 1 chờ kiểm tra và commit. E2E DB dev và cleanup list của P3-2 vẫn chờ riêng; BE-P3-19 chưa hoàn tất.
 - 19/11/2026 · BE-P3-13..15 · Mã và kiểm tra theo từng luồng đã hoàn tất; [Checkpoint 1](plans/P3-3/CHECKPOINT-1.md) lưu kết quả và review đầy đủ. Full suite trên bản cuối chưa hoàn tất vì automatic approval review chặn telemetry Visual Studio. Cần chạy `npm run test` trên máy dự án trước khi nghiệm thu. DB dev từ phiên Codex vẫn `P1001`; không đánh dấu BE-P3-12 hoặc BE-P3-19 đạt E2E dev.
 

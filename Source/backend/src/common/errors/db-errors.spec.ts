@@ -85,9 +85,11 @@ describe('BE-P2-01 / BE-P2-02: mapDbError, one test per row of PLAN 2.2', () => 
     expect(mapDbError(p2002(target))).toEqual({ code: ErrorCode.CONFLICT_STATE });
   });
 
-  it('API-03: DB_ERROR_MAP includes the EX-1 email and EX-6 open-viewing constraints', () => {
+  it('API-03/BIL-11: DB_ERROR_MAP includes the payment triggers and existing constraints', () => {
     expect(Object.keys(DB_ERROR_MAP).sort()).toEqual(
       [
+        'INVOICE_NOT_UNPAID',
+        'PAYMENT_AMOUNT_MISMATCH',
         'users_phone_key',
         'users_email_key',
         'viewings_one_open_per_user_room',
@@ -100,5 +102,9 @@ describe('BE-P2-01 / BE-P2-02: mapDbError, one test per row of PLAN 2.2', () => 
         'buildings_code_format',
       ].sort(),
     );
+  });
+
+  it.each(['INVOICE_NOT_UNPAID', 'PAYMENT_AMOUNT_MISMATCH'] as const)('BIL-11: trigger %s maps without leaking the raw DB message', code => {
+    expect(mapDbError(dbMessage(`ERROR: ${code}: private invoice details`))).toEqual({ code: ErrorCode[code] });
   });
 });

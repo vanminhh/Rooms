@@ -17,6 +17,8 @@ export function isUniqueOn(error: unknown, ...names: string[]): boolean {
 // Keys: constraint, index and trigger names from prisma/constraints.sql and the init migration.
 // Trigger messages start with the key ("MANAGER_MAX_2_BUILDINGS: ..."). The [ASSUMPTION] wordings are from the plan.
 export const DB_ERROR_MAP: Record<string, DbErrorMapping> = {
+  INVOICE_NOT_UNPAID: { code: ErrorCode.INVOICE_NOT_UNPAID },
+  PAYMENT_AMOUNT_MISMATCH: { code: ErrorCode.PAYMENT_AMOUNT_MISMATCH },
   users_phone_key: { code: ErrorCode.PHONE_TAKEN },
   users_email_key: { code: ErrorCode.EMAIL_TAKEN },
   viewings_one_open_per_user_room: { code: ErrorCode.CONFLICT_STATE },

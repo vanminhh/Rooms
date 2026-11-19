@@ -1,6 +1,8 @@
 # P3-3 — Checkpoint 1 — BE-P3-13..15
 
-Ngày 19/11/2026, bắt đầu từ commit `b6c7ff6` đã được chủ dự án xác nhận. Chưa commit các thay đổi ở checkpoint này.
+Ngày 19/11/2026, bắt đầu từ commit `b6c7ff6` đã được chủ dự án xác nhận. Mã BE-P3-13..15 đã commit tại `0d50e23`.
+
+Ghi nhận ở lượt tiếp theo: BE-P3-13..15 đã nằm trong commit `0d50e23`; workspace sạch trước khi bắt đầu BE-P3-16 theo yêu cầu chủ dự án.
 
 Cập nhật 19/11/2026: ảnh kết quả trên máy chủ dự án xác nhận bộ backend chuẩn đạt **99/99 file, 1961/1961 test**, thời lượng **90,01 giây** (bắt đầu 08:42:54). Đã đủ kết quả test cho checkpoint BE-P3-13..15; đang chờ chủ dự án kiểm tra và commit. Kết quả này không thay thế E2E trên DB dev.
 

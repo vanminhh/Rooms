@@ -8,6 +8,8 @@ Kế hoạch cho BE-P3-13..19, dựa trên P3-2 đã được chủ dự án xá
 
 Mốc đầu kết thúc BE-P3-15: ký với scan riêng tư, kích hoạt đúng tài khoản, hóa đơn cọc và VietQR. Mốc sau làm BE-P3-16..19: ghi thu cọc, reset mật khẩu, hoàn thiện tenant/scan/in và nghiệm thu. Chưa làm move-in/cancel, hóa đơn tháng, webhook, inbox, gia hạn hoặc trang chỉnh mẫu. Q-15 đã cho phép bản in nháp, không cần đợi mẫu thật để phát triển.
 
+Cập nhật 19/11/2026: BE-P3-13..15 đã commit `0d50e23`. Chủ dự án giao riêng **BE-P3-16**, vì vậy lượt này dừng ở [checkpoint BE-P3-16](CHECKPOINT-BE-P3-16.md) để kiểm tra và commit, chưa tiếp tục BE-P3-17..19. Phạm vi CP-2 tổng thể bên dưới vẫn giữ làm kế hoạch cho các lượt sau.
+
 ## Quyết định, giả định và điểm cần xác nhận
 
 ### Cách triển khai BE-P3-13..15
