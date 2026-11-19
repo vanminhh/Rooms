@@ -120,6 +120,12 @@ export async function flaggedTenantUntilPasswordChanged(app: INestApplication) {
 
   await changePassword(app, s, t.password, next);
 
+  // AUTH-T3: the retained refresh session renews the access credential version.
+  expect((await send(app, 'get', '/auth/me', undefined, { token: s.token })).status).toBe(401);
+  const renewed = await send(app, 'post', '/auth/refresh', undefined, { cookie: s.cookie });
+  expect(renewed.status).toBe(200);
+  s.token = renewed.body.data.accessToken;
+  s.cookie = rtOf(renewed);
   expect((await send(app, 'patch', '/auth/me', {}, { token: s.token })).status).toBe(200);
   expect((await send(app, 'get', '/t/tenant', undefined, { token: s.token })).status).toBe(200);
   const staff = await send(app, 'get', '/t/staff', undefined, { token: s.token });

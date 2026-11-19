@@ -186,6 +186,30 @@ describe('SCOPE-01: deny by default', () => {
 });
 
 describe('AUTH-T1: access token checks', () => {
+  it('AUTH-T3: a previously signed token without a credential version cannot bypass revocation', async () => {
+    const legacy = await new JwtService().signAsync(
+      { sub: String(IDS.users.boss), role: 'BOSS' },
+      { secret: SECRET, algorithm: 'HS256', expiresIn: 900 },
+    );
+    const res = await get('/t/whoami', legacy);
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe('UNAUTHENTICATED');
+  });
+
+  it('AUTH-T3: old access tokens stay revoked after password reset and after the forced-change flag clears', async () => {
+    fake.account('tenant').mustChangePassword = false;
+    const old = await tokenFor('tenant');
+    expect((await get('/t/tenant', old)).status).toBe(200);
+
+    fake.account('tenant').passwordHash = '$argon2id$test-reset-hash-with-a-new-salt';
+    fake.account('tenant').mustChangePassword = true;
+    expect((await get('/t/whoami', old)).status).toBe(401);
+
+    fake.account('tenant').mustChangePassword = false;
+    expect((await get('/t/tenant', old)).status).toBe(401);
+    expect((await get('/t/tenant', await tokenFor('tenant'))).status).toBe(200);
+  });
+
   it.each([
     ['no Authorization header', undefined],
     ['Basic scheme', 'Basic dXNlcjpwYXNz'],

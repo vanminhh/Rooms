@@ -1,4 +1,6 @@
 import { JwtService } from '@nestjs/jwt';
+import { credentialVersion } from '../../common/crypto/credential-version.js';
+import type { PrismaService } from '../../common/prisma/prisma.service.js';
 import {
   ACCESS_TOKEN_TTL_SECONDS,
   REFRESH_TTL_REMEMBER_MS,
@@ -10,18 +12,22 @@ import {
 // (an outside edge) and process.env.JWT_SECRET is set by the test and restored after.
 const SECRET = 'test-only-secret-0123456789abcdef0123';
 const OTHER_SECRET = 'another-secret-0123456789abcdef012345';
+const PASSWORD_HASH = '$argon2id$test-only-stored-password-hash';
+const fakeTokenDb = () => ({ user: { findUnique: vi.fn(async () => ({ passwordHash: PASSWORD_HASH })) } });
 
 const b64url = (value: object | string) =>
   Buffer.from(typeof value === 'string' ? value : JSON.stringify(value)).toString('base64url');
 
 describe('AUTH-T1 / BE-LOGIN-10: access token (JWT)', () => {
   const jwt = new JwtService();
-  const tokens = new TokenService(jwt);
+  const db = fakeTokenDb();
+  const tokens = new TokenService(jwt, db as unknown as PrismaService);
   let savedSecret: string | undefined;
 
   beforeEach(() => {
     savedSecret = process.env.JWT_SECRET;
     process.env.JWT_SECRET = SECRET;
+    db.user.findUnique.mockClear();
   });
 
   afterEach(() => {
@@ -51,10 +57,40 @@ describe('AUTH-T1 / BE-LOGIN-10: access token (JWT)', () => {
     expect(header.alg).toBe('HS256');
   });
 
-  it('AUTH-T1: the payload holds only sub, role, iat, exp (no phone, hash or other personal data)', async () => {
+  it('AUTH-T1 / AUTH-T3: payload has only sub, role, cv, iat, exp; cv reveals no password hash', async () => {
     const token = await tokens.signAccessToken({ id: 3, role: 'BOSS' });
     const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString('utf8')) as Record<string, unknown>;
-    expect(Object.keys(payload).sort()).toEqual(['exp', 'iat', 'role', 'sub']);
+    expect(Object.keys(payload).sort()).toEqual(['cv', 'exp', 'iat', 'role', 'sub']);
+    expect(payload.cv).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(JSON.stringify(payload)).not.toContain(PASSWORD_HASH);
+    expect(payload.cv).not.toBe(PASSWORD_HASH);
+  });
+
+  it('AUTH-T3: internal id/role issuance reads the current stored hash', async () => {
+    const token = await tokens.signAccessToken({ id: 12, role: 'MANAGER' });
+    expect(db.user.findUnique).toHaveBeenCalledWith({ where: { id: 12 }, select: { passwordHash: true } });
+    expect((await tokens.verifyAccessToken(token)).cv).toBe(credentialVersion(12, PASSWORD_HASH));
+  });
+
+  it('AUTH-T3: uses the authenticated hash snapshot instead of rereading a password changed by staff', async () => {
+    const verifiedHash = '$argon2id$the-login-snapshot-before-reset';
+    const token = await tokens.signAccessToken({ id: 12, role: 'MANAGER', passwordHash: verifiedHash });
+    expect(db.user.findUnique).not.toHaveBeenCalled();
+    expect((await tokens.verifyAccessToken(token)).cv).toBe(credentialVersion(12, verifiedHash));
+    expect((await tokens.verifyAccessToken(token)).cv).not.toBe(credentialVersion(12, PASSWORD_HASH));
+  });
+
+  it('AUTH-T3: credential versions change with the user id and the salted hash', async () => {
+    const first = await tokens.verifyAccessToken(await tokens.signAccessToken({ id: 1, role: 'TENANT', passwordHash: PASSWORD_HASH }));
+    const otherUser = await tokens.verifyAccessToken(await tokens.signAccessToken({ id: 2, role: 'TENANT', passwordHash: PASSWORD_HASH }));
+    const changed = await tokens.verifyAccessToken(await tokens.signAccessToken({ id: 1, role: 'TENANT', passwordHash: PASSWORD_HASH + '-new-salt' }));
+    expect(first.cv).not.toBe(otherUser.cv);
+    expect(first.cv).not.toBe(changed.cv);
+  });
+
+  it.each([undefined, null, 123, '', 'short', 'x'.repeat(44)])('AUTH-T3: a signed token with invalid credential version %j is rejected', async (cv) => {
+    const token = await jwt.signAsync({ sub: '1', role: 'BOSS', cv }, { secret: SECRET, algorithm: 'HS256', expiresIn: 900 });
+    await expect(tokens.verifyAccessToken(token)).rejects.toThrow('Invalid access credential version');
   });
 
   it.each(['BOSS', 'MANAGER', 'TENANT'] as const)('AUTH-T1: verifyAccessToken round-trips role %s', async (role) => {
@@ -115,7 +151,7 @@ describe('AUTH-T1 / BE-LOGIN-10: access token (JWT)', () => {
 });
 
 describe('AUTH-T2 / A-07 / BE-LOGIN-10: refresh expiry', () => {
-  const tokens = new TokenService(new JwtService());
+  const tokens = new TokenService(new JwtService(), fakeTokenDb() as unknown as PrismaService);
   const t = new Date('2026-10-29T08:00:00.000Z');
   let savedTz: string | undefined;
 

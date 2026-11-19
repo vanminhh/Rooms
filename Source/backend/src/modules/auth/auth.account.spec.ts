@@ -477,7 +477,12 @@ describe('BE-LOGIN-17: POST /auth/change-password', () => {
     expect(await argon2.verify(newHash, PASSWORD.tenant)).toBe(false);
     expect(fake.account('tenant').mustChangePassword).toBe(false);
 
-    const after = await patchMe(A.accessToken, {});
+    // Password changes invalidate the old access credential version. The current
+    // refresh session survives and supplies a replacement access token (AUTH-T3).
+    expect((await patchMe(A.accessToken, {})).status).toBe(401);
+    const renewed = await refresh(A.cookie);
+    expect(renewed.status).toBe(200);
+    const after = await patchMe(renewed.body.data.accessToken, {});
     expect(after.status).toBe(200);
     expect(after.body.data.mustChangePassword).toBe(false);
   });
@@ -735,8 +740,13 @@ describe('BE-LOGIN-17: POST /auth/change-password', () => {
 
     it('AUD-01: two successful changes write two rows', async () => {
       const boss = await loginOk('boss');
-      await changePassword(boss.accessToken, { currentPassword: PASSWORD.boss, newPassword: NEW_PASSWORD }, boss.cookie);
-      await changePassword(boss.accessToken, { currentPassword: NEW_PASSWORD, newPassword: 'MatKhauMoi@2' }, boss.cookie);
+      const first = await changePassword(boss.accessToken, { currentPassword: PASSWORD.boss, newPassword: NEW_PASSWORD }, boss.cookie);
+      expect(first.status).toBe(200);
+      const renewed = await refresh(boss.cookie);
+      expect(renewed.status).toBe(200);
+      const second = await changePassword(renewed.body.data.accessToken,
+        { currentPassword: NEW_PASSWORD, newPassword: 'MatKhauMoi@2' }, rtValue(renewed));
+      expect(second.status).toBe(200);
       expect(fake.db.auditLog).toHaveLength(2);
       expect(fake.db.auditLog.every((r) => r.action === 'user.change_password' && r.actorId === IDS.users.boss)).toBe(true);
     });

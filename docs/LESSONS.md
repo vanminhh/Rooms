@@ -6,6 +6,7 @@ Read this before the first task of any part. Each line is a mistake that really 
 
 ## Tests and expected values
 
+- Mark a transaction-barrier promise as intentionally ignored when the awaited service call already waits for that transaction; seven race setup calls failed no-floating-promises lint [BE-P3-17, 19/11/2026].
 - Recurse through arrays when projecting nested Prisma SELECTs in an HTTP fake; treating an invoice relation as an object broke the contract detail serializer after signing [BE-P3-15, 19/11/2026].
 - When removing an INSERT column, check each VALUES tuple that reuses the column list through `.replace(...)`. The renewal scenario retained two `billing_day` values and failed before checking the renewal constraint [BE-P3-03, 16/11/2026].
 - Keep translated validation literals in the files scanned by the field-catalog test; adding warning copy in reservations made the exact catalog check fail until it moved to VIEWING_FIELDS [BE-EX-24, 16/11/2026].
@@ -45,6 +46,7 @@ Read this before the first task of any part. Each line is a mistake that really 
 
 ## Commands and environment
 
+- PowerShell reads POWERSHELL_TELEMETRY_OPTOUT during startup; setting it inside exec did not stop telemetry-related auto-review rejection, so do not present that setting as a verified host-egress control [BE-P3-17, 19/11/2026].
 - When a backend test stops in `beforeAll` while builds run concurrently, rerun that file alone with a process-local `--hookTimeout` before diagnosing assertion failures. The isolated HTTP test reached the expected loopback restriction, and the same file passed with in-memory HTTP [BE-P3-11, 18/11/2026].
 - When the full backend run hits Vitest's per-test limit, retry the affected files with `--maxWorkers=1` and a process-local `--testTimeout` before diagnosing the assertion. The password and Prisma suites passed in isolation after six cases hit the five-second limit [BE-P3-11, 18/11/2026].
 - Keep list and apply on the same cleanup policy. Retire owned HOLD fixtures in the E2E hook with the viewing mapping and room locks before checking linked rows and deactivating fixtures [BE-P3-12, 18/11/2026].

@@ -97,9 +97,10 @@ BE maps DB constraint/trigger errors to these codes. Module specs add their own.
 
 ## Auth tokens
 
-- **AUTH-T1** Access token: JWT, 15 minutes, in `Authorization: Bearer`. Claims: `sub` (user id), `role`.
+- **AUTH-T1** Access token: JWT, 15 minutes, in `Authorization: Bearer`. Claims: `sub` (user id), `role`, and `cv` (a domain-separated HMAC of user id and current password hash, keyed by `JWT_SECRET`; never the hash itself). The guard checks `cv` against the account's current password hash, so changing the hash permanently rejects older access tokens, even after `must_change_password` is cleared. Legacy tokens without `cv` are rejected; a still-valid refresh cookie can obtain the new token format.
 - **AUTH-T2** Refresh token: random 32 bytes, stored only as SHA-256 hash in `sessions.token_hash`, sent as httpOnly + Secure + SameSite=Lax cookie on path `/api/v1/auth`. Lifetime 30 days if "Ghi nhớ đăng nhập", else session cookie (browser close) with 12 h server expiry [ASSUMPTION A-07]. Rotated on every refresh.
 - **AUTH-T3** Deactivating a user or resetting a password (email link or staff reset) revokes all their sessions. Changing one's own password revokes all their **other** sessions; the current one stays logged in (owner 29/10/2026).
+  Password changes revoke previous access JWTs through AUTH-T1's credential version. After changing their own password, the current refresh session stays valid and obtains a fresh access token through the existing refresh-on-401 flow. Staff reset also invalidates unused password-recovery links. Credential checks, session creation/rotation and password changes are serialized under the user row lock; a previously checked password cannot create a surviving session or overwrite a later reset.
 
 ## Files
 

@@ -1,6 +1,8 @@
 # P3-3 — BE-P3-16 — Ghi nhận thu tiền cọc
 
-Ngày 19/11/2026. Bắt đầu từ `0d50e23` (BE-P3-13..15), workspace sạch. Chủ dự án chỉ giao BE-P3-16; chưa triển khai BE-P3-17..19. Chưa commit thay đổi ở mốc này.
+Ngày 19/11/2026. Bắt đầu từ `0d50e23` (BE-P3-13..15), workspace sạch. Chủ dự án chỉ giao BE-P3-16; chưa triển khai BE-P3-17..19. Mã BE-P3-16 đã commit tại `449b450`.
+
+Cập nhật nghiệm thu 19/11/2026: chủ dự án xác nhận “test đã thành công và đã commit”. Git xác minh commit `449b450`, workspace sạch trước khi ghi nhận kết quả. Không có số lượng test/thời lượng trong xác nhận này; không suy đoán số đếm. Đã khép phần chờ full suite cho BE-P3-16; E2E DB dev vẫn là mục riêng của BE-P3-19.
 
 ## Hành vi
 
@@ -53,7 +55,7 @@ Cập nhật thêm task, PROGRESS và bản ghi commit checkpoint trước. Khô
 | `npm run lint` | Exit 0, `Found 4 warnings and 0 errors.`, 231 file. Bốn cảnh báo sort cũ trong dashboard/pricing. |
 | Test tập trung | Exit 0: `Test Files 3 passed (3)`, `Tests 62 passed (62)`, thời lượng 8,77 giây. Gồm 36 ca payment HTTP, 19 ca DB error map và 7 ca Prisma/module. Dùng HTTP trong bộ nhớ và chặn egress mạng ngoài trong Node. |
 | Smoke PostgreSQL nhúng | Exit 0 trên mã build cuối. Nest HTTP và Prisma thật với schema/constraints hiện có: tạo/ký hợp đồng, thu cọc, replay, từ chối ghi thu độc lập lần hai hoặc dùng key cho invoice khác; kiểm hai lỗi trigger thực; hai lời gọi cùng key chỉ có một payment; lỗi audit rollback payment, trạng thái invoice và key; retry thành công; đổi quản lý chặn replay ngoài scope. |
-| Bộ backend đầy đủ | Không có kết quả hoàn tất cho bản BE-P3-16. Automatic approval review chặn lệnh do telemetry Visual Studio gửi payload chưa xác định ra ngoài. Dừng tại chặn, không thử vượt chặn. Kết quả 1961/1961 trước đây thuộc commit BE-P3-13..15. |
+| Bộ backend đầy đủ | Chủ dự án xác nhận test thành công và đã commit ngày 19/11/2026; commit được xác minh là `449b450`. Không có số đếm/thời lượng được cung cấp. Các lượt Codex trước đó bị automatic approval review chặn telemetry Visual Studio; kết quả nghiệm thu hiện tại đến từ chủ dự án. Kết quả 1961/1961 trước đây vẫn thuộc commit BE-P3-13..15. |
 | E2E DB dev | Chưa chạy ở mốc BE-P3-16; nghiệm thu create → sign → pay trên DB dev thuộc BE-P3-19. E2E và cleanup list còn chờ của P3-2 giữ nguyên. |
 | Review độc lập | DUYỆT; báo cáo đầy đủ bên dưới. |
 | `git diff --check` | Đạt trên thay đổi hiện tại. |
@@ -72,7 +74,7 @@ Fake HTTP xếp hàng toàn bộ transaction; smoke PGlite dùng một session P
 
 ## Kiểm tra và commit trên máy dự án
 
-Chạy bộ backend chuẩn:
+Đã hoàn tất theo xác nhận chủ dự án và commit `449b450`. Lệnh bộ backend chuẩn được giữ để tham khảo, không cần chạy lại vì cập nhật tài liệu này:
 
 ```powershell
 cd D:\Rooms\Source\backend

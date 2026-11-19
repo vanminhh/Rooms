@@ -115,11 +115,20 @@ export class AuthService {
       throw new ForbiddenException(ErrorCode.EMAIL_NOT_VERIFIED);
     }
 
-    this.loginLimiter.reset(phone);
     const remember = dto.remember ?? false;
-    const session = await this.prisma.$transaction((tx) => this.startSession(tx, user.id, remember, userAgent));
+    const { session, credentials } = await this.prisma.$transaction(async tx => {
+      await tx.$queryRaw`SELECT id FROM users WHERE id = ${user.id} FOR UPDATE`;
+      const current = await tx.user.findUnique({ where: { id: user.id } });
+      if (!current || current.passwordHash !== user.passwordHash || current.phone !== phone) {
+        throw new UnauthorizedException(ErrorCode.INVALID_CREDENTIALS);
+      }
+      if (!current.isActive) throw new ForbiddenException(ErrorCode.ACCOUNT_LOCKED);
+      if (isUnverifiedGuest(current)) throw new ForbiddenException(ErrorCode.EMAIL_NOT_VERIFIED);
+      return { session: await this.startSession(tx, current.id, remember, userAgent), credentials: current };
+    });
+    this.loginLimiter.reset(phone);
     return {
-      accessToken: await this.tokens.signAccessToken(user),
+      accessToken: await this.tokens.signAccessToken(credentials),
       user: await this.getMe(user.id),
       session,
     };
@@ -184,7 +193,7 @@ export class AuthService {
     const email = user.email;
     const codeId = await this.otp.check(email, dto.code);
     if (!user.isActive) throw new ForbiddenException(ErrorCode.ACCOUNT_LOCKED);
-    const session = await this.prisma.$transaction(async (tx) => {
+    const { session, credentials } = await this.prisma.$transaction(async (tx) => {
       // AUTH-12 / CON-07: the account may be replaced or promoted while the code is checked.
       await this.otp.lock(tx, `phone:${dto.phone}`);
       await this.otp.lock(tx, `email:${email}`);
@@ -196,10 +205,10 @@ export class AuthService {
       const now = new Date();
       await this.otp.markUsed(tx, codeId, now);
       await tx.user.update({ where: { id: user.id }, data: { emailVerifiedAt: now } });
-      return this.startSession(tx, user.id, false, userAgent, now);
+      return { session: await this.startSession(tx, user.id, false, userAgent, now), credentials: current };
     });
     return {
-      accessToken: await this.tokens.signAccessToken(user),
+      accessToken: await this.tokens.signAccessToken(credentials),
       user: await this.getMe(user.id),
       session,
     };
@@ -235,9 +244,14 @@ export class AuthService {
     if (!user?.isActive) throw new UnauthorizedException(ErrorCode.UNAUTHENTICATED);
 
     const token = randomToken();
-    await this.prisma.$transaction(async (tx) => {
+    const credentials = await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM users WHERE id = ${old.userId} FOR UPDATE`;
+      const current = await tx.user.findUnique({ where: { id: old.userId } });
+      if (!current?.isActive || current.passwordHash !== user.passwordHash) {
+        throw new UnauthorizedException(ErrorCode.UNAUTHENTICATED);
+      }
       const { count } = await tx.session.updateMany({
-        where: { id: old.id, revokedAt: null },
+        where: { id: old.id, revokedAt: null, expiresAt: { gt: new Date() } },
         data: { revokedAt: now },
       });
       // Another request rotated the same token first.
@@ -251,9 +265,10 @@ export class AuthService {
           userAgent,
         },
       });
+      return current;
     });
     return {
-      accessToken: await this.tokens.signAccessToken(user),
+      accessToken: await this.tokens.signAccessToken(credentials),
       session: { token, expiresAt: old.expiresAt, remember: old.remember },
     };
   }
@@ -323,6 +338,11 @@ export class AuthService {
     }
     const passwordHash = await hashPassword(dto.newPassword);
     await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM users WHERE id = ${user.id} FOR UPDATE`;
+      const latest = await tx.user.findUnique({ where: { id: user.id } });
+      if (!latest?.isActive || latest.passwordHash !== current.passwordHash) {
+        throw new UnauthorizedException(ErrorCode.UNAUTHENTICATED);
+      }
       await tx.user.update({
         where: { id: user.id },
         data: { passwordHash, mustChangePassword: false },
@@ -350,17 +370,20 @@ export class AuthService {
     if (user.role === Role.GUEST && !user.emailVerifiedAt) return;
 
     // Not awaited: the reply time must not depend on the token write or the mail send (AUTH-07).
-    void this.sendResetLink({ id: user.id, email: user.email, locale: mailLocale(user) }).catch((e) =>
+    void this.sendResetLink({ id: user.id, email: user.email, passwordHash: user.passwordHash, locale: mailLocale(user) }).catch((e) =>
       // Name only: the error text could echo the mail body, which holds the token.
       this.logger.error(`Could not send the password reset link (${e instanceof Error ? e.name : 'unknown error'})`),
     );
   }
 
   // Runs after forgotPassword has replied; its caller catches errors.
-  private async sendResetLink(user: { id: number; email: string; locale: Lang }): Promise<void> {
+  private async sendResetLink(user: { id: number; email: string; passwordHash: string; locale: Lang }): Promise<void> {
     const token = randomToken();
     const now = new Date();
-    await this.prisma.$transaction(async (tx) => {
+    const issued = await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM users WHERE id = ${user.id} FOR UPDATE`;
+      const current = await tx.user.findUnique({ where: { id: user.id } });
+      if (!current?.isActive || current.email !== user.email || current.passwordHash !== user.passwordHash) return false;
       // A new link voids the older unused ones (Q4d).
       await tx.passwordResetToken.updateMany({
         where: { userId: user.id, usedAt: null },
@@ -373,7 +396,9 @@ export class AuthService {
           expiresAt: new Date(now.getTime() + RESET_TOKEN_TTL_MS),
         },
       });
+      return true;
     });
+    if (!issued) return;
     await sendWithRetry(this.mailer, {
       to: user.email,
       ...await emailTemplate(this.prisma, 'passwordReset', user.locale, { url: `${process.env.APP_URL}/quen-mat-khau?token=${token}` }),
@@ -392,8 +417,11 @@ export class AuthService {
 
     const passwordHash = await hashPassword(dto.newPassword);
     await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM users WHERE id = ${record.userId} FOR UPDATE`;
+      const current = await tx.user.findUnique({ where: { id: record.userId } });
+      if (!current?.isActive) throw invalidLink();
       const { count } = await tx.passwordResetToken.updateMany({
-        where: { id: record.id, usedAt: null },
+        where: { id: record.id, usedAt: null, expiresAt: { gt: new Date() } },
         data: { usedAt: now },
       });
       // Another request used the same link first.

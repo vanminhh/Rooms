@@ -1,6 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
+import { matchesCredentialVersion } from '../crypto/credential-version.js';
 import { ErrorCode } from '../errors/error-code.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { allowedBuildingIds } from '../scope/scope.js';
@@ -26,8 +27,11 @@ export class JwtAuthGuard implements CanActivate {
     if (!token) throw new UnauthorizedException(ErrorCode.UNAUTHENTICATED);
 
     let sub: unknown;
+    let credential: unknown;
     try {
-      sub = (await this.tokens.verifyAccessToken(token)).sub;
+      const payload = await this.tokens.verifyAccessToken(token);
+      sub = payload.sub;
+      credential = payload.cv;
     } catch {
       throw new UnauthorizedException(ErrorCode.UNAUTHENTICATED);
     }
@@ -38,6 +42,9 @@ export class JwtAuthGuard implements CanActivate {
     // Role and flags come from the DB, not the token (AUTH-T1, P5).
     const user = await this.prisma.user.findUnique({ where: { id: Number(sub) } });
     if (!user?.isActive) throw new UnauthorizedException(ErrorCode.UNAUTHENTICATED);
+    if (!matchesCredentialVersion(credential, user.id, user.passwordHash ?? '')) {
+      throw new UnauthorizedException(ErrorCode.UNAUTHENTICATED);
+    }
 
     req.user = {
       id: user.id,
