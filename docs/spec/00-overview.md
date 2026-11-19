@@ -146,6 +146,7 @@ Decisions D-35..D-37: owner 16/11/2026, before Phase 3 (`docs/phase-3-contracts/
 - **A-15** [ASSUMPTION] A manager's email is used as typed by the manager, without a verification step; only guests verify their email (AUTH-12, VIEW-19).
 - **A-18** [ASSUMPTION] At contract creation, when the signer's phone already has a guest account, the staff member (who is with the signer) confirms on the form that the account is the signer's before it is reused; if the signer says it is not theirs, the contract is not created and Boss sorts out the account (CON-07). The owner had no preference on 12/11/2026.
 - **A-21** [ASSUMPTION] A prorated amount is rounded to the nearest đồng, half up, once per line (G-01).
+- **A-22** [ASSUMPTION] When a new pending tenant account has several unsigned HOLD contracts, the first successfully signed contract activates the account and issues its one temporary password. Later signatures reuse that password. A pending account is identified by its unusable password marker, and first activation is serialized under its user lock.
 - **A-16** [ASSUMPTION] A tenant keeps role `TENANT` after all their contracts ended: they still read past contracts and invoices and use the guest area (D-26, CON-12).
 - **A-17** [ASSUMPTION] Repair review: 1–5 stars + optional comment, once per incident, editable for 7 days, read by staff in scope only; hiding a comment needs a reason. These are the values the brief proposed for viewing reviews, reused for repairs (REQ-09, Q-13).
 

@@ -6,6 +6,7 @@ Read this before the first task of any part. Each line is a mistake that really 
 
 ## Tests and expected values
 
+- Recurse through arrays when projecting nested Prisma SELECTs in an HTTP fake; treating an invoice relation as an object broke the contract detail serializer after signing [BE-P3-15, 19/11/2026].
 - When removing an INSERT column, check each VALUES tuple that reuses the column list through `.replace(...)`. The renewal scenario retained two `billing_day` values and failed before checking the renewal constraint [BE-P3-03, 16/11/2026].
 - Keep translated validation literals in the files scanned by the field-catalog test; adding warning copy in reservations made the exact catalog check fail until it moved to VIEWING_FIELDS [BE-EX-24, 16/11/2026].
 - Compare fake-DOM element identity with a boolean assertion and a short message; strict equality on different cyclic DOM objects stalled formatting the expected failure [FE-EX-27, 16/11/2026].

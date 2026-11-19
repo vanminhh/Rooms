@@ -2,21 +2,26 @@ import { BadRequestException, ConflictException, ForbiddenException, Injectable,
 import type { Prisma } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
 import { encryptCccd, last4 } from '../../common/crypto/cccd.js';
+import { hashPassword, PENDING_TENANT_PASSWORD_HASH } from '../../common/crypto/password.js';
 import { contractEndDate } from '../../common/date/period.js';
 import { formatDateOnly, parseDateOnly, todayHanoi } from '../../common/date/today.js';
 import { isUniqueOn } from '../../common/errors/db-errors.js';
 import { ErrorCode } from '../../common/errors/error-code.js';
 import type { AuthUser } from '../../common/guards/auth.decorators.js';
-import { pageParams, paginated } from '../../common/pagination.js';
+import { pageParams, paginated, type PaginationQuery } from '../../common/pagination.js';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
 import { publicRoomWhere } from '../../common/rooms/public-room.js';
 import { scopeWhere } from '../../common/scope/scope.js';
 import { lockViewingMapping } from '../../common/viewings/viewing-lock.js';
 import { AuditService } from '../audit/audit.service.js';
+import { lockOtpKey } from '../auth/otp.service.js';
+import { verifyContractAsset } from '../files/files.service.js';
 import { assertViewingScope } from '../viewings/viewing-reservations.js';
 import { resolveContractTenant } from './contract-tenant.js';
 import type { ContractsQueryDto } from './dto/contracts-query.dto.js';
 import type { CreateContractDto } from './dto/create-contract.dto.js';
+import type { SignContractDto } from './dto/sign-contract.dto.js';
+import { DEPOSIT_INVOICE_SELECT, depositInvoiceView } from './deposit-invoice.js';
 
 const CONTRACT_SUMMARY = {
   id: true, code: true, status: true, startDate: true, endDate: true, termMonths: true, rent: true, deposit: true,
@@ -45,7 +50,7 @@ const CONTRACT_DETAIL = {
   },
   invoices: {
     where: { type: 'DEPOSIT' }, orderBy: { id: 'desc' }, take: 1,
-    select: { id: true, status: true, total: true, issueDate: true, dueDate: true },
+    select: DEPOSIT_INVOICE_SELECT,
   },
 } satisfies Prisma.ContractSelect;
 
@@ -89,8 +94,17 @@ export class ContractsService {
         { room: { code: { contains: keyword, mode: 'insensitive' } } },
       ] } : {}),
     };
-    const { page, limit, skip, take } = pageParams(query);
     const direction = query.sort === 'createdAt' ? 'asc' : 'desc';
+    return this.listContracts(where, query, direction);
+  }
+
+  async listMine(actor: AuthUser, query: PaginationQuery) {
+    if (actor.role !== 'TENANT') throw new ForbiddenException(ErrorCode.FORBIDDEN);
+    return this.listContracts({ tenantId: actor.id }, query, 'desc');
+  }
+
+  private async listContracts(where: Prisma.ContractWhereInput, query: PaginationQuery, direction: 'asc' | 'desc') {
+    const { page, limit, skip, take } = pageParams(query);
     const total = await this.prisma.contract.count({ where });
     const rows = skip >= total ? [] : await this.prisma.contract.findMany({
       where, select: CONTRACT_SUMMARY, skip, take, orderBy: [{ createdAt: direction }, { id: direction }],
@@ -110,7 +124,23 @@ export class ContractsService {
       if (exists) throw new ForbiddenException(ErrorCode.OUT_OF_SCOPE);
       throw new NotFoundException(ErrorCode.NOT_FOUND);
     }
+    return this.contractDetail(contract);
+  }
+
+  async getMine(actor: AuthUser, id: number) {
+    if (actor.role !== 'TENANT') throw new ForbiddenException(ErrorCode.FORBIDDEN);
+    const contract = await this.prisma.contract.findFirst({ where: { id, tenantId: actor.id }, select: CONTRACT_DETAIL });
+    if (!contract) throw new NotFoundException(ErrorCode.NOT_FOUND);
+    const detail = await this.contractDetail(contract);
+    return { ...detail, occupants: detail.occupants.map(occupant => ({
+      ...occupant, idNumberLast4: occupant.isSigner ? occupant.idNumberLast4 : null,
+    })) };
+  }
+
+  private async contractDetail(contract: Prisma.ContractGetPayload<{ select: typeof CONTRACT_DETAIL }>) {
     const { terms, signedAt, movedInAt, occupants, vehicles, services, invoices: [depositInvoice], ...summary } = contract;
+    const bank = depositInvoice?.status === 'UNPAID'
+      ? await this.prisma.setting.findUnique({ where: { key: 'bank_account' }, select: { value: true } }) : null;
     return {
       ...toContractSummary(summary),
       terms, signedAt: signedAt?.toISOString() ?? null, movedInAt: movedInAt?.toISOString() ?? null,
@@ -122,9 +152,7 @@ export class ContractsService {
         ...vehicle, registeredAt: formatDateOnly(vehicle.registeredAt), removedAt: dateOnlyOrNull(vehicle.removedAt),
       })),
       services: services.map(({ service }) => service),
-      depositInvoice: depositInvoice ? {
-        ...depositInvoice, issueDate: dateOnlyOrNull(depositInvoice.issueDate), dueDate: dateOnlyOrNull(depositInvoice.dueDate),
-      } : null,
+      depositInvoice: depositInvoice ? depositInvoiceView(depositInvoice, bank?.value) : null,
     };
   }
 
@@ -224,6 +252,67 @@ export class ContractsService {
       }, ip, tx);
 
       return toContractSummary(contract);
+    });
+  }
+
+  async sign(actor: AuthUser, id: number, dto: SignContractDto, ip?: string) {
+    assertStaff(actor);
+    const existing = await this.prisma.contract.findUnique({ where: { id, ...scopeWhere(actor) }, select: { id: true, status: true, signedAt: true } });
+    if (!existing) {
+      if (await this.prisma.contract.findUnique({ where: { id }, select: { id: true } })) {
+        throw new ForbiddenException(ErrorCode.OUT_OF_SCOPE);
+      }
+      throw new NotFoundException(ErrorCode.NOT_FOUND);
+    }
+    if (existing.status !== 'HOLD' || existing.signedAt !== null) throw new ConflictException(ErrorCode.CONFLICT_STATE);
+
+    // Provider IO precedes the transaction. State and current assignment are rechecked under locks.
+    const assetId = await verifyContractAsset(this.prisma, id, 'CONTRACT_SCAN', dto);
+    return this.prisma.$transaction(async tx => {
+      await lockViewingMapping(tx);
+      await tx.$queryRaw`SELECT id FROM contracts WHERE id = ${id} FOR UPDATE`;
+      const contract = await tx.contract.findUnique({
+        where: { id, ...scopeWhere(actor) }, select: {
+          id: true, status: true, signedAt: true, startDate: true, deposit: true, previousContractId: true,
+          tenantId: true, tenant: { select: { phone: true } },
+          building: { select: { isActive: true, managerId: true, manager: { select: { isActive: true } } } },
+        },
+      });
+      if (!contract) throw new ForbiddenException(ErrorCode.OUT_OF_SCOPE);
+      assertViewingScope(actor, contract);
+      if (contract.status !== 'HOLD' || contract.signedAt !== null) throw new ConflictException(ErrorCode.CONFLICT_STATE);
+
+      await lockOtpKey(tx, `phone:${contract.tenant.phone}`);
+      await tx.$queryRaw`SELECT id FROM users WHERE id = ${contract.tenantId} FOR UPDATE`;
+      const tenant = await tx.user.findUniqueOrThrow({ where: { id: contract.tenantId } });
+      const pending = tenant.passwordHash === PENDING_TENANT_PASSWORD_HASH;
+      if (!tenant.isActive && !pending) throw new ForbiddenException(ErrorCode.ACCOUNT_LOCKED);
+      if (tenant.role !== 'TENANT') throw new ConflictException(ErrorCode.CONFLICT_STATE);
+      let temporaryPassword: string | undefined;
+      if (pending) {
+        // A-22: the first signed HOLD activates a pending account, including multiple unsigned HOLDs.
+        temporaryPassword = randomBytes(8).toString('base64url').slice(0, 10);
+        const passwordHash = await hashPassword(temporaryPassword);
+        await tx.user.update({ where: { id: tenant.id }, data: { passwordHash, mustChangePassword: true, isActive: true } });
+      }
+      const signedAt = new Date();
+      const saved = await tx.contract.update({ where: { id }, data: { signedAt, signedScanAssetId: assetId }, select: CONTRACT_SUMMARY });
+      let depositInvoice = null;
+      if (contract.deposit > 0 && contract.previousContractId === null) {
+        const today = todayHanoi();
+        const invoice = await tx.invoice.create({ data: {
+          contractId: id, type: 'DEPOSIT', periodNo: 0, total: contract.deposit, status: 'UNPAID',
+          issueDate: today, dueDate: contract.startDate > today ? contract.startDate : today, createdById: actor.id,
+          lines: { create: { kind: 'DEPOSIT', label: 'Tiền cọc', quantity: 1, unitPrice: contract.deposit, amount: contract.deposit } },
+        }, select: DEPOSIT_INVOICE_SELECT });
+        const bank = await tx.setting.findUnique({ where: { key: 'bank_account' }, select: { value: true } });
+        depositInvoice = depositInvoiceView(invoice, bank?.value);
+      }
+      await this.audit.log(actor.id, 'contract.sign', 'contract', id, undefined, {
+        signedAt: signedAt.toISOString(), depositInvoiceId: depositInvoice?.id ?? null,
+      }, ip, tx);
+      return { ...toContractSummary(saved), signedAt: signedAt.toISOString(), depositInvoice,
+        ...(temporaryPassword === undefined ? {} : { temporaryPassword }) };
     });
   }
 

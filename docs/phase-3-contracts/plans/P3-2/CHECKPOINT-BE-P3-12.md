@@ -2,6 +2,8 @@
 
 Ngày 18/11/2026. Commit API trước đó `5c56d06`.
 
+Ngày 19/11/2026 chủ dự án xác nhận đã commit mã nghiệm thu tại `b6c7ff6`. Lượt đọc trạng thái migration từ Codex tiếp tục báo `P1001`. Kết quả E2E và cleanup list trên DB dev còn chờ xác minh.
+
 ## Thay đổi
 
 - `test/contracts.e2e-spec.ts` có bốn ca qua Nest, HTTP và Prisma. Ca ngoài phạm vi kiểm `OUT_OF_SCOPE`. Ca tạo qua “Chốt” kiểm hai xác nhận, người ký, dịch vụ, CCCD, audit, lịch `WON`, hủy các lịch `NEW` và `CONFIRMED` cùng phòng và hai lệnh “Đã gọi”. Hai ca còn lại kiểm tranh chấp tạo HOLD cùng phòng và rollback sau khi ghi audit.
