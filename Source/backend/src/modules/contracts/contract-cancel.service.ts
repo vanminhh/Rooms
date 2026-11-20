@@ -92,6 +92,9 @@ export class ContractCancelService {
         }
         const saved = await tx.contract.updateMany({ where: { id, status: 'HOLD' }, data: { status: 'CANCELLED', cancelReason: reason } });
         if (saved.count !== 1) throw new ConflictException(ErrorCode.CONFLICT_STATE);
+        // CON-14/Q-P3-21: preserve registration history and release plates atomically.
+        const stoppedVehicles = await tx.vehicle.updateMany({ where: { contractId: id, isActive: true },
+          data: { isActive: false, removedAt: todayHanoi() } });
 
         // CON-12/D-26: pending accounts are already inactive. Leave users and sessions
         // untouched so a reused account or activation from another HOLD is preserved.
@@ -101,6 +104,7 @@ export class ContractCancelService {
         await this.audit.log(actor.id, 'contract.cancel', 'contract', id, { status: 'HOLD' }, {
           status: 'CANCELLED', cancelReason: reason, depositInvoiceId: invoice?.id ?? null,
           settlementId: settlement?.id ?? null, deposit, depositForfeit: depositKept, refund: settlement?.net ?? 0,
+          ...(stoppedVehicles.count ? { vehiclesRemoved: stoppedVehicles.count } : {}),
         }, ip, tx);
         return response;
       });

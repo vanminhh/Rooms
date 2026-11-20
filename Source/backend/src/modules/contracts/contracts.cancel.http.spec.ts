@@ -35,6 +35,7 @@ function initialState() {
     audits: [] as any[],
     viewings: [{ id: 90, userId: 3, contractId: 42, status: 'WON' }, { id: 91, userId: 4, status: 'CANCELLED' }],
     sessions: [{ id: 92, userId: 3, revokedAt: null }],
+    vehicles: [] as any[],
     room: { id: 30, buildingId: 7, code: 'P301', isActive: true, underMaintenance: false, price: 2_500_000 },
   };
 }
@@ -173,7 +174,11 @@ describe('BE-P3-21 / CON-12 / BIL-17 / API-05: HOLD cancellation over HTTP', () 
     payment: { delete: forbiddenMutation, update: forbiddenMutation },
     room: { update: forbiddenMutation, updateMany: forbiddenMutation },
     viewing: { updateMany: forbiddenMutation, update: forbiddenMutation },
-    vehicle: { updateMany: forbiddenMutation },
+    vehicle: { updateMany: vi.fn(async ({ where, data }: any) => {
+      const rows = state.vehicles.filter(row => matches(row, where));
+      rows.forEach(row => Object.assign(row, data));
+      return { count: rows.length };
+    }) },
     session: { updateMany: forbiddenMutation, deleteMany: forbiddenMutation },
     auditLog: { create: vi.fn(async ({ data }: any) => {
       state.audits.push(structuredClone(data));
@@ -217,6 +222,31 @@ describe('BE-P3-21 / CON-12 / BIL-17 / API-05: HOLD cancellation over HTTP', () 
     state = initialState(); queue = Promise.resolve(); reassignOnTransaction = false; payBeforeInvoiceLock = false;
     failAudit = false; failSettlement = false; conflictInvoice = false; conflictContract = false; uniqueSettlement = false;
     vi.clearAllMocks();
+  });
+
+  it('CON-12/14 Q-P3-21: cancelling a HOLD stops only its active vehicles and preserves removal history', async () => {
+    state.vehicles.push({ id: 501, contractId: 42, plate: '29A12345', isActive: true, removedAt: null },
+      { id: 502, contractId: 42, plate: '29B12345', isActive: false, removedAt: new Date('2026-10-31') },
+      { id: 503, contractId: 43, plate: '30A12345', isActive: true, removedAt: null });
+    const oldRemoval = structuredClone(state.vehicles[1]); const other = structuredClone(state.vehicles[2]);
+    const result = await cancel(BODY, 2, 'cancel-vehicles');
+    expect(result.status).toBe(201); expect(state.vehicles).toHaveLength(3);
+    expect(state.vehicles[0]).toMatchObject({ isActive: false, removedAt: todayHanoi() });
+    expect(state.vehicles[1]).toEqual(oldRemoval); expect(state.vehicles[2]).toEqual(other);
+    expect(state.audits).toHaveLength(1); expect(state.audits[0].after.vehiclesRemoved).toBe(1);
+    const calls = db.vehicle.updateMany.mock.calls.length;
+    expect((await cancel(BODY, 2, 'cancel-vehicles')).body).toEqual(result.body);
+    expect(db.vehicle.updateMany).toHaveBeenCalledTimes(calls); expect(state.audits).toHaveLength(1);
+  });
+
+  it('CON-12/14: audit failure restores active vehicles together with contract, settlement and idempotency', async () => {
+    state.vehicles.push({ id: 501, contractId: 42, plate: '29A12345', isActive: true, removedAt: null });
+    const before = structuredClone(state); failAudit = true;
+    expect((await cancel(BODY, 2, 'cancel-vehicle-rollback')).status).toBe(500);
+    expect(state).toEqual(before);
+    failAudit = false;
+    expect((await cancel(BODY, 2, 'cancel-vehicle-rollback')).status).toBe(201);
+    expect(state.vehicles[0].isActive).toBe(false); expect(state.audits[0].after.vehiclesRemoved).toBe(1);
   });
   afterAll(async () => { await app?.close(); vi.unstubAllEnvs(); });
 

@@ -66,7 +66,9 @@ Owner 20/11/2026 revises the old rule that additions only count from the next pe
 
 D-41 still applies to the contract's own partial first/last months; do not prorate a second time by the individual person's date or infer that the owner abolished contract-level proration. This answer does not settle vehicle-specific mid-month proration, infer a vehicle per person, change the building's water mode or authorize recalculating issued/paid invoices. The monthly invoice engine remains Phase 4; BE-P3-23 stores the occupant and move-in date needed for it.
 
-For occupants/vehicles already present at period_start, retain the existing departure boundary: counted when move_out_date/removed_at is null or strictly greater than period_start. New people count in their entry month as above; no separate departure-proration/refund rule or vehicle-specific addition/removal formula is approved by the added-person answer.
+For occupants already present at period_start, retain the existing departure boundary: counted when move_out_date is null or strictly greater than period_start. New people count in their entry month as above; the added-person answer does not change their departure-proration/refund rule.
+
+**Q-P3-20 answered by the owner 20/11/2026:** parking is charged by calendar month. Stopping a registered vehicle during November still charges November; from December it is not charged. Include vehicle registration/removal history intersecting the billing month, including vehicles marked inactive by month-end; do not select is_active=true alone. A removal recorded by the end of the prior month excludes it from the following month. This does not change D-41 for the contract's own partial months, approve a separate vehicle-entry day-proration formula or authorize recalculating issued/paid invoices. BE-P3-25 stores registration/removal dates; calculation remains Phase 4.
 
 | Line kind | Quantity | Unit price |
 |---|---|---|

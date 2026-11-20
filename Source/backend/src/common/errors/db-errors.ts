@@ -21,6 +21,7 @@ export const DB_ERROR_MAP: Record<string, DbErrorMapping> = {
   PAYMENT_AMOUNT_MISMATCH: { code: ErrorCode.PAYMENT_AMOUNT_MISMATCH },
   users_phone_key: { code: ErrorCode.PHONE_TAKEN },
   users_email_key: { code: ErrorCode.EMAIL_TAKEN },
+  vehicles_plate_active: { code: ErrorCode.VALIDATION_FAILED, fields: { plate: 'Biển số đang được đăng ký gửi xe' } },
   viewings_one_open_per_user_room: { code: ErrorCode.CONFLICT_STATE },
   meter_readings_contract_opening_key: { code: ErrorCode.CONFLICT_STATE },
   meter_readings_contract_daily_key: { code: ErrorCode.CONFLICT_STATE },

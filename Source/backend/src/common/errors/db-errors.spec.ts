@@ -92,6 +92,7 @@ describe('BE-P2-01 / BE-P2-02: mapDbError, one test per row of PLAN 2.2', () => 
         'PAYMENT_AMOUNT_MISMATCH',
         'users_phone_key',
         'users_email_key',
+        'vehicles_plate_active',
         'viewings_one_open_per_user_room',
         'meter_readings_contract_opening_key',
         'meter_readings_contract_daily_key',
@@ -110,6 +111,11 @@ describe('BE-P2-01 / BE-P2-02: mapDbError, one test per row of PLAN 2.2', () => 
 
   it.each(['INVOICE_NOT_UNPAID', 'PAYMENT_AMOUNT_MISMATCH'] as const)('BIL-11: trigger %s maps without leaking the raw DB message', code => {
     expect(mapDbError(dbMessage(`ERROR: ${code}: private invoice details`))).toEqual({ code: ErrorCode[code] });
+  });
+
+  it.each(['vehicles_plate_active', ['vehicles_plate_active']])('CON-14: duplicate vehicle index %j maps to a friendly plate error', target => {
+    expect(mapDbError(p2002(target))).toEqual({ code: ErrorCode.VALIDATION_FAILED,
+      fields: { plate: 'Biển số đang được đăng ký gửi xe' } });
   });
 
   it.each([

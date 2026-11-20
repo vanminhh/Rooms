@@ -129,6 +129,7 @@ Decisions D-35..D-37: owner 16/11/2026, before Phase 3 (`docs/phase-3-contracts/
 
 ## Assumptions (not yet confirmed — implement, keep easy to change)
 
+- **A-27** [ASSUMPTION, BE-P3-25 technical date-entry default] Vehicle registeredAt/removedAt default to today's Hanoi date; staff may supply an actual date no later than today, with removal on/after registration. Removed registrations remain immutable and a new POST preserves their old interval. Q-P3-19/20/21 separately confirm writable contract statuses, monthly parking departure and automatic vehicle removal on HOLD cancellation.
 - **A-01** [ASSUMPTION] On early move-out, services (wifi, rác, parking) are charged in full for the current period; remaining periods charge rent only.
 - **A-02** [ASSUMPTION] Deposit invoice due date = contract `start_date` (or issue date if later). Move-in is blocked until it is paid.
 - **A-03** [ASSUMPTION] Viewing bookings: 3 per day per account, counted from the `viewings` table ([13-viewings.md](13-viewings.md) VIEW-02). Before 12/11/2026 the public form had 5 per hour per IP and 3 per day per phone; that form is removed (D-28).

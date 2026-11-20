@@ -1,5 +1,7 @@
 # BE-P3-24 · Xem ảnh CCCD riêng tư
 
+**Cập nhật sau checkpoint:** owner báo đã commit; Git xác minh `ee0e891` cùng workspace sạch trước BE-P3-25. Không suy ra kết quả full suite mới từ xác nhận commit; phần dưới lưu kết quả tại điểm dừng BE-P3-24.
+
 20/11/2026. BE-P3-23 đã commit `ab5ebac`, Git sạch trước lượt này. **BE-P3-24 đã triển khai, kiểm chứng các tiêu chí CON-16 / DB-B9 và được reviewer DUYỆT; chờ owner kiểm/commit.** Lượt full backend bị automatic approval review chặn, chưa có kết quả full suite mới.
 
 ## Kết quả chức năng
