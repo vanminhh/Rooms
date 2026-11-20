@@ -38,7 +38,7 @@ Out: a separate login page per entry (owner: one shared page); any change to ref
 - [x] **FE-LP-02** `LoginPage` at an entry: title "Đăng nhập người thuê" / "Đăng nhập quản lý" (vi + en keys), no sign-up note, link "Dùng trang đăng nhập chung" → `/dang-nhap` keeping `?next=`; sends `portal`; `WRONG_PORTAL` shows the API message in the form error slot and the user stays signed out. `EntryScreen` needs no change (it navigates to `/thue` / `/ql`; the guard adds the entry).
   Done when: page tests for both entries and for the plain page; the i18n parity test has the new keys in `vi` and `en`; `ui-30-login` and `auth-login-flow` updated where they assert URLs or texts.
 - [x] **FE-LP-03** ⏸ `npm run lint`, `npm run build`, `npm run test:components`. Stop and report FE-LP-01..03.
-- [ ] **QA-LP-01** ⏸ Reviewer on the uncommitted changes (full report in the checkpoint). Manual walk with the seed accounts (PLAN.md §6) in Vietnamese and English, at 360 px and desktop.
+- [x] **QA-LP-01** ⏸ Reviewer on the uncommitted changes (full report in the checkpoint). Manual walk with the seed accounts (PLAN.md §6) in Vietnamese and English, at 360 px and desktop.
   Done when: every line of PLAN.md §6 checked with its result.
 
 ## Questions for the owner
@@ -48,3 +48,5 @@ Answered 20/11/2026: block both ways; one shared login page; checked by the BE w
 ## Issues log
 
 - 20/11/2026 · BE-LP-03 · `test/auth.e2e-spec.ts` stops in `seed()` (`prisma/seed.ts:266`, `meterReading.upsert` with `roomId_kind_readOn`, a unique key the current schema no longer has; Phase 3 BE-P3-20 area), so the scenario `loginByEntry` was run on the dev DB through a temporary spec without seed: 1/1 passed. Other e2e files (viewings, contracts, pricing, buildings) also failed in the full run; not investigated, not caused by the login change. Needed: owner decides who fixes the seed.
+
+- 21/11/2026 · QA-LP-01 · reviewer DUYỆT, no blocking finding. Fixed: AUTH-16 is checked again under the row lock inside the login transaction; test for portal as array/object added. Manual walk on the dev DB: all 14 role x entry cells of PLAN.md §3 as expected, tenant entry title and no sign-up link, refused login leaves no session (refresh 401), 360 px no overflow. Not walked by hand: English texts (automated test only). Commit 47efd8d has the message "fixx login" without task IDs; not changed (history).

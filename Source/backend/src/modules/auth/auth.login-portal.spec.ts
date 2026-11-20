@@ -111,7 +111,7 @@ describe('AUTH-16: the entry never reveals an account', () => {
 });
 
 describe('AUTH-16: validation and language', () => {
-  it.each([['ADMIN'], ['tenant'], [''], [1], [null]])('AUTH-16: portal %j -> 400 VALIDATION_FAILED on fields.portal', async (portal) => {
+  it.each([['ADMIN'], ['tenant'], [''], [1], [null], [['TENANT']], [{}]])('AUTH-16: portal %j -> 400 VALIDATION_FAILED on fields.portal', async (portal) => {
     const res = await login({ ...ACCOUNTS.tenant, portal });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('VALIDATION_FAILED');

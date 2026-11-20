@@ -131,6 +131,8 @@ export class AuthService {
         throw new UnauthorizedException(ErrorCode.INVALID_CREDENTIALS);
       }
       if (!current.isActive) throw new ForbiddenException(ErrorCode.ACCOUNT_LOCKED);
+      // AUTH-16: the role is read again under the lock (a guest can become a tenant while this login runs), like the checks above.
+      if (dto.portal && !PORTAL_ROLES[dto.portal].includes(current.role)) throw new ForbiddenException(ErrorCode.WRONG_PORTAL);
       if (isUnverifiedGuest(current)) throw new ForbiddenException(ErrorCode.EMAIL_NOT_VERIFIED);
       return { session: await this.startSession(tx, current.id, remember, userAgent), credentials: current };
     });
