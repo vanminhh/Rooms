@@ -20,8 +20,8 @@ Rules: mark `[~]` when you start a task, `[x]` only after its "Done when" is ver
 
 ## Scope
 
-In: `/thue` overview, `/thue/hop-dong`, `/thue/hop-dong/:id`, the tenant print page, all in Vietnamese and English.
-Out: the request buttons ("Báo trả phòng", "Xin gia hạn", "Cập nhật người ở", "Cập nhật xe", Phase 5), monthly invoices and charts (Phase 4–5), any backend change, staff pages.
+In: `/thue` overview, `/thue/hop-dong`, `/thue/hop-dong/:id`, direct addition of roommates to the tenant's own contract (owner 20/11/2026, CON-13/15), the tenant print page, all in Vietnamese and English.
+Out: other request buttons ("Báo trả phòng", "Xin gia hạn", other occupant changes, "Cập nhật xe", Phase 5), monthly invoices and charts (Phase 4–5), any backend change, staff pages. Adding a roommate no longer requires the Phase 5 approval-request flow.
 
 ## Tasks
 
@@ -29,7 +29,7 @@ Out: the request buttons ("Báo trả phòng", "Xin gia hạn", "Cập nhật ng
   Done when: the "every vi key has en" test passes; no Vietnamese literal in the new tenant files (the EX-3 scan test covers them).
 - [ ] **FE-P3-11** `/thue` overview (D-35, BIL-10): before move-in, the deposit invoice with VietQR image, amount, content `TT{id}` with a copy button, due date and the move-in date; after move-in, the contract summary; a room switcher when the tenant has several contracts; a tenant with only ended contracts sees them as past (A-16).
   Done when: page tests for before move-in, after move-in, two contracts, no contract; money and dates the same in both languages (LOC-05).
-- [ ] **FE-P3-12** ⏸ `/thue/hop-dong` and `/thue/hop-dong/:id` (CON-16, CON-22): current and past contracts, term progress, deposit, occupants with CCCD last 4 digits only, vehicles read only, "Xem bản hợp đồng đã ký" through the signed view, link to the print page; no request buttons yet.
+- [ ] **FE-P3-12** ⏸ `/thue/hop-dong` and `/thue/hop-dong/:id` (CON-13/15/16, CON-22): current and past contracts, term progress, deposit, occupants with only the signer's CCCD last 4 digits, vehicles read only, "Xem bản hợp đồng đã ký" through the signed view, link to the print page. Include a form to add a roommate directly through POST `/me/contracts/:id/occupants`, without request approval; roommate CCCD/photos are optional and do not expose stored private values. Show backend validation and lifecycle rules after Q-P3-16/17 are settled. Other request buttons remain Phase 5; monthly fee calculation remains Phase 4.
   Done when: page tests; another tenant's id shows the not-found state; nothing on the page shows a full CCCD number or a photo. Stop and report FE-P3-10..12.
 - [ ] **FE-P3-13** Tenant print page `/thue/hop-dong/:id/in`, reusing the P3-6 print component with the tenant routes.
   Done when: page test; manual print preview in both languages (the contract text itself stays Vietnamese, LOC-01).

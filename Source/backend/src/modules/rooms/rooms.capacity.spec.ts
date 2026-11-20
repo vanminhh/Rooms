@@ -19,6 +19,8 @@ function harness(occupants: Occupant[] = []) {
       updateMany: vi.fn(async ({ data }: any) => { Object.assign(room, data); return { count: 1 }; }),
     },
     occupant: {
+      findMany: vi.fn(async ({ where }: any) => occupants.filter(o => where.contract.status.in.includes(o.status))
+        .map(({ moveInDate, moveOutDate }) => ({ moveInDate, moveOutDate }))),
       count: vi.fn(async ({ where }: any) => occupants.filter((o) => {
         const today = where.moveInDate.lte.getTime();
         return o.status === where.contract.status && o.moveInDate.getTime() <= today
@@ -148,5 +150,50 @@ describe('BE-P2-17 · room occupant capacity', () => {
     expect(room.maxOccupants).toBe(3);
     expect(tx.$queryRaw).toHaveBeenCalledTimes(2);
     expect(tx.room.updateMany).toHaveBeenCalledOnce();
+  });
+
+  it('BE-P3-23/CON-13: refuses a lower limit that would overbook a future HOLD even when today is empty', async () => {
+    vi.useFakeTimers().setSystemTime(new Date('2026-11-20T12:00:00.000Z'));
+    const { service, room, tx } = harness([
+      { status: 'HOLD', moveInDate: day('2026-12-01'), moveOutDate: null },
+      { status: 'HOLD', moveInDate: day('2026-12-10'), moveOutDate: null },
+    ]);
+    await expect(service.update(boss, 203, { maxOccupants: 1 } as any)).rejects.toMatchObject({
+      status: 409, response: { code: 'CONFLICT_STATE' },
+    });
+    expect(tx.occupant.count.mock.results).toHaveLength(1);
+    expect(await tx.occupant.count.mock.results[0].value).toBe(0);
+    expect(tx.occupant.findMany).toHaveBeenCalledExactlyOnceWith({
+      where: { contract: { roomId: 203, status: { in: ['HOLD', 'ACTIVE'] } } },
+      select: { moveInDate: true, moveOutDate: true },
+    });
+    expect(tx.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(tx.occupant.findMany.mock.invocationCallOrder[0]);
+    expect(tx.room.updateMany).not.toHaveBeenCalled();
+    expect(room.maxOccupants).toBe(2);
+  });
+
+  it('BE-P3-23/CON-13: an exact future limit permits separated planned stays without rewriting their history', async () => {
+    vi.useFakeTimers().setSystemTime(new Date('2026-11-20T12:00:00.000Z'));
+    const occupants: Occupant[] = [
+      { status: 'HOLD', moveInDate: day('2026-12-01'), moveOutDate: day('2026-12-10') },
+      { status: 'HOLD', moveInDate: day('2026-12-11'), moveOutDate: null },
+    ];
+    const before = structuredClone(occupants);
+    const { service, room, tx } = harness(occupants);
+    expect((await service.update(boss, 203, { maxOccupants: 1 } as any)).maxOccupants).toBe(1);
+    expect(room.maxOccupants).toBe(1);
+    expect(tx.room.updateMany).toHaveBeenCalledOnce();
+    expect(occupants).toEqual(before);
+  });
+
+  it('BE-P3-23/CON-13: historical peaks before today and ENDED stays do not block a lower future limit', async () => {
+    vi.useFakeTimers().setSystemTime(new Date('2026-11-20T12:00:00.000Z'));
+    const { service } = harness([
+      { status: 'ACTIVE', moveInDate: day('2026-11-01'), moveOutDate: day('2026-11-19') },
+      { status: 'ACTIVE', moveInDate: day('2026-11-01'), moveOutDate: day('2026-11-19') },
+      { status: 'HOLD', moveInDate: day('2026-12-01'), moveOutDate: null },
+      { status: 'ENDED', moveInDate: day('2026-12-01'), moveOutDate: null },
+    ]);
+    expect((await service.update(boss, 203, { maxOccupants: 1 } as any)).maxOccupants).toBe(1);
   });
 });

@@ -90,7 +90,7 @@ Boss → Manager (≤ 2 buildings) → Building (address, district, ward in Hà 
 | D-14 | Moving out early still charges rent until the contract end date, deducted from the deposit; any extra deposit kept is decided by the manager |
 | D-15 | Repair cost of incidents is always paid by the owner; it is recorded for reports |
 | D-16 | Contract is printed from a template, signed on paper, scan uploaded (the "PDF" is the browser's print / save as PDF of the filled template, D-36) |
-| D-17 | Occupants' CCCD number (encrypted) and both-side photos (private) are stored for residence registration |
+| D-17 | The contract keeps its signer's CCCD information for residence registration; roommates' CCCD numbers/photos are optional (owner 20/11/2026). When supplied, numbers remain encrypted and photos private. This does not make the optional signer idNumber at initial contract creation newly mandatory (CON-01), expose anyone's full number or delete existing records |
 | D-18 | Each building has at most 1 manager; each manager at most 2 buildings |
 | D-19 | Database: PostgreSQL on Neon or Supabase, Prisma 6, integer auto-increment ids |
 | D-20 | Deferred: AI chatbot, Zalo reminders, e-signature |
@@ -150,6 +150,8 @@ Decisions D-35..D-37: owner 16/11/2026, before Phase 3 (`docs/phase-3-contracts/
 - **A-23** [ASSUMPTION] Staff password reset is unavailable while a tenant still has the unusable pending-account password marker: sign a contract first to issue the initial password. Reset returns `CONFLICT_STATE` for that pending account and never activates it. Resetting an account locked by staff preserves its locked state (D-26).
 - **A-24** [ASSUMPTION, implementation limit of BE-P3-20] If a boundary day contains different meter values and a recorded meter replacement, date-only records cannot identify their physical meter order reliably. Move-in returns `CONFLICT_STATE` for history review instead of guessing from insertion ids/timestamps. A single unambiguous replacement or an explicit replacement at move-in is supported. This is not an owner-confirmed business choice; resolving ambiguous historical meter epochs needs the later meter-history workflow.
 - **A-16** [ASSUMPTION] A tenant keeps role `TENANT` after all their contracts ended: they still read past contracts and invoices and use the guest area (D-26, CON-12).
+- **A-25** [ASSUMPTION, BE-P3-23 implementation default, Q-P3-16] Occupant additions/edits/move-out dates are writable only for HOLD/ACTIVE contracts; ENDED/CANCELLED occupant history remains readable. The owner requested continuation after these options were presented but has not directly confirmed this individual policy; disclose it at the checkpoint.
+- **A-26** [ASSUMPTION, BE-P3-23 implementation default, Q-P3-17] Occupant mutations validate the inclusive overlap peak across the affected stay dates, including planned HOLD occupants. Keep the existing current-day room-limit guard and also protect registered stays from today onward when lowering a room limit or moving in; ignore past peaks for those transitions. These are the proposed defaults used after the continuation request, not an explicit owner answer to this individual policy.
 - **A-17** [ASSUMPTION] Repair review: 1–5 stars + optional comment, once per incident, editable for 7 days, read by staff in scope only; hiding a comment needs a reason. These are the values the brief proposed for viewing reviews, reused for repairs (REQ-09, Q-13).
 
 ## Open questions (do not implement until answered)

@@ -52,9 +52,11 @@ stateDiagram-v2
 
 ## Occupants and vehicles
 
-- **CON-13** Staff manage occupants (`full_name`, `phone`, `date_of_birth`, CCCD, photos, `move_in_date`, `move_out_date`). Active occupants ≤ `max_occupants`. For a room limit change, active occupants are those on ACTIVE contracts with `move_in_date <= today` and `move_out_date IS NULL OR move_out_date >= today` in `Asia/Ho_Chi_Minh`; departure today counts through the day (DB-B6, owner 04/11/2026). Exactly one signer.
+- **CON-13** Staff manage occupants (`full_name`, `phone`, `date_of_birth`, CCCD, photos, `move_in_date`, `move_out_date`). Owner 20/11/2026: the tenant may also directly add roommates to their own contract from their account, without waiting for a staff approval request (CON-15). Roommates' CCCD numbers/photos are optional; provided values retain the existing encryption/private-asset safeguards. Exactly one signer; adding a roommate never changes the contract's signer or tenant account. Active occupants ≤ `max_occupants`. For a room limit change, active occupants are those on ACTIVE contracts with `move_in_date <= today` and `move_out_date IS NULL OR move_out_date >= today` in `Asia/Ho_Chi_Minh`; departure today counts through the day (DB-B6, owner 04/11/2026). Adding people does not multiply room rent or room electricity charges. Chosen PERSON fees take effect in their month of entry at month-end billing (Phase 4, Q-P3-18 for mid-month calculation); parking still depends on registered vehicles (D-07), not one vehicle inferred per person. Q-P3-16/17 remain open for writable statuses and capacity across scheduled/backdated stays; the owner has not removed max_occupants.
+  - BE-P3-23 implements the previously presented defaults as **A-25/26**, pending the owner's individual policy confirmation: mutations on HOLD/ACTIVE only, historical ENDED/CANCELLED readable; validate inclusive overlap across affected stay dates including HOLD. A room-limit decrease keeps DB-B6's current-day check and adds future plans from today onward; move-in rechecks the same capacity under the room lock. Do not treat the fee answer as confirmation of these two defaults.
+  - Q-P3-18 is answered: +1 unit for the additional person in their move-in month regardless of day, without extra individual day-proration. Keep D-41 for the contract's own partial months; calculation remains Phase 4.
 - **CON-14** Staff manage vehicles: `plate` (normalized uppercase, no spaces), `type`, `service_id` (a VEHICLE service of the building). Removing sets `is_active = false`, `removed_at`.
-- **CON-15** Tenants never write occupants or vehicles directly; they send `OCCUPANT_CHANGE` / `VEHICLE_CHANGE` requests ([18-requests.md](18-requests.md)).
+- **CON-15** Owner 20/11/2026 supersedes the request-only flow for adding roommates: tenants directly add them to their own contract through `POST /me/contracts/:id/occupants` (CON-13), without staff approval. This grants no right to change tenantId/isSigner, access another contract or read stored CCCD numbers/photos of other people. Other occupant mutations and vehicle changes retain the Phase 5 request flow (`OCCUPANT_CHANGE` / `VEHICLE_CHANGE`, [18-requests.md](18-requests.md)) until separately specified; do not broaden the new addition permission to arbitrary contract edits.
 - **CON-16** CCCD photos and the signed contract scan are uploaded as Cloudinary authenticated assets (D-37). CCCD photos are viewed through `GET /contracts/:id/occupants/:oid/id-photos`, the scan through `GET /contracts/:id/scan` (staff in scope) and `GET /me/contracts/:id/scan` (the contract's tenant); each returns signed URLs valid ≤ 5 minutes and writes an audit log (`occupant.view_id`, `contract.view_scan`). Tenants see only their own CCCD number's last 4 digits, never CCCD photos.
 
 ## Renewal
@@ -86,6 +88,7 @@ stateDiagram-v2
 | GET | `/contracts/:id/scan` · `/me/contracts/:id/scan` | signed URL of the signed scan (CON-16, D-37) |
 | GET | `/vehicles?plate=` | staff "Tra cứu xe" |
 | GET | `/me/contracts` · `/me/contracts/:id` | tenant, own only |
+| POST | `/me/contracts/:id/occupants` | tenant directly adds a roommate to their own contract, no approval request (CON-13/15); lifecycle gates Q-P3-16 |
 
 ## Acceptance
 

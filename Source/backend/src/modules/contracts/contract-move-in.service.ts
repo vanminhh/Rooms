@@ -1,9 +1,10 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import type { MeterKind, Prisma } from '@prisma/client';
-import { formatDateOnly, parseDateOnly } from '../../common/date/today.js';
+import { formatDateOnly, parseDateOnly, todayHanoi } from '../../common/date/today.js';
 import { ErrorCode } from '../../common/errors/error-code.js';
 import type { AuthUser } from '../../common/guards/auth.decorators.js';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
+import { assertOccupantCapacity } from '../../common/rooms/occupant-capacity.js';
 import { scopeWhere } from '../../common/scope/scope.js';
 import { lockViewingMapping } from '../../common/viewings/viewing-lock.js';
 import { AuditService } from '../audit/audit.service.js';
@@ -43,6 +44,7 @@ export class ContractMoveInService {
       const contract = await tx.contract.findUnique({ where: { id, ...scopeWhere(actor) }, select: {
         id: true, code: true, roomId: true, status: true, signedAt: true, movedInAt: true,
         startDate: true, deposit: true, previousContractId: true,
+        room: { select: { maxOccupants: true } },
         building: { select: { isActive: true, managerId: true, manager: { select: { isActive: true } } } },
       } });
       if (!contract) throw new ForbiddenException(ErrorCode.OUT_OF_SCOPE);
@@ -65,6 +67,8 @@ export class ContractMoveInService {
         }
       }
 
+      // The same room lock serializes occupant writes and room-limit changes.
+      await assertOccupantCapacity(tx, contract.roomId, contract.room.maxOccupants, todayHanoi());
       const electric = await this.opening(tx, actor.id, id, contract.roomId, 'ELECTRIC', dto.electric, readOn, note, dto.electricReplacement?.oldMeterFinal);
       const water = await this.opening(tx, actor.id, id, contract.roomId, 'WATER', dto.water, readOn, note, dto.waterReplacement?.oldMeterFinal);
       const movedInAt = new Date();

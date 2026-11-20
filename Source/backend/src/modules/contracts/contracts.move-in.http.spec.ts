@@ -41,6 +41,9 @@ function initialState() {
       rent: 2_500_000, deposit: 2_500_000, signedScanAssetId: PRIVATE_SCAN,
       createdAt: new Date('2026-11-18T03:00:00Z') },
     invoices: [{ id: 70, contractId: 42, type: 'DEPOSIT', status: 'PAID', total: 2_500_000 }],
+    roomMaxOccupants: 2,
+    occupants: [{ moveInDate: new Date(DATE), moveOutDate: null as Date | null,
+      contract: { roomId: 30, status: 'HOLD' } }],
     readings: [] as Reading[],
     audits: [] as any[],
   };
@@ -114,7 +117,7 @@ describe('BE-P3-20 / CON-10..11 / MTR-02..04/06: move-in over HTTP', () => {
   const contractRow = () => {
     const building = state.buildings.get(state.contract.buildingId);
     return { ...state.contract, building: { ...building, manager: state.users.get(building.managerId) ?? null },
-      tenant: state.users.get(state.contract.tenantId), room: { id: 30, code: 'P301', buildingId: 7,
+      tenant: state.users.get(state.contract.tenantId), room: { id: 30, code: 'P301', buildingId: 7, maxOccupants: state.roomMaxOccupants,
         building: { ...building, manager: state.users.get(building.managerId) ?? null } },
     };
   };
@@ -137,6 +140,8 @@ describe('BE-P3-20 / CON-10..11 / MTR-02..04/06: move-in over HTTP', () => {
     },
     invoice: { findFirst: vi.fn(async ({ where, select, orderBy }: any) =>
       project(ordered(state.invoices.filter(invoice => matches(invoice, where)), orderBy)[0] ?? null, select)) },
+    occupant: { findMany: vi.fn(async ({ where, select }: any) => state.occupants
+      .filter(occupant => matches(occupant.contract, where.contract)).map(occupant => project(occupant, select))) },
     meterReading: {
       findFirst: vi.fn(async (args: any) => readingRows({ ...args, take: 1 })[0] ?? null),
       findMany: vi.fn(async (args: any) => readingRows(args)),
@@ -240,6 +245,41 @@ describe('BE-P3-20 / CON-10..11 / MTR-02..04/06: move-in over HTTP', () => {
   it('SCOPE-02: Boss moves in a contract managed by another staff member', async () => {
     state.buildings.get(7).managerId = 5;
     expect((await moveIn(BODY, 1)).status).toBe(201);
+  });
+  it('BE-P3-23/CON-10/CON-13: an over-capacity future HOLD cannot move in or write meter/audit history', async () => {
+    state.occupants.push(
+      { moveInDate: new Date('2027-01-01'), moveOutDate: null, contract: { roomId: 30, status: 'HOLD' } },
+      { moveInDate: new Date('2027-01-02'), moveOutDate: null, contract: { roomId: 30, status: 'HOLD' } },
+    );
+    const occupantsBefore = structuredClone(state.occupants);
+    const invoicesBefore = structuredClone(state.invoices);
+    const result = await moveIn();
+    expect(result.status).toBe(409);
+    expect(result.body.error.code).toBe('CONFLICT_STATE');
+    noMoveInWrites();
+    rolledBack();
+    expect(state.occupants).toEqual(occupantsBefore);
+    expect(state.invoices).toEqual(invoicesBefore);
+    expect(db.occupant.findMany).toHaveBeenCalledExactlyOnceWith({
+      where: { contract: { roomId: 30, status: { in: ['HOLD', 'ACTIVE'] } } },
+      select: { moveInDate: true, moveOutDate: true },
+    });
+  });
+  it('BE-P3-23/CON-10/CON-13: the exact future limit moves in and preserves occupant/deposit history', async () => {
+    state.occupants.push(
+      { moveInDate: new Date('2026-12-01'), moveOutDate: new Date('2026-12-31'), contract: { roomId: 30, status: 'HOLD' } },
+      { moveInDate: new Date('2027-01-01'), moveOutDate: null, contract: { roomId: 30, status: 'HOLD' } },
+      { moveInDate: new Date(DATE), moveOutDate: null, contract: { roomId: 30, status: 'ENDED' } },
+      { moveInDate: new Date(DATE), moveOutDate: null, contract: { roomId: 31, status: 'ACTIVE' } },
+    );
+    const occupantsBefore = structuredClone(state.occupants);
+    const invoicesBefore = structuredClone(state.invoices);
+    expect((await moveIn()).status).toBe(201);
+    expect(state.contract.status).toBe('ACTIVE');
+    expect(state.occupants).toEqual(occupantsBefore);
+    expect(state.invoices).toEqual(invoicesBefore);
+    expect(state.readings).toHaveLength(2);
+    expect(state.audits).toHaveLength(1);
   });
   it.each(['UNPAID', 'DRAFT', 'CANCELLED', 'SETTLED'])('CON-10: %s deposit prevents move-in', async status => {
     state.invoices[0].status = status;

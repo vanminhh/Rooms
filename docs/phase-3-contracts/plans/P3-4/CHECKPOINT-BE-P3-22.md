@@ -1,6 +1,6 @@
 # P3-4 · BE-P3-22 · Kiểm chứng vào ở và hủy sau thu cọc
 
-Ngày 20/11/2026. Bắt đầu từ `7fa1c97` (BE-P3-21, owner báo đã commit, Git sạch). **BE-P3-22 đã xác minh đạt `[x]`; P3-4 hoàn tất kiểm chứng, chờ owner commit.** Owner đã cung cấp E2E dev và cleanup list thành công cho run `20261120T1215-KOQK`. Chưa bắt đầu BE-P3-23. Owner tự commit; agent không stage/commit.
+Ngày 20/11/2026. Bắt đầu từ `7fa1c97` (BE-P3-21, owner báo đã commit, Git sạch). **BE-P3-22 đã xác minh đạt `[x]` và owner đã commit; Git xác minh `af383a0`, workspace sạch trước BE-P3-23. P3-4 hoàn tất.** Owner đã cung cấp E2E dev và cleanup list thành công cho run `20261120T1215-KOQK`. Owner tự commit; agent không stage/commit.
 
 ## Kết quả dev đã xác minh từ owner
 
@@ -116,7 +116,7 @@ node --env-file=.env .\scripts\e2e\verify-contract-workflow.mjs
 
 Runner chỉ chạy một test workflow BE-P3-19/22, không chạy toàn bộ E2E. File hồi quy BE-P3-12 `test/contracts.e2e-spec.ts` có 4 test và journal cleanup riêng, không cộng vào một test workflow đã báo ở trên và không phải điều kiện mới để nghiệm thu BE-P3-22.
 
-Output dev đã đạt; task `[x]`, P3-4 `chờ commit`. Owner commit trước BE-P3-23. Gợi ý commit: `test(contracts): verify paid move-in and cancellation workflows (BE-P3-22, CON-10..12, MTR-02, BIL-17)`.
+Output dev đã đạt; task `[x]`, owner đã commit `af383a0` trước BE-P3-23. Commit thực tế: `test(contracts): verify workflows (BE-P3-22, CON-10..12, BIL-17)`.
 
 ## Giới hạn và [ASSUMPTION]
 

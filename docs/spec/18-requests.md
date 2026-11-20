@@ -13,6 +13,8 @@ Module: `requests`. Table: `requests` (+ writes to `contracts`, `occupants`, `ve
 | `VEHICLE_CHANGE` | "Cập nhật xe" | same | `{ add: [{ plate, type, serviceId }], remove: [{ vehicleId, removedAt }] }` |
 | `PAYMENT_ISSUE` | "Báo lỗi thanh toán" | PENDING → ESCALATED → RESOLVED; PENDING → RESOLVED / REJECTED; CANCELLED | `{ invoiceId, transferredAt, amount }` + receipt in `photos` |
 
+Owner 20/11/2026: adding a roommate is directly available to the tenant on their own contract (CON-13/15), without an OCCUPANT_CHANGE approval step. Keep the request type/history and other change-request operations; do not remove schema or historical payloads because the addition path changed.
+
 Status labels: PENDING "Chờ xử lý", IN_PROGRESS "Đang xử lý", RESOLVED "Hoàn thành", CLOSED "Đã đóng", APPROVED "Đã duyệt", REJECTED "Từ chối", ESCALATED "Đã chuyển Boss", CANCELLED "Đã rút".
 
 ## Rules
@@ -21,7 +23,7 @@ Status labels: PENDING "Chờ xử lý", IN_PROGRESS "Đang xử lý", RESOLVED 
 - **REQ-02** At most one PENDING `MOVE_OUT` or `RENEW` per contract (`PENDING_REQUEST_EXISTS`).
 - **REQ-03** Approving `MOVE_OUT`: set `contracts.move_out_notice_date` = request `created_at` date and `planned_move_out_date`. If before `end_date`, the approval screen and the tenant's request page show "Dọn trước hạn: vẫn tính tiền phòng đến {end_date}" with the amount (D-14). Settlement itself happens on the move-out day ([16-billing.md#settlement](16-billing.md#settlement)).
 - **REQ-04** Approving `RENEW`: staff then creates the renewal contract prefilled (CON-17). The request links to the new contract in `payload.contractId`.
-- **REQ-05** Approving `OCCUPANT_CHANGE` / `VEHICLE_CHANGE` applies the payload in the same transaction (rules CON-13, CON-14). Effects count from the next period (BIL counting rules).
+- **REQ-05** Approving an applicable `OCCUPANT_CHANGE` / `VEHICLE_CHANGE` applies the payload in the same transaction (rules CON-13, CON-14). Direct tenant roommate additions use CON-15 instead of approval. The old blanket next-period fee rule is superseded for additions by the month-of-entry/registration rule in [16-billing.md](16-billing.md). Q-P3-18 is answered for people: count one additional unit in the entry month regardless of entry day, without person-specific day-proration. This does not settle vehicle-specific mid-month proration. Other change requests and historical records remain intact.
 - **REQ-06** `INCIDENT`: staff moves it IN_PROGRESS → RESOLVED, recording `cost` (owner pays, D-15). Tenant confirms → CLOSED, or "Chưa ổn" → IN_PROGRESS. RESOLVED for 3 days → CLOSED by cron.
 - **REQ-07** `PAYMENT_ISSUE`: manager may resolve directly (e.g. records a manual payment, BIL-11) or reject with reason; otherwise escalates (`escalated_at`) → Boss resolves via [17-bank.md](17-bank.md) BANK-05 and sets RESOLVED.
 - **REQ-08** Every status change notifies the tenant (`REQUEST_UPDATED`). REJECTED needs `decision_note`.

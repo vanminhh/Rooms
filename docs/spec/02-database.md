@@ -73,6 +73,7 @@ Latest offline `check-constraints.mjs` result: **107/107** on 20/11/2026, from t
 - **DB-B4** `invoices.total` = sum of its lines. Tiers ascend by `up_to`, last tier `up_to = null`.
 - **DB-B5** `contract_services` only reference services with unit ROOM or PERSON; `vehicles.service_id` only unit VEHICLE.
 - **DB-B6** Active occupants ≤ `rooms.max_occupants`. When changing a room's limit, count occupants of ACTIVE contracts with `move_in_date <= today` and `move_out_date IS NULL OR move_out_date >= today`, using the business date in `Asia/Ho_Chi_Minh`. An occupant whose move-out date is today still counts through that day. The BE checks and updates the room in one transaction; a lower limit returns 409 `CONFLICT_STATE` (owner 04/11/2026; CON-13).
+  - BE-P3-23 / A-26 implementation default for DB-B6 (pending separate owner confirmation): retain the current-day limit check and additionally reject a decrease below the peak of existing HOLD/ACTIVE stay plans from today onward. Occupant writes check their affected date range and move-in checks current/future plans; all keep the room lock. Past peaks do not prevent a limit decrease. This does not change BIL's separate billing departure boundary.
 - **DB-B7** Renewal `start_date` = previous `end_date` + 1 day (periods are calendar months, D-40).
 - **DB-B8** Building scope and tenant ownership on every read and write.
 - **DB-B9** CCCD photo URLs are signed per request and expire in ≤ 5 minutes; each view writes `audit_logs` (`occupant.view_id`).

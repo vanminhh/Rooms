@@ -24,6 +24,8 @@ Quyết định cũ vẫn áp dụng: D-01 (tài khoản thuộc người ký), 
 | Mã | Câu hỏi | Đề xuất | Chặn |
 |---|---|---|---|
 | Q-15 | Nội dung mẫu hợp đồng thật | Chủ dự án gửi file; agent chuyển thành mẫu có chỗ điền | Ký hợp đồng thật (không chặn code) |
+| Q-P3-16 | Trạng thái hợp đồng cho phép thêm/sửa người ở | HOLD/ACTIVE được sửa, ENDED/CANCELLED chỉ xem; chờ owner chốt | BE-P3-23 |
+| Q-P3-17 | Kiểm giới hạn khi lịch ở nằm ở ngày tương lai/quá khứ | Kiểm các ngày lưu trú giao nhau kể cả HOLD, thay vì chỉ hôm nay; chờ owner chốt và phối hợp guard room/move-in | BE-P3-23 |
 | – | (Q-16 đã trả lời: kỳ theo tháng dương lịch, D-40) | – | – |
 
 Đã trả lời (chủ dự án, 16/11/2026):
@@ -37,11 +39,14 @@ Quyết định cũ vẫn áp dụng: D-01 (tài khoản thuộc người ký), 
 
 Chủ dự án chốt thêm ngày 20/11/2026:
 
+Owner sửa luồng người ở: quản lý hoặc tenant tự thêm người ở cùng vào hợp đồng của tenant; không cần request duyệt cho thao tác thêm. CCCD/ảnh roommate tùy chọn, khi cung cấp vẫn mã hóa/private. Tiền phòng và điện theo phòng; phí theo người của người mới được cộng trong tháng moveInDate khi chốt tháng, parking theo xe thật đăng ký. Q-P3-18 đã chốt: cộng một đơn vị phí theo người bất kể ngày vào nào, không chia thêm theo ngày riêng của người đó; giữ D-41 cho tháng lẻ hợp đồng. Đã cập nhật CON-13/15, D-17, billing và phạm vi BE-P3-23/FE-P3-12. Không bỏ maxOccupants hoặc coi Q-P3-16/17 đã được trả lời; theo yêu cầu tiếp tục, triển khai hai mặc định đã trình dưới A-25/26 để owner kiểm ở checkpoint. Không tự áp câu trả lời về người sang cách prorate xe. Bộ tính hóa đơn vẫn Phase 4.
+
 | Mã | Câu trả lời / việc cần duyệt | Ghi vào |
 |---|---|---|
+| Q-P3-18 | Mỗi người thêm tính một đơn vị phí theo người trong tháng vào ở, bất kể ngày vào; không chia thêm theo số ngày ở của riêng người đó. Giữ D-41 cho tháng lẻ hợp đồng | CON-13, BIL counting rules / Phase 4 |
 | Q-P3-12/13 | Khách cũ ghi chỉ số khi kết thúc thuê để chốt hóa đơn; khách mới có điện/nước hiện tại lúc vào ở làm baseline riêng. Cuối tháng tính từ baseline khách mới; thay quy tắc cũ cùng ngày dùng chung một row | CON-10, MTR-02/10, BIL-07, BE-P3-20 |
 | Q-P3-14 | Đã duyệt sửa schema và tạo migration lưu baseline riêng; đã triển khai và kiểm offline, [SQL proposal](plans/P3-4/SCHEMA-PROPOSAL-BE-P3-20.md) khớp migration. Owner đã kiểm tra không lỗi và chốt BE-P3-20 ngày 20/11 | BE-P3-20 |
-| Q-P3-15 | Đã duyệt apply migration `20261120000000_contract_meter_openings`, sau đó owner kiểm tra và nghiệm thu BE-P3-20. Ghi nhận xác nhận owner trong [checkpoint](plans/P3-4/CHECKPOINT-BE-P3-20.md); không tự thêm output migrate/full suite chưa được cung cấp, không yêu cầu duyệt/kiểm lại cùng bước. Chỉ chờ commit | BE-P3-20 |
+| Q-P3-15 | Đã duyệt apply migration `20261120000000_contract_meter_openings`, sau đó owner kiểm tra và nghiệm thu BE-P3-20, đã commit `40747f6`. Ghi nhận xác nhận owner trong [checkpoint](plans/P3-4/CHECKPOINT-BE-P3-20.md); không tự thêm output migrate/full suite chưa được cung cấp, không yêu cầu duyệt/kiểm lại cùng bước | BE-P3-20 |
 
 Câu hỏi mới phát sinh khi làm ghi vào mục "Questions for the owner" của file task, rồi chép lên bảng này.
 

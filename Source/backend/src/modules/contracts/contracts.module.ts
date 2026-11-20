@@ -7,6 +7,8 @@ import { ContractPasswordService } from './contract-password.service.js';
 import { ContractDocumentsService } from './contract-documents.service.js';
 import { ContractMoveInService } from './contract-move-in.service.js';
 import { ContractCancelService } from './contract-cancel.service.js';
+import { ContractOccupantsController, MeContractOccupantsController } from './contract-occupants.controller.js';
+import { ContractOccupantsService } from './contract-occupants.service.js';
 
-@Module({ imports: [AuditModule], controllers: [ContractsController, MeContractsController], providers: [ContractsService, ContractPasswordService, ContractDocumentsService, ContractMoveInService, ContractCancelService] })
+@Module({ imports: [AuditModule], controllers: [ContractsController, MeContractsController, ContractOccupantsController, MeContractOccupantsController], providers: [ContractsService, ContractPasswordService, ContractDocumentsService, ContractMoveInService, ContractCancelService, ContractOccupantsService] })
 export class ContractsModule {}

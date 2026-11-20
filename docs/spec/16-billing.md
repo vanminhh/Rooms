@@ -58,9 +58,15 @@ The job runs at 00:05 daily **and at app start** (D-21, owner 04/11/2026): the s
 
 ## Calculation (issue)
 
-For MONTHLY period k, rates = approved plans effective at `period_start` (RATE-04). In a partial period (D-41) every fixed line (rent, ROOM, PERSON and VEHICLE services) keeps its quantity and uses the prorated unit price; electricity and water use the readings as usual. Counts are taken at `period_start` so that approved changes apply from the next period:
-- occupants counted: `move_in_date ≤ period_start` and (`move_out_date` null or `> period_start`);
-- vehicles counted: `registered_at ≤ period_start` and (`removed_at` null or `> period_start`).
+For MONTHLY period k, rates = approved plans effective at `period_start` (RATE-04). In a partial contract month (D-41) every fixed line (rent, ROOM, PERSON and VEHICLE services) keeps its quantity and uses the prorated unit price; electricity and water use the readings as usual.
+
+Owner 20/11/2026 revises the old rule that additions only count from the next period: a newly added occupant's selected PERSON fees are included in the calendar month they move in, calculated when that month is closed. Rent, room electricity and ROOM-unit services remain room-based; adding an occupant never multiplies them. Parking requires an actual registered vehicle with its VEHICLE service, not a vehicle inferred from a new person; added parking charges belong to its registration month. Water mode PER_PERSON/PER_M3 is unchanged.
+
+**Q-P3-18 answered by the owner 20/11/2026:** count each additional occupant as one unit for the applicable per-person fees in the calendar month of their move_in_date, regardless of entry day. No extra day-proration based on that person's entry date. For a contract covering all of November and a PERSON fee of 30.000 đ/month, entry on 16/11 or 29/11 adds 30.000 đ for November. The month comes from move_in_date, not the submission date. Include a person who enters and leaves within that same month; counting only the last day's headcount or the old period_start snapshot would omit them.
+
+D-41 still applies to the contract's own partial first/last months; do not prorate a second time by the individual person's date or infer that the owner abolished contract-level proration. This answer does not settle vehicle-specific mid-month proration, infer a vehicle per person, change the building's water mode or authorize recalculating issued/paid invoices. The monthly invoice engine remains Phase 4; BE-P3-23 stores the occupant and move-in date needed for it.
+
+For occupants/vehicles already present at period_start, retain the existing departure boundary: counted when move_out_date/removed_at is null or strictly greater than period_start. New people count in their entry month as above; no separate departure-proration/refund rule or vehicle-specific addition/removal formula is approved by the added-person answer.
 
 | Line kind | Quantity | Unit price |
 |---|---|---|

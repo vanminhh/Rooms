@@ -13,6 +13,7 @@ import { pageParams, paginated } from '../../common/pagination.js';
 import type { AuthUser } from '../../common/guards/auth.decorators.js';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
 import { formatDateOnly, todayHanoi } from '../../common/date/today.js';
+import { assertOccupantCapacity } from '../../common/rooms/occupant-capacity.js';
 import type {
   AddRoomImageDto,
   CreateRoomDto,
@@ -270,6 +271,9 @@ export class RoomsService {
           if (occupantCount > dto.maxOccupants) {
             throw new ConflictException(ErrorCode.CONFLICT_STATE);
           }
+          // A-26 / Q-P3-17: preserve today's DB-B6 guard and also protect already
+          // registered future stays, including HOLD. Past peaks do not prevent a decrease.
+          await assertOccupantCapacity(tx, id, dto.maxOccupants, today);
         }
 
         const changingMaintenance = dto.underMaintenance !== undefined
