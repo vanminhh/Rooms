@@ -101,13 +101,22 @@ export async function signContractUpload(
   env: NodeJS.ProcessEnv = process.env,
   now: Date = new Date(),
 ): Promise<SignedContractUpload> {
-  const cfg = cloudinaryConfig(env);
+  cloudinaryConfig(env);
   const contract = await findContract(db, contractId);
   const allowedBuildings = scopeWhere(user).buildingId?.in;
   if (allowedBuildings && !allowedBuildings.includes(contract.buildingId)) {
     throw new ForbiddenException(ErrorCode.OUT_OF_SCOPE);
   }
 
+  return createContractUploadSignature(contract, purpose, env, now);
+}
+
+// Call only after staff scope or tenant ownership/lifecycle has been checked.
+export function createContractUploadSignature(
+  contract: { id: number; buildingId: number }, purpose: ContractUploadPurpose,
+  env: NodeJS.ProcessEnv = process.env, now: Date = new Date(),
+): SignedContractUpload {
+  const cfg = cloudinaryConfig(env);
   const timestamp = Math.floor(now.getTime() / 1_000);
   const folder = contractAssetFolder(contract.buildingId, contract.id);
   const policy = CONTRACT_UPLOAD[purpose];

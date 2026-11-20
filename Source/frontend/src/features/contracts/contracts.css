@@ -1,0 +1,34 @@
+.rooms-theme .contracts-list, .rooms-theme .contracts-state { display: grid; gap: 16px; }
+.rooms-theme .contracts-toolbar, .rooms-theme .contracts-actions, .rooms-theme .contracts-card-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.rooms-theme .contracts-toolbar { align-items: flex-end; margin-bottom: 24px; }
+.rooms-theme .contracts-toolbar .rooms-field { flex: 1 1 220px; }
+.rooms-theme .contracts-card { padding: 20px; min-width: 0; overflow-wrap: anywhere; }
+.rooms-theme .contracts-card-head { justify-content: space-between; }
+.rooms-theme .contracts-card-head h3 { margin: 0; }
+.rooms-theme .contracts-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.rooms-theme .contracts-facts dt { color: var(--rooms-muted); font-size: 12px; font-weight: 500; }
+.rooms-theme .contracts-facts dd { margin: 4px 0 0; font-weight: 600; }
+.rooms-theme .contracts-actions { margin-top: 16px; }
+.rooms-theme .contracts-form { display: grid; gap: 16px; max-width: 720px; margin-block: 20px; }
+.rooms-theme .contracts-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.rooms-theme .contracts-private-document { max-width: 100%; overflow-wrap: anywhere; }
+.rooms-theme .contracts-fieldset { border: 1px solid var(--rooms-line); border-radius: var(--rooms-radius-input); padding: 16px; min-width: 0; display: grid; gap: 12px; }
+.rooms-theme .contracts-fieldset legend { font-weight: 600; padding-inline: 6px; }
+.rooms-theme .contracts-check { display: flex; align-items: center; gap: 10px; }
+.rooms-theme .contracts-qr { width: 260px; max-width: 100%; height: auto; display: block; margin-block: 16px; }
+.rooms-theme .contracts-print-paper { margin-block: 20px; padding: 24px; }
+.rooms-theme .contracts-print-paper pre { white-space: pre-wrap; overflow-wrap: anywhere; font-family: inherit; line-height: 1.7; }
+.rooms-theme .contracts-draft { padding: 12px; border: 2px solid currentColor; font-weight: 700; }
+.rooms-theme .contracts-registration { border-block-end: 1px solid var(--rooms-line); padding-block: 16px; }
+.rooms-theme .contracts-terms { white-space: pre-wrap; overflow-wrap: anywhere; }
+@media print {
+  body:has(.contracts-print) header, body:has(.contracts-print) nav, body:has(.contracts-print) aside, body:has(.contracts-print) footer,
+  body:has(.contracts-print) .layout-building-select,
+  .rooms-theme .contracts-print-toolbar { display: none !important; }
+  body:has(.contracts-print) main { width: 100%; max-width: none; margin: 0; padding: 0; }
+  .rooms-theme .contracts-print-paper { border: none; box-shadow: none; margin: 0; padding: 0; color: var(--rooms-ink); background: var(--rooms-paper); }
+}
+@media (max-width: 560px) {
+  .rooms-theme .contracts-form-grid { grid-template-columns: 1fr; }
+  .rooms-theme .contracts-actions > .rooms-button { flex: 1 1 auto; }
+}

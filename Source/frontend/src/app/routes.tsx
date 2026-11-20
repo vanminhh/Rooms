@@ -27,6 +27,14 @@ import { RoomsPage } from '../pages/staff/RoomsPage'
 import { PricesPage } from '../pages/staff/PricesPage'
 import { ApprovalsPage } from '../pages/staff/ApprovalsPage'
 import { ViewingsPage } from '../pages/staff/ViewingsPage'
+import { ContractsPage } from '../pages/staff/ContractsPage'
+import { ContractCreatePage } from '../pages/staff/ContractCreatePage'
+import { ContractDetailPage } from '../pages/staff/ContractDetailPage'
+import { ContractPrintPage } from '../pages/staff/ContractPrintPage'
+import { VehiclesPage } from '../pages/staff/VehiclesPage'
+import { TenantContractsPage } from '../pages/tenant/TenantContractsPage'
+import { TenantContractDetailPage } from '../pages/tenant/TenantContractDetailPage'
+import { TenantContractPrintPage } from '../pages/tenant/TenantContractPrintPage'
 import { GuestOnly, RequireAuth } from './RequireAuth'
 
 export const routes: RouteObject[] = [
@@ -55,6 +63,9 @@ export const routes: RouteObject[] = [
       children: [
         { index: true, element: <TenantHomePage /> },
         { path: 'tai-khoan', element: <TenantAccountPage /> },
+        { path: 'hop-dong', element: <TenantContractsPage /> },
+        { path: 'hop-dong/:id', element: <TenantContractDetailPage /> },
+        { path: 'hop-dong/:id/in', element: <TenantContractPrintPage /> },
       ],
     }],
   },
@@ -71,6 +82,11 @@ export const routes: RouteObject[] = [
         { path: 'phong', element: <RoomsPage /> },
         { path: 'don-gia', element: <PricesPage /> },
         { path: 'lich-hen', element: <ViewingsPage /> },
+        { path: 'hop-dong', element: <ContractsPage /> },
+        { path: 'hop-dong/moi', element: <ContractCreatePage /> },
+        { path: 'hop-dong/:id', element: <ContractDetailPage /> },
+        { path: 'hop-dong/:id/in', element: <ContractPrintPage /> },
+        { path: 'xe', element: <VehiclesPage /> },
         // Boss-only pages: the guard blocks a manager who types the URL, not only the menu (AUTH-06, UI-08).
         { element: <RequireAuth allow={['BOSS']} />, children: [
           { path: 'nhan-su', element: <ManagersPage /> },

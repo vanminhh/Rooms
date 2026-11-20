@@ -14,4 +14,11 @@ export class CancelContractDto {
   @Min(0, { message: 'Tiền cọc giữ lại không được âm' })
   @Max(2147483647, { message: 'Tiền cọc giữ lại vượt giới hạn lưu trữ' })
   depositKept?: number;
+
+  // Optional optimistic check from the read-only confirmation preview.
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsInt({ message: 'Tiền cọc đã nhận phải là số nguyên đồng' })
+  @Min(0, { message: 'Tiền cọc đã nhận không được âm' })
+  @Max(2147483647, { message: 'Tiền cọc đã nhận vượt giới hạn lưu trữ' })
+  expectedDepositReceived?: number;
 }

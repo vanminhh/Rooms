@@ -264,6 +264,38 @@ describe('BE-P3-21 / CON-12 / BIL-17 / API-05: HOLD cancellation over HTTP', () 
     expect(db.pricingIdempotencyKey.create).not.toHaveBeenCalled();
   }
   function invoiceUnpaid() { state.invoices[0].status = 'UNPAID'; state.invoices[0].payment = null; }
+  async function preview(body: unknown = BODY, actor = 2, id = 42) {
+    const token = await app.get(TokenService).signAccessToken({ id: actor, role: roles.get(actor)! });
+    return request(app.getHttpServer()).post(`/api/v1/contracts/${id}/cancel-preview`).set('Authorization', `Bearer ${token}`).send(body as object);
+  }
+  it('FE-P3-07/CON-12/UI-04: preview returns received/kept/refund without changing history, audit or idempotency', async () => {
+    const before = structuredClone(state);
+    const result = await preview();
+    expect(result.status).toBe(201);
+    expect(result.headers['cache-control']).toBe('no-store');
+    expect(result.body.data).toEqual({ depositReceived: 2_500_000, depositKept: 1_000_000, refund: 1_500_000, createsSettlement: true });
+    expect(state).toEqual(before); noCancelWrites();
+  });
+  it('FE-P3-07/CON-12: unpaid preview shows zero refund; keeping unreceived money fails', async () => {
+    invoiceUnpaid();
+    expect((await preview({ reason: BODY.reason, depositKept: 0 })).body.data).toEqual({ depositReceived: 0, depositKept: 0, refund: 0, createsSettlement: false });
+    expect((await preview()).status).toBe(400); noCancelWrites();
+  });
+  it.each([3, 4, 5])('FE-P3-07/SCOPE-02: preview rejects unauthorized actor %i', async actor => {
+    expect((await preview(BODY, actor)).status).toBe(403); noCancelWrites();
+  });
+  it('FE-P3-07/CON-12: preview rejects a historical contract and unknown id', async () => {
+    state.contract.status = 'ACTIVE';
+    expect((await preview()).status).toBe(409);
+    expect((await preview(BODY, 2, 999)).status).toBe(404); noCancelWrites();
+  });
+  it('FE-P3-07/BIL-11: payment after confirmation preview requires a new preview before cancellation', async () => {
+    invoiceUnpaid();
+    expect((await preview({ reason: BODY.reason, depositKept: 0 })).body.data.depositReceived).toBe(0);
+    payBeforeInvoiceLock = true;
+    const result = await cancel({ reason: BODY.reason, depositKept: 0, expectedDepositReceived: 0 });
+    expect(result.status).toBe(409); noCancelWrites();
+  });
   function rolledBack() {
     expect(state.contract.status).toBe('HOLD'); expect(state.contract.cancelReason).toBeNull();
     expect(state.settlements).toEqual([]); expect(state.audits).toEqual([]); expect(state.idempotency).toEqual([]);

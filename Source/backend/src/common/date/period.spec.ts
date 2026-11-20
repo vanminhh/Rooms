@@ -1,5 +1,5 @@
 import { formatDateOnly, parseDateOnly } from './today.js';
-import { contractEndDate, contractPeriods, dueDateOfBillingMonth, proratedAmount } from './period.js';
+import { contractEndDate, contractPeriods, contractTermProgress, dueDateOfBillingMonth, proratedAmount } from './period.js';
 
 function date(value: string): Date {
   const parsed = parseDateOnly(value);
@@ -8,6 +8,11 @@ function date(value: string): Date {
 }
 
 describe('BE-P3-01: calendar-month contract periods', () => {
+  it('FE-P3-12/D-41: term progress clamps before start and after the inclusive last day', () => {
+    expect(contractTermProgress(date('2027-01-01'), date('2027-01-31'), date('2026-12-31'))).toEqual({ elapsedDays: 0, totalDays: 31, percent: 0 });
+    expect(contractTermProgress(date('2027-01-01'), date('2027-01-31'), date('2027-01-16'))).toEqual({ elapsedDays: 15, totalDays: 31, percent: 48 });
+    expect(contractTermProgress(date('2027-01-01'), date('2027-01-31'), date('2027-02-01'))).toEqual({ elapsedDays: 31, totalDays: 31, percent: 100 });
+  });
   it('BIL-01 / BIL-08: six full months end on 28/02/2027 and the first invoice is due on 09/10/2026', () => {
     expect(formatDateOnly(contractEndDate(date('2026-09-01'), 6))).toBe('2027-02-28');
     const periods = contractPeriods(date('2026-09-01'), 6);

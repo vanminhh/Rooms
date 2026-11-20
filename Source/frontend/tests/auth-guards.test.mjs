@@ -8,6 +8,7 @@ import { draftFirst } from './draft-root.mjs'
 // edges: globalThis.fetch and the DOM, see tests/p2/cp7-rooms.test.mjs and tests/p2/fe12-dashboard.test.mjs for
 // the same shape); `find` is aliased, this file already declares its own `find` for the stub-JSX tree above.
 import { loadModule, mount, fakeFetch, find as domFind, until } from './p2/public-dom.mjs'
+import { mountContractPage } from './p3/contracts-dom.mjs'
 
 // Mirrored from the main copy (PLAN.md CP-6, the P2-8a lesson): `read` now resolves draft-first / main-fallback
 // via draft-root.mjs (replacing the old single-fixed-depth ENOENT fallback), so files this draft does touch
@@ -340,7 +341,7 @@ test('A2: PublicLayout root onClick turns an in-app link click into navigate, le
   assert.equal(prevented, 1)
 })
 
-test('Q3-A, Q2-A: TenantLayout has exactly the 3 menu items (EX-2 adds the guest area link), the sign-out button and no footer', () => {
+test('Q3-A, Q2-A, FE-P3-01: TenantLayout has the 4 menu items including contracts, the sign-out button and no footer', () => {
   const calls = []
   const { exports, fakes } = loadLayout('../src/layouts/TenantLayout.tsx', { signOutState: { signOut: () => calls.push('out'), signingOut: false } })
   const root = exports.TenantLayout()
@@ -348,7 +349,7 @@ test('Q3-A, Q2-A: TenantLayout has exactly the 3 menu items (EX-2 adds the guest
   const header = headerOf(root, fakes)
   assert.equal(header.props.homeHref, '/thue')
   assert.equal(header.props.logoSrc, '/images/rooms-logo.webp')
-  assert.deepEqual(header.props.links, [{ label: 'Tổng quan', href: '/thue' }, { label: 'Tài khoản', href: '/thue/tai-khoan' }, { label: 'Lịch hẹn xem phòng', href: '/toi' }])
+  assert.deepEqual(header.props.links, [{ label: 'Tổng quan', href: '/thue' }, { label: 'Hợp đồng', href: '/thue/hop-dong' }, { label: 'Tài khoản', href: '/thue/tai-khoan' }, { label: 'Lịch hẹn xem phòng', href: '/toi' }])
   assert.equal(find(root, n => n.type === fakes.RoomsFooter), undefined)
   assert.equal(find(root, n => n.props?.className === 'layout-buildings'), undefined)
   const button = find(header.props.action, n => n.type === fakes.RoomsButton)
@@ -361,9 +362,9 @@ test('Q3-A, Q2-A: TenantLayout has exactly the 3 menu items (EX-2 adds the guest
   assert.deepEqual(calls, ['out'])
 })
 
-// FE-P2-02 (PLAN.md CP-2): the Boss menu grew from 2 items to 8, and a manager now gets the same 8 minus
+// FE-P3-01: contracts and vehicle lookup bring the Boss menu to 10 items; a manager gets the same menu minus
 // "Nhân sự"/"Duyệt giá" (AUTH-06/UI-08 still guard the URLs directly, covered in cp1-routes.test.mjs).
-test('Q2-A: StaffLayout menu follows role (manager: 8 minus Nhân sự/Duyệt giá), sign-out disabled while signing out, no footer', () => {
+test('Q2-A, FE-P3-01: StaffLayout menu follows role (manager: 10 minus Nhân sự/Duyệt giá), sign-out disabled while signing out, no footer', () => {
   const { exports, fakes } = loadLayout('../src/layouts/StaffLayout.tsx', {
     auth: { status: 'ready', user: { role: 'MANAGER', buildings: [] } },
     signOutState: { signOut() {}, signingOut: true },
@@ -377,6 +378,8 @@ test('Q2-A: StaffLayout menu follows role (manager: 8 minus Nhân sự/Duyệt g
     { label: 'Phòng', href: '/ql/phong' },
     { label: 'Đơn giá', href: '/ql/don-gia' },
     { label: 'Lịch hẹn', href: '/ql/lich-hen' },
+    { label: 'Hợp đồng', href: '/ql/hop-dong' },
+    { label: 'Tra cứu xe', href: '/ql/xe' },
     { label: 'Tài khoản', href: '/ql/tai-khoan' },
   ])
   assert.equal(find(root, n => n.type === fakes.RoomsFooter), undefined)
@@ -387,7 +390,7 @@ test('Q2-A: StaffLayout menu follows role (manager: 8 minus Nhân sự/Duyệt g
   assert.ok(find(find(root, n => n.type === 'main'), n => n.type === fakes.Outlet))
 })
 
-test('Q2-A: a Boss gets all 8 menu items, including Nhân sự and Duyệt giá', () => {
+test('Q2-A, FE-P3-01: a Boss gets all 10 menu items, including Nhân sự and Duyệt giá', () => {
   const { exports, fakes } = loadLayout('../src/layouts/StaffLayout.tsx', { auth: { status: 'ready', user: { role: 'BOSS', buildings: [] } } })
   const header = headerOf(exports.StaffLayout(), fakes)
   assert.deepEqual(header.props.links, [
@@ -398,6 +401,8 @@ test('Q2-A: a Boss gets all 8 menu items, including Nhân sự and Duyệt giá'
     { label: 'Đơn giá', href: '/ql/don-gia' },
     { label: 'Duyệt giá', href: '/ql/duyet-gia' },
     { label: 'Lịch hẹn', href: '/ql/lich-hen' },
+    { label: 'Hợp đồng', href: '/ql/hop-dong' },
+    { label: 'Tra cứu xe', href: '/ql/xe' },
     { label: 'Tài khoản', href: '/ql/tai-khoan' },
   ])
 })
@@ -491,11 +496,13 @@ function loadPage(file, user, extra = {}) {
   return { exports: compile(file, id => { if (id in modules) return modules[id]; throw new Error(`unexpected import ${id}`) }), SectionHeading, Link: modules['react-router'].Link }
 }
 
-test('FE-LOGIN-11: TenantHomePage "Tổng quan" greets by full name and shows nothing else', () => {
-  const { exports, SectionHeading } = loadPage('../src/pages/tenant/TenantHomePage.tsx', { fullName: 'Nguyễn Văn An' })
-  const tree = exports.TenantHomePage()
-  assert.equal(textOf(find(tree, n => n.type === SectionHeading)), 'Tổng quan')
-  assert.deepEqual(findAll(tree, n => n.type === 'p').map(textOf), ['Xin chào, Nguyễn Văn An'])
+test('FE-LOGIN-11: TenantHomePage "Tổng quan" greets by full name while the real overview is loading', async () => {
+  const { TenantHomePage } = loadModule(draftFirst('src/pages/tenant/TenantHomePage.tsx'))
+  const app = await mountContractPage(TenantHomePage, { path: '/thue', user: { id: 4, role: 'TENANT', fullName: 'Nguyễn Văn An' }, rules: [{ prefix: '/me/contracts', handler: () => new Promise(() => {}) }] })
+  try {
+    assert.deepEqual(domFind(app.container, n => n.tagName === 'H2').map(n => n.textContent), ['Tổng quan'])
+    assert.deepEqual(domFind(app.container, n => n.tagName === 'P').map(n => n.textContent), ['Xin chào, Nguyễn Văn An'])
+  } finally { await app.stop() }
 })
 
 // FE-LOGIN-11 (StaffHomePage) restored (owner's request, 2026-11-06): this draft makes StaffHomePage call
@@ -586,6 +593,14 @@ test('AUTH-06 / T3 / FE-P2-01: routes wire guards and layouts (tenant area TENAN
     '../pages/staff/PricesPage': stub('PricesPage'),
     '../pages/staff/ApprovalsPage': stub('ApprovalsPage'),
     '../pages/staff/ViewingsPage': stub('ViewingsPage'),
+    '../pages/staff/ContractsPage': stub('ContractsPage'),
+    '../pages/staff/ContractCreatePage': stub('ContractCreatePage'),
+    '../pages/staff/ContractDetailPage': stub('ContractDetailPage'),
+    '../pages/staff/ContractPrintPage': stub('ContractPrintPage'),
+    '../pages/staff/VehiclesPage': stub('VehiclesPage'),
+    '../pages/tenant/TenantContractsPage': stub('TenantContractsPage'),
+    '../pages/tenant/TenantContractDetailPage': stub('TenantContractDetailPage'),
+    '../pages/tenant/TenantContractPrintPage': stub('TenantContractPrintPage'),
     '../pages/public/LoginPage': stub('LoginPage'),
     '../pages/public/ChangePasswordPage': stub('ChangePasswordPage'),
     '../pages/public/ForgotPasswordPage': stub('ForgotPasswordPage'),

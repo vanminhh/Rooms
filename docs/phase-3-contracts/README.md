@@ -4,7 +4,7 @@ Nguồn: `docs/spec/14-contracts.md` (CON-01..16, CON-22), phần cọc của `d
 
 **Mục tiêu (roadmap):** từ lịch xem tới người thuê đăng nhập được; tiền cọc được ghi nhận và người thuê dọn vào ở.
 
-**Trạng thái:** chia thành 9 phần (P3-0 là việc của chủ dự án, P3-1..P3-8 mỗi phần một file task `feature_p3-*.md`). Chưa có dòng code nào. Tiến trình thật: [PROGRESS.md](PROGRESS.md).
+**Trạng thái:** P3-1..P3-5 đã được chủ dự án nghiệm thu; BE-P3-27 còn trong bộ thay đổi chờ commit. Giao diện nhân sự/người thuê P3-6/P3-7 và API tích hợp đã triển khai; full backend **2633/2633**, full frontend **981/981** đạt ngày20/11/2026 sau xác nhận chạy lại test. Chưa đóng phase: E2E/DB dev, cleanup và kiểm trình duyệt/in vẫn chờ bằng chứng. Hồ sơ chung: [p3-8-qa-checklist.md](p3-8-qa-checklist.md); tiến trình: [PROGRESS.md](PROGRESS.md).
 
 ## 1. Quyết định đã chốt
 
@@ -73,6 +73,7 @@ Câu hỏi mới phát sinh khi làm ghi vào mục "Questions for the owner" c�
 |---|---|---|---|---|
 | Tạo, ký, ghi thu cọc, dọn vào, hủy hợp đồng | ✘ | ✘ | ✔ | ✔ (mọi tòa) |
 | Người ở, xe, dịch vụ của hợp đồng; tra cứu xe | ✘ | ✘ | ✔ | ✔ |
+| Thêm người ở cùng và ký upload ảnh CCCD mới cho người ở cùng | ✘ | ✔ hợp đồng của mình, HOLD/ACTIVE; không xem ảnh đã lưu | ✔ | ✔ |
 | Xem ảnh CCCD (có ghi nhật ký) | ✘ | ✘ | ✔ | ✔ |
 | Xem scan đã ký (có ghi nhật ký) | ✘ | ✔ chỉ hợp đồng của mình | ✔ | ✔ |
 | Trang in hợp đồng | ✘ | ✔ chỉ hợp đồng của mình | ✔ | ✔ |

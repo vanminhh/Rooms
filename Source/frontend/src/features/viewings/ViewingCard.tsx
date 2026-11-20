@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { useNavigate } from 'react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -12,6 +13,7 @@ import { viewingTime } from './time'
 import { useViewingStarted } from './useViewingStarted'
 import { outcomeFormSchema, rescheduleFormSchema, type OutcomeFormValues, type RescheduleFormValues } from './schemas'
 import './viewings.css'
+import { viewingContractPrefill } from '../contracts/prefill'
 
 type ViewingUpdate = Parameters<typeof updateViewing>[1]
 type Panel = 'LOST' | 'CANCELLED' | 'RESCHEDULE'
@@ -70,6 +72,7 @@ function ReschedulePanel({ viewing, pending, onSave, onCancel }: { viewing: View
   </>
 }
 export function ViewingCard({ viewing }: { viewing: ViewingView }) {
+  const navigate = useNavigate()
   const client = useQueryClient(), sending = useRef(false)
   const [panel, setPanel] = useState<Panel | null>(null)
   const [actionError, setActionError] = useState('')
@@ -110,10 +113,9 @@ export function ViewingCard({ viewing }: { viewing: ViewingView }) {
         <RoomsButton variant="outline" disabled={mutation.isPending} onClick={() => setPanel('RESCHEDULE')}>Đổi ngày/giờ</RoomsButton>
       </>}
       {viewing.status === 'DONE' && <RoomsButton disabled={mutation.isPending} onClick={() => setPanel('LOST')}>Không thành</RoomsButton>}
-      {(viewing.status === 'DONE' || viewing.status === 'CONFIRMED') && <RoomsButton disabled aria-describedby={`won-hint-${viewing.id}`}>Chốt</RoomsButton>}
+      {(viewing.status === 'DONE' || viewing.status === 'CONFIRMED') && <RoomsButton disabled={mutation.isPending} onClick={() => navigate('/ql/hop-dong/moi', { state: { viewing: viewingContractPrefill(viewing) } })}>Chốt</RoomsButton>}
     </div>
     {viewing.status === 'NEW' && !viewing.guestEmail && <p className="viewings-card-meta">Lịch này chưa có email tài khoản. Hãy xác nhận qua điện thoại.</p>}
-    {(viewing.status === 'DONE' || viewing.status === 'CONFIRMED') && <p id={`won-hint-${viewing.id}`} className="viewings-card-meta">Chốt lịch sẽ có khi làm phần Hợp đồng.</p>}
     <FormError>{actionError}</FormError>
     {((open && panel === 'CANCELLED') || (viewing.status === 'DONE' && panel === 'LOST')) && <OutcomePanel key={panel} status={panel} pending={mutation.isPending} onSave={save} onCancel={() => setPanel(null)} />}
     {open && panel === 'RESCHEDULE' && <ReschedulePanel viewing={viewing} pending={mutation.isPending} onSave={save} onCancel={() => setPanel(null)} />}

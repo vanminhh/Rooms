@@ -3,7 +3,7 @@ import type { Prisma } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
 import { encryptCccd, last4 } from '../../common/crypto/cccd.js';
 import { hashPassword, PENDING_TENANT_PASSWORD_HASH } from '../../common/crypto/password.js';
-import { contractEndDate } from '../../common/date/period.js';
+import { contractEndDate, contractTermProgress } from '../../common/date/period.js';
 import { formatDateOnly, parseDateOnly, todayHanoi } from '../../common/date/today.js';
 import { isUniqueOn } from '../../common/errors/db-errors.js';
 import { ErrorCode } from '../../common/errors/error-code.js';
@@ -76,6 +76,24 @@ function assertStaff(actor: AuthUser): void {
 export class ContractsService {
   constructor(private readonly prisma: PrismaService, private readonly audit: AuditService) {}
 
+  // The form preview and create use the same D-41 calculation and validation.
+  private dates(value: string, termMonths: number, today = todayHanoi()) {
+    const startDate = parseDateOnly(value);
+    if (!startDate || startDate < today) throw fieldError('startDate', 'Ngày vào ở phải từ hôm nay trở đi');
+    if (termMonths < 3) throw new BadRequestException(ErrorCode.CONTRACT_TERM_TOO_SHORT);
+    const endDate = contractEndDate(startDate, termMonths);
+    if (!Number.isFinite(endDate.getTime()) || endDate.getUTCFullYear() > 9999) {
+      throw fieldError('termMonths', 'Ngày kết thúc hợp đồng vượt giới hạn');
+    }
+    return { startDate, endDate };
+  }
+
+  previewDates(actor: AuthUser, dto: { startDate: string; termMonths: number }) {
+    assertStaff(actor);
+    const { startDate, endDate } = this.dates(dto.startDate, dto.termMonths);
+    return { startDate: formatDateOnly(startDate), endDate: formatDateOnly(endDate), termMonths: dto.termMonths };
+  }
+
   async list(actor: AuthUser, query: ContractsQueryDto) {
     assertStaff(actor);
     const { buildingId, status } = query;
@@ -143,6 +161,7 @@ export class ContractsService {
       ? await this.prisma.setting.findUnique({ where: { key: 'bank_account' }, select: { value: true } }) : null;
     return {
       ...toContractSummary(summary),
+      progress: contractTermProgress(summary.startDate, summary.endDate, todayHanoi()),
       terms, signedAt: signedAt?.toISOString() ?? null, movedInAt: movedInAt?.toISOString() ?? null,
       occupants: occupants.map(occupant => ({
         ...occupant, dateOfBirth: dateOnlyOrNull(occupant.dateOfBirth),
@@ -159,13 +178,7 @@ export class ContractsService {
   async create(actor: AuthUser, dto: CreateContractDto, ip?: string) {
     assertStaff(actor);
     const today = todayHanoi();
-    const startDate = parseDateOnly(dto.startDate);
-    if (!startDate || startDate < today) throw fieldError('startDate', 'Ngày vào ở phải từ hôm nay trở đi');
-    if (dto.termMonths < 3) throw new BadRequestException(ErrorCode.CONTRACT_TERM_TOO_SHORT);
-    const endDate = contractEndDate(startDate, dto.termMonths);
-    if (!Number.isFinite(endDate.getTime()) || endDate.getUTCFullYear() > 9999) {
-      throw fieldError('termMonths', 'Ngày kết thúc hợp đồng vượt giới hạn');
-    }
+    const { startDate, endDate } = this.dates(dto.startDate, dto.termMonths, today);
     const dateOfBirth = dto.signer.dateOfBirth ? parseDateOnly(dto.signer.dateOfBirth) : null;
     if (dto.signer.dateOfBirth && (!dateOfBirth || dateOfBirth > today)) {
       throw fieldError('signer.dateOfBirth', 'Ngày sinh không hợp lệ');

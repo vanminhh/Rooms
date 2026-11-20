@@ -73,8 +73,9 @@ test('SCOPE-03: a late boot refresh cannot clear a newly accepted account sessio
     auth = React.useContext(AuthContext)
     return React.createElement('p', null, `${auth.status}:${auth.user?.id ?? 'none'}`)
   }
+  const client = new QueryClient()
   const app = await mount(React.createElement(I18nProvider, { locale: 'vi' },
-    React.createElement(AuthProvider, null, React.createElement(Probe))))
+    React.createElement(QueryClientProvider, { client }, React.createElement(AuthProvider, null, React.createElement(Probe)))))
   try {
     await until(() => finishRefresh, 'old boot refresh')
     auth.acceptSession({ accessToken: 'account-b', user: { id: 42, role: 'GUEST', locale: 'vi' } })
@@ -82,5 +83,5 @@ test('SCOPE-03: a late boot refresh cannot clear a newly accepted account sessio
     finishRefresh({ ok: false, status: 401, json: async () => ({ error: { code: 'UNAUTHORIZED', message: 'Expired' } }) })
     await wait(30)
     assert.equal(app.container.textContent, 'ready:42')
-  } finally { await app.stop(); setAccessToken(null); globalThis.fetch = previousFetch }
+  } finally { await app.stop(); client.clear(); setAccessToken(null); globalThis.fetch = previousFetch }
 })

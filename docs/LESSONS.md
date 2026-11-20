@@ -6,6 +6,9 @@ Read this before the first task of any part. Each line is a mistake that really 
 
 ## Tests and expected values
 
+- Search every exact-menu assertion when extending navigation, including mounted auth-login-flow tests; updating only the guard/layout fixtures left two stale expected arrays and failed the owner's full suite [FE-P3-01, 20/11/2026].
+- Use typed vi.spyOn(...).mockResolvedValue/mockRejectedValue on Prisma delegates in fixtures; replacing a generic PrismaPromise method with an async vi.fn caused scoped noEmit failures even though the tests passed [BE-P3-27, 20/11/2026].
+- Test both hostname and literal-IP connections before trusting a Node loopback guard: createConnection passes a normalized argument array into Socket.connect, so normalizing it twice missed the direct-IP check [BE-P3-27, 20/11/2026].
 - A returned test session ID is not proof of a completed run: asynchronous auto-review blocked the BE-P3-24 full-suite result and no JSON was produced; report the verified scoped results separately from that blocked attempt [BE-P3-24, 20/11/2026].
 - Run scoped noEmit for new HTTP specs as well as Vitest and lint; Supertest.send rejected an unknown-typed test body even though the native HTTP suite passed, fixed with an erased test-only type assertion [BE-P3-20, 20/11/2026].
 - Adding a seeded setting also changes EXPECTED_COUNTS in seed.spec.ts; the draft contract template made the repeatable-seed check fail at two settings instead of the spec's three [BE-P3-18, 19/11/2026].
@@ -32,6 +35,7 @@ Read this before the first task of any part. Each line is a mistake that really 
 
 ## Backend rules that reviewers had to catch
 
+- Cleanup protection must follow VEHICLE services through vehicles as well as contract_services, including inactive history; a protected contract otherwise kept its room/users but lost its parking catalog service [BE-P3-27, 20/11/2026].
 - Reject NUL in text search DTOs before Prisma. PostgreSQL rejects U+0000 in text parameters even though the value passes string validation [BE-P3-10, 17/11/2026].
 - Match the Prisma SELECT in fixtures when a shared serializer reads dates from the returned row. The POST smoke fixture needed its selected dates before exercising the new serializer [BE-P3-10, 17/11/2026].
 - Route a pending tenant's unusable password marker through the same Argon2 work as an unknown phone. The marker alone made failed logins for newly created accounts faster [BE-P3-08, 17/11/2026].
@@ -115,3 +119,7 @@ Read this before the first task of any part. Each line is a mistake that really 
 - Finish delegated source/test edits before starting the full suite; an in-flight locale fixture correction made one full run read an older test version [BE-P3-23, 20/11/2026].
 - Extend translation coverage scans when adding a tenant endpoint; require every scanned message to have a translation while allowing catalog entries shared with other translated paths [BE-P3-23, 20/11/2026].
 - Validate required template placeholders as well as unknown ones; a nonempty custom email without its code, reset link or appointment details passed the initial template checks [BE-EX-29, 15/11/2026].
+- 20/11/2026 · FE-P3-03..14: private QueryClient phải gắn account+role+building scope và clear query/mutation trước đổi identity, remount local secrets; picker/hidden meter field/archived service/print selector/validation locale cần đối chiếu API và DOM thực, không giữ assertion placeholder sau khi trang đã triển khai.
+- Keep unobserved private-query fixtures alive and assert data still exists immediately before an account/scope switch; gcTime0 otherwise makes cache-clear assertions vacuous; destroy manually built mutation timers in finally [FE-P3-03/06,20/11/2026].
+- Await committed dialog close/route unmount before the next interaction, and match file inputs by DOM property or attribute; router promises alone do not prove a React page has unmounted [FE-P3-06,20/11/2026].
+- Generate constraint-checker SQL from the current model before applying current custom constraints; a stale snapshot caused missing called_by_id42703. PGlite checks run offline and must not be marked blocked by dev DB connectivity [QA-P3-02/DB-07,20/11/2026].

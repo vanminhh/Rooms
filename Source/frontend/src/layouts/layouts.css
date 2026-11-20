@@ -1,5 +1,13 @@
 /* Frame shared by the three layouts; colors come from the kit tokens inside .rooms-theme. */
 
+/* The staff menu has ten links for Boss. Wrap the desktop row above the kit's mobile breakpoint. */
+@media (min-width: 1121px) {
+  .rooms-theme.layout-staff .rooms-header-panel,
+  .rooms-theme.layout-staff .rooms-nav {
+    flex-wrap: wrap;
+  }
+}
+
 /* Session check before a protected layout renders (RequireAuth): fill the screen with sand, not white. */
 .rooms-theme.layout-startup {
   display: grid;

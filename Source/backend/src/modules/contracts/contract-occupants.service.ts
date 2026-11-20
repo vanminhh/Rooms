@@ -10,7 +10,7 @@ import { assertOccupantCapacity } from '../../common/rooms/occupant-capacity.js'
 import { scopeWhere } from '../../common/scope/scope.js';
 import { lockViewingMapping } from '../../common/viewings/viewing-lock.js';
 import { AuditService } from '../audit/audit.service.js';
-import { signedContractAssetUrl, verifyContractAsset } from '../files/files.service.js';
+import { createContractUploadSignature, signedContractAssetUrl, verifyContractAsset } from '../files/files.service.js';
 import { assertViewingScope } from '../viewings/viewing-reservations.js';
 import type { CreateOccupantDto, UpdateOccupantDto } from './dto/occupants.dto.js';
 
@@ -63,6 +63,17 @@ function businessDates(dto: CreateOccupantDto | UpdateOccupantDto, current?: Occ
 @Injectable()
 export class ContractOccupantsService {
   constructor(private readonly prisma: PrismaService, private readonly audit: AuditService) {}
+
+  async signMyIdPhoto(actor: AuthUser, id: number) {
+    if (actor.role !== 'TENANT') throw new ForbiddenException(ErrorCode.FORBIDDEN);
+    return this.prisma.$transaction(async tx => {
+      await tx.$queryRaw`SELECT id FROM contracts WHERE id = ${id} AND tenant_id = ${actor.id} FOR SHARE`;
+      const contract = await tx.contract.findFirst({ where: { id, tenantId: actor.id }, select: { id: true, buildingId: true, status: true } });
+      if (!contract) throw new NotFoundException(ErrorCode.NOT_FOUND);
+      writable(contract.status);
+      return createContractUploadSignature(contract, 'ID_PHOTO');
+    });
+  }
 
   private async contract(db: Pick<Prisma.TransactionClient, 'contract'>, actor: AuthUser, id: number) {
     const tenant = actor.role === 'TENANT';

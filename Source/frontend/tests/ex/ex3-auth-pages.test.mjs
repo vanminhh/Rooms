@@ -92,16 +92,20 @@ test('AUTH-09, AUTH-12, LOC-01: guest email stays read-only in English; tenant a
 })
 
 test('LOC-01, LOC-04, VIEW-20: guest and tenant home translate fixed copy and preserve the user name', async () => {
-  fakeFetch([{ prefix: '/me/viewings', handler: () => ok([], { page: 1, limit: 20, total: 0 }) }])
+  fakeFetch([{ prefix: '/me/viewings', handler: () => ok([], { page: 1, limit: 20, total: 0 }) }, { prefix: '/me/contracts', handler: () => ok([], { page: 1, limit: 100, total: 0 }) }])
   const { GuestHomePage } = mod('pages/guest/GuestHomePage.tsx')
   const { TenantHomePage } = mod('pages/tenant/TenantHomePage.tsx')
-  const app = await page(React.createElement(React.Fragment, null, React.createElement(GuestHomePage), React.createElement(TenantHomePage)), { user: guest })
+  const app = await page(React.createElement(GuestHomePage), { user: guest })
   try {
     assert.match(app.container.textContent, /My viewings/)
     await until(() => app.container.textContent.includes('You have no room viewings yet'), 'empty list')
     assert.match(app.container.textContent, /Find a room/)
-    assert.match(app.container.textContent, /Hello, Đỗ Thị Khách/)
   } finally { await app.stop() }
+  const tenantApp = await page(React.createElement(TenantHomePage), { user: { ...guest, role: 'TENANT' } })
+  try {
+    await until(() => tenantApp.container.textContent.includes('You have no contracts yet'), 'tenant empty overview')
+    assert.match(tenantApp.container.textContent, /Hello, Đỗ Thị Khách/)
+  } finally { await tenantApp.stop() }
 })
 
 test('AUTH-11, AUTH-12, AUTH-13, UI-05, LOC-02: English signup to verification keeps API fields, handles wrong code and opens the guest area', async () => {

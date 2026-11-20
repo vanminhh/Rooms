@@ -1,6 +1,6 @@
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { Prisma } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import request from 'supertest';
 import { configureApp } from '../src/app.setup.js';
 import { hashPassword } from '../src/common/crypto/password.js';
@@ -13,6 +13,7 @@ import { MailerService } from '../src/modules/mailer/mailer.service.js';
 import {
   CLEANUP_NOTE, E2eRun, cleanupContractRun, contractFixtureTerms, e2eName, e2eServiceName,
   randomPassword, uniqueBuildingCode, uniquePhone,
+  uniqueVehiclePlate,
 } from '../scripts/e2e/run.js';
 
 vi.setConfig({ testTimeout: 180_000, hookTimeout: 240_000 });
@@ -20,7 +21,7 @@ vi.setConfig({ testTimeout: 180_000, hookTimeout: 240_000 });
 describe('BE-P3-12 real contracts, viewing transitions and call tasks', () => {
   let app: INestApplication, prisma: PrismaService, run: E2eRun | undefined;
   let boss: { id: number; token: string }, managerToken: string, managerId: number;
-  let buildingId: number, otherRoomId: number, serviceId: number, passwordHash: string;
+  let buildingId: number, otherRoomId: number, serviceId: number, parkingServiceId: number, passwordHash: string;
   const roomIds: number[] = [];
   const rent = 3_000_000;
 
@@ -110,6 +111,9 @@ describe('BE-P3-12 real contracts, viewing transitions and call tasks', () => {
     const service = await prisma.service.create({ data: { buildingId, name: e2eServiceName(run.runId), unit: 'ROOM' } });
     serviceId = service.id;
     run.record('services', serviceId);
+    const parking = await prisma.service.create({ data: { buildingId, name: e2eServiceName(`${run.runId} Parking`), unit: 'VEHICLE' } });
+    parkingServiceId = parking.id;
+    run.record('services', parking.id);
     await fixtureRate(buildingId, 'SERVICE', serviceId);
     for (const code of ['P1', 'P2', 'P3']) roomIds.push(await fixtureRoom(buildingId, code));
     otherRoomId = await fixtureRoom(otherBuildingId, 'P1');
@@ -126,8 +130,8 @@ describe('BE-P3-12 real contracts, viewing transitions and call tasks', () => {
         if (ids.rooms.length > 0) {
           await tx.$queryRaw`SELECT id FROM rooms WHERE id IN (${Prisma.join(ids.rooms)}) ORDER BY id FOR UPDATE`;
         }
-        expect(await cleanupContractRun(tx, log)).toEqual([]);
-        const [contracts, viewings, buildings, rooms, users, services] = await Promise.all([
+        expect(await cleanupContractRun(tx, log, todayHanoi())).toEqual([]);
+        const [contracts, viewings, buildings, rooms, users, services, vehicles] = await Promise.all([
           tx.contract.count({ where: { roomId: { in: ids.rooms }, status: { in: ['HOLD', 'ACTIVE'] } } }),
           tx.viewing.count({ where: { id: { in: ids.viewings }, OR: [
             { status: { in: ['NEW', 'CONFIRMED'] } }, { depositCancelledByContractId: { not: null }, calledAt: null },
@@ -136,9 +140,10 @@ describe('BE-P3-12 real contracts, viewing transitions and call tasks', () => {
           tx.room.count({ where: { id: { in: ids.rooms }, isActive: true } }),
           tx.user.count({ where: { id: { in: ids.users }, isActive: true } }),
           tx.service.count({ where: { id: { in: ids.services }, isActive: true } }),
+          tx.vehicle.count({ where: { buildingId: { in: ids.buildings }, isActive: true } }),
         ]);
-        expect({ contracts, viewings, buildings, rooms, users, services }).toEqual({
-          contracts: 0, viewings: 0, buildings: 0, rooms: 0, users: 0, services: 0,
+        expect({ contracts, viewings, buildings, rooms, users, services, vehicles }).toEqual({
+          contracts: 0, viewings: 0, buildings: 0, rooms: 0, users: 0, services: 0, vehicles: 0,
         });
       }, { maxWait: 10_000, timeout: 60_000 });
       run.finish('CLEANED');
@@ -235,6 +240,96 @@ describe('BE-P3-12 real contracts, viewing transitions and call tasks', () => {
     expect(await prisma.user.findUniqueOrThrow({ where: { id: loser.id } })).toMatchObject({ role: 'GUEST', passwordHash });
     expect(await prisma.auditLog.count({ where: { entity: 'user', entityId: loser.id, action: 'user.role_change' } })).toBe(0);
   });
+
+  it('BE-P3-27/CON-14: two independent requests for one normalized plate commit one registration', async () => {
+    const held: number[] = [];
+    const failures: unknown[] = [];
+    const clients: PrismaClient[] = [], raceApps: INestApplication[] = [];
+    const backendPids = new Set<number>();
+    let arrivals = 0;
+    let release!: () => void;
+    const ready = new Promise<void>(resolve => { release = resolve; });
+    const beforeInsert = async (tx: Prisma.TransactionClient) => {
+      const [backend] = await tx.$queryRaw<Array<{ pid: number }>>`SELECT pg_backend_pid() AS pid`;
+      backendPids.add(backend.pid);
+      if (++arrivals === 2) release();
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      try {
+        await Promise.race([ready, new Promise<void>((_resolve, reject) => {
+          timer = setTimeout(() => { reject(new Error('Plate race requires two live database transactions')); }, 45_000);
+        })]);
+      } finally { if (timer) clearTimeout(timer); }
+    };
+    try {
+      for (const code of ['VR1', 'VR2']) {
+        const roomId = await fixtureRoom(buildingId, code);
+        const signer = await fixtureUser('GUEST', `Plate race ${code}`);
+        const created = await api('post', '/contracts', managerToken)
+          .send({ ...contract(roomId, signer), deposit: 0, confirmedGuestAccountId: signer.id }).expect(201);
+        held.push(created.body.data.id);
+      }
+      const plate = await uniqueVehiclePlate(async value => !!await prisma.vehicle.findFirst({ where: { plate: value, isActive: true }, select: { id: true } }));
+      let url: URL;
+      try { url = new URL(process.env.DATABASE_URL!); }
+      catch { throw new Error('Plate race requires a configured PostgreSQL URL'); }
+      // Separate clients still give two connections when the owner's runtime URL
+      // limits each pool to one. No environment file or global setting is changed.
+      url.searchParams.set('connection_limit', '1');
+      const { AppModule } = await import('../src/app.module.js');
+      for (let index = 0; index < 2; index++) {
+        const client = new PrismaClient({ datasourceUrl: url.toString(), transactionOptions: { maxWait: 30_000, timeout: 120_000 } });
+        clients.push(client);
+        const edge = new Proxy(client, { get(target, property) {
+          if (property === '$transaction') return async (work: (tx: Prisma.TransactionClient) => Promise<unknown>) => target.$transaction(async tx => {
+            // Only delay the real DB edge; no route/service/query result is mocked.
+            const vehicles = new Proxy(tx.vehicle, { get(delegate, key) {
+              if (key === 'create') return async (args: Prisma.VehicleCreateArgs) => { await beforeInsert(tx); return delegate.create(args); };
+              const value: unknown = Reflect.get(delegate, key, delegate);
+              return typeof value === 'function' ? value.bind(delegate) : value;
+            } });
+            const instrumented = new Proxy(tx, { get(transaction, key) {
+              if (key === 'vehicle') return vehicles;
+              const value: unknown = Reflect.get(transaction, key, transaction);
+              return typeof value === 'function' ? value.bind(transaction) : value;
+            } });
+            return work(instrumented);
+          });
+          const value: unknown = Reflect.get(target, property, target);
+          return typeof value === 'function' ? value.bind(target) : value;
+        } });
+        const module = await Test.createTestingModule({ imports: [AppModule] })
+          .overrideProvider(PrismaService).useValue(edge)
+          .overrideProvider(MailerService).useValue({ send: vi.fn(async () => {}) }).compile();
+        const raceApp = module.createNestApplication(); raceApp.useLogger(false); configureApp(raceApp);
+        raceApps.push(raceApp); await raceApp.init();
+      }
+      const responses = await Promise.all(held.map((id, index) => request(raceApps[index].getHttpServer())
+        .post(`/api/v1/contracts/${id}/vehicles`).set('Authorization', managerToken)
+        .send({ plate: index === 0 ? plate.toLowerCase() : `${plate.slice(0, 4)} ${plate.slice(4)}`, type: 'MOTORBIKE', serviceId: parkingServiceId })));
+      expect(arrivals, 'Both transactions reached the DB insert barrier').toBe(2);
+      expect(backendPids.size, 'Two distinct PostgreSQL backends overlapped before insertion').toBe(2);
+      expect(responses.map(result => result.status).sort((a, b) => a - b)).toEqual([201, 400]);
+      expect(responses.find(result => result.status === 400)!.body.error).toMatchObject({
+        code: 'VALIDATION_FAILED', fields: { plate: 'Biển số đang được đăng ký gửi xe' },
+      });
+      const winner = responses.find(result => result.status === 201)!.body.data.id;
+      expect(await prisma.vehicle.count({ where: { plate, isActive: true } })).toBe(1);
+      expect(await prisma.auditLog.count({ where: { action: 'vehicle.create', entity: 'vehicle', entityId: winner } })).toBe(1);
+      expect(await prisma.vehicle.count({ where: { contractId: { in: held }, isActive: true } })).toBe(1);
+    } catch (error) {
+      failures.push(error);
+    } finally {
+      for (const raceApp of raceApps) { try { await raceApp.close(); } catch (error) { failures.push(error); } }
+      for (const client of clients) { try { await client.$disconnect(); } catch (error) { failures.push(error); } }
+      // Successful route transactions are independently committed; retire only these
+      // logged E2E contracts. The protected afterAll helper also handles partial setup.
+      for (const id of held) {
+        try { await api('post', `/contracts/${id}/cancel`, managerToken).send({ reason: CLEANUP_NOTE }).expect(201); }
+        catch (error) { failures.push(error); }
+      }
+    }
+    if (failures.length) throw new AggregateError(failures, 'Plate race or its retirement failed');
+  }, 300_000);
 
   it('CON-05/07/VIEW-05/06/AUD-01: failure after the audit write rolls back the full operation', async () => {
     const signer = await fixtureUser('GUEST', 'Rollback signer');

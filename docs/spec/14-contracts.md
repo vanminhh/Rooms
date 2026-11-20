@@ -84,11 +84,13 @@ stateDiagram-v2
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/contracts?buildingId&status&q` | doubles as tenant list; `q` matches name, phone, room code |
+| GET | `/contracts?buildingId&status&q` | staff list; `q` matches name, phone, room code; tenant list uses `/me/contracts` |
+| GET | `/contracts/end-date?startDate&termMonths` | staff read-only D-41 preview for the create form; same validation/calculation as create, no-store, no contract write |
 | POST | `/contracts` | CON-01..05 |
-| GET | `/contracts/:id` | includes occupants, vehicles, services, invoices summary |
+| GET | `/contracts/:id` | includes occupants, vehicles, services, deposit invoice summary and read-only `progress:{elapsedDays,totalDays,percent}`; complete elapsed calendar days from start, inclusive end, clamped 0..100; same display field on own tenant detail, never used for billing |
 | GET | `/contracts/:id/print` · `/me/contracts/:id/print` | filled template for the print page (CON-22, D-36; replaces `/pdf`) |
 | POST | `/contracts/:id/sign` · `/move-in` · `/cancel` · `/renew` · `/reset-password` | |
+| POST | `/contracts/:id/cancel-preview` | staff read-only confirmation using the same CON-12 payment validation/math as cancel; `{reason,depositKept?}` → `{depositReceived,depositKept,refund,createsSettlement}`, no-store; no mutation/audit/idempotency record. Cancel may include `expectedDepositReceived` from preview; a changed received amount returns CONFLICT_STATE before writes, and belongs to the idempotent request hash |
 | GET/POST | `/contracts/:id/occupants` · `/contracts/:id/vehicles` | staff |
 | PATCH | `/contracts/:id/occupants/:oid` · `/contracts/:id/vehicles/:vid` | staff |
 | GET/PATCH | `/contracts/:id/services` | selected ROOM/PERSON services, staff (D-07, DB-B5) |
@@ -97,6 +99,7 @@ stateDiagram-v2
 | GET | `/vehicles?plate=` | staff "Tra cứu xe" |
 | GET | `/me/contracts` · `/me/contracts/:id` | tenant, own only |
 | POST | `/me/contracts/:id/occupants` | tenant directly adds a roommate to their own contract, no approval request (CON-13/15); lifecycle gates Q-P3-16 |
+| POST | `/me/contracts/:id/id-photo-sign` | TENANT-only, own HOLD/ACTIVE contract, fixed authenticated ID_PHOTO purpose; no custom folder/purpose or stored-photo read. Foreign/unknown contract →404; closed contract →409. Metadata is verified again by occupant creation |
 
 ## Acceptance
 

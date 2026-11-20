@@ -2,7 +2,7 @@
 // task prompt + docs/spec/13-viewings.md VIEW-04/05/10, docs/spec/31-ui-kit.md UI-03).
 //
 // D3 — Spinner `block`: src/components/FormFields.tsx + rooms.css.
-// A9 — ViewingCard "Chốt" (disabled, aria-describedby hint): src/features/viewings/ViewingCard.tsx.
+// A9 / FE-P3-03 — ViewingCard "Chốt" navigation: src/features/viewings/ViewingCard.tsx.
 // A5 — PublicRoomPage building name is a link to /toa/:id: src/pages/public/PublicRoomPage.tsx.
 // B1 — RoomInspector pendingProposal shows the proposed price: src/features/rooms/RoomInspector.tsx.
 //
@@ -145,23 +145,21 @@ function baseViewing(overrides = {}) {
 
 function mountCard(viewing) {
   const { QueryClientProvider } = nodeRequire('@tanstack/react-query')
-  return mount(React.createElement(QueryClientProvider, { client: newClient() }, React.createElement(ViewingCard, { viewing })))
+  const { MemoryRouter } = nodeRequire('react-router')
+  return mount(React.createElement(MemoryRouter, null, React.createElement(QueryClientProvider, { client: newClient() }, React.createElement(ViewingCard, { viewing }))))
 }
 
-test('A9/VIEW-05: a CONFIRMED (open) viewing shows a disabled "Chốt" button without direct "Không thành", aria-describedby -> #won-hint-<id> with the Phase-3 hint text; clicking it sends no request', async () => {
+test('A9/VIEW-05/FE-P3-03: a CONFIRMED viewing enables Chốt navigation without a direct LOST transition or API mutation', async () => {
   const calls = fakeFetch([])
   const app = await mountCard(baseViewing({ id: 7, status: 'CONFIRMED' }))
   const chot = buttonByText(app.container, 'Chốt')
   assert.ok(chot, 'CONFIRMED card must show a "Chốt" button')
-  assert.ok(chot.disabled === true || chot.hasAttribute('disabled'), '"Chốt" must be disabled')
+  assert.equal(chot.disabled === true || chot.hasAttribute('disabled'), false)
   assert.equal(buttonByText(app.container, 'Không thành'), undefined, 'EX-7: only DONE can become LOST')
-  assert.equal(chot.getAttribute('aria-describedby'), 'won-hint-7')
-  const hint = find(app.container, n => n.getAttribute('id') === 'won-hint-7')[0]
-  assert.ok(hint, 'no element with id won-hint-7')
-  assert.equal(hint.textContent, 'Chốt lịch sẽ có khi làm phần Hợp đồng.')
+  assert.equal(chot.getAttribute('aria-describedby'), null)
   dispatch(app.container, chot, 'click')
   await wait(30)
-  assert.equal(calls.length, 0, 'clicking the disabled "Chốt" button must send no request')
+  assert.equal(calls.length, 0, 'Opening creation is navigation, not a viewing mutation')
   await app.stop()
 })
 

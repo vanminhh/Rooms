@@ -20,6 +20,14 @@ export function contractEndDate(startDate: Date, termMonths: number): Date {
   return addDays(new Date(Date.UTC(targetMonth.getUTCFullYear(), targetMonth.getUTCMonth(), day)), -1);
 }
 
+// Read-only UI progress: complete calendar days elapsed; the inclusive end day is still in the term.
+export function contractTermProgress(startDate: Date, endDate: Date, asOf: Date) {
+  const start = toDateOnly(startDate).getTime();
+  const totalDays = Math.max(1, (toDateOnly(endDate).getTime() - start) / 86_400_000 + 1);
+  const elapsedDays = Math.min(totalDays, Math.max(0, (toDateOnly(asOf).getTime() - start) / 86_400_000));
+  return { elapsedDays, totalDays, percent: Math.floor(elapsedDays * 100 / totalDays) };
+}
+
 export function contractPeriods(startDate: Date, termMonths: number): ContractPeriod[] {
   const endDate = contractEndDate(startDate, termMonths);
   const periods: ContractPeriod[] = [];

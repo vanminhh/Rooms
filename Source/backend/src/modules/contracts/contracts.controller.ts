@@ -2,6 +2,7 @@ import { Body, Controller, Get, Header, Headers, Ip, Param, Post, Query } from '
 import { type AuthUser, CurrentUser, Roles } from '../../common/guards/auth.decorators.js';
 import { ContractsService } from './contracts.service.js';
 import { ContractIdParamsDto, ContractsQueryDto } from './dto/contracts-query.dto.js';
+import { ContractDatesQueryDto } from './dto/contract-dates.dto.js';
 import { CreateContractDto } from './dto/create-contract.dto.js';
 import { SignContractDto } from './dto/sign-contract.dto.js';
 import { ContractPasswordService } from './contract-password.service.js';
@@ -20,6 +21,12 @@ export class ContractsController {
   @Get()
   list(@CurrentUser() actor: AuthUser, @Query() query: ContractsQueryDto) {
     return this.contracts.list(actor, query);
+  }
+
+  @Get('end-date')
+  @Header('Cache-Control', 'no-store')
+  previewDates(@CurrentUser() actor: AuthUser, @Query() dto: ContractDatesQueryDto) {
+    return this.contracts.previewDates(actor, dto);
   }
 
   @Get(':id')
@@ -60,6 +67,12 @@ export class ContractsController {
   @Header('Cache-Control', 'no-store')
   moveIn(@CurrentUser() actor: AuthUser, @Param() params: ContractIdParamsDto, @Body() dto: MoveInContractDto, @Ip() ip: string) {
     return this.moveIns.moveIn(actor, params.id, dto, ip);
+  }
+
+  @Post(':id/cancel-preview')
+  @Header('Cache-Control', 'no-store')
+  cancelPreview(@CurrentUser() actor: AuthUser, @Param() params: ContractIdParamsDto, @Body() dto: CancelContractDto) {
+    return this.cancellations.preview(actor, params.id, dto);
   }
 
   @Post(':id/cancel')

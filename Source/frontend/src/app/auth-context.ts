@@ -15,6 +15,11 @@ export interface AuthContextValue {
 
 export const AuthContext = createContext<AuthContextValue | null>(null)
 
+// Private query data belongs to the current account, role and building assignment.
+export function authScopeKey(user: Me | null): string {
+  return user ? `${user.id}:${user.role}:${(user.buildings ?? []).map(building => building.id).sort((a, b) => a - b).join(',')}` : 'signed-out'
+}
+
 export function useAuth(): AuthContextValue {
   const value = useContext(AuthContext)
   if (!value) throw new Error('useAuth must be used inside AuthProvider')

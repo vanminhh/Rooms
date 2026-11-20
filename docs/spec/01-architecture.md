@@ -75,6 +75,7 @@ BE maps DB constraint/trigger errors to these codes. Module specs add their own.
 | `TOO_MANY_REQUESTS` | 429 | Rate limit |
 | `PHONE_TAKEN` | 409 | `users_phone_key` |
 | `EMAIL_TAKEN` | 409 | `users_email_key`, at sign-up (AUTH-11) |
+| `WRONG_PORTAL` | 403 | right password, but the account's role does not match the entry used to log in (AUTH-16, D-43); no session is created |
 | `EMAIL_NOT_VERIFIED` | 403 | login of a self-registered account whose email has not passed the code (AUTH-12) |
 | `OTP_INVALID` | 400 | email code wrong, expired, used, or out of tries (AUTH-13) |
 | `MAIL_UNAVAILABLE` | 503 | no mail provider configured or the provider failed while sending a sign-up code (AUTH-13); the app still starts without one |

@@ -89,18 +89,20 @@ const BOSS_MENU = [
   { label: 'Đơn giá', href: '/ql/don-gia' },
   { label: 'Duyệt giá', href: '/ql/duyet-gia' },
   { label: 'Lịch hẹn', href: '/ql/lich-hen' },
+  { label: 'Hợp đồng', href: '/ql/hop-dong' },
+  { label: 'Tra cứu xe', href: '/ql/xe' },
   { label: 'Tài khoản', href: '/ql/tai-khoan' },
 ]
 const MANAGER_MENU = BOSS_MENU.filter(item => item.label !== 'Nhân sự' && item.label !== 'Duyệt giá')
 
-test('FE-P2-02: Boss sees exactly 8 menu items in the PLAN.md order', () => {
+test('FE-P2-02/FE-P3-01: Boss sees the 10 menu items including contracts and vehicle lookup', () => {
   assert.deepEqual(loadStaffLayout({ role: 'BOSS', buildings: [] }), BOSS_MENU)
-  assert.equal(BOSS_MENU.length, 8)
+  assert.equal(BOSS_MENU.length, 10)
 })
 
-test('FE-P2-02: a manager sees the same 8 minus "Nhân sự" and "Duyệt giá" (6 items)', () => {
+test('FE-P2-02/FE-P3-01: a manager sees the same menu minus "Nhân sự" and "Duyệt giá" (8 items)', () => {
   assert.deepEqual(loadStaffLayout({ role: 'MANAGER', buildings: [] }), MANAGER_MENU)
-  assert.equal(MANAGER_MENU.length, 6)
+  assert.equal(MANAGER_MENU.length, 8)
   assert.ok(!MANAGER_MENU.some(item => item.label === 'Nhân sự' || item.label === 'Duyệt giá'))
 })
 

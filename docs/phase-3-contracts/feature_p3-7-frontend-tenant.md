@@ -20,20 +20,27 @@ Rules: mark `[~]` when you start a task, `[x]` only after its "Done when" is ver
 
 ## Scope
 
+Owner direction 20/11/2026: complete all remaining Phase3 in one continuous pass, including P3-6/P3-7/QA. No intermediate commit pause for this pass; retain review and actual validation evidence. Add the missing tenant-only ID_PHOTO signature route required by direct roommate additions, with ownership/lifecycle checks; do not grant staff upload purposes to tenants.
+
 In: `/thue` overview, `/thue/hop-dong`, `/thue/hop-dong/:id`, direct addition of roommates to the tenant's own contract (owner 20/11/2026, CON-13/15), the tenant print page, all in Vietnamese and English.
 Out: other request buttons ("Báo trả phòng", "Xin gia hạn", other occupant changes, "Cập nhật xe", Phase 5), monthly invoices and charts (Phase 4–5), any backend change, staff pages. Adding a roommate no longer requires the Phase 5 approval-request flow.
 
 ## Tasks
 
-- [ ] **FE-P3-10** Dictionary keys (vi and en) for every tenant text of this part, contract and invoice status labels for the tenant area, and the `/me` API client.
+- [x] **FE-P3-10** Dictionary keys (vi and en) for every tenant text of this part, contract and invoice status labels for the tenant area, and the `/me` API client.
+  KIỂM MỚI 20/11/2026: full frontend981/981,0fail/skip, gồm dictionary equality/EX3 scan, own-tenant page/API/privacy/VI-EN; reviewer DUYỆT source/test fixes. FE13/14 còn manual print/360px/desktop/dev workflow; không suy unit pass thành manual. [Checkpoint](plans/P3-6/CHECKPOINT-FE-P3-03-14.md), [QA](p3-8-qa-checklist.md).
   Done when: the "every vi key has en" test passes; no Vietnamese literal in the new tenant files (the EX-3 scan test covers them).
-- [ ] **FE-P3-11** `/thue` overview (D-35, BIL-10): before move-in, the deposit invoice with VietQR image, amount, content `TT{id}` with a copy button, due date and the move-in date; after move-in, the contract summary; a room switcher when the tenant has several contracts; a tenant with only ended contracts sees them as past (A-16).
+- [x] **FE-P3-11** `/thue` overview (D-35, BIL-10): before move-in, the deposit invoice with VietQR image, amount, content `TT{id}` with a copy button, due date and the move-in date; after move-in, the contract summary; a room switcher when the tenant has several contracts; a tenant with only ended contracts sees them as past (A-16).
+  KIỂM MỚI 20/11/2026: full frontend981/981,0fail/skip, gồm dictionary equality/EX3 scan, own-tenant page/API/privacy/VI-EN; reviewer DUYỆT source/test fixes. FE13/14 còn manual print/360px/desktop/dev workflow; không suy unit pass thành manual. [Checkpoint](plans/P3-6/CHECKPOINT-FE-P3-03-14.md), [QA](p3-8-qa-checklist.md).
   Done when: page tests for before move-in, after move-in, two contracts, no contract; money and dates the same in both languages (LOC-05).
-- [ ] **FE-P3-12** ⏸ `/thue/hop-dong` and `/thue/hop-dong/:id` (CON-13/15/16, CON-22): current and past contracts, term progress, deposit, occupants with only the signer's CCCD last 4 digits, vehicles read only, "Xem bản hợp đồng đã ký" through the signed view, link to the print page. Include a form to add a roommate directly through POST `/me/contracts/:id/occupants`, without request approval; roommate CCCD/photos are optional and do not expose stored private values. Show backend validation and lifecycle rules after Q-P3-16/17 are settled. Other request buttons remain Phase 5; monthly fee calculation remains Phase 4.
+- [x] **FE-P3-12** ⏸ `/thue/hop-dong` and `/thue/hop-dong/:id` (CON-13/15/16, CON-22): current and past contracts, term progress, deposit, occupants with only the signer's CCCD last 4 digits, vehicles read only, "Xem bản hợp đồng đã ký" through the signed view, link to the print page. Include a form to add a roommate directly through POST `/me/contracts/:id/occupants`, without request approval; roommate CCCD/photos are optional and do not expose stored private values. Show backend validation and lifecycle rules after Q-P3-16/17 are settled. Other request buttons remain Phase 5; monthly fee calculation remains Phase 4.
+  KIỂM MỚI 20/11/2026: full frontend981/981,0fail/skip, gồm dictionary equality/EX3 scan, own-tenant page/API/privacy/VI-EN; reviewer DUYỆT source/test fixes. FE13/14 còn manual print/360px/desktop/dev workflow; không suy unit pass thành manual. [Checkpoint](plans/P3-6/CHECKPOINT-FE-P3-03-14.md), [QA](p3-8-qa-checklist.md).
   Done when: page tests; another tenant's id shows the not-found state; nothing on the page shows a full CCCD number or a photo. Stop and report FE-P3-10..12.
-- [ ] **FE-P3-13** Tenant print page `/thue/hop-dong/:id/in`, reusing the P3-6 print component with the tenant routes.
+- [!] **FE-P3-13** Tenant print page `/thue/hop-dong/:id/in`, reusing the P3-6 print component with the tenant routes.
+  KIỂM MỚI 20/11/2026: full frontend981/981,0fail/skip, gồm dictionary equality/EX3 scan, own-tenant page/API/privacy/VI-EN; reviewer DUYỆT source/test fixes. FE13/14 còn manual print/360px/desktop/dev workflow; không suy unit pass thành manual. [Checkpoint](plans/P3-6/CHECKPOINT-FE-P3-03-14.md), [QA](p3-8-qa-checklist.md).
   Done when: page test; manual print preview in both languages (the contract text itself stays Vietnamese, LOC-01).
-- [ ] **FE-P3-14** ⏸ `npm run lint`, `npm run build`, `npm run test:components`.
+- [!] **FE-P3-14** ⏸ `npm run lint`, `npm run build`, `npm run test:components`.
+  KIỂM MỚI 20/11/2026: full frontend981/981,0fail/skip, gồm dictionary equality/EX3 scan, own-tenant page/API/privacy/VI-EN; reviewer DUYỆT source/test fixes. FE13/14 còn manual print/360px/desktop/dev workflow; không suy unit pass thành manual. [Checkpoint](plans/P3-6/CHECKPOINT-FE-P3-03-14.md), [QA](p3-8-qa-checklist.md).
   Done when: all pass with real output quoted; manual walk with the tenant account created in the P3-6 walk: first login forces the password change, then overview with the deposit VietQR, then after the staff records the deposit and move-in, the contract pages; at 360 px and desktop, Vietnamese and English.
 
 ## Questions for the owner
@@ -41,5 +48,9 @@ Out: other request buttons ("Báo trả phòng", "Xin gia hạn", other occupant
 <!-- none yet -->
 
 ## Issues log
+
+- 20/11/2026 · Full frontend mới981/981,0fail/skip,163409,7733ms · Dictionary/scan/tenant API/pages/roommate/privacy/VI-EN đã qua; FE10..12 đạt Done when tự động. FE13/14 còn kiểm print/manual360px/desktop/dev account, không có browser-control và DBpreflight thất bại. Giữ lịch sử blocked phía dưới, không gọi toàn P3-7đã nghiệm thu.
+
+- 20/11/2026 · FE10..14 code ready/QA pending · `/me` API, dictionary/overview/detail/roommate/print VI-EN và tenant ID_PHOTO-only signature own HOLD/ACTIVE đã có, reviewer DUYỆT source. FElint0/0warning/build0(Vite7,25s); syntax15file0 không thay unit pass. Các test mới đã viết nhưng chưa thực thi/xác minh sau auto-review rejection; backend scoped304+i18n19 giữ phạm vi riêng. DBdev không kết nối, browser-control không có nên manual360px/desktop/VI-EN/print/forced-password chưa có bằng chứng mới. Chờ các gate trong checklist, không ghi P3-7done hoặc gộp counts cũ.
 
 <!-- When a task is [!], add: date · task ID · what failed · what is needed -->

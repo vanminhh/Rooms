@@ -192,6 +192,9 @@ test('UI-12, FE-EX-10, FE-EX-11: public and auth pages and features keep display
     'features/auth/schemas.ts', 'features/auth/pendingVerification.ts',
     'components/FormFields.tsx', 'app/RequireAuth.tsx',
     'shared/api.ts', 'shared/form-errors.ts',
+    'pages/tenant/TenantContractsPage.tsx', 'pages/tenant/TenantContractDetailPage.tsx', 'pages/tenant/TenantContractPrintPage.tsx',
+    'features/contracts/TenantContractView.tsx', 'features/contracts/ContractInformation.tsx', 'features/contracts/ContractSummaryCard.tsx',
+    'features/contracts/DepositCard.tsx', 'features/contracts/ContractDocuments.tsx', 'features/contracts/ContractPrintView.tsx', 'features/contracts/OccupantForm.tsx',
     // EX-7 removes the old booking form exception; all public/guest viewing text is translated.
     'features/public/ViewingForm.tsx', 'features/public/viewing-schema.ts', 'features/public/ViewingCalendar.tsx', 'features/viewings/ViewingContacts.tsx', 'pages/guest/GuestViewingPage.tsx',
   ]

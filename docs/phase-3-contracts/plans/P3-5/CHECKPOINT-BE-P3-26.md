@@ -1,5 +1,7 @@
 # BE-P3-26 · Dịch vụ của hợp đồng
 
+**Cập nhật sau checkpoint:** owner báo đã commit; Git xác minh `b904ece`, workspace sạch trước BE-P3-27. Giữ A-28 và kết quả tại điểm dừng dưới đây; không suy ra một full-backend/E2E result mới từ xác nhận commit.
+
 20/11/2026. Owner xác nhận BE-P3-25 đã commit; Git xác minh **`4428721`**, workspace sạch trước task. **BE-P3-26 đã triển khai và kiểm chứng, reviewer DUYỆT; chờ owner kiểm A-28 và commit.** Sau commit, tiếp tục BE-P3-27 kiểm tổng thể/E2E P3-5.
 
 ## Hành vi đã triển khai

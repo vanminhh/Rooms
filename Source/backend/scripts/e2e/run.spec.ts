@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import {
   e2eServiceName, uniqueBuildingCode, uniquePhone, cleanupRun, cleanupContractRun, linkedRows, planCleanup,
   skippedReport, E2eRun, readAllLogs, readLogs, E2E_TABLES, LINKED_TITLE, CLEANUP_NOTE,
-  type E2eRunLog, type E2eCleanupDb, type SkippedRow, type CleanupFacts,
+  uniqueVehiclePlate, E2E_PLATE_PREFIX, type E2eRunLog, type E2eCleanupDb, type SkippedRow, type CleanupFacts,
 } from './run.js';
 
 // CP-7 (BE-P2-09) · scripts/e2e/run.ts, scripts/e2e/cleanup.mjs. Outside edge mocked only:
@@ -15,7 +15,7 @@ import {
 // The unit under test (run.ts functions) is never mocked.
 
 function emptyIds(): E2eRunLog['ids'] {
-  return Object.fromEntries(E2E_TABLES.map((t) => [t, []])) as E2eRunLog['ids'];
+  return { buildings: [], rooms: [], services: [], users: [], room_prices: [], rate_plans: [], viewings: [], room_images: [] };
 }
 function makeLog(ids: Partial<E2eRunLog['ids']>, status: E2eRunLog['status'] = 'RUNNING'): E2eRunLog {
   return {
@@ -31,7 +31,7 @@ interface FakeContractRow {
 }
 interface FakeContractServiceRow { serviceId: number; contractCode: string }
 
-function fakeCleanupDb(contracts: FakeContractRow[], services: FakeContractServiceRow[] = []): {
+function fakeCleanupDb(contracts: FakeContractRow[], services: FakeContractServiceRow[] = [], vehicles: FakeContractServiceRow[] = []): {
   db: EcCleanupDbWithCalls; calls: { updateMany: { table: string; args: unknown }[] };
 } {
   const calls = { updateMany: [] as { table: string; args: unknown }[] };
@@ -78,12 +78,15 @@ function fakeCleanupDb(contracts: FakeContractRow[], services: FakeContractServi
     building: { updateMany: updateMany('buildings') },
     user: { updateMany: updateMany('users') },
     session: { updateMany: updateMany('session') },
+    vehicle: { updateMany: updateMany('vehicles'), findMany: vi.fn(async (args: { where: { serviceId: { in: number[] } } }) =>
+      vehicles.filter(row => args.where.serviceId.in.includes(row.serviceId)).map(row => ({ serviceId: row.serviceId, contract: { code: row.contractCode } }))) },
   } as unknown as EcCleanupDbWithCalls;
   return { db, calls };
 }
 type EcCleanupDbWithCalls = E2eCleanupDb & {
   contract: { findMany: ReturnType<typeof vi.fn> };
   contractService: { findMany: ReturnType<typeof vi.fn> };
+  vehicle: { findMany: ReturnType<typeof vi.fn> };
 };
 
 const tmpDirs: string[] = [];
@@ -182,10 +185,8 @@ describe('CP-7 cleanupRun', () => {
   it('21: one failing step does not stop the others; cleanupRun throws AggregateError with it', async () => {
     const log = makeLog({ rooms: [1], buildings: [2] });
     const { db } = fakeCleanupDb([]);
-    const roomSpy = vi.fn(async () => { throw new Error('room step failed'); });
-    db.room.updateMany = roomSpy;
-    const buildingSpy = vi.fn(async () => ({ count: 0 }));
-    db.building.updateMany = buildingSpy;
+    const roomSpy = vi.spyOn(db.room, 'updateMany').mockRejectedValue(new Error('room step failed'));
+    const buildingSpy = vi.spyOn(db.building, 'updateMany').mockResolvedValue({ count: 0 });
     await expect(cleanupRun(db, log)).rejects.toSatisfy((e: unknown) => {
       expect(e).toBeInstanceOf(AggregateError);
       expect((e as AggregateError).errors).toHaveLength(1);
@@ -198,10 +199,9 @@ describe('CP-7 cleanupRun', () => {
   it('21b: two failing steps -> AggregateError.errors has exactly 2 elements', async () => {
     const log = makeLog({ rooms: [1], buildings: [2], services: [3] });
     const { db } = fakeCleanupDb([]);
-    db.room.updateMany = vi.fn(async () => { throw new Error('room failed'); });
-    db.building.updateMany = vi.fn(async () => { throw new Error('building failed'); });
-    const serviceSpy = vi.fn(async () => ({ count: 0 }));
-    db.service.updateMany = serviceSpy;
+    vi.spyOn(db.room, 'updateMany').mockRejectedValue(new Error('room failed'));
+    vi.spyOn(db.building, 'updateMany').mockRejectedValue(new Error('building failed'));
+    const serviceSpy = vi.spyOn(db.service, 'updateMany').mockResolvedValue({ count: 0 });
     await expect(cleanupRun(db, log)).rejects.toSatisfy((e: unknown) => {
       expect((e as AggregateError).errors).toHaveLength(2);
       return true;
@@ -211,6 +211,37 @@ describe('CP-7 cleanupRun', () => {
 });
 
 describe('BE-P3-12 cleanup with contract fixtures', () => {
+  it('BE-P3-27/G-05: parking used by a contract outside the run remains active and list/apply agree', async () => {
+    const log = makeLog({ services: [5] });
+    const { db, calls } = fakeCleanupDb([], [], [{ serviceId: 5, contractCode: 'HD-PROTECTED' }]);
+    const expected = [{ table: 'services', id: 5, reason: 'hợp đồng HD-PROTECTED' }];
+    expect(await linkedRows(db, log)).toEqual(expected);
+    expect(await cleanupRun(db, log)).toEqual(expected);
+    expect(calls.updateMany.some(row => row.table === 'services')).toBe(false);
+    expect(db.vehicle.findMany).toHaveBeenCalledWith({ where: { serviceId: { in: [5] }, contract: {} },
+      select: { serviceId: true, contract: { select: { code: true } } } });
+  });
+
+  it('BE-P3-27/G-05: only proven retired fixture contracts are excluded from parking-service protection', async () => {
+    const log = { ...makeLog({ services: [5], rooms: [1], buildings: [2], users: [3] }), kind: 'contracts' as const, buildingCodes: ['E2TEST'] };
+    const { db } = fakeCleanupDb([]);
+    db.contract.findMany.mockResolvedValueOnce([{ id: 7 }]).mockResolvedValueOnce([]);
+    await linkedRows(db, log);
+    expect(db.vehicle.findMany).toHaveBeenCalledWith({ where: { serviceId: { in: [5] }, contract: { id: { notIn: [7] } } },
+      select: { serviceId: true, contract: { select: { code: true } } } });
+  });
+  it('BE-P3-27/G-05: a synthetic plate fits the DB column and retries an existing plate', async () => {
+    const seen: string[] = [];
+    const plate = await uniqueVehiclePlate(async value => { seen.push(value); return seen.length < 2; });
+    expect(seen).toHaveLength(2); expect(plate).toBe(seen[1]); expect(plate).toMatch(/^E2[A-F0-9]{12}$/);
+  });
+
+  it('BE-P3-27/G-05: a repeated plate collision stops after the fixed retry budget', async () => {
+    const exists = vi.fn(async () => true);
+    await expect(uniqueVehiclePlate(exists)).rejects.toThrow('No free e2e vehicle plate after 20 tries');
+    expect(exists).toHaveBeenCalledTimes(20);
+  });
+
   it('VIEW-06: a cancelled viewing linked to a contract outside this run remains protected', async () => {
     const log = makeLog({ viewings: [4, 5] });
     const { db, calls } = fakeCleanupDb([
@@ -227,14 +258,20 @@ describe('BE-P3-12 cleanup with contract fixtures', () => {
     const { db } = fakeCleanupDb([]);
     const updateContract = vi.fn(async () => ({ count: 1 }));
     const updateViewing = vi.fn(async () => ({ count: 1 }));
+    const updateVehicle = vi.spyOn(db.vehicle, 'updateMany');
     const tx = { ...db, contract: { ...db.contract, updateMany: updateContract }, viewing: { ...db.viewing, updateMany: updateViewing } } as unknown as E2eCleanupDb;
     db.contract.findMany.mockImplementationOnce(async () => [{ id: 7, createdById: 3 }]).mockImplementationOnce(async () => [{ id: 7 }]);
 
-    expect(await cleanupContractRun(tx, log)).toEqual([]);
+    const removedOn = new Date('2026-11-20');
+    expect(await cleanupContractRun(tx, log, removedOn)).toEqual([]);
     expect(updateContract).toHaveBeenCalledWith({ where: expect.objectContaining({
       id: 7, status: 'HOLD', terms: '[E2E 20261101T1200-TEST] Contract fixture', buildingId: { in: [2] }, roomId: { in: [1] },
       signedAt: null, invoices: { none: {} }, createdById: { in: [3, 4] }, tenantId: { in: [3, 4] },
+      vehicles: { every: { plate: { startsWith: E2E_PLATE_PREFIX }, buildingId: { in: [2] }, serviceId: { in: [5] } } },
     }), data: { status: 'CANCELLED', cancelReason: CLEANUP_NOTE } });
+    expect(updateVehicle).toHaveBeenCalledWith({ where: { contractId: 7,
+      plate: { startsWith: E2E_PLATE_PREFIX }, buildingId: { in: [2] }, serviceId: { in: [5] }, isActive: true },
+      data: { isActive: false, removedAt: removedOn } });
     expect(updateViewing).toHaveBeenCalledWith({
       where: { id: { in: [6] }, depositCancelledByContractId: 7, calledAt: null },
       data: { calledById: 3, calledAt: expect.any(Date) },
@@ -481,7 +518,7 @@ describe('CP-7 planCleanup heading and skippedReport output (scenarios 31-33c)',
     const { db } = fakeCleanupDb([
       { id: 100, code: 'HD000011', roomId: 1, buildingId: 999, tenantId: 999, createdById: 999, viewingId: null, invoices: 0 },
     ]);
-    db.building.updateMany = vi.fn(async () => { throw new Error('building failed'); });
+    vi.spyOn(db.building, 'updateMany').mockRejectedValue(new Error('building failed'));
     let caught: unknown;
     try {
       await cleanupRun(db, log);

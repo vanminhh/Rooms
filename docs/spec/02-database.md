@@ -80,12 +80,13 @@ Latest offline `check-constraints.mjs` result: **107/107** on 20/11/2026, from t
 
 ## Run the DB check
 
+With the backend's existing Prisma/PGlite dependencies installed:
+
 ```bash
 cd Source/backend
-npm i --no-save @electric-sql/pglite@0.2   # prisma is already a dev dependency
-export DATABASE_URL=postgresql://u:p@localhost/db DIRECT_URL=postgresql://u:p@localhost/db   # dummy, not used
-npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script -o prisma/schema.sql
-node prisma/check-constraints.mjs . prisma   # expect every scenario to pass: "N/N tình huống đúng như mong đợi" (66/66 on 13/11/2026)
+node prisma/check-constraints.mjs . prisma
 ```
+
+The checker generates fresh SQL from `schema.prisma` with the local Prisma CLI (`migrate diff --from-empty --to-schema-datamodel ... --script`) and applies it plus `constraints.sql` only inside embedded PGlite. It substitutes dummy connection URLs in the CLI child and does not connect to Supabase, apply a migration, overwrite `schema.sql` or edit `.env`. When generation fails it stops rather than testing a stale snapshot. A deliberately supplied SQL-only directory may still provide `schema.sql`. Verified after the QA-P3-02 fix on20/11/2026: **107/107**,exit0. The prior command failed42703 on `called_by_id` because the tracked snapshot predated Phase3; this is separate from migration status on the dev database.
 
 Any schema change MUST keep every scenario passing and SHOULD add a scenario for the new rule. The list above names the first 50; later migrations added theirs (Phase 2: 54, Phase Extra so far: 66).

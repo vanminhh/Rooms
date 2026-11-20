@@ -24,10 +24,12 @@ export function StaffLayout() {
     { label: 'Đơn giá', href: '/ql/don-gia' },
     ...(isBoss ? [{ label: 'Duyệt giá', href: '/ql/duyet-gia' }] : []),
     { label: 'Lịch hẹn', href: '/ql/lich-hen' },
+    { label: 'Hợp đồng', href: '/ql/hop-dong' },
+    { label: 'Tra cứu xe', href: '/ql/xe' },
     { label: 'Tài khoản', href: '/ql/tai-khoan' },
   ]
 
-  return <div className="rooms-theme" lang="vi" onClick={event => handleInternalLinkClick(event, navigate)}>
+  return <div className="rooms-theme layout-staff" lang="vi" onClick={event => handleInternalLinkClick(event, navigate)}>
     <RoomsHeader
       homeHref="/ql"
       logoSrc="/images/rooms-logo.webp"

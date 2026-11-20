@@ -226,6 +226,9 @@ const queryOf = url => new URL(url, 'http://x').searchParams
 function baseDashboard(overrides = {}) {
   return {
     newViewings: { count: 0, items: [] },
+    overlappingViewings: { count: 0, items: [] },
+    depositCancelledViewings: { count: 0, items: [] },
+    unpaidDeposits: { count: 0, items: [] },
     pendingPrices: { count: 0, rooms: 0, ratePlans: 0 },
     ...overrides,
   }

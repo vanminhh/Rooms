@@ -20,7 +20,10 @@ describe('BE-P3-10: staff contract reads', () => {
       count: vi.fn<(args: Prisma.ContractCountArgs) => Promise<number>>(),
       findMany: vi.fn<(args: Prisma.ContractFindManyArgs) => Promise<unknown[]>>(),
       findUnique: vi.fn<(args: Prisma.ContractFindUniqueArgs) => Promise<unknown>>(),
+      findFirst: vi.fn<(args: Prisma.ContractFindFirstArgs) => Promise<unknown>>(),
     },
+    $queryRaw: vi.fn(async () => []),
+    $transaction: async (fn: (tx: any) => Promise<any>): Promise<any> => fn(db),
   };
   const startDate = new Date('2026-11-30T00:00:00Z');
   const endDate = new Date('2027-02-27T00:00:00Z');
@@ -47,6 +50,7 @@ describe('BE-P3-10: staff contract reads', () => {
     db.contract.count.mockReset().mockResolvedValue(0);
     db.contract.findMany.mockReset().mockResolvedValue([]);
     db.contract.findUnique.mockReset().mockResolvedValue(null);
+    db.contract.findFirst.mockReset().mockResolvedValue(null);
   });
 
   afterAll(async () => {
@@ -58,6 +62,70 @@ describe('BE-P3-10: staff contract reads', () => {
     const token = await app.get(TokenService).signAccessToken({ id: actor, role: roles.get(actor)! });
     return request(app.getHttpServer()).get('/api/v1/contracts' + path).set('Authorization', 'Bearer ' + token);
   };
+
+  describe('FE-P3-12 tenant ID_PHOTO upload signature', () => {
+    beforeEach(() => { vi.stubEnv('CLOUDINARY_URL', 'cloudinary://test-key:test-secret@test-cloud'); });
+    const sign = async (actor: number, body: object = {}) => {
+      const token = await app.get(TokenService).signAccessToken({ id: actor, role: roles.get(actor)! });
+      return request(app.getHttpServer()).post('/api/v1/me/contracts/123/id-photo-sign').set('Authorization', `Bearer ${token}`).send(body);
+    };
+    it.each(['HOLD', 'ACTIVE'])('CON-13/15/SCOPE-03: own %s contract signs authenticated ID photos only', async status => {
+      db.contract.findFirst.mockResolvedValue({ id: 123, buildingId: 7, status });
+      const result = await sign(3, { purpose: 'CONTRACT_SCAN', folder: 'attacker-folder' });
+      expect(result.status).toBe(201);
+      expect(result.headers['cache-control']).toBe('no-store');
+      expect(result.body.data).toMatchObject({ type: 'authenticated', folder: 'contracts/7/123', allowedFormats: 'jpg,png,webp', overwrite: false });
+      expect(result.body.data.publicId).toMatch(/^id-photo-/);
+      expect(db.contract.findFirst).toHaveBeenCalledWith({ where: { id: 123, tenantId: 3 }, select: { id: true, buildingId: true, status: true } });
+    });
+    it('SCOPE-03: foreign or unknown contract returns 404 without a signature', async () => {
+      const result = await sign(3); expect(result.status).toBe(404);
+      expect(result.body).not.toHaveProperty('data.signature');
+    });
+    it.each(['ENDED', 'CANCELLED'])('CON-13/15: %s contract cannot sign a new ID upload', async status => {
+      db.contract.findFirst.mockResolvedValue({ id: 123, buildingId: 7, status });
+      expect((await sign(3)).status).toBe(409);
+    });
+    it.each([1, 2, 4])('AUTH-06/SCOPE-03: actor %i cannot use the tenant-only signature route', async actor => {
+      expect((await sign(actor)).status).toBe(403);
+      expect(db.contract.findFirst).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('FE-P3-04 read-only end date preview', () => {
+    beforeEach(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-11-20T03:00:00Z')); });
+    afterEach(() => { vi.useRealTimers(); });
+
+    it.each([
+      ['2027-01-31', 3, '2027-04-29'],
+      ['2027-03-20', 6, '2027-09-19'],
+    ])('D-41/BIL-02/22: %s plus %i months previews %s without contract writes', async (startDate, termMonths, endDate) => {
+      const result = await get(`/end-date?startDate=${startDate}&termMonths=${termMonths}`, 2);
+      expect(result.status).toBe(200);
+      expect(result.headers['cache-control']).toBe('no-store');
+      expect(result.body.data).toEqual({ startDate, endDate, termMonths });
+      expect(db.contract.findUnique).not.toHaveBeenCalled();
+      expect(db.contract.findMany).not.toHaveBeenCalled();
+      expect(db.contract.count).not.toHaveBeenCalled();
+    });
+
+    it.each([3, 4])('AUTH-06: actor %i cannot access the staff date preview', async actor => {
+      expect((await get('/end-date?startDate=2027-01-31&termMonths=3', actor)).status).toBe(403);
+    });
+
+    it.each([
+      'startDate=2027-02-30&termMonths=3',
+      'startDate=2027-01-31&termMonths=3.5',
+      'startDate=2026-11-19&termMonths=3',
+      'startDate=9999-12-31&termMonths=3',
+    ])('CON-01: invalid preview %s fails before contract access', async query => {
+      expect((await get('/end-date?' + query, 1)).status).toBe(400);
+      expect(db.contract.count).not.toHaveBeenCalled();
+    });
+    it('D-03: two months retains CONTRACT_TERM_TOO_SHORT', async () => {
+      expect((await get('/end-date?startDate=2027-01-31&termMonths=2', 1)).body.error.code).toBe('CONTRACT_TERM_TOO_SHORT');
+    });
+  });
 
   it('API-02/08: combines the name, phone and room search with status and building, and returns page metadata', async () => {
     db.contract.count.mockResolvedValue(3);

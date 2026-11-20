@@ -1,16 +1,27 @@
-// Chạy schema.sql + constraints.sql trên PostgreSQL nhúng (PGlite), rồi thử từng tình huống sai.
-// Dùng: node check-constraints.mjs <thư mục có node_modules/@electric-sql/pglite> <thư mục chứa schema.sql và constraints.sql>
-// schema.sql sinh bằng: npx prisma migrate diff --from-empty --to-schema-datamodel schema.prisma --script -o schema.sql
+// Run current schema.prisma + constraints.sql in embedded PostgreSQL, without the configured DB.
+// Usage: node check-constraints.mjs <dependency directory> <schema/constraints directory>
+// A SQL-only directory may supply schema.sql explicitly; a model always takes precedence.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { loadCheckSchema } from './check-schema.mjs';
 
 const [deps, dbDir] = process.argv.slice(2);
+let schema;
+try { schema = loadCheckSchema(deps, dbDir); }
+catch (error) { console.error(error.message); process.exit(1); }
 const { PGlite } = await import(pathToFileURL(join(deps, 'node_modules/@electric-sql/pglite/dist/index.js')).href);
 const db = new PGlite();
 
-await db.exec(readFileSync(join(dbDir, 'schema.sql'), 'utf8'));
-await db.exec(readFileSync(join(dbDir, 'constraints.sql'), 'utf8'));
+console.log(`DB-07: ${schema.source}; PostgreSQL nhúng, không kết nối DATABASE_URL/DIRECT_URL.`);
+try {
+  await db.exec(schema.sql);
+  await db.exec(readFileSync(join(dbDir, 'constraints.sql'), 'utf8'));
+} catch (error) {
+  console.error(`DB-07: khởi tạo DB kiểm thử thất bại: ${error.message}`);
+  await db.close();
+  process.exit(1);
+}
 
 // Dữ liệu nền dùng chung cho mọi tình huống
 await db.exec(`
@@ -215,4 +226,5 @@ for (const [group, name, sql, expect] of cases) {
 }
 for (const r of rows) console.log(`${r.pass ? 'PASS' : 'FAIL'} | ${r.group} | ${r.name} | mong đợi: ${r.expect}${r.pass ? '' : ` | thực tế: ${r.got}`}`);
 console.log(`\n${rows.length - failed}/${rows.length} tình huống đúng như mong đợi`);
+await db.close();
 process.exit(failed ? 1 : 0);

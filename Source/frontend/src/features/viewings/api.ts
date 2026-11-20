@@ -9,6 +9,8 @@ export interface ViewingTime { visitAt: string | null; visitDate: string | null;
 export interface ViewingView extends ViewingTime {
   id: number; roomId: number; roomCode: string; buildingId: number; buildingName: string
   guestName: string; guestPhone: string; guestEmail: string | null; timeSlotLabel: string | null
+  guestAccount?: { fullName: string; phone: string }
+  calledById?: number | null; calledAt?: string | null
   note: string | null; source: 'WEB' | 'MANUAL'; status: ViewingStatus; statusLabel: string
   handledById: number | null; outcomeNote: string | null; overdue: boolean; overlap: boolean; roomLocked: boolean
   createdAt: string; updatedAt: string
@@ -35,6 +37,9 @@ export function updateViewing(id: number, input: { status?: ViewingStatus; outco
 }
 export function confirmViewing(id: number, via: 'PHONE' | 'EMAIL') {
   return apiRequest<ViewingView>(`/viewings/${id}/confirm`, { method: 'POST', body: { via } })
+}
+export function markViewingCalled(id: number) {
+  return apiRequest<ViewingView>(`/viewings/${id}/called`, { method: 'POST' })
 }
 export function getViewingTimes(roomId: number, from: string, to: string, signedIn: boolean) {
   return apiRequest<ViewingDay[]>(`/${signedIn ? 'me' : 'public'}/rooms/${roomId}/viewing-times?${new URLSearchParams({ from, to })}`)

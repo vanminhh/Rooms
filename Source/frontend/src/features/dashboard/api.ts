@@ -7,6 +7,10 @@ import type { ViewingView } from '../viewings/api'
 export interface DashboardView {
   newViewings: { count: number; items: ViewingView[] }
   overlappingViewings: { count: number; items: ViewingView[] }
+  depositCancelledViewings: { count: number; items: ViewingView[] }
+  unpaidDeposits: { count: number; items: { id: number; code: string; total: number; dueDate: string | null; contract: {
+    id: number; code: string; room: { id: number; code: string }; building: { id: number; code: string; name: string }; tenant: { id: number; fullName: string; phone: string }
+  } }[] }
   pendingPrices: { count: number; rooms: number; ratePlans: number } | null
 }
 

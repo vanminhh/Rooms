@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { getMe, loginRequest, logoutRequest, updateMe } from '../features/auth/api'
 import type { Me } from '../features/auth/api'
 import { ApiError, refreshAccessToken, setAccessToken, setAuthHandlers } from '../shared/api'
 import { savedLang, useI18n } from '../shared/i18n'
-import { AuthContext } from './auth-context'
+import { AuthContext, authScopeKey } from './auth-context'
 import type { AuthContextValue, AuthStatus } from './auth-context'
 
 function isUnauthorized(error: unknown): boolean {
@@ -15,6 +16,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Me | null>(null)
   const [status, setStatus] = useState<AuthStatus>('loading')
   const [attempt, setAttempt] = useState(0)
+  const queryClient = useQueryClient()
+  const identity = useRef(authScopeKey(null))
+  const replaceUser = useCallback((next: Me | null) => {
+    const scope = authScopeKey(next)
+    if (identity.current !== scope) {
+      identity.current = scope
+      // Clear before exposing the next identity, including its first render.
+      queryClient.clear()
+    }
+    setUser(next)
+  }, [queryClient])
   const { lang, setLang } = useI18n()
   const lastLocaleSync = useRef('')
 
@@ -44,35 +56,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login: AuthContextValue['login'] = useCallback(async input => {
     const data = await loginRequest(input)
     setAccessToken(data.accessToken)
-    setUser(data.user)
+    replaceUser(data.user)
     setStatus('ready')
     return data.user
-  }, [])
+  }, [replaceUser])
 
   const acceptSession: AuthContextValue['acceptSession'] = useCallback(data => {
     setAccessToken(data.accessToken)
-    setUser(data.user)
+    replaceUser(data.user)
     setStatus('ready')
     return data.user
-  }, [])
+  }, [replaceUser])
 
   const logout = useCallback(async () => {
     await logoutRequest().catch(() => null) // the local sign-out must happen even if the call fails
     setAccessToken(null)
-    setUser(null)
-  }, [])
+    replaceUser(null)
+  }, [replaceUser])
 
   const refreshMe = useCallback(async () => {
     try {
       const me = await getMe()
-      setUser(me)
+      replaceUser(me)
       return me
     } catch (error) {
       if (!isUnauthorized(error)) throw error
-      setUser(null)
+      replaceUser(null)
       return null
     }
-  }, [])
+  }, [replaceUser])
 
   const retry = useCallback(() => {
     setStatus('loading')
@@ -81,12 +93,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setAuthHandlers({
-      onSignedOut: () => setUser(null),
+      onSignedOut: () => replaceUser(null),
       onPasswordChangeRequired: () => {
         refreshMe().catch(() => null) // the guard redirects once the flag is refreshed; no unhandled rejection
       },
     })
-  }, [refreshMe])
+  }, [refreshMe, replaceUser])
 
   // StrictMode runs this twice; refreshAccessToken shares one in-flight call, so the cookie rotates once.
   useEffect(() => {
@@ -96,12 +108,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await refreshAccessToken()
         const me = await getMe()
         if (active) {
-          setUser(me)
+          replaceUser(me)
           setStatus('ready')
         }
       } catch (error) {
         if (active && !(error instanceof ApiError && error.code === 'SESSION_CHANGED')) {
-          setUser(null)
+          replaceUser(null)
           setStatus(isUnauthorized(error) ? 'ready' : 'error')
         }
       }
@@ -110,12 +122,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       active = false
     }
-  }, [attempt])
+  }, [attempt, replaceUser])
 
   const value = useMemo<AuthContextValue>(
     () => ({ status, user, login, acceptSession, logout, refreshMe, retry }),
     [status, user, login, acceptSession, logout, refreshMe, retry],
   )
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return <AuthContext.Provider key={authScopeKey(user)} value={value}>{children}</AuthContext.Provider>
 }

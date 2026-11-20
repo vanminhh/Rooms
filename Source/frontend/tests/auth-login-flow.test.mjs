@@ -168,7 +168,7 @@ function loadFresh() {
     if (/(^|\/)components$/.test(id)) {
       // The kit index also pulls in three.js / motion scenes; load only the real modules used by these flows.
       // SharedPrimitives provides IllustrationLabel for the UI-20 PublicHomePage.
-      kit ??= Object.assign({}, ...['Button', 'FormFields', 'SectionHeading', 'Navigation', 'LanguageSwitch', 'RoomSearch', 'SharedPrimitives'].map(n => load(resolve(kitDir, `${n}.tsx`))))
+      kit ??= Object.assign({}, ...['Button', 'FormFields', 'SectionHeading', 'Navigation', 'LanguageSwitch', 'RoomSearch', 'SharedPrimitives', 'StatusBadge', 'ConfirmDialog'].map(n => load(resolve(kitDir, `${n}.tsx`))))
       return kit
     }
     return load(resolveRelative(dir, id))
@@ -211,6 +211,7 @@ function makeFetch({ session = null, contact = { phone: '0900000001', zaloUrl: '
     else if (path === '/public/locations') result = { status: 200, body: { data: [] } }
     else if (path === '/public/featured-rooms') result = { status: 200, body: { data: [] } }
     else if (path.startsWith('/public/rooms')) result = { status: 200, body: { data: [], meta: { page: 1, limit: 20, total: 0 } } }
+    else if (path.startsWith('/me/contracts?')) result = { status: 200, body: { data: [], meta: { page: 1, limit: 100, total: 0 } } }
     else if (path === '/auth/login') {
       if (loginOverride) result = loginOverride(body)
       else if (body.phone === '0900000005') result = err(403, 'ACCOUNT_LOCKED', 'Tài khoản đã bị khóa. Liên hệ quản lý.')
@@ -725,10 +726,10 @@ test('D-5: clicking "Tìm phòng" in the header changes the route to /phong with
   await app.stop()
 })
 
-test('FE-LOGIN-10, Q2-A: TenantLayout menu is "Tổng quan", "Tài khoản" and "Lịch hẹn xem phòng"; no building line; no footer; inside .rooms-theme with the kit logo', async () => {
+test('FE-LOGIN-10, FE-P3-01, Q2-A: TenantLayout menu includes "Hợp đồng" alongside overview, account and viewings; no building line; no footer; inside .rooms-theme with the kit logo', async () => {
   const app = await mount('/thue', { session: 'tenant' })
   await until(() => app.text().includes('Xin chào'), 'tenant home')
-  assert.deepEqual(navLinks(app), [['Tổng quan', '/thue'], ['Tài khoản', '/thue/tai-khoan'], ['Lịch hẹn xem phòng', '/toi']]) // EX-2 adds the link to the guest area
+  assert.deepEqual(navLinks(app), [['Tổng quan', '/thue'], ['Hợp đồng', '/thue/hop-dong'], ['Tài khoản', '/thue/tai-khoan'], ['Lịch hẹn xem phòng', '/toi']]) // FE-P3-01 adds contracts; EX-2 keeps the guest area link.
   assert.ok(!app.text().includes('Tòa đang quản lý'))
   assert.ok(!app.text().includes('Chưa được giao tòa nào'))
   assert.equal(find(app.container, n => n.tagName === 'FOOTER').length, 0)
@@ -738,9 +739,9 @@ test('FE-LOGIN-10, Q2-A: TenantLayout menu is "Tổng quan", "Tài khoản" and 
   await app.stop()
 })
 
-test('FE-LOGIN-10, Q2-A, Q5-A: StaffLayout menu follows role (manager 6 items, Boss 8), no read-only building line, no footer', async () => {
-  const common = [['Việc hôm nay', '/ql'], ['Tòa nhà', '/ql/toa-nha'], ['Phòng', '/ql/phong'], ['Đơn giá', '/ql/don-gia'], ['Lịch hẹn', '/ql/lich-hen'], ['Tài khoản', '/ql/tai-khoan']]
-  const boss = [['Việc hôm nay', '/ql'], ['Tòa nhà', '/ql/toa-nha'], ['Nhân sự', '/ql/nhan-su'], ['Phòng', '/ql/phong'], ['Đơn giá', '/ql/don-gia'], ['Duyệt giá', '/ql/duyet-gia'], ['Lịch hẹn', '/ql/lich-hen'], ['Tài khoản', '/ql/tai-khoan']]
+test('FE-LOGIN-10, FE-P3-01, Q2-A, Q5-A: StaffLayout menu follows role (manager 8 items, Boss 10), no read-only building line, no footer', async () => {
+  const common = [['Việc hôm nay', '/ql'], ['Tòa nhà', '/ql/toa-nha'], ['Phòng', '/ql/phong'], ['Đơn giá', '/ql/don-gia'], ['Lịch hẹn', '/ql/lich-hen'], ['Hợp đồng', '/ql/hop-dong'], ['Tra cứu xe', '/ql/xe'], ['Tài khoản', '/ql/tai-khoan']]
+  const boss = [['Việc hôm nay', '/ql'], ['Tòa nhà', '/ql/toa-nha'], ['Nhân sự', '/ql/nhan-su'], ['Phòng', '/ql/phong'], ['Đơn giá', '/ql/don-gia'], ['Duyệt giá', '/ql/duyet-gia'], ['Lịch hẹn', '/ql/lich-hen'], ['Hợp đồng', '/ql/hop-dong'], ['Tra cứu xe', '/ql/xe'], ['Tài khoản', '/ql/tai-khoan']]
   for (const [session, links] of [['manager', common], ['managerEmpty', common], ['bossThree', boss], ['boss', boss]]) {
     const app = await mount('/ql', { session })
     await until(() => app.text().includes('Xin chào'), `staff home ${session}`)

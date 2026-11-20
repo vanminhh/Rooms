@@ -22,6 +22,7 @@ export interface E2eRunLog {
 
 export const E2E_PREFIX = '[E2E';
 export const CLEANUP_NOTE = '[E2E] dọn dữ liệu thử';
+export const E2E_PLATE_PREFIX = 'E2';
 export const RUNS_DIR = 'test/e2e-runs';
 
 const ALNUM = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -83,6 +84,14 @@ export async function uniquePhone(
     if (!(await exists(phone))) return phone;
   }
   throw new Error(`No free e2e phone after ${MAX_TRIES} tries`);
+}
+
+export async function uniqueVehiclePlate(exists: (plate: string) => Promise<boolean>): Promise<string> {
+  for (let i = 0; i < MAX_TRIES; i++) {
+    const plate = E2E_PLATE_PREFIX + randomBytes(6).toString('hex').toUpperCase();
+    if (!(await exists(plate))) return plate;
+  }
+  throw new Error(`No free e2e vehicle plate after ${MAX_TRIES} tries`);
 }
 
 function emptyIds(): Record<E2eTable, number[]> {
@@ -173,7 +182,7 @@ export function readLogs(dir: string = RUNS_DIR): E2eRunLog[] {
 
 export type E2eCleanupDb = Pick<PrismaClient,
   'viewing' | 'roomPrice' | 'ratePlan' | 'room' | 'service' | 'building' | 'user' | 'session'
-  | 'contract' | 'contractService'>;
+  | 'contract' | 'contractService' | 'vehicle'>;
 
 // Rows with a contract, invoice or contract link: never updated (PLAN 2.9b). reason is shown to the owner.
 export interface SkippedRow { table: E2eTable; id: number; reason: string }
@@ -191,6 +200,8 @@ function contractFixtureWhere(log: E2eRunLog): Prisma.ContractWhereInput {
     previousContractId: null, nextContract: null,
     signedAt: null, movedInAt: null, signedScanAssetId: null, invoices: { none: {} },
     services: { every: { serviceId: { in: log.ids.services } } },
+    vehicles: { every: { plate: { startsWith: E2E_PLATE_PREFIX },
+      buildingId: { in: log.ids.buildings }, serviceId: { in: log.ids.services } } },
     OR: [{ viewing: null }, { viewing: { id: { in: log.ids.viewings } } }],
     depositCancelledViewings: { every: { id: { in: log.ids.viewings } } },
   };
@@ -198,7 +209,7 @@ function contractFixtureWhere(log: E2eRunLog): Prisma.ContractWhereInput {
 
 // BE-P3-12 / G-05. The test's transaction locks the fixture rooms before this step.
 // Keep the contract, signer, service links and audit history.
-export async function cleanupContractRun(tx: E2eCleanupDb, log: E2eRunLog): Promise<SkippedRow[]> {
+export async function cleanupContractRun(tx: E2eCleanupDb, log: E2eRunLog, removedOn: Date): Promise<SkippedRow[]> {
   if (log.kind !== 'contracts') throw new Error('Expected a contracts e2e run');
   const where = { ...contractFixtureWhere(log), status: 'HOLD' as const };
   const contracts = await tx.contract.findMany({ where, select: { id: true, createdById: true } });
@@ -207,6 +218,9 @@ export async function cleanupContractRun(tx: E2eCleanupDb, log: E2eRunLog): Prom
       where: { ...where, id: contract.id }, data: { status: 'CANCELLED', cancelReason: CLEANUP_NOTE },
     });
     if (result.count !== 1) throw new Error(`Contract fixture ${contract.id} changed during cleanup`);
+    await tx.vehicle.updateMany({ where: { contractId: contract.id, plate: { startsWith: E2E_PLATE_PREFIX },
+      buildingId: { in: log.ids.buildings }, serviceId: { in: log.ids.services }, isActive: true },
+      data: { isActive: false, removedAt: removedOn } });
     await tx.viewing.updateMany({
       where: { id: { in: log.ids.viewings }, depositCancelledByContractId: contract.id, calledAt: null },
       data: { calledById: contract.createdById, calledAt: new Date() },
@@ -218,7 +232,7 @@ export async function cleanupContractRun(tx: E2eCleanupDb, log: E2eRunLog): Prom
 // Called by cleanupRun and by the list mode of cleanup.mjs, so both agree.
 // A viewing counts as linked through the contract that holds it, even if that contract is outside the log.
 export async function linkedRows(
-  db: Pick<PrismaClient, 'contract' | 'contractService'>, log: E2eRunLog,
+  db: Pick<PrismaClient, 'contract' | 'contractService' | 'vehicle'>, log: E2eRunLog,
 ): Promise<SkippedRow[]> {
   const { rooms, buildings, users, services, viewings } = log.ids;
   const retired = log.kind === 'contracts' ? await db.contract.findMany({
@@ -262,6 +276,13 @@ export async function linkedRows(
     where: { serviceId: { in: services }, contract: protectedContract }, select: { serviceId: true, contract: { select: { code: true } } },
   });
   for (const s of serviceLinks) link('services', s.serviceId, `hợp đồng ${s.contract.code}`);
+  // Parking links live on vehicles, not contract_services. Preserve catalog
+  // services used by any protected contract, including historical vehicles.
+  const vehicleLinks = services.length ? await db.vehicle.findMany({
+    where: { serviceId: { in: services }, contract: protectedContract },
+    select: { serviceId: true, contract: { select: { code: true } } },
+  }) : [];
+  for (const vehicle of vehicleLinks) link('services', vehicle.serviceId, `hợp đồng ${vehicle.contract.code}`);
   return [...found.values()].map((row) => ({ table: row.table, id: row.id, reason: row.reasons.join('; ') }));
 }
 
