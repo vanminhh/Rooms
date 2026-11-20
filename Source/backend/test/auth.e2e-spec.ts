@@ -34,6 +34,7 @@ describe('BE-LOGIN-24: auth flow on the real AppModule and the dev database (e2e
   });
 
   it('AUTH-01: each seeded active role logs in', () => scenario.eachRoleLogsIn(app));
+  it('AUTH-16, D-43: each entry logs in only its own roles, on the real database', () => scenario.loginByEntry(app));
   it('AUTH-01: wrong password and unknown phone give the same error', () => scenario.wrongPasswordEqualsUnknownPhone(app));
   it('AUTH-02: inactive tenant gets ACCOUNT_LOCKED', () => scenario.inactiveTenantLocked(app));
   it('AUTH-04: 6th failed attempt gets 429', () => scenario.sixthFailureIs429(app));

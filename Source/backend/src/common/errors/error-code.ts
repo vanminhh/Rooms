@@ -12,6 +12,7 @@ export enum ErrorCode {
   PHONE_TAKEN = 'PHONE_TAKEN',
   EMAIL_TAKEN = 'EMAIL_TAKEN',
   EMAIL_NOT_VERIFIED = 'EMAIL_NOT_VERIFIED',
+  WRONG_PORTAL = 'WRONG_PORTAL',
   OTP_INVALID = 'OTP_INVALID',
   MAIL_UNAVAILABLE = 'MAIL_UNAVAILABLE',
   MANAGER_MAX_2_BUILDINGS = 'MANAGER_MAX_2_BUILDINGS',
@@ -56,6 +57,8 @@ export const ERRORS: Record<ErrorCode, { status: number; message: string }> = {
   [ErrorCode.PHONE_TAKEN]: { status: 409, message: 'Số điện thoại đã được sử dụng' },
   [ErrorCode.EMAIL_TAKEN]: { status: 409, message: 'Email đã được dùng cho tài khoản khác' },
   [ErrorCode.EMAIL_NOT_VERIFIED]: { status: 403, message: 'Email chưa được xác minh' },
+  // AUTH-16, D-43: right password, but the account does not belong to the entry used to log in.
+  [ErrorCode.WRONG_PORTAL]: { status: 403, message: 'Tài khoản này không đăng nhập được ở lối vào này. Hãy chọn đúng lối vào hoặc dùng trang đăng nhập chung.' },
   [ErrorCode.OTP_INVALID]: { status: 400, message: 'Mã xác minh không đúng hoặc đã hết hạn' },
   [ErrorCode.MAIL_UNAVAILABLE]: { status: 503, message: 'Chưa gửi được email, vui lòng thử lại sau' },
   [ErrorCode.MANAGER_MAX_2_BUILDINGS]: {

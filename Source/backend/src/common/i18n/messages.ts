@@ -13,6 +13,7 @@ export const ERRORS_EN: Record<ErrorCode, string> = {
   PHONE_TAKEN: 'This phone number is already in use',
   EMAIL_TAKEN: 'This email is already used by another account',
   EMAIL_NOT_VERIFIED: 'Your email has not been verified',
+  WRONG_PORTAL: 'This account cannot sign in through this entry. Choose the right entry or use the general sign-in page.',
   OTP_INVALID: 'The verification code is incorrect or has expired',
   MAIL_UNAVAILABLE: 'Unable to send the email. Please try again later',
   MANAGER_MAX_2_BUILDINGS: 'A manager can manage at most 2 buildings',
@@ -36,6 +37,7 @@ export const ERRORS_EN: Record<ErrorCode, string> = {
 };
 
 export const FIELDS_EN: Record<string, string> = {
+  'Lối vào không hợp lệ': 'Invalid entry',
   'Mã người ở không hợp lệ': 'Invalid occupant ID',
   'Giá trị đồng ý trùng lịch không hợp lệ': 'Invalid viewing overlap acknowledgement',
   'Khách đã có lịch xem ở tòa khác vào cùng giờ. Bạn có muốn tiếp tục?': 'The guest already has a viewing at another building at this time. Do you want to continue?',

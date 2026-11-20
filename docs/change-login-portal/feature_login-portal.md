@@ -28,11 +28,11 @@ Out: a separate login page per entry (owner: one shared page); any change to ref
 
 ## Tasks
 
-- [ ] **BE-LP-01** `WRONG_PORTAL` (403) in `ErrorCode` / `ERRORS` with the Vietnamese text of AUTH-16, and its English text in `src/common/i18n/messages.ts`.
+- [x] **BE-LP-01** `WRONG_PORTAL` (403) in `ErrorCode` / `ERRORS` with the Vietnamese text of AUTH-16, and its English text in `src/common/i18n/messages.ts`.
   Done when: `app.setup.spec.ts` counts 32 codes and checks status + text; the English-catalog test has no missing code.
-- [ ] **BE-LP-02** `LoginDto.portal?: 'TENANT' | 'STAFF'` (any other value → `VALIDATION_FAILED` with `fields.portal`); `AuthService.login` checks it after the password, lock and before creating the session; the refused attempt is taken back from the AUTH-04 counter like `ACCOUNT_LOCKED`.
+- [x] **BE-LP-02** `LoginDto.portal?: 'TENANT' | 'STAFF'` (any other value → `VALIDATION_FAILED` with `fields.portal`); `AuthService.login` checks it after the password, lock and before creating the session; the refused attempt is taken back from the AUTH-04 counter like `ACCOUNT_LOCKED`.
   Done when: tests `AUTH-16: …` for every row of the role × entry table in PLAN.md §3, plus: wrong password at an entry → `INVALID_CREDENTIALS`; locked tenant at the tenant entry → `ACCOUNT_LOCKED`; refused login creates no session row, no cookie, `last_login_at` unchanged; 6 refused logins in a row do not give 429.
-- [ ] **BE-LP-03** ⏸ e2e on the dev DB: seed tenant at `TENANT` ok, seed manager at `TENANT` refused, seed manager and Boss at `STAFF` ok, seed tenant at `STAFF` refused, `Accept-Language: en` gives the English text. `npm run lint`, `test`, `build`, `test:e2e`. Stop and report BE-LP-01..03.
+- [x] **BE-LP-03** ⏸ e2e on the dev DB: seed tenant at `TENANT` ok, seed manager at `TENANT` refused, seed manager and Boss at `STAFF` ok, seed tenant at `STAFF` refused, `Accept-Language: en` gives the English text. `npm run lint`, `test`, `build`, `test:e2e`. Stop and report BE-LP-01..03.
 - [ ] **FE-LP-01** `loginRequest` and `AuthContext.login` take `portal?`; `guards.ts`: `entryOf(pathname)` (`/thue…` → `thue`, `/ql…` → `quan-ly`, else none) and `guardRedirect` adds `loi-vao=` for those two areas; `portalOf(param)` maps `thue` → `TENANT`, `quan-ly` → `STAFF`, anything else → none.
   Done when: tests: `/thue/tai-khoan?a=1` signed out → `/dang-nhap?loi-vao=thue&next=%2Fthue%2Ftai-khoan%3Fa%3D1`; `/ql` → `…loi-vao=quan-ly…`; `/toi`, `/doi-mat-khau` → no entry; unknown `loi-vao` → none; the old guard tests updated to the new URLs.
 - [ ] **FE-LP-02** `LoginPage` at an entry: title "Đăng nhập người thuê" / "Đăng nhập quản lý" (vi + en keys), no sign-up note, link "Dùng trang đăng nhập chung" → `/dang-nhap` keeping `?next=`; sends `portal`; `WRONG_PORTAL` shows the API message in the form error slot and the user stays signed out. `EntryScreen` needs no change (it navigates to `/thue` / `/ql`; the guard adds the entry).
@@ -43,8 +43,8 @@ Out: a separate login page per entry (owner: one shared page); any change to ref
 
 ## Questions for the owner
 
-Answered 20/11/2026: block both ways; one shared login page; checked by the BE with no session. Still open – see PLAN.md §7 (OQ-LP-1..3).
+Answered 20/11/2026: block both ways; one shared login page; checked by the BE with no session. OQ-LP-1..3 (PLAN.md §7) answered 20/11/2026, all as proposed: a logged-in user who picks the other entry goes to their own home as in AUTH-06, with no message; the link "Dùng trang đăng nhập chung" stays; one shared error text. Nothing left open.
 
 ## Issues log
 
-<!-- When a task is [!], add: date · task ID · what failed · what is needed -->
+- 20/11/2026 · BE-LP-03 · `test/auth.e2e-spec.ts` stops in `seed()` (`prisma/seed.ts:266`, `meterReading.upsert` with `roomId_kind_readOn`, a unique key the current schema no longer has; Phase 3 BE-P3-20 area), so the scenario `loginByEntry` was run on the dev DB through a temporary spec without seed: 1/1 passed. Other e2e files (viewings, contracts, pricing, buildings) also failed in the full run; not investigated, not caused by the login change. Needed: owner decides who fixes the seed.

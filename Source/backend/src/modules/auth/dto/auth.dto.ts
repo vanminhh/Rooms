@@ -36,6 +36,11 @@ export class LoginDto {
   @IsOptional()
   @IsBoolean({ message: 'Giá trị ghi nhớ đăng nhập không hợp lệ' })
   remember?: boolean;
+
+  // AUTH-16, D-43: the entry the login came through; absent = every role may log in. null is not absent: it is refused.
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsIn(['TENANT', 'STAFF'], { message: 'Lối vào không hợp lệ' })
+  portal?: 'TENANT' | 'STAFF';
 }
 
 export class ChangePasswordDto {

@@ -38,6 +38,7 @@ afterEach(async () => {
 
 describe('BE-LOGIN-24: auth flow scenarios on the Prisma fake', () => {
   it('AUTH-01: each seeded active role logs in (fake)', () => scenario.eachRoleLogsIn(app));
+  it('AUTH-16, D-43: each entry logs in only its own roles (fake)', () => scenario.loginByEntry(app));
   it('AUTH-01: wrong password and unknown phone give the same error (fake)', () => scenario.wrongPasswordEqualsUnknownPhone(app));
   it('AUTH-02: inactive tenant gets ACCOUNT_LOCKED (fake)', () => scenario.inactiveTenantLocked(app));
   it('AUTH-04: 6th failed attempt gets 429 (fake)', () => scenario.sixthFailureIs429(app));

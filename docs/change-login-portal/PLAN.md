@@ -104,7 +104,7 @@ Dùng tài khoản seed trên DB dev, cả tiếng Việt và English, ở 360 p
 6. Link "Dùng trang đăng nhập chung" mở `/dang-nhap` giữ `next`.
 7. Sai mật khẩu ở lối vào nào cũng chỉ ra "Số điện thoại hoặc mật khẩu không đúng".
 
-## 7. Câu hỏi còn mở (đề xuất in đậm)
+## 7. Câu hỏi (đã trả lời 20/11/2026: cả ba theo đề xuất in đậm, spec không phải sửa thêm)
 
 - **OQ-LP-1** Người **đã đăng nhập** (ví dụ quản lý) mở màn chào và chọn "Tôi đang thuê": không có lần đăng nhập nào để chặn. (a) **giữ như AUTH-06: đưa về khu của mình (`/ql`), không báo gì** · (b) đưa về khu của mình và hiện một dòng "Bạn đang đăng nhập bằng tài khoản quản lý" · (c) đăng xuất rồi mở trang đăng nhập người thuê.
 - **OQ-LP-2** Trang đăng nhập chung `/dang-nhap` vẫn cho mọi vai trò (đã ghi trong D-43 theo câu trả lời "lối Tìm phòng và trang thường vẫn cho mọi tài khoản"). Có muốn bỏ link "Dùng trang đăng nhập chung" ở hai lối vào để người dùng không vòng qua được? (a) **giữ link** (đây là phân luồng, không phải bảo mật; quyền vẫn do vai trò quyết định) · (b) bỏ link.

@@ -34,6 +34,8 @@ import { OtpService } from './otp.service.js';
 import { RateLimiter } from './rate-limiter.js';
 import { TokenService } from './token.service.js';
 
+// AUTH-16, D-43: the roles each login entry accepts.
+const PORTAL_ROLES: Record<'TENANT' | 'STAFF', readonly Role[]> = { TENANT: [Role.TENANT], STAFF: [Role.MANAGER, Role.BOSS] };
 const RESET_TOKEN_TTL_MS = 30 * 60 * 1000;
 // AUTH-11 wording, carried in fields: the PHONE_TAKEN message itself is shared with manager creation.
 export const PHONE_TAKEN_SIGNUP_MSG = 'Số điện thoại đã có tài khoản. Hãy đăng nhập hoặc dùng Quên mật khẩu';
@@ -108,6 +110,12 @@ export class AuthService {
     if (!user.isActive) {
       this.loginLimiter.remove(phone, attemptAt);
       throw new ForbiddenException(ErrorCode.ACCOUNT_LOCKED);
+    }
+    // AUTH-16, D-43: after the password and lock checks, so an entry never reveals whether a phone has an account.
+    // Not a failed attempt (the password was right) and no session is created.
+    if (dto.portal && !PORTAL_ROLES[dto.portal].includes(user.role)) {
+      this.loginLimiter.remove(phone, attemptAt);
+      throw new ForbiddenException(ErrorCode.WRONG_PORTAL);
     }
     // AUTH-12: checked only after the right password, so it reveals nothing to a guesser (owner 12/11/2026). No code is sent.
     if (isUnverifiedGuest(user)) {

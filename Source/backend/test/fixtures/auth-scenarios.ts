@@ -67,6 +67,32 @@ export async function eachRoleLogsIn(app: INestApplication) {
   }
 }
 
+// AUTH-16, D-43: the tenant entry takes only a tenant, the staff entry only a manager or the Boss; a refused login opens no session.
+// Uses the seeded accounts before any scenario changes their password (the tenant logs in only at its own entry).
+export async function loginByEntry(app: INestApplication) {
+  const wrong = { error: { code: 'WRONG_PORTAL', message: 'Tài khoản này không đăng nhập được ở lối vào này. Hãy chọn đúng lối vào hoặc dùng trang đăng nhập chung.' } };
+  const at = (key: DevAccount['key'], portal: 'TENANT' | 'STAFF', lang?: string) => {
+    const a = account(key);
+    const req = request(app.getHttpServer()).post('/api/v1/auth/login');
+    return (lang ? req.set('Accept-Language', lang) : req).send({ phone: a.phone, password: a.password, portal });
+  };
+  for (const [key, portal, ok] of [
+    ['tenant', 'TENANT', true], ['manager1', 'TENANT', false], ['boss', 'TENANT', false],
+    ['manager1', 'STAFF', true], ['boss', 'STAFF', true], ['tenant', 'STAFF', false],
+  ] as const) {
+    const res = await at(key, portal);
+    if (ok) {
+      expect(res.status, `${key} at ${portal}`).toBe(200);
+      continue;
+    }
+    expect(res.status, `${key} at ${portal}`).toBe(403);
+    expect(res.body, `${key} at ${portal}`).toEqual(wrong);
+    expect(res.headers['set-cookie'], `${key} at ${portal}: no session`).toBeUndefined();
+  }
+  const en = await at('manager1', 'TENANT', 'en');
+  expect(en.body.error).toEqual({ code: 'WRONG_PORTAL', message: 'This account cannot sign in through this entry. Choose the right entry or use the general sign-in page.' });
+}
+
 export async function wrongPasswordEqualsUnknownPhone(app: INestApplication) {
   const wrong = await login(app, account('boss').phone, WRONG_PASSWORD);
   const unknown = await login(app, '0999999998', WRONG_PASSWORD); // not 0999999999: that one is for the AUTH-04 scenario
