@@ -47,6 +47,7 @@ Owner sửa luồng người ở: quản lý hoặc tenant tự thêm người �
 | Q-P3-19 | Xe chỉ được thêm/sửa/ngừng đăng ký trên HOLD/ACTIVE; hợp đồng cũ chỉ xem lịch sử | CON-14, BE-P3-25 |
 | Q-P3-20 | Phí xe theo tháng: ngừng giữa tháng vẫn thu tháng đó, từ tháng sau không thu. Giữ lịch sử removedAt để chốt hóa đơn, không lọc mỗi isActive=true; D-41 giữ nguyên | CON-14, BIL counting rules / Phase 4 |
 | Q-P3-21 | Hủy HOLD tự ngừng các đăng ký xe đang hoạt động trong cùng transaction, giữ lịch sử và giải phóng biển số | CON-14/12, BE-P3-25 |
+| Q-P3-22 | Dịch vụ mới thêm phải có giá đã duyệt đang có hiệu lực: HOLD tại ngày bắt đầu, ACTIVE tại hôm nay | D-07, BE-P3-26 |
 | Q-P3-12/13 | Khách cũ ghi chỉ số khi kết thúc thuê để chốt hóa đơn; khách mới có điện/nước hiện tại lúc vào ở làm baseline riêng. Cuối tháng tính từ baseline khách mới; thay quy tắc cũ cùng ngày dùng chung một row | CON-10, MTR-02/10, BIL-07, BE-P3-20 |
 | Q-P3-14 | Đã duyệt sửa schema và tạo migration lưu baseline riêng; đã triển khai và kiểm offline, [SQL proposal](plans/P3-4/SCHEMA-PROPOSAL-BE-P3-20.md) khớp migration. Owner đã kiểm tra không lỗi và chốt BE-P3-20 ngày 20/11 | BE-P3-20 |
 | Q-P3-15 | Đã duyệt apply migration `20261120000000_contract_meter_openings`, sau đó owner kiểm tra và nghiệm thu BE-P3-20, đã commit `40747f6`. Ghi nhận xác nhận owner trong [checkpoint](plans/P3-4/CHECKPOINT-BE-P3-20.md); không tự thêm output migrate/full suite chưa được cung cấp, không yêu cầu duyệt/kiểm lại cùng bước | BE-P3-20 |

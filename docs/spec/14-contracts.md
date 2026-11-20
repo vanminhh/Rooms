@@ -52,6 +52,8 @@ stateDiagram-v2
 
 ## Occupants and vehicles
 
+- **D-07 / DB-B5 — selected contract services:** staff in scope can GET/PATCH `/contracts/:id/services`; writes are restricted to HOLD/ACTIVE and same-building ROOM/PERSON services. Owner 20/11/2026 (Q-P3-22): newly added services must be active and have an approved SERVICE rate effective at the HOLD start date or today's Hanoi date for ACTIVE. The API updates the selected services, not their catalog prices or already issued invoices; monthly calculations remain Phase 4. A-28 documents full-set replacement, retained archived selections and historical read behavior.
+  - PATCH body `{ serviceIds: number[] }`, complete desired selection (unique positive int32 IDs; empty clears). GET/PATCH returns selected `{ id, name, unit, isActive }[]` sorted by ID with no-store. Changes audit `contract.update_services` with complete before/after ID sets; unchanged/order-only lists do not create a change audit (A-28). Only omitted current membership links are removed; master services, rates, invoices and audit history remain. The API does not decide the billing month of a membership change.
 - **CON-13** Staff manage occupants (`full_name`, `phone`, `date_of_birth`, CCCD, photos, `move_in_date`, `move_out_date`). Owner 20/11/2026: the tenant may also directly add roommates to their own contract from their account, without waiting for a staff approval request (CON-15). Roommates' CCCD numbers/photos are optional; provided values retain the existing encryption/private-asset safeguards. Exactly one signer; adding a roommate never changes the contract's signer or tenant account. Active occupants ≤ `max_occupants`. For a room limit change, active occupants are those on ACTIVE contracts with `move_in_date <= today` and `move_out_date IS NULL OR move_out_date >= today` in `Asia/Ho_Chi_Minh`; departure today counts through the day (DB-B6, owner 04/11/2026). Adding people does not multiply room rent or room electricity charges. Chosen PERSON fees take effect in their month of entry at month-end billing (Phase 4, Q-P3-18 for mid-month calculation); parking still depends on registered vehicles (D-07), not one vehicle inferred per person. Q-P3-16/17 remain open for writable statuses and capacity across scheduled/backdated stays; the owner has not removed max_occupants.
   - BE-P3-23 implements the previously presented defaults as **A-25/26**, pending the owner's individual policy confirmation: mutations on HOLD/ACTIVE only, historical ENDED/CANCELLED readable; validate inclusive overlap across affected stay dates including HOLD. A room-limit decrease keeps DB-B6's current-day check and adds future plans from today onward; move-in rechecks the same capacity under the room lock. Do not treat the fee answer as confirmation of these two defaults.
   - Q-P3-18 is answered: +1 unit for the additional person in their move-in month regardless of day, without extra individual day-proration. Keep D-41 for the contract's own partial months; calculation remains Phase 4.
@@ -87,7 +89,9 @@ stateDiagram-v2
 | GET | `/contracts/:id` | includes occupants, vehicles, services, invoices summary |
 | GET | `/contracts/:id/print` · `/me/contracts/:id/print` | filled template for the print page (CON-22, D-36; replaces `/pdf`) |
 | POST | `/contracts/:id/sign` · `/move-in` · `/cancel` · `/renew` · `/reset-password` | |
-| GET/POST/PATCH | `/contracts/:id/occupants` · `/vehicles` · `/services` | staff |
+| GET/POST | `/contracts/:id/occupants` · `/contracts/:id/vehicles` | staff |
+| PATCH | `/contracts/:id/occupants/:oid` · `/contracts/:id/vehicles/:vid` | staff |
+| GET/PATCH | `/contracts/:id/services` | selected ROOM/PERSON services, staff (D-07, DB-B5) |
 | GET | `/contracts/:id/occupants/:oid/id-photos` | CON-16 |
 | GET | `/contracts/:id/scan` · `/me/contracts/:id/scan` | signed URL of the signed scan (CON-16, D-37) |
 | GET | `/vehicles?plate=` | staff "Tra cứu xe" |

@@ -129,6 +129,7 @@ Decisions D-35..D-37: owner 16/11/2026, before Phase 3 (`docs/phase-3-contracts/
 
 ## Assumptions (not yet confirmed — implement, keep easy to change)
 
+- **A-28** [ASSUMPTION, BE-P3-26 API collection behavior] PATCH contract services supplies the full desired serviceIds set (empty clears current membership); already selected archived services may be retained; unchanged/order-only sets do not create a change audit; GET reads historical ENDED/CANCELLED selections in scope while writes remain HOLD/ACTIVE. Before/after membership is kept in audit history. Q-P3-22 separately confirms approved-rate eligibility for newly added services; no monthly billing effective-date rule is inferred from this API behavior.
 - **A-27** [ASSUMPTION, BE-P3-25 technical date-entry default] Vehicle registeredAt/removedAt default to today's Hanoi date; staff may supply an actual date no later than today, with removal on/after registration. Removed registrations remain immutable and a new POST preserves their old interval. Q-P3-19/20/21 separately confirm writable contract statuses, monthly parking departure and automatic vehicle removal on HOLD cancellation.
 - **A-01** [ASSUMPTION] On early move-out, services (wifi, rác, parking) are charged in full for the current period; remaining periods charge rent only.
 - **A-02** [ASSUMPTION] Deposit invoice due date = contract `start_date` (or issue date if later). Move-in is blocked until it is paid.

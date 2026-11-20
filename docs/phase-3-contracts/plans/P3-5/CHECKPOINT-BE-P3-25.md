@@ -1,5 +1,7 @@
 # BE-P3-25 · Đăng ký và tra cứu xe
 
+**Cập nhật sau checkpoint:** owner báo đã commit và yêu cầu tiếp tục; Git xác minh `4428721`, workspace sạch trước BE-P3-26. Giữ lịch sử mặc định A-27 và kết quả tại điểm dừng dưới đây; không suy ra một full-suite result mới từ xác nhận commit.
+
 20/11/2026. Owner báo BE-P3-24 đã commit; Git xác minh **`ee0e891`**, workspace sạch trước task. **BE-P3-25 đã triển khai và kiểm chứng, reviewer DUYỆT; chờ owner nghiệm thu A-27 và commit.** Phạm vi checkpoint gồm phần xe sau BE-P3-23/24 đã commit; chưa mở BE-P3-26.
 
 ## Nghiệp vụ owner đã chốt

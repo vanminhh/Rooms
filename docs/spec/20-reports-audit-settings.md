@@ -17,6 +17,7 @@ API: `GET /reports/revenue?buildingId&from&to` (monthly series) · `GET /reports
 
 - **AUD-01** Write `audit_logs` (actor, action, entity, entity_id, before, after, ip) for: price propose/approve/reject; contract create/sign/move-in/cancel/renew/settle; payment record/assign/refund; invoice issue/reissue/cancel, create of a missed period (BIL-21); building manager change; manager create/deactivate; password reset by staff; CCCD photo view; signed contract scan view (`contract.view_scan`, CON-16); settings change; a guest account becoming a tenant (`user.role_change`, CON-07); hiding a repair review (`request.review_hide`, REQ-09).
 - **AUD-02** Action names: `<entity>.<verb>`, e.g. `invoice.reissue`, `price.approve`, `occupant.view_id`.
+- **D-07 / BE-P3-26** Selected-service changes write `contract.update_services`, entity `contract`, with full before/after `serviceIds` sets in the same transaction as membership replacement; unchanged selections do not create a change audit. Current membership links may be replaced, while master services, rates, invoices and past audit rows are retained.
 - **AUD-03** Webhook and cron actions use `actor_id = null`.
 - **AUD-04** Boss reads it at "Nhật ký thao tác": `GET /audit-logs?entity&entityId&actorId&from&to` **Boss**.
 
