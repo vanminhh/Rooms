@@ -6,6 +6,8 @@ Ngày 20/11/2026. Chủ dự án giao riêng BE-P3-20. Git xác minh P3-3 đã c
 
 ## Phạm vi đã rõ
 
+Xác minh commit khi bắt đầu BE-P3-21 ngày 20/11/2026: owner báo đã commit, Git có `40747f6`, workspace sạch. Phần chờ commit BE-P3-20 đã khép; các câu chờ commit trong bản báo cáo gốc phản ánh thời điểm trước commit.
+
 - `POST /contracts/:id/move-in` chỉ staff trong scope hiện tại; HOLD đã ký, tiền cọc PAID hoặc deposit = 0; thiếu cọc trả `DEPOSIT_NOT_PAID`. Gia hạn không dùng bước move-in (CON-18).
 - Cả điện và nước bắt buộc, kể cả PER_PERSON. Giá trị là số nguyên không âm trong giới hạn PostgreSQL Int. `readOn` là business date; lệch startDate hơn ba ngày cần note, bao gồm cả hai phía; không đổi startDate hoặc lịch tính tiền.
 - MTR-04 cần khai báo thay đồng hồ riêng cho điện/nước, có số cuối đồng hồ cũ và số đầu đồng hồ mới. Bổ sung trường tùy chọn để hỗ trợ yêu cầu này, giữ electric/water dạng số như CON-10. Tên/shape field là lựa chọn triển khai; không cần owner chọn tên kỹ thuật.

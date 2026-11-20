@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Header, Ip, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Header, Headers, Ip, Param, Post, Query } from '@nestjs/common';
 import { type AuthUser, CurrentUser, Roles } from '../../common/guards/auth.decorators.js';
 import { ContractsService } from './contracts.service.js';
 import { ContractIdParamsDto, ContractsQueryDto } from './dto/contracts-query.dto.js';
@@ -8,11 +8,14 @@ import { ContractPasswordService } from './contract-password.service.js';
 import { ContractDocumentsService } from './contract-documents.service.js';
 import { ContractMoveInService } from './contract-move-in.service.js';
 import { MoveInContractDto } from './dto/move-in-contract.dto.js';
+import { CancelContractDto } from './dto/cancel-contract.dto.js';
+import { ContractCancelService } from './contract-cancel.service.js';
+import { parseIdempotencyKey } from '../pricing/pricing-idempotency.js';
 
 @Controller('contracts')
 @Roles('BOSS', 'MANAGER')
 export class ContractsController {
-  constructor(private readonly contracts: ContractsService, private readonly passwords: ContractPasswordService, private readonly documents: ContractDocumentsService, private readonly moveIns: ContractMoveInService) {}
+  constructor(private readonly contracts: ContractsService, private readonly passwords: ContractPasswordService, private readonly documents: ContractDocumentsService, private readonly moveIns: ContractMoveInService, private readonly cancellations: ContractCancelService) {}
 
   @Get()
   list(@CurrentUser() actor: AuthUser, @Query() query: ContractsQueryDto) {
@@ -57,5 +60,12 @@ export class ContractsController {
   @Header('Cache-Control', 'no-store')
   moveIn(@CurrentUser() actor: AuthUser, @Param() params: ContractIdParamsDto, @Body() dto: MoveInContractDto, @Ip() ip: string) {
     return this.moveIns.moveIn(actor, params.id, dto, ip);
+  }
+
+  @Post(':id/cancel')
+  @Header('Cache-Control', 'no-store')
+  cancel(@CurrentUser() actor: AuthUser, @Param() params: ContractIdParamsDto, @Body() dto: CancelContractDto, @Ip() ip: string,
+    @Headers('idempotency-key') idempotencyKey: string | undefined) {
+    return this.cancellations.cancel(actor, params.id, dto, ip, parseIdempotencyKey(idempotencyKey));
   }
 }
