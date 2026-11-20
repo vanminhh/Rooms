@@ -2,6 +2,8 @@
 
 ## Phạm vi và điểm xuất phát
 
+Cập nhật 20/11/2026: BE-P3-18..19 đã nghiệm thu; chủ dự án xác nhận toàn bộ test pass, E2E DB dev đạt 2/2 file, 5/5 test, 164,71 giây, cleanup đã xác minh và reviewer DUYỆT. Không có số đếm unit trong xác nhận mới nên không suy đoán. P3-3 chờ commit, HEAD vẫn `11379c8`; chưa bắt đầu BE-P3-20. Các ghi nhận theo ngày trước đó bên dưới là lịch sử triển khai.
+
 Kế hoạch cho BE-P3-13..19, dựa trên P3-2 đã được chủ dự án xác nhận commit `b6c7ff6`. Dòng P3-2 trong `PROGRESS.md` còn phản ánh lần kiểm tra trước; không coi trạng thái cũ hoặc lỗi mạng trước đây là điều kiện phải duyệt lại. Lượt lập kế hoạch chỉ viết file này, không sửa mã nguồn, `.env`, schema, DB, dependency hay trạng thái task.
 
 Đã đọc các mục Before you start của `feature_p3-3-backend-sign-deposit.md`: hai `CLAUDE.md`, `LESSONS.md`, spec 00/14/16/01/02/10/20/19 và mã nguồn liên quan. Đã đọc câu hỏi bàn giao nhiều HOLD trong `plans/P3-2/PLAN.md`. Spec là nguồn nghiệp vụ; hướng dẫn AGENTS mới nhất của chủ dự án thay cho nội dung AGENTS cũ.
@@ -9,6 +11,8 @@ Kế hoạch cho BE-P3-13..19, dựa trên P3-2 đã được chủ dự án xá
 Mốc đầu kết thúc BE-P3-15: ký với scan riêng tư, kích hoạt đúng tài khoản, hóa đơn cọc và VietQR. Mốc sau làm BE-P3-16..19: ghi thu cọc, reset mật khẩu, hoàn thiện tenant/scan/in và nghiệm thu. Chưa làm move-in/cancel, hóa đơn tháng, webhook, inbox, gia hạn hoặc trang chỉnh mẫu. Q-15 đã cho phép bản in nháp, không cần đợi mẫu thật để phát triển.
 
 Cập nhật 19/11/2026: BE-P3-13..15 đã commit `0d50e23`. Chủ dự án giao riêng **BE-P3-16**, vì vậy lượt này dừng ở [checkpoint BE-P3-16](CHECKPOINT-BE-P3-16.md) để kiểm tra và commit, chưa tiếp tục BE-P3-17..19. Phạm vi CP-2 tổng thể bên dưới vẫn giữ làm kế hoạch cho các lượt sau.
+
+Cập nhật tiếp: BE-P3-16 đã commit `449b450`, BE-P3-17 đã commit `11379c8` và chủ dự án xác nhận pass hết. Đã được giao tiếp tục BE-P3-18..19. Hành vi scan/in và unpaidDeposits đã triển khai; trạng thái nghiệm thu cuối tại [checkpoint BE-P3-18..19](CHECKPOINT-BE-P3-18-19.md), không dùng kết quả backend ở commit trước để thay test revision mới.
 
 ## Quyết định, giả định và điểm cần xác nhận
 
@@ -107,5 +111,7 @@ Test unit/HTTP không mock chính unit đang kiểm; fake Prisma phải hỗ tr�
 E2E dev DB chỉ chạy ở giai đoạn nghiệm thu được giao, không thuộc lượt viết kế hoạch này. Theo LESSONS, set NODE_ENV=test trước import AppModule, giữ mail override để không gửi thư thật; command fallback hiện có tại backend là `node --env-file=.env ./node_modules/vitest/vitest.mjs run --config ./vitest.config.e2e.ts` khi script mặc định tìm sai `.env`. Không đọc/in giá trị env trong báo cáo.
 
 Trước E2E, sửa/kiểm chính sách runner và cleanup list cùng nhau: policy hiện chỉ retire unsigned/no-invoice HOLD, nên signed/paid fixtures được bảo vệ và không thể hứa CLEANED. Giữ nguyên financial history, lưu id sở hữu trong run log; không xóa invoice/payment/audit hoặc tự xây settlement trước P3-4 chỉ để dọn thử. Nếu chưa có cách retire signed/paid an toàn trong phạm vi, báo rõ fixture được giữ/protected và trạng thái log, không đánh dấu CLEANED sai. Không để invoice UNPAID thử bị bỏ lại không được báo. Cleanup apply/DB mutation ngoài fixture run đã giao cần đúng phạm vi ủy quyền của chủ dự án.
+
+Triển khai BE-P3-19 chọn workflow mới trong **outer transaction** với provider Prisma test-only; mỗi transaction API chạy SQL thật trong savepoint và cuối workflow bắt buộc rollback bằng sentinel. Kiểm 13 nhóm fixture và bank/template sau rollback. Không thay policy cleanup BE-P3-12, không giữ PAID HOLD giả, không xóa lịch sử đã commit và không ghi log CLEANED cho workflow này. Chạy file riêng/1 worker: create giữ mapping lock đến outer rollback; sequence PostgreSQL có thể tăng. Đây là kiểm route/SQL/trigger trên một connection, không chứng minh commit độc lập của từng request hay tranh chấp nhiều connection.
 
 Mỗi checkpoint cập nhật task/PROGRESS đúng kết quả thật, thêm LESSONS chỉ nếu có lỗi tốn lần thử, ghi assumptions A-02/A-22 riêng với các lựa chọn owner đã xác nhận. Báo files, output thật, giới hạn còn lại, cách kiểm tay, commit gợi ý có BE-P3/spec IDs. Không tự commit. Reviewer cuối phải kiểm riêng tiền/rollback, account takeover/lock, idempotency lưu clear và dữ liệu CCCD/scan; đưa đầy đủ report vào checkpoint.

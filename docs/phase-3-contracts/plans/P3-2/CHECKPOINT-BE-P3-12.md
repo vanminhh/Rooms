@@ -4,6 +4,8 @@ Ngày 18/11/2026. Commit API trước đó `5c56d06`.
 
 Ngày 19/11/2026 chủ dự án xác nhận đã commit mã nghiệm thu tại `b6c7ff6`. Lượt đọc trạng thái migration từ Codex tiếp tục báo `P1001`. Kết quả E2E và cleanup list trên DB dev còn chờ xác minh.
 
+**Cập nhật 20/11/2026 — BE-P3-12 đã nghiệm thu:** ảnh chủ dự án xác nhận `test/contracts.e2e-spec.ts` đạt 4/4 trên DB dev, có dòng `BE-P3-12 20261120T0659-VCIC CLEANED`. Toàn lượt gồm cả workflow BE-P3-19 đạt `Test Files 2 passed (2)`, `Tests 5 passed (5)`, 164,71 giây. Dòng lỗi simulated audit failure là ca cố tình gây lỗi để kiểm rollback và đã pass. Chủ dự án tiếp tục gửi cleanup list: không có nhật ký chờ dọn và không có run `20261120T0659-VCIC`; chỉ báo bản ghi E2E cũ không có nhật ký tương ứng từ 03–06/11. E2E, dọn tự động và tiêu chí list đều đạt; không cần chạy lại. Kết quả máy dự án khép phần chờ dù kết nối đọc từ Codex vẫn thất bại.
+
 ## Thay đổi
 
 - `test/contracts.e2e-spec.ts` có bốn ca qua Nest, HTTP và Prisma. Ca ngoài phạm vi kiểm `OUT_OF_SCOPE`. Ca tạo qua “Chốt” kiểm hai xác nhận, người ký, dịch vụ, CCCD, audit, lịch `WON`, hủy các lịch `NEW` và `CONFIRMED` cùng phòng và hai lệnh “Đã gọi”. Hai ca còn lại kiểm tranh chấp tạo HOLD cùng phòng và rollback sau khi ghi audit.
@@ -21,11 +23,18 @@ Ngày 19/11/2026 chủ dự án xác nhận đã commit mã nghiệm thu tại `
 | Runner trên bản cuối | `Tests 37 passed (37)`, exit 0. |
 | E2E trên PostgreSQL nhúng | `Tests 4 passed (4)`, exit 0 sau bản sửa khóa và thêm lịch `CONFIRMED`. Log thử `CLEANED`. Kiểm SQL giữ đúng hai hợp đồng đã hủy, hai người ký, hai liên kết dịch vụ và hai audit tạo hợp đồng. Adapter dùng một phiên PostgreSQL. |
 | Ràng buộc DB | `97/97 tình huống đúng như mong đợi`, exit 0. |
-| DB dev | Prisma status báo `P1001`. Lệnh E2E thật dừng ở truy vấn lấy Boss, `Tests 4 skipped (4)` do hook hỏng trước khi sinh log hay dữ liệu thử. `cleanup.mjs` ở chế độ liệt kê cũng báo `Can't reach database server`. Hai kết nối thật và kết quả list sau khi chạy còn chờ máy dự án. |
+| DB dev | Ảnh chủ dự án 20/11 xác nhận 4/4 test và `20261120T0659-VCIC CLEANED`, khép kết quả E2E bị chặn kết nối ở lượt trước. |
+| Cleanup list DB dev | Chủ dự án cung cấp đầu ra ngày 20/11: `Nhật ký (không có nhật ký) · CLEANED · bắt đầu -`, sau đó chỉ có báo cáo unlogged từ 03–06/11. Không có run `20261120T0659-VCIC` trong danh sách chờ dọn; tiêu chí list đạt. Header là mục tổng hợp khi không có nhật ký chờ dọn, không phải chứng nhận các dòng unlogged đã được xử lý. |
 
 ## Chạy trên máy dự án
 
-Từ PowerShell có kết nối DB dev, chạy cả bộ E2E rồi liệt kê các lượt chưa dọn. Biến `NODE_ENV` được khôi phục sau khi chạy.
+E2E và cleanup list đều đã đạt ngày 20/11/2026; không còn lệnh cần chạy để chốt BE-P3-12. Lệnh list read-only dưới đây lưu để tham khảo, chạy tại `Source/backend`:
+
+```powershell
+node --env-file=.env .\scripts\e2e\cleanup.mjs
+```
+
+Kết quả đã xác nhận không còn run `20261120T0659-VCIC` trong danh sách chờ dọn. Các dòng unlogged 03–06/11 chỉ được báo, không được xử lý bởi list; chưa kết luận trạng thái active hoặc thay đổi dữ liệu cũ. Lệnh tái kiểm E2E dưới đây chỉ lưu để dùng khi có thay đổi; không yêu cầu chạy lại lượt đã pass. Biến `NODE_ENV` được khôi phục sau khi chạy.
 
 ```powershell
 cd D:\Rooms\Source\backend
@@ -41,7 +50,7 @@ try {
 }
 ```
 
-Đối chiếu các dòng tổng `Test Files`, `Tests`, `BE-P3-12 <runId> CLEANED` và xác nhận phần liệt kê không có chính `<runId>` đó. Các log cũ có thể được in riêng. Cần kết quả này trước khi đánh dấu BE-P3-12 hoàn tất.
+Đã đối chiếu các dòng tổng `Test Files`, `Tests`, `BE-P3-12 <runId> CLEANED` và phần liệt kê không có chính `<runId>` đó; BE-P3-12 được đánh dấu hoàn tất. Báo cáo unlogged cũ được ghi riêng và không làm thay đổi kết quả lượt này.
 
 Commit gợi ý sau nghiệm thu `test(contracts): verify HOLD and viewing side effects (BE-P3-12, CON-02, CON-07, VIEW-05, VIEW-06)`.
 

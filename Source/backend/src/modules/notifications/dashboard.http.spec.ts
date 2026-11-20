@@ -74,6 +74,7 @@ describe('CP-5 (BE-P2-33) · GET /dashboard HTTP contract (VIEW-07, SCOPE-04, PR
 
   const fakePrisma: any = {
     $transaction: vi.fn(async (work: (tx: typeof fakePrisma) => Promise<unknown>) => work(fakePrisma)),
+    invoice: { count: vi.fn(async () => 0), findMany: vi.fn(async () => []) },
     user: { findUnique: vi.fn(async ({ where }: any) => users.get(where.id) ?? null), findFirst: vi.fn(async () => ({ id: 1 })) },
     building: {
       findMany: vi.fn(async ({ where }: any) =>
@@ -130,6 +131,7 @@ describe('CP-5 (BE-P2-33) · GET /dashboard HTTP contract (VIEW-07, SCOPE-04, PR
     expect(res.status).toBe(200);
     expect(res.body.data.newViewings).toEqual({ count: 1, items: [expect.objectContaining({ id: 1, roomCode: 'P101' })] });
     expect(res.body.data.pendingPrices).toBeNull();
+    expect(res.body.data.unpaidDeposits).toEqual({ count: 0, items: [] });
   });
 
   it('PRC-11: BOSS → 200 { data } with pendingPrices populated (not null) and newViewings present', async () => {

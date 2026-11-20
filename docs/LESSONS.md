@@ -6,6 +6,8 @@ Read this before the first task of any part. Each line is a mistake that really 
 
 ## Tests and expected values
 
+- Adding a seeded setting also changes EXPECTED_COUNTS in seed.spec.ts; the draft contract template made the repeatable-seed check fail at two settings instead of the spec's three [BE-P3-18, 19/11/2026].
+- Do not assert a specific dash glyph for optional print data when the spec does not choose one; the missing-signer-details fixture failed on hyphen versus em dash [BE-P3-18, 19/11/2026].
 - Mark a transaction-barrier promise as intentionally ignored when the awaited service call already waits for that transaction; seven race setup calls failed no-floating-promises lint [BE-P3-17, 19/11/2026].
 - Recurse through arrays when projecting nested Prisma SELECTs in an HTTP fake; treating an invoice relation as an object broke the contract detail serializer after signing [BE-P3-15, 19/11/2026].
 - When removing an INSERT column, check each VALUES tuple that reuses the column list through `.replace(...)`. The renewal scenario retained two `billing_day` values and failed before checking the renewal constraint [BE-P3-03, 16/11/2026].

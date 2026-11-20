@@ -28,8 +28,12 @@ Key/value in `settings`, edited by Boss (`GET/PATCH /settings` **Boss**). No sec
 |---|---|
 | `bank_account` | `{ bankBin, bankName, accountNo, accountName }` for VietQR |
 | `webhook` | `{ provider: "SEPAY" | "CASSO", enabled }` |
-| `contract_template` | template text with placeholders `{{tenant.fullName}}`, `{{room.code}}`, `{{contract.rent}}`… |
+| `contract_template` | Plain template text (treated as draft while Q-15 is open), or `{ content: string, isDraft: boolean }` with an explicit draft flag; placeholders `{{tenant.fullName}}`, `{{room.code}}`, `{{contract.rent}}`… |
 | `email_templates` | `{ invoiceIssued, invoiceDue, invoiceOverdue, contractExpiring, passwordReset }` + `emailCode` (`vi`, `en`), `viewingNew` (to staff, `vi`), `readingsLate` (to Boss, `vi`, NOTI-10), `viewingConfirmed` (to the guest, `vi`, `en`) (AUTH-13, NOTI-08, LOC-06) |
 | `default_contact` | Boss contact shown when a building has no manager |
+
+CON-22 placeholders are limited to `contract.code`, `contract.startDate`, `contract.endDate`, `contract.termMonths`, `contract.rent`, `contract.deposit`, `contract.terms`, `building.name`, `building.code`, `building.address`, `building.ward`, `building.district`, `room.code`, `tenant.fullName`, `tenant.phone`, `tenant.dateOfBirth`, `tenant.idNumberLast4`. Tenant values come from the signer occupant snapshot, never a later profile name; CCCD is only its stored last four digits. Unknown/malformed placeholders or invalid settings fail with a controlled error. Rendering performs one plain-text substitution pass; inserted values are not interpreted as placeholders or HTML. Print-page consumers render content as text, not raw HTML.
+
+When the setting is absent, the API uses its built-in draft. The dev seed adds a draft without overwriting an existing template; no seed run is required for printing. Draft output has `isDraft: true` and starts with `BẢN NHÁP – chưa dùng để ký`. A plain text setting remains draft; only an explicitly supplied `{ content, isDraft: false }` marks an approved template after the owner provides it (Q-15).
 
 Env vars (never committed, see root `.gitignore`): `DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`, `CCCD_KEY`, `BANK_WEBHOOK_SECRET`, `CLOUDINARY_URL`, `MAIL_*` (also the mail provider's key, Q-14; filled by the owner).

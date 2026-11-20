@@ -5,11 +5,12 @@ import { ContractIdParamsDto, ContractsQueryDto } from './dto/contracts-query.dt
 import { CreateContractDto } from './dto/create-contract.dto.js';
 import { SignContractDto } from './dto/sign-contract.dto.js';
 import { ContractPasswordService } from './contract-password.service.js';
+import { ContractDocumentsService } from './contract-documents.service.js';
 
 @Controller('contracts')
 @Roles('BOSS', 'MANAGER')
 export class ContractsController {
-  constructor(private readonly contracts: ContractsService, private readonly passwords: ContractPasswordService) {}
+  constructor(private readonly contracts: ContractsService, private readonly passwords: ContractPasswordService, private readonly documents: ContractDocumentsService) {}
 
   @Get()
   list(@CurrentUser() actor: AuthUser, @Query() query: ContractsQueryDto) {
@@ -19,6 +20,18 @@ export class ContractsController {
   @Get(':id')
   get(@CurrentUser() actor: AuthUser, @Param() params: ContractIdParamsDto) {
     return this.contracts.get(actor, params.id);
+  }
+
+  @Get(':id/scan')
+  @Header('Cache-Control', 'no-store')
+  scan(@CurrentUser() actor: AuthUser, @Param() params: ContractIdParamsDto, @Ip() ip: string) {
+    return this.documents.scan(actor, params.id, ip);
+  }
+
+  @Get(':id/print')
+  @Header('Cache-Control', 'no-store')
+  print(@CurrentUser() actor: AuthUser, @Param() params: ContractIdParamsDto) {
+    return this.documents.print(actor, params.id);
   }
 
   @Post()

@@ -1,6 +1,8 @@
 # P3-3 — BE-P3-17 — Reset mật khẩu người thuê
 
-Ngày 19/11/2026, bắt đầu từ `449b450` (BE-P3-16 đã được chủ dự án xác nhận test thành công và commit). Ba thay đổi tài liệu có sẵn là bản ghi nghiệm thu của chính lượt trước, được giữ và cập nhật trong lượt này. Chỉ triển khai BE-P3-17; chưa BE-P3-18..19. Chưa commit các thay đổi mới.
+Ngày 19/11/2026, bắt đầu từ `449b450` (BE-P3-16 đã được chủ dự án xác nhận test thành công và commit). Ba thay đổi tài liệu có sẵn là bản ghi nghiệm thu của chính lượt trước, được giữ và cập nhật trong lượt này. Phạm vi mốc này chỉ BE-P3-17. Mã đã commit tại `11379c8`.
+
+Cập nhật nghiệm thu: chủ dự án xác nhận “đã pass hết và commit” ở lượt tiếp theo; Git xác minh `11379c8`, workspace sạch trước BE-P3-18. Đã khép phần chờ hồi quy backend của BE-P3-17. Không cung cấp số lượng test/thời lượng nên không ghi số đếm suy đoán; E2E DB dev vẫn chờ riêng.
 
 ## Hành vi
 
@@ -41,7 +43,7 @@ Không đổi schema, migration, dependency hoặc `.env`; không ghi DB dev, g�
 | Guard | `65/65` đạt trong lượt HTTP tập trung độc lập: role/scope và access cũ vẫn bị từ chối sau khi clear flag. |
 | Reset + race mới | Exit 0: `Test Files 2 passed (2)`, `Tests 30 passed (30)`, 7,94 giây. 15 ca reset HTTP và 15 ca race với DB edge lập lịch competing commit; service/Argon2/token/audit thực. HTTP trong bộ nhớ, chặn egress ngoài trong Node. |
 | PostgreSQL nhúng | Exit 0, Nest HTTP và Prisma thật trên schema/constraints hiện hữu. Luồng create/sign/pay cũ vẫn qua, tiếp đến staff reset thu hồi access/refresh/link cũ; login bằng mật khẩu tạm bị buộc đổi; tự đổi giữ current refresh, refresh lấy access mới; access trước reset và access mật khẩu tạm tiếp tục 401 sau clear flag; audit không chứa password/hash. |
-| Hồi quy rộng/full suite | Chưa có kết quả hoàn tất cho bản BE-P3-17. Lượt 7 file hồi quy auth/contracts/billing và lượt 3 file auth account/reset/session bị automatic approval review chặn do telemetry Visual Studio có payload chưa xác định. Không tính log dở là pass, không gọi đây là full suite đạt. Cần `npm run test` trên máy dự án. |
+| Hồi quy rộng/full suite | Chủ dự án xác nhận pass hết và commit `11379c8` ở lượt tiếp theo, không cung cấp số đếm/thời lượng. Các lượt Codex trước đó bị auto-review chặn telemetry; không dùng log dở của chúng làm bằng chứng pass. Kết quả nghiệm thu đến từ xác nhận của chủ dự án. |
 | E2E DB dev | Chưa chạy ở mốc này; giữ BE-P3-19 và phần chờ E2E/cleanup list P3-2. |
 | Review | DUYỆT; báo cáo đầy đủ bên dưới. |
 | Diff | `git diff --check` đạt. |

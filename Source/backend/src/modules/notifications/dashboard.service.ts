@@ -1,6 +1,6 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
-import { todayHanoi } from '../../common/date/today.js';
+import { formatDateOnly, todayHanoi } from '../../common/date/today.js';
 import { ErrorCode } from '../../common/errors/error-code.js';
 import type { AuthUser } from '../../common/guards/auth.decorators.js';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
@@ -17,10 +17,34 @@ export interface DashboardView {
   newViewings: { count: number; items: ViewingView[] };
   overlappingViewings: { count: number; items: ViewingView[] };
   depositCancelledViewings: { count: number; items: ViewingView[] };
+  unpaidDeposits: { count: number; items: UnpaidDepositItem[] };
   pendingPrices: { count: number; rooms: number; ratePlans: number } | null;
 }
 
+export interface UnpaidDepositItem {
+  id: number;
+  code: string;
+  total: number;
+  dueDate: string | null;
+  contract: {
+    id: number;
+    code: string;
+    room: { id: number; code: string };
+    building: { id: number; code: string; name: string };
+    tenant: { id: number; fullName: string; phone: string };
+  };
+}
+
 const ITEM_LIMIT = 5;
+const UNPAID_DEPOSIT_SELECT = {
+  id: true, total: true, dueDate: true,
+  contract: { select: {
+    id: true, code: true,
+    room: { select: { id: true, code: true } },
+    building: { select: { id: true, code: true, name: true } },
+    tenant: { select: { id: true, fullName: true, phone: true } },
+  } },
+} satisfies Prisma.InvoiceSelect;
 
 // SCOPE-04: a building whose manager is null or inactive. A locked building has managerId null (BLD-06).
 const WITHOUT_ACTIVE_MANAGER: Prisma.BuildingWhereInput = {
@@ -49,6 +73,7 @@ export class DashboardService {
       newViewings: await this.newViewings(user, query.buildingId, overlaps),
       overlappingViewings: await this.overlappingViewings(user, query.buildingId, overlaps),
       depositCancelledViewings: await this.depositCancelledViewings(user, query.buildingId),
+      unpaidDeposits: await this.unpaidDeposits(user, query.buildingId),
       pendingPrices: user.buildingIds === null ? await this.pendingPrices() : null,
     };
   }
@@ -96,6 +121,23 @@ export class DashboardService {
         where, include: VIEWING_INCLUDE, orderBy: [{ createdAt: 'asc' }, { id: 'asc' }], take: ITEM_LIMIT,
       });
       return { count, items: rows.map(row => toView(row)) };
+    }, { isolationLevel: 'RepeatableRead' });
+  }
+
+  // NOTI-06: one current responsible person owns each unpaid deposit task, irrespective of due date.
+  private async unpaidDeposits(user: AuthUser, buildingId: number | undefined): Promise<DashboardView['unpaidDeposits']> {
+    const contract: Prisma.ContractWhereInput = user.role === 'BOSS'
+      ? { building: { id: buildingId, ...WITHOUT_ACTIVE_MANAGER } }
+      : { ...scopeWhere(user), building: { id: buildingId, isActive: true, managerId: user.id, manager: { isActive: true } } };
+    const where: Prisma.InvoiceWhereInput = { type: 'DEPOSIT', status: 'UNPAID', contract };
+    return this.prisma.$transaction(async tx => {
+      const count = await tx.invoice.count({ where });
+      const rows = count === 0 ? [] : await tx.invoice.findMany({
+        where, select: UNPAID_DEPOSIT_SELECT, orderBy: [{ dueDate: 'asc' }, { id: 'asc' }], take: ITEM_LIMIT,
+      });
+      return { count, items: rows.map(row => ({
+        ...row, code: `TT${row.id}`, dueDate: row.dueDate ? formatDateOnly(row.dueDate) : null,
+      })) };
     }, { isolationLevel: 'RepeatableRead' });
   }
 

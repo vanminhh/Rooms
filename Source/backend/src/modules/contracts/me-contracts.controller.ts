@@ -1,13 +1,14 @@
-import { Controller, Get, Header, Param, Query } from '@nestjs/common';
+import { Controller, Get, Header, Ip, Param, Query } from '@nestjs/common';
 import { CurrentUser, TenantMeRoles, type AuthUser } from '../../common/guards/auth.decorators.js';
 import { PaginationQuery } from '../../common/pagination.js';
 import { ContractsService } from './contracts.service.js';
 import { ContractIdParamsDto } from './dto/contracts-query.dto.js';
+import { ContractDocumentsService } from './contract-documents.service.js';
 
 @Controller('me/contracts')
 @TenantMeRoles()
 export class MeContractsController {
-  constructor(private readonly contracts: ContractsService) {}
+  constructor(private readonly contracts: ContractsService, private readonly documents: ContractDocumentsService) {}
 
   @Get()
   @Header('Cache-Control', 'no-store')
@@ -19,5 +20,17 @@ export class MeContractsController {
   @Header('Cache-Control', 'no-store')
   get(@CurrentUser() actor: AuthUser, @Param() params: ContractIdParamsDto) {
     return this.contracts.getMine(actor, params.id);
+  }
+
+  @Get(':id/scan')
+  @Header('Cache-Control', 'no-store')
+  scan(@CurrentUser() actor: AuthUser, @Param() params: ContractIdParamsDto, @Ip() ip: string) {
+    return this.documents.scan(actor, params.id, ip);
+  }
+
+  @Get(':id/print')
+  @Header('Cache-Control', 'no-store')
+  print(@CurrentUser() actor: AuthUser, @Param() params: ContractIdParamsDto) {
+    return this.documents.print(actor, params.id);
   }
 }

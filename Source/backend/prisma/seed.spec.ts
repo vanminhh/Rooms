@@ -488,13 +488,13 @@ class FakeDb {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Expected values come from PLAN.md section 2.4 / the spec, never from seed.ts.
-// Only change from the Phase 1 main-file spec allowed by CP-6 (BE-P2-08, SVC-05):
-// ratePlan 15 -> 18, rateTier 21 -> 24 (3 buildings x 1 extra "Gửi xe điện" plan/tier).
+// BE-P2-08/SVC-05 added one e-bike rate per building; BE-P3-18/Q-15 adds the draft
+// contract template to default_contact and bank_account, for three settings in total.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const EXPECTED_COUNTS = {
   user: 6,
-  setting: 2,
+  setting: 3,
   building: 3,
   room: 7,
   roomPrice: 6,
@@ -802,6 +802,10 @@ describe('BE-LOGIN-06: seed (in-memory Prisma)', { timeout: 120_000 }, () => {
         'bankBin',
         'bankName',
       ]);
+      expect(setting('contract_template').value).toEqual(expect.any(String));
+      expect(setting('contract_template').value).toContain('BẢN NHÁP – chưa dùng để ký');
+      expect(setting('contract_template').value).toContain('{{tenant.fullName}}');
+      expect(setting('contract_template').value).toContain('{{contract.rent}}');
       expect(db.t.setting.every((s) => s.updatedById === boss.id)).toBe(true);
     });
   });

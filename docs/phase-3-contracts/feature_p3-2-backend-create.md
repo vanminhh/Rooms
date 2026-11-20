@@ -39,13 +39,13 @@ Out: signing, the deposit invoice and the temporary password (P3-3), move-in and
 - [x] **BE-P3-11** ⏸ "Việc hôm nay" (NOTI-06, VIEW-06, D-39): a group of viewings cancelled by a deposit, for the person responsible, listed until staff press "Đã gọi". Migration: who pressed and when on `viewings` (ask the owner before creating and before applying; add DB-check scenarios). `POST /viewings/:id/called` for staff in scope, only on a viewing cancelled by a deposit, pressing twice changes nothing.
   Done when: `dashboard.service.spec.ts` covers the group for a manager and for Boss (buildings without an active manager); a called viewing leaves the list; another building → `OUT_OF_SCOPE`; DB check passes every scenario (report the count).
   Dev migration confirmed on 18/11/2026 and committed in `56fabd0`. The API and dashboard acceptance checks passed, including 97/97 DB cases. See [implementation checkpoint](plans/P3-2/CHECKPOINT-BE-P3-11.md) and [migration checkpoint](plans/P3-2/CHECKPOINT-BE-P3-11-MIGRATION.md).
-- [!] **BE-P3-12** ⏸ `npm run lint`, `npm run test`, `npm run build`, e2e (add a contracts e2e file for create + VIEW-05/06 on the dev DB with the existing e2e runner and cleanup). Run the reviewer on the uncommitted changes and put its full report in the checkpoint report.
-  E2E code and local checks passed. The dev database is unreachable in Codex (`P1001`); the dev E2E and cleanup list await output from the project machine. See [checkpoint BE-P3-12](plans/P3-2/CHECKPOINT-BE-P3-12.md).
+- [x] **BE-P3-12** ⏸ `npm run lint`, `npm run test`, `npm run build`, e2e (add a contracts e2e file for create + VIEW-05/06 on the dev DB with the existing e2e runner and cleanup). Run the reviewer on the uncommitted changes and put its full report in the checkpoint report.
+  Dev E2E confirmed by the owner's 20/11/2026 screenshot: 4/4 tests and `20261120T0659-VCIC CLEANED` (combined contracts run: 2 files / 5 tests passed, 164.71s). The owner also supplied cleanup list output: no pending run logs and no rows from this run; only unlogged legacy fixtures dated 03–06/11 are reported separately. Together with the recorded local checks and reviewer approval, this closes BE-P3-12. See [checkpoint BE-P3-12](plans/P3-2/CHECKPOINT-BE-P3-12.md). No rerun is needed.
   Done when: all pass with real output quoted; `cleanup.mjs` in list mode shows no row left by this run; list the `[ASSUMPTION]`s used (A-18).
 
 ## Questions for the owner
 
-- BE-P3-12: chạy bộ E2E và lệnh liệt kê cleanup trên máy kết nối DB dev theo [hướng dẫn](plans/P3-2/CHECKPOINT-BE-P3-12.md#chạy-trên-máy-dự-án), rồi gửi kết quả để chốt nghiệm thu.
+- BE-P3-12 đã khép ngày 20/11: chủ dự án cung cấp E2E dev, `CLEANED` và cleanup list không còn run `20261120T0659-VCIC`. Các mục unlogged từ 03–06/11 được báo riêng, không thuộc lượt nghiệm thu này.
 - BE-P3-11 (D-39, VIEW-06): chủ dự án đã duyệt tạo và áp dụng `20261118000000_viewing_deposit_calls` lên DB dev (18/11/2026).
 
 Đã trả lời 17/11/2026
@@ -61,6 +61,8 @@ Out: signing, the deposit invoice and the temporary password (P3-3), move-in and
 
 ## Issues log
 
+- 20/11/2026 · BE-P3-12 · Đã nhận cleanup list từ chủ dự án: không có nhật ký chờ dọn, không còn run `20261120T0659-VCIC`; chỉ báo bản ghi unlogged 03–06/11. Khép phần chờ list và đánh dấu `[x]`. Danh sách cũ là báo cáo dữ liệu thử thiếu nhật ký, không phải lỗi E2E của lượt mới; không có thao tác dọn dữ liệu cũ trong lượt này.
+- 20/11/2026 · BE-P3-12 · Ảnh chủ dự án xác nhận E2E dev 4/4 và `CLEANED`, trong lượt hai file đạt 5/5 test. Khép lỗi kết nối đối với E2E; lệnh cleanup list read-only từ Codex vẫn không kết nối được DB. Giữ `[!]` chỉ vì chưa có đầu ra list theo tiêu chí nghiệm thu; không yêu cầu chạy lại E2E đã pass.
 - 18/11/2026 · BE-P3-12 · DB dev trả `P1001`, cả E2E và cleanup list dừng ở truy vấn đầu. Bộ test E2E nhúng và kiểm tra dọn dữ liệu đã qua. Cần chạy E2E và cleanup list trên máy dự án để nghiệm thu hai kết nối PostgreSQL.
 - 17/11/2026 · BE-P3-10 · Đã chặn NUL trong từ khóa trước Prisma và kiểm rõ danh sách trường API được phép đọc. 11 ca HTTP GET qua TCP gặp lỗi loopback trong phiên này. Cả bộ backend đạt 1927/1927 qua HTTP trong bộ nhớ, truy vấn Prisma/PGlite đạt và reviewer DUYỆT.
 

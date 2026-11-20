@@ -144,6 +144,7 @@ export async function seed(prisma: PrismaClient): Promise<void> {
   const settings = {
     default_contact: { phone: BOSS_CONTACT.contactPhone, zaloUrl: BOSS_CONTACT.zaloUrl, facebookUrl: BOSS_CONTACT.facebookUrl },
     bank_account: { bankBin: '970436', bankName: 'Vietcombank', accountNo: '0000000000', accountName: 'TRO THONG MINH' },
+    contract_template: 'BẢN NHÁP – chưa dùng để ký\n\nHợp đồng {{contract.code}}\nTòa {{building.name}} – Phòng {{room.code}}\nNgười thuê: {{tenant.fullName}}\nSĐT: {{tenant.phone}}\nCCCD (4 số cuối): {{tenant.idNumberLast4}}\nTừ {{contract.startDate}} đến {{contract.endDate}} ({{contract.termMonths}} tháng)\nTiền phòng: {{contract.rent}}\nTiền cọc: {{contract.deposit}}\nGhi chú/thỏa thuận: {{contract.terms}}',
   };
   for (const [key, value] of Object.entries(settings)) {
     await prisma.setting.upsert({ where: { key }, update: {}, create: { key, value, updatedById: boss } });
