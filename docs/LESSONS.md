@@ -108,4 +108,6 @@ Read this before the first task of any part. Each line is a mistake that really 
 - listPath always adds page/limit; build availability URLs with URLSearchParams so a non-paginated DTO does not reject those extra query fields [FE-EX-22, 15/11/2026].
 
 - When adding one mail retry, failure fixtures must fail both attempts and explicitly restore success before testing recovery; an always-failing signup mailer incorrectly expected the next signup to succeed [BE-EX-28, 15/11/2026].
+- Preserve a Node command's exit status before restoring environment variables in a PowerShell finally block; the successful restoration can otherwise mask a failed Vitest run. Assess the actual test report as well as the wrapper status [BE-P3-22, 20/11/2026].
+- Vitest testTimeout and Prisma transaction timeout/maxWait do not extend the initial database connect_timeout (5 seconds by default in Prisma 6); after repeated initialization failures, test that connection limit separately instead of rerunning the unchanged workflow [BE-P3-22, 20/11/2026].
 - Validate required template placeholders as well as unknown ones; a nonempty custom email without its code, reset link or appointment details passed the initial template checks [BE-EX-29, 15/11/2026].

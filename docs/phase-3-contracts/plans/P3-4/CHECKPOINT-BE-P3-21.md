@@ -1,6 +1,6 @@
 # P3-4 · BE-P3-21 · Hủy HOLD và số tiền hoàn cọc
 
-Ngày 20/11/2026, bắt đầu từ `40747f6` (BE-P3-20 đã nghiệm thu/commit, Git sạch). **BE-P3-21 đã triển khai và kiểm cục bộ đạt, reviewer DUYỆT; chờ owner kiểm và commit.** Chưa làm BE-P3-22 hoặc đánh dấu toàn bộ P3-4 xong. Không đổi schema, migration, dependency, env hoặc DB dev.
+Ngày 20/11/2026, bắt đầu từ `40747f6` (BE-P3-20 đã nghiệm thu/commit, Git sạch). **BE-P3-21 đã triển khai và kiểm cục bộ đạt, reviewer DUYỆT; owner báo đã commit, Git xác minh `7fa1c97` trước khi làm BE-P3-22.** Kết quả bên dưới là kết quả của BE-P3-21; BE-P3-22 được ghi riêng ở [checkpoint BE-P3-22](CHECKPOINT-BE-P3-22.md). Chưa đánh dấu toàn bộ P3-4 xong. Không đổi schema, migration, dependency, env hoặc DB dev ở BE-P3-21.
 
 ## Phạm vi
 

@@ -4,21 +4,24 @@ import type { Role } from '@prisma/client';
 import request from 'supertest';
 import { configureApp } from '../src/app.setup.js';
 import { hashPassword } from '../src/common/crypto/password.js';
+import { contractEndDate } from '../src/common/date/period.js';
 import { addDays, formatDateOnly, todayHanoi } from '../src/common/date/today.js';
 import { PrismaService } from '../src/common/prisma/prisma.service.js';
+import { publicRoomWhere } from '../src/common/rooms/public-room.js';
+import { AuditService } from '../src/modules/audit/audit.service.js';
 import { TokenService } from '../src/modules/auth/token.service.js';
 import { MailerService } from '../src/modules/mailer/mailer.service.js';
 import { e2eName, newRunId, randomPassword, uniqueBuildingCode, uniquePhone } from '../scripts/e2e/run.js';
 import { rollbackPrismaFacade } from './fixtures/rollback-prisma.js';
 
-vi.setConfig({ testTimeout: 300_000, hookTimeout: 300_000 });
+vi.setConfig({ testTimeout: 600_000, hookTimeout: 600_000 });
 
 // Run this file alone with one worker. Contract creation's global mapping lock lasts until
 // the outer rollback. PostgreSQL sequences can advance, but no fixture rows are committed.
 // Real routes, queries and triggers run on ONE connection, with a savepoint per service
 // transaction. This is neither independent-request commit proof nor a concurrency test.
-describe('BE-P3-19: real PostgreSQL contract workflow with outer rollback', () => {
-  it('CON-06..09/BIL-10..11/CON-16/22: create, sign, pay and read private tenant documents (single connection)', async () => {
+describe('BE-P3-19/22: real PostgreSQL contract workflows with outer rollback', () => {
+  it('CON-06..12/BIL-10..11/17/MTR-02: sign → pay → move-in and sign → pay → cancel (single connection)', async () => {
     vi.stubEnv('NODE_ENV', 'test');
     vi.stubEnv('MAIL_PROVIDER', '');
     vi.stubEnv('JWT_SECRET', 'test-only-rollback-contract-workflow-jwt-secret');
@@ -26,7 +29,7 @@ describe('BE-P3-19: real PostgreSQL contract workflow with outer rollback', () =
     vi.stubEnv('CLOUDINARY_URL', 'cloudinary://workflow-key:workflow-secret@rooms-workflow');
 
     let prisma: PrismaService | undefined;
-    const rollback = new Error('BE-P3-19 expected outer rollback');
+    const rollback = new Error('BE-P3-22 expected outer rollback');
     const runId = newRunId();
     const owned = {
       users: [] as number[], buildings: [] as number[], rooms: [] as number[],
@@ -134,6 +137,29 @@ describe('BE-P3-19: real PostgreSQL contract workflow with outer rollback', () =
             } });
             owned.rooms.push(room.id);
 
+            // MTR-02: the previous tenant closes at 1284; the new tenant starts at
+            // 1290 on the same day. Both histories must survive independently.
+            const handoverDay = todayHanoi();
+            const oldStart = addDays(handoverDay, -100);
+            const oldContract = await tx.contract.create({ data: {
+              code: `E2EOLD${room.id}`, buildingId: building.id, roomId: room.id, tenantId: foreignTenant.id,
+              startDate: oldStart, endDate: contractEndDate(oldStart, 3), termMonths: 3,
+              rent: 2_500_000, deposit: 0, status: 'ENDED', createdById: manager.id,
+              signedAt: oldStart, movedInAt: oldStart, endedAt: new Date(),
+              occupants: { create: { fullName: e2eName(runId, 'Former signer'), isSigner: true, moveInDate: oldStart } },
+            }, select: { id: true } });
+            owned.contracts.push(oldContract.id);
+            for (const [kind, value] of [['ELECTRIC', 1284], ['WATER', 100]] as const) {
+              await tx.meterReading.create({ data: {
+                roomId: room.id, contractId: oldContract.id, kind, value,
+                readOn: handoverDay, isOpening: false, readById: manager.id,
+              } });
+            }
+            const oldReadings = await tx.meterReading.findMany({
+              where: { contractId: oldContract.id }, orderBy: { kind: 'asc' },
+              select: { id: true, contractId: true, kind: true, value: true, readOn: true, isOpening: true },
+            });
+
             originalSettings = await tx.setting.findMany({
               where: { key: { in: ['bank_account', 'contract_template'] } }, select: { key: true, value: true }, orderBy: { key: 'asc' },
             });
@@ -146,7 +172,7 @@ describe('BE-P3-19: real PostgreSQL contract workflow with outer rollback', () =
               create: { key: 'contract_template', value: template, updatedById: manager.id }, update: { value: template, updatedById: manager.id } });
 
             const tenantPhone = await uniquePhone(async candidate => !!await tx.user.findUnique({ where: { phone: candidate }, select: { id: true } }));
-            const startDate = formatDateOnly(addDays(todayHanoi(), 1));
+            const startDate = formatDateOnly(handoverDay);
             const create = remember('create', await api('post', '/contracts', managerToken).send({
               roomId: room.id, signer: { fullName: e2eName(runId, 'Signer'), phone: tenantPhone, idNumber: cccd },
               startDate, termMonths: 3, deposit: 2_500_000,
@@ -182,6 +208,12 @@ describe('BE-P3-19: real PostgreSQL contract workflow with outer rollback', () =
               .toEqual([{ kind: 'DEPOSIT', quantity: 1, unitPrice: 2_500_000, amount: 2_500_000 }]);
             remember('repeat sign', await api('post', `/contracts/${contractId}/sign`, managerToken).send(scan).expect(409));
 
+            const moveInBody = { electric: 1290, water: 105, readOn: startDate };
+            const beforePayment = remember('move-in before payment', await api('post', `/contracts/${contractId}/move-in`, managerToken)
+              .send(moveInBody).expect(409));
+            expect(beforePayment.body.error.code).toBe('DEPOSIT_NOT_PAID');
+            expect(await tx.meterReading.count({ where: { contractId } })).toBe(0);
+
             // A real trigger error aborts its PostgreSQL savepoint. Recover before the next
             // HTTP request, without retaining the failed payment or poisoning the outer tx.
             await expect(facade.$transaction(routeTx => routeTx.payment.create({ data: {
@@ -203,6 +235,33 @@ describe('BE-P3-19: real PostgreSQL contract workflow with outer rollback', () =
             expect(await tx.payment.count({ where: { invoiceId } })).toBe(1);
             expect(await tx.auditLog.count({ where: { action: 'payment.record', actorId: manager.id, entityId: paid.body.data.id } })).toBe(1);
             expect((await tx.invoice.findUniqueOrThrow({ where: { id: invoiceId }, select: { status: true } })).status).toBe('PAID');
+
+            remember('move-in requires both meters', await api('post', `/contracts/${contractId}/move-in`, managerToken)
+              .send({ electric: 1290, readOn: startDate }).expect(400));
+            const movedIn = remember('move-in', await api('post', `/contracts/${contractId}/move-in`, managerToken)
+              .send(moveInBody).expect(201));
+            expect(movedIn.body.data).toMatchObject({ id: contractId, status: 'ACTIVE' });
+            const active = await tx.contract.findUniqueOrThrow({ where: { id: contractId }, select: { status: true, movedInAt: true } });
+            expect(active.status).toBe('ACTIVE');
+            expect(active.movedInAt?.toISOString()).toBe(movedIn.body.data.movedInAt);
+            const openings = await tx.meterReading.findMany({ where: { contractId }, orderBy: { kind: 'asc' },
+              select: { roomId: true, contractId: true, kind: true, value: true, readOn: true, isOpening: true } });
+            expect(openings).toEqual([
+              { roomId: room.id, contractId, kind: 'ELECTRIC', value: 1290, readOn: handoverDay, isOpening: true },
+              { roomId: room.id, contractId, kind: 'WATER', value: 105, readOn: handoverDay, isOpening: true },
+            ]);
+            expect(await tx.meterReading.findMany({
+              where: { contractId: oldContract.id }, orderBy: { kind: 'asc' },
+              select: { id: true, contractId: true, kind: true, value: true, readOn: true, isOpening: true },
+            })).toEqual(oldReadings);
+            const closing = await tx.meterReading.create({ data: {
+              roomId: room.id, contractId, kind: 'ELECTRIC', value: 1350, readOn: handoverDay, readById: manager.id,
+            }, select: { value: true, isOpening: true, contractId: true, readOn: true } });
+            expect(closing).toEqual({ value: 1350, isOpening: false, contractId, readOn: handoverDay });
+            // Baseline arithmetic only; the Phase 4 monthly invoice engine is out of scope.
+            expect(closing.value - openings[0].value, 'MTR-02: use the new tenant baseline, not the previous closing').toBe(60);
+            remember('repeat move-in', await api('post', `/contracts/${contractId}/move-in`, managerToken).send(moveInBody).expect(409));
+            expect(await tx.auditLog.count({ where: { action: 'contract.move_in', entity: 'contract', entityId: contractId } })).toBe(1);
 
             const login = remember('tenant login', await api('post', '/auth/login').send({ phone: tenantPhone, password: temporaryPassword }).expect(200));
             const oldAccess: string = login.body.data.accessToken;
@@ -257,6 +316,91 @@ describe('BE-P3-19: real PostgreSQL contract workflow with outer rollback', () =
             expect(scanAudits.map(row => row.actorId).sort((a, b) => a! - b!)).toEqual([manager.id, tenant.id].sort((a, b) => a - b));
             expect(await tx.auditLog.count({ where: { action: 'contract.sign', entity: 'contract', entityId: contractId } })).toBe(1);
 
+            // CON-12/BIL-17: an already activated tenant keeps the same account and
+            // session when a second signed/paid HOLD is cancelled before move-in.
+            const cancelRoom = await tx.room.create({ data: {
+              buildingId: building.id, code: 'WF2', floor: 1, areaM2: 25, price: 2_500_000,
+            } });
+            owned.rooms.push(cancelRoom.id);
+            const cancelCreate = remember('create cancellation contract', await api('post', '/contracts', managerToken).send({
+              roomId: cancelRoom.id, signer: { fullName: e2eName(runId, 'Signer'), phone: tenantPhone },
+              startDate, termMonths: 3, deposit: 2_500_000, serviceIds: [],
+            }).expect(201));
+            const cancelId: number = cancelCreate.body.data.id;
+            owned.contracts.push(cancelId);
+            const cancelUpload = await api('post', '/files/sign', managerToken)
+              .send({ purpose: 'CONTRACT_SCAN', contractId: cancelId }).expect(201);
+            const cancelScan = { assetId: `cancel-scan-${runId}`,
+              publicId: `${cancelUpload.body.data.folder}/${cancelUpload.body.data.publicId}`, version: 1, format: 'pdf' };
+            scanMetadata = { asset_id: cancelScan.assetId, public_id: cancelScan.publicId, asset_folder: cancelUpload.body.data.folder,
+              version: 1, format: 'pdf', resource_type: 'image', type: 'authenticated' };
+            const cancelSign = remember('sign cancellation contract', await api('post', `/contracts/${cancelId}/sign`, managerToken)
+              .send(cancelScan).expect(201));
+            expect('temporaryPassword' in cancelSign.body.data, 'CON-09: reused tenant password is not reset').toBe(false);
+            const cancelInvoiceId: number = cancelSign.body.data.depositInvoice.id;
+            owned.invoices.push(cancelInvoiceId);
+            const cancelPayment = remember('pay cancellation deposit', await api('post', `/invoices/${cancelInvoiceId}/payment`, managerToken)
+              .set('Idempotency-Key', `cancel-payment-${runId}`)
+              .send({ method: 'CASH', paidAt: new Date().toISOString() }).expect(201));
+            owned.payments.push(cancelPayment.body.data.id);
+            const paidSnapshot = await tx.invoice.findUniqueOrThrow({ where: { id: cancelInvoiceId }, include: { payment: true } });
+            const tenantSnapshot = await tx.user.findUniqueOrThrow({ where: { id: tenant.id } });
+            const cancelBody = { reason: e2eName(runId, 'Tenant cancelled before move-in'), depositKept: 1_000_000 };
+            const cancelKey = `cancel-${runId}`;
+            const audit = app.get(AuditService);
+            const realAudit = audit.log.bind(audit);
+            let cancellationAuditInserted = false;
+            const fault = vi.spyOn(audit, 'log').mockImplementationOnce(async (...args) => {
+              await realAudit(...args);
+              cancellationAuditInserted = true;
+              throw new Error('BE-P3-22 simulated cancellation failure after audit INSERT');
+            });
+            try {
+              remember('cancel audit failure', await api('post', `/contracts/${cancelId}/cancel`, managerToken)
+                .set('Idempotency-Key', cancelKey).send(cancelBody).expect(500));
+            } finally {
+              fault.mockRestore();
+            }
+            expect(cancellationAuditInserted, 'AUD-01: failure injected after the real audit INSERT').toBe(true);
+            expect((await tx.contract.findUniqueOrThrow({ where: { id: cancelId }, select: { status: true } })).status).toBe('HOLD');
+            expect(await tx.settlement.count({ where: { contractId: cancelId } })).toBe(0);
+            expect(await tx.auditLog.count({ where: { action: 'contract.cancel', entity: 'contract', entityId: cancelId } })).toBe(0);
+            // The key is stored after the action: a failed action must not cache an error.
+            expect(await tx.pricingIdempotencyKey.count({ where: {
+              actorId: manager.id, route: 'POST /contracts/:id/cancel', key: cancelKey,
+            } })).toBe(0);
+            expect(await tx.invoice.findUniqueOrThrow({ where: { id: cancelInvoiceId }, include: { payment: true } })).toEqual(paidSnapshot);
+            const outsideCancel = remember('foreign manager cancel denied', await api('post', `/contracts/${cancelId}/cancel`, foreignManagerToken)
+              .send(cancelBody).expect(403));
+            expect(outsideCancel.body.error.code).toBe('OUT_OF_SCOPE');
+            const cancelled = remember('cancel paid HOLD', await api('post', `/contracts/${cancelId}/cancel`, managerToken)
+              .set('Idempotency-Key', cancelKey).send(cancelBody).expect(201));
+            expect(cancelled.body.data).toMatchObject({ id: cancelId, status: 'CANCELLED', cancelReason: cancelBody.reason,
+              depositInvoice: { id: cancelInvoiceId, status: 'PAID' },
+              settlement: { deposit: 2_500_000, depositForfeit: 1_000_000, net: 1_500_000, refundPaidAt: null } });
+            expect(await tx.settlement.findUniqueOrThrow({ where: { contractId: cancelId }, select: {
+              deposit: true, depositForfeit: true, net: true, refundPaidAt: true, finalInvoiceId: true,
+              lastPeriodAmount: true, remainingRent: true, previousDebt: true, damages: true,
+            } })).toEqual({ deposit: 2_500_000, depositForfeit: 1_000_000, net: 1_500_000,
+              refundPaidAt: null, finalInvoiceId: null, lastPeriodAmount: 0, remainingRent: 0, previousDebt: 0, damages: 0 });
+            const cancelReplay = remember('cancel replay', await api('post', `/contracts/${cancelId}/cancel`, managerToken)
+              .set('Idempotency-Key', cancelKey).send(cancelBody).expect(201));
+            expect(cancelReplay.body).toEqual(cancelled.body);
+            remember('cancel key different body', await api('post', `/contracts/${cancelId}/cancel`, managerToken)
+              .set('Idempotency-Key', cancelKey).send({ ...cancelBody, depositKept: 0 }).expect(409));
+            remember('cancel repeat without key', await api('post', `/contracts/${cancelId}/cancel`, managerToken).send(cancelBody).expect(409));
+            expect(await tx.settlement.count({ where: { contractId: cancelId } })).toBe(1);
+            expect(await tx.auditLog.count({ where: { action: 'contract.cancel', entity: 'contract', entityId: cancelId } })).toBe(1);
+            expect(await tx.invoice.findUniqueOrThrow({ where: { id: cancelInvoiceId }, include: { payment: true } })).toEqual(paidSnapshot);
+            expect(JSON.stringify(await tx.user.findUniqueOrThrow({ where: { id: tenant.id } })) === JSON.stringify(tenantSnapshot),
+              'CON-12: cancellation preserves the reused tenant account').toBe(true);
+            expect(await tx.room.findFirst({ where: { id: cancelRoom.id, ...publicRoomWhere(handoverDay) }, select: { id: true } }))
+              .toEqual({ id: cancelRoom.id });
+            const cancelledDetail = remember('tenant reads cancelled contract', await api('get', `/me/contracts/${cancelId}`, tenantToken).expect(200));
+            expect(cancelledDetail.body.data.status).toBe('CANCELLED');
+            const activeDetail = remember('tenant keeps active contract', await api('get', `/me/contracts/${contractId}`, tenantToken).expect(200));
+            expect(activeDetail.body.data.status).toBe('ACTIVE');
+
             savedHash = (await tx.user.findUniqueOrThrow({ where: { id: tenant.id }, select: { passwordHash: true } })).passwordHash;
             encryptedCccd = (await tx.occupant.findFirstOrThrow({ where: { contractId, isSigner: true }, select: { idNumberEnc: true } })).idNumberEnc!;
             const auditBodies = await tx.auditLog.findMany({ where: { actorId: { in: owned.users } }, select: { before: true, after: true } });
@@ -276,7 +420,7 @@ describe('BE-P3-19: real PostgreSQL contract workflow with outer rollback', () =
             app = undefined;
           }
           throw rollback;
-        }, { maxWait: 10_000, timeout: 240_000 });
+        }, { maxWait: 10_000, timeout: 420_000 });
         throw new Error('Workflow outer transaction unexpectedly committed');
       } catch (error) {
         if (error !== rollback) throw error;
@@ -293,20 +437,24 @@ describe('BE-P3-19: real PostgreSQL contract workflow with outer rollback', () =
         prisma.occupant.count({ where: { contractId: { in: owned.contracts } } }),
         prisma.invoice.count({ where: { id: { in: owned.invoices } } }),
         prisma.invoiceLine.count({ where: { invoiceId: { in: owned.invoices } } }),
-        prisma.payment.count({ where: { id: { in: owned.payments } } }),
+        prisma.payment.count({ where: { invoiceId: { in: owned.invoices } } }),
+        prisma.meterReading.count({ where: { OR: [
+          { roomId: { in: owned.rooms } }, { contractId: { in: owned.contracts } },
+        ] } }),
+        prisma.settlement.count({ where: { contractId: { in: owned.contracts } } }),
         prisma.session.count({ where: { userId: { in: owned.users } } }),
         prisma.auditLog.count({ where: { actorId: { in: owned.users } } }),
         prisma.pricingIdempotencyKey.count({ where: { actorId: { in: owned.users } } }),
       ]);
       const tableNames = ['users', 'buildings', 'rooms', 'ratePlans', 'rateTiers', 'contracts', 'occupants',
-        'invoices', 'invoiceLines', 'payments', 'sessions', 'auditLogs', 'idempotencyKeys'];
+        'invoices', 'invoiceLines', 'payments', 'meterReadings', 'settlements', 'sessions', 'auditLogs', 'idempotencyKeys'];
       expect(Object.fromEntries(tableNames.map((name, index) => [name, remaining[index]])), 'No fixture rows or paid deposit liability')
         .toEqual(Object.fromEntries(tableNames.map(name => [name, 0])));
       const restoredSettings = await prisma.setting.findMany({
         where: { key: { in: ['bank_account', 'contract_template'] } }, select: { key: true, value: true }, orderBy: { key: 'asc' },
       });
       expect(JSON.stringify(restoredSettings) === JSON.stringify(originalSettings), 'Bank/template values restored by rollback').toBe(true);
-      console.log(`BE-P3-19 ${runId}: outer rollback verified; no fixture rows retained (sequences may advance)`);
+      console.log(`BE-P3-22 ${runId}: outer rollback verified; no fixture rows retained (sequences may advance)`);
     } finally {
       try {
         await app?.close();
