@@ -4,6 +4,8 @@ Ngày 19/11/2026, bắt đầu từ `11379c8`. Chủ dự án xác nhận BE-P3-
 
 **Cập nhật 20/11/2026: BE-P3-18..19 đã nghiệm thu; P3-3 chờ commit.** Chủ dự án xác nhận “pass hết r nhé”, khép bộ backend đầy đủ; E2E DB dev đạt 2/2 file, 5/5 test và cleanup đã xác minh. Reviewer DUYỆT, build/lint đạt. Không có số đếm/thời lượng unit trong xác nhận mới nên không suy đoán. Mã mới chưa commit; HEAD vẫn `11379c8`.
 
+**Xác minh commit khi bắt đầu BE-P3-20 ngày 20/11/2026:** Git đã có `b4da02b`, workspace sạch; P3-3 xong. Các ghi nhận chờ commit bên dưới phản ánh thời điểm báo cáo trước commit, không còn là việc chờ hiện tại.
+
 ## Hành vi
 
 - Staff có `GET /contracts/:id/scan`, `/print`; tenant có `/me/contracts/:id/scan`, `/print`, bên cạnh list/detail và QR đã có. Guest bị từ chối trước lookup. Tenant khác nhận 404; staff khác tòa nhận 403. Scope được đọc lại dưới mapping lock; truy vấn khóa tenant cũng ràng buộc tenant_id.

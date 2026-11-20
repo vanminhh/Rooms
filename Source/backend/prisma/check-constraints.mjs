@@ -140,7 +140,40 @@ const cases = [
   ['Xe', 'Xe gửi theo dịch vụ của tòa khác', `INSERT INTO vehicles (contract_id, building_id, service_id, plate, type, registered_at) VALUES (1,1,3,'29A12345','MOTORBIKE','2026-09-15')`, 'vehicles_service_id_building_id_fkey'],
   ['Xe', 'Một biển số đang gửi ở hai nơi', `INSERT INTO vehicles (contract_id, building_id, service_id, plate, type, registered_at) VALUES (1,1,2,'29A12345','MOTORBIKE','2026-09-15'),(1,1,2,'29A12345','MOTORBIKE','2026-09-16')`, 'vehicles_plate_active'],
   ['Xe', 'Biển số cũ đã ngừng gửi, đăng ký lại', `INSERT INTO vehicles (contract_id, building_id, service_id, plate, type, registered_at, is_active, removed_at) VALUES (1,1,2,'29A12345','MOTORBIKE','2026-09-15',false,'2026-10-01'),(1,1,2,'29A12345','MOTORBIKE','2026-10-02',true,NULL)`, 'ok'],
-  ['Điện nước', 'Hai số điện cùng ngày cho một phòng', `INSERT INTO meter_readings (room_id, kind, value, read_on, read_by_id) VALUES (1,'ELECTRIC',1284,'2026-09-15',2),(1,'ELECTRIC',1290,'2026-09-15',2)`, 'meter_readings_room_id_kind_read_on_key'],
+  ['Điện nước', 'MTR-02: hai số điện chưa gắn hợp đồng cùng ngày cho một phòng', `INSERT INTO meter_readings (room_id, kind, value, read_on, read_by_id) VALUES (1,'ELECTRIC',1284,'2026-09-15',2),(1,'ELECTRIC',1290,'2026-09-15',2)`, 'meter_readings_room_daily_unassigned_key'],
+  ['Điện nước', 'CON-10: opening bắt buộc gắn hợp đồng', `INSERT INTO meter_readings (room_id, kind, value, read_on, read_by_id, is_opening) VALUES (1,'ELECTRIC',1290,'2026-11-30',2,true)`, 'meter_readings_opening_contract'],
+  ['Điện nước', 'CON-10: chỉ một opening mỗi hợp đồng và loại, kể cả khác ngày', `INSERT INTO meter_readings (room_id, contract_id, kind, value, read_on, read_by_id, is_opening) VALUES (1,1,'ELECTRIC',1290,'2026-11-29',2,true),(1,1,'ELECTRIC',1295,'2026-11-30',2,true)`, 'meter_readings_contract_opening_key'],
+  ['Điện nước', 'CON-10 / MTR-06: opening điện và nước riêng của hợp đồng', `INSERT INTO meter_readings (room_id, contract_id, kind, value, read_on, read_by_id, is_opening) VALUES (1,1,'ELECTRIC',1290,'2026-11-30',2,true),(1,1,'WATER',100,'2026-11-30',2,true)`, 'ok'],
+  ['Điện nước', 'MTR-02: chỉ số thường trùng hợp đồng, phòng, loại và ngày', `INSERT INTO meter_readings (room_id, contract_id, kind, value, read_on, read_by_id) VALUES (1,1,'ELECTRIC',1350,'2026-11-30',2),(1,1,'ELECTRIC',1355,'2026-11-30',2)`, 'meter_readings_contract_daily_key'],
+  ['Điện nước', 'MTR-02: chỉ số thường khác ngày của cùng hợp đồng', `INSERT INTO meter_readings (room_id, contract_id, kind, value, read_on, read_by_id) VALUES (1,1,'ELECTRIC',1350,'2026-11-29',2),(1,1,'ELECTRIC',1355,'2026-11-30',2)`, 'ok'],
+  ['Điện nước', 'CON-10 / MTR-02: opening và chốt tháng cùng hợp đồng, phòng, loại, ngày',
+    `INSERT INTO meter_readings (room_id, contract_id, kind, value, read_on, read_by_id, is_opening) VALUES (1,1,'ELECTRIC',1290,'2026-11-30',2,true),(1,1,'ELECTRIC',1350,'2026-11-30',2,false);
+     DO $$ BEGIN
+       IF (SELECT max(value) FILTER (WHERE NOT is_opening) - max(value) FILTER (WHERE is_opening) FROM meter_readings WHERE contract_id=1 AND kind='ELECTRIC') <> 60
+       THEN RAISE EXCEPTION 'incorrect opening baseline'; END IF;
+     END $$`, 'ok'],
+  ['Điện nước', 'MTR-02: chỉ số chưa gắn hợp đồng không chặn chỉ số hợp đồng cùng ngày', `INSERT INTO meter_readings (room_id, contract_id, kind, value, read_on, read_by_id) VALUES (1,NULL,'ELECTRIC',1284,'2026-11-30',2),(1,1,'ELECTRIC',1350,'2026-11-30',2)`, 'ok'],
+  ['Điện nước', 'CON-10: không được bỏ liên kết hợp đồng của opening', `INSERT INTO meter_readings (room_id, contract_id, kind, value, read_on, read_by_id, is_opening) VALUES (1,1,'ELECTRIC',1290,'2026-11-30',2,true); UPDATE meter_readings SET contract_id=NULL WHERE is_opening`, 'meter_readings_opening_contract'],
+  ['Điện nước', 'MTR-02: chỉ số cũ mặc định là regular, giữ nguyên dữ liệu',
+    `INSERT INTO meter_readings (id,room_id,contract_id,kind,value,read_on,read_by_id,note) VALUES (500,1,1,'ELECTRIC',1284,'2026-11-30',2,'historic reading');
+     DO $$ BEGIN
+       IF NOT EXISTS (SELECT 1 FROM meter_readings WHERE id=500 AND value=1284 AND contract_id=1 AND read_on='2026-11-30' AND note='historic reading' AND NOT is_opening)
+       THEN RAISE EXCEPTION 'regular default changed historic reading'; END IF;
+     END $$`, 'ok'],
+  ['Điện nước', 'CON-10 / MTR-02: khách cũ chốt, khách mới opening và chốt tháng cùng ngày, không tính phòng trống',
+    `UPDATE contracts SET status='ENDED' WHERE id=1;
+     INSERT INTO contracts (id,code,building_id,room_id,tenant_id,start_date,term_months,end_date,rent,deposit,status,created_by_id,updated_at)
+       VALUES (2,'HD000002',1,1,5,'2026-11-30',3,'2027-02-27',2500000,0,'HOLD',2,now());
+     INSERT INTO meter_readings (id,room_id,contract_id,kind,value,read_on,read_by_id,is_opening) VALUES
+       (500,1,1,'ELECTRIC',1284,'2026-11-30',2,false),
+       (501,1,2,'ELECTRIC',1290,'2026-11-30',2,true),
+       (502,1,2,'ELECTRIC',1350,'2026-11-30',2,false);
+     DO $$ BEGIN
+       IF (SELECT count(*) FROM meter_readings WHERE room_id=1 AND kind='ELECTRIC' AND read_on='2026-11-30') <> 3
+         OR (SELECT value FROM meter_readings WHERE id=500) <> 1284
+         OR (SELECT max(value) FILTER (WHERE NOT is_opening) - max(value) FILTER (WHERE is_opening) FROM meter_readings WHERE contract_id=2 AND kind='ELECTRIC') <> 60
+       THEN RAISE EXCEPTION 'handover lost history or charged vacancy'; END IF;
+     END $$`, 'ok'],
   ['Điện nước', 'Thay đồng hồ mà không ghi số cuối đồng hồ cũ', `INSERT INTO meter_readings (room_id, kind, value, read_on, read_by_id, is_meter_replaced) VALUES (1,'ELECTRIC',0,'2026-09-20',2,true)`, 'meter_readings_values'],
   ['Hóa đơn', 'Hai hóa đơn cho cùng kỳ 1', `INSERT INTO invoices (contract_id, type, period_no, period_start, period_end, updated_at) VALUES (1,'MONTHLY',1,'2026-09-15','2026-10-14',now()),(1,'MONTHLY',1,'2026-09-15','2026-10-14',now())`, 'invoices_one_per_period'],
   ['Hóa đơn', 'Hủy hóa đơn kỳ 1 rồi lập lại', `INSERT INTO invoices (id, contract_id, type, period_no, period_start, period_end, status, cancel_reason, updated_at) VALUES (20,1,'MONTHLY',1,'2026-09-15','2026-10-14','CANCELLED','Sai chỉ số',now()); INSERT INTO invoices (contract_id, type, period_no, period_start, period_end, replaces_id, updated_at) VALUES (1,'MONTHLY',1,'2026-09-15','2026-10-14',20,now())`, 'ok'],

@@ -72,7 +72,7 @@ For MONTHLY period k, rates = approved plans effective at `period_start` (RATE-0
 | `SERVICE` unit PERSON (each chosen service) | occupants | service price |
 | `PARKING` per VEHICLE service | vehicles of that service | service price |
 
-- **BIL-07** `amount = quantity × unit_price` per line; `total` = sum. `meta` stores opening/closing readings and dates.
+- **BIL-07** `amount = quantity × unit_price` per line; `total` = sum. `meta` stores opening/closing reading ids, values and dates. Owner 20/11/2026 (MTR-02): the first period's electric and PER_M3 water consumption starts at this contract's actual move-in baseline; subsequent periods start at this contract's preceding closing reading. The previous tenant's final reading closes their utilities and stays in their history; it is not the new tenant's baseline. Vacancy consumption between tenants is not assigned to either tenant. Distinct handover and month-end readings may share a date. PER_PERSON water continues to use occupants, not consumption (MTR-06).
 - **BIL-08** <a id="issue"></a>Issue: status `UNPAID`, `issue_date` = today, `due_date` = the 9th of the month the invoice belongs to after its period (the billing month); unpaid after the 9th it is overdue (D-40). Managers enter the readings so that invoices go out on the 1st. Notify tenant (in-app + email) with VietQR.
 - **BIL-09** Worked example (must be a unit test; the BIL-01 contract, so no partial month): start 01/09/2026, rent 2.500.000, readings electric 1.284 → 1.368, water 6 m³ PER_M3 at 15.000, Wifi (ROOM) 100.000, Rác (PERSON) 30.000 × 2, 1 motorbike 100.000, seed tiers → 2.500.000 + 150.000 + 119.000 + 90.000 + 100.000 + 60.000 + 100.000 = **3.119.000 đ**, issued 01/10/2026, due 09/10/2026.
 

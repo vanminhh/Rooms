@@ -92,6 +92,10 @@ ALTER TABLE vehicles ADD CONSTRAINT vehicles_removed CHECK (is_active OR removed
 
 -- ── Điện nước, hóa đơn ──
 ALTER TABLE meter_readings ADD CONSTRAINT meter_readings_values CHECK (value >= 0 AND (NOT is_meter_replaced OR old_meter_final IS NOT NULL));
+ALTER TABLE meter_readings ADD CONSTRAINT meter_readings_opening_contract CHECK (NOT is_opening OR contract_id IS NOT NULL);
+CREATE UNIQUE INDEX meter_readings_contract_opening_key ON meter_readings (contract_id, kind) WHERE is_opening;
+CREATE UNIQUE INDEX meter_readings_contract_daily_key ON meter_readings (room_id, contract_id, kind, read_on) WHERE NOT is_opening AND contract_id IS NOT NULL;
+CREATE UNIQUE INDEX meter_readings_room_daily_unassigned_key ON meter_readings (room_id, kind, read_on) WHERE NOT is_opening AND contract_id IS NULL;
 
 ALTER TABLE invoices ADD CONSTRAINT invoices_total CHECK (total >= 0);
 ALTER TABLE invoices ADD CONSTRAINT invoices_issued_dates CHECK (status IN ('DRAFT', 'CANCELLED') OR (issue_date IS NOT NULL AND due_date IS NOT NULL AND due_date >= issue_date));

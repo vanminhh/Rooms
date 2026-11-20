@@ -93,6 +93,10 @@ describe('BE-P2-01 / BE-P2-02: mapDbError, one test per row of PLAN 2.2', () => 
         'users_phone_key',
         'users_email_key',
         'viewings_one_open_per_user_room',
+        'meter_readings_contract_opening_key',
+        'meter_readings_contract_daily_key',
+        'meter_readings_room_daily_unassigned_key',
+        'meter_readings_opening_contract',
         'rooms_building_id_code_key',
         'room_prices_one_pending',
         'rate_plans_one_pending',
@@ -106,5 +110,17 @@ describe('BE-P2-01 / BE-P2-02: mapDbError, one test per row of PLAN 2.2', () => 
 
   it.each(['INVOICE_NOT_UNPAID', 'PAYMENT_AMOUNT_MISMATCH'] as const)('BIL-11: trigger %s maps without leaking the raw DB message', code => {
     expect(mapDbError(dbMessage(`ERROR: ${code}: private invoice details`))).toEqual({ code: ErrorCode[code] });
+  });
+
+  it.each([
+    'meter_readings_contract_opening_key', 'meter_readings_contract_daily_key', 'meter_readings_room_daily_unassigned_key',
+    ['contract_id', 'kind'], ['contractId', 'kind'], ['room_id', 'contract_id', 'kind', 'read_on'],
+    ['roomId', 'contractId', 'kind', 'readOn'], ['room_id', 'kind', 'read_on'], ['roomId', 'kind', 'readOn'],
+  ])('MTR-02/API-03: duplicate meter reading %j maps to CONFLICT_STATE', target => {
+    expect(mapDbError(p2002(target))).toEqual({ code: ErrorCode.CONFLICT_STATE });
+  });
+
+  it('MTR-02/API-03: opening without contract maps without exposing the raw CHECK', () => {
+    expect(mapDbError(dbMessage('private row violates meter_readings_opening_contract'))).toEqual({ code: ErrorCode.CONFLICT_STATE });
   });
 });

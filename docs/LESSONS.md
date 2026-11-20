@@ -6,6 +6,7 @@ Read this before the first task of any part. Each line is a mistake that really 
 
 ## Tests and expected values
 
+- Run scoped noEmit for new HTTP specs as well as Vitest and lint; Supertest.send rejected an unknown-typed test body even though the native HTTP suite passed, fixed with an erased test-only type assertion [BE-P3-20, 20/11/2026].
 - Adding a seeded setting also changes EXPECTED_COUNTS in seed.spec.ts; the draft contract template made the repeatable-seed check fail at two settings instead of the spec's three [BE-P3-18, 19/11/2026].
 - Do not assert a specific dash glyph for optional print data when the spec does not choose one; the missing-signer-details fixture failed on hyphen versus em dash [BE-P3-18, 19/11/2026].
 - Mark a transaction-barrier promise as intentionally ignored when the awaited service call already waits for that transaction; seven race setup calls failed no-floating-promises lint [BE-P3-17, 19/11/2026].
@@ -48,6 +49,7 @@ Read this before the first task of any part. Each line is a mistake that really 
 
 ## Commands and environment
 
+- When generating Prisma from an isolated temp schema to avoid loading the real .env, use the installed generator's absolute path and client output; the default provider could not resolve @prisma/client from the temp directory [BE-P3-20, 20/11/2026].
 - PowerShell reads POWERSHELL_TELEMETRY_OPTOUT during startup; setting it inside exec did not stop telemetry-related auto-review rejection, so do not present that setting as a verified host-egress control [BE-P3-17, 19/11/2026].
 - When a backend test stops in `beforeAll` while builds run concurrently, rerun that file alone with a process-local `--hookTimeout` before diagnosing assertion failures. The isolated HTTP test reached the expected loopback restriction, and the same file passed with in-memory HTTP [BE-P3-11, 18/11/2026].
 - When the full backend run hits Vitest's per-test limit, retry the affected files with `--maxWorkers=1` and a process-local `--testTimeout` before diagnosing the assertion. The password and Prisma suites passed in isolation after six cases hit the five-second limit [BE-P3-11, 18/11/2026].

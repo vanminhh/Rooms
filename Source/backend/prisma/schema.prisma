@@ -586,6 +586,7 @@ model MeterReading {
   photoUrl        String?   @map("photo_url")
   isMeterReplaced Boolean   @default(false) @map("is_meter_replaced")
   oldMeterFinal   Int?      @map("old_meter_final") // số cuối của đồng hồ cũ khi thay
+  isOpening       Boolean   @default(false) @map("is_opening") // mốc đầu vào riêng của hợp đồng
   readById        Int       @map("read_by_id")
   note            String?
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
@@ -594,7 +595,9 @@ model MeterReading {
   contract Contract? @relation(fields: [contractId], references: [id], onDelete: SetNull)
   readBy   User      @relation(fields: [readById], references: [id], onDelete: Restrict)
 
-  @@unique([roomId, kind, readOn]) // mỗi ngày một số; ngày trả và ngày vào ở dùng chung
+  // Opening and regular daily uniqueness are partial indexes in constraints.sql.
+  @@index([roomId, kind, readOn])
+  @@index([contractId, kind, readOn])
   @@map("meter_readings")
 }
 

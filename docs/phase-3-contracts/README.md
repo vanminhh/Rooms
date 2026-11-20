@@ -35,6 +35,14 @@ Quyết định cũ vẫn áp dụng: D-01 (tài khoản thuộc người ký), 
 | Q-P3-3 | Phase 3 chỉ lập quyết toán và hiện số tiền phải trả; ghi "đã trả lại tiền" làm ở **Phase 4** | BE-P3-21 |
 | Q-P3-4 | Thiếu `CCCD_KEY` thì **app không khởi động** | BE-P3-02 |
 
+Chủ dự án chốt thêm ngày 20/11/2026:
+
+| Mã | Câu trả lời / việc cần duyệt | Ghi vào |
+|---|---|---|
+| Q-P3-12/13 | Khách cũ ghi chỉ số khi kết thúc thuê để chốt hóa đơn; khách mới có điện/nước hiện tại lúc vào ở làm baseline riêng. Cuối tháng tính từ baseline khách mới; thay quy tắc cũ cùng ngày dùng chung một row | CON-10, MTR-02/10, BIL-07, BE-P3-20 |
+| Q-P3-14 | Đã duyệt sửa schema và tạo migration lưu baseline riêng; đã triển khai và kiểm offline, [SQL proposal](plans/P3-4/SCHEMA-PROPOSAL-BE-P3-20.md) khớp migration. Owner đã kiểm tra không lỗi và chốt BE-P3-20 ngày 20/11 | BE-P3-20 |
+| Q-P3-15 | Đã duyệt apply migration `20261120000000_contract_meter_openings`, sau đó owner kiểm tra và nghiệm thu BE-P3-20. Ghi nhận xác nhận owner trong [checkpoint](plans/P3-4/CHECKPOINT-BE-P3-20.md); không tự thêm output migrate/full suite chưa được cung cấp, không yêu cầu duyệt/kiểm lại cùng bước. Chỉ chờ commit | BE-P3-20 |
+
 Câu hỏi mới phát sinh khi làm ghi vào mục "Questions for the owner" của file task, rồi chép lên bảng này.
 
 ## 3. Ma trận yêu cầu

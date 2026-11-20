@@ -6,11 +6,13 @@ import { CreateContractDto } from './dto/create-contract.dto.js';
 import { SignContractDto } from './dto/sign-contract.dto.js';
 import { ContractPasswordService } from './contract-password.service.js';
 import { ContractDocumentsService } from './contract-documents.service.js';
+import { ContractMoveInService } from './contract-move-in.service.js';
+import { MoveInContractDto } from './dto/move-in-contract.dto.js';
 
 @Controller('contracts')
 @Roles('BOSS', 'MANAGER')
 export class ContractsController {
-  constructor(private readonly contracts: ContractsService, private readonly passwords: ContractPasswordService, private readonly documents: ContractDocumentsService) {}
+  constructor(private readonly contracts: ContractsService, private readonly passwords: ContractPasswordService, private readonly documents: ContractDocumentsService, private readonly moveIns: ContractMoveInService) {}
 
   @Get()
   list(@CurrentUser() actor: AuthUser, @Query() query: ContractsQueryDto) {
@@ -49,5 +51,11 @@ export class ContractsController {
   @Header('Cache-Control', 'no-store')
   resetPassword(@CurrentUser() actor: AuthUser, @Param() params: ContractIdParamsDto, @Ip() ip: string) {
     return this.passwords.resetPassword(actor, params.id, ip);
+  }
+
+  @Post(':id/move-in')
+  @Header('Cache-Control', 'no-store')
+  moveIn(@CurrentUser() actor: AuthUser, @Param() params: ContractIdParamsDto, @Body() dto: MoveInContractDto, @Ip() ip: string) {
+    return this.moveIns.moveIn(actor, params.id, dto, ip);
   }
 }

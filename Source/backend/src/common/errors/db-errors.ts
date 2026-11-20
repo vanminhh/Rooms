@@ -22,6 +22,10 @@ export const DB_ERROR_MAP: Record<string, DbErrorMapping> = {
   users_phone_key: { code: ErrorCode.PHONE_TAKEN },
   users_email_key: { code: ErrorCode.EMAIL_TAKEN },
   viewings_one_open_per_user_room: { code: ErrorCode.CONFLICT_STATE },
+  meter_readings_contract_opening_key: { code: ErrorCode.CONFLICT_STATE },
+  meter_readings_contract_daily_key: { code: ErrorCode.CONFLICT_STATE },
+  meter_readings_room_daily_unassigned_key: { code: ErrorCode.CONFLICT_STATE },
+  meter_readings_opening_contract: { code: ErrorCode.CONFLICT_STATE },
   rooms_building_id_code_key: {
     code: ErrorCode.VALIDATION_FAILED,
     fields: { code: 'Mã phòng đã có trong tòa (kể cả phòng đã khóa)' },
@@ -52,6 +56,17 @@ export function mapDbError(e: unknown): DbErrorMapping | null {
     // Prisma puts the violated index name in meta.target (a string, or an array on some versions).
     const target = meta?.target;
     const targets: unknown[] = Array.isArray(target) ? target : [target];
+    const meterColumns = targets.map(value => {
+      if (value === 'roomId') return 'room_id';
+      if (value === 'contractId') return 'contract_id';
+      if (value === 'readOn') return 'read_on';
+      return value;
+    });
+    if (meterColumns.every(value => typeof value === 'string') && [
+      'contract_id,kind', 'contract_id,kind,read_on,room_id', 'kind,read_on,room_id',
+    ].includes((meterColumns as string[]).sort().join(','))) {
+      return { code: ErrorCode.CONFLICT_STATE };
+    }
     if (targets.length === 2 &&
         ((targets.includes('user_id') && targets.includes('room_id')) ||
          (targets.includes('userId') && targets.includes('roomId')))) {

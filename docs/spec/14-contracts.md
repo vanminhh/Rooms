@@ -43,7 +43,7 @@ stateDiagram-v2
 
 ## Move-in
 
-- **CON-10** `POST /contracts/:id/move-in` `{ electric, water, readOn, note? }` (no photo, D-38). Requires signed, deposit invoice PAID (or deposit = 0) → else `DEPOSIT_NOT_PAID`. Records first meter readings (water reading required even if `water_mode = PER_PERSON`, for history), sets `moved_in_at`, status ACTIVE.
+- **CON-10** `POST /contracts/:id/move-in` `{ electric, water, readOn, note?, electricReplacement?: { oldMeterFinal }, waterReplacement?: { oldMeterFinal } }` (no photo, D-38). Electric/water and any oldMeterFinal are nonnegative integers within the DB Int range. A replacement object declares replacement of that meter (MTR-04): electric/water is the new meter's first reading, oldMeterFinal the old meter's last reading. Requires signed HOLD, deposit invoice PAID (or deposit = 0) → else `DEPOSIT_NOT_PAID`; other lifecycle conflicts return `CONFLICT_STATE`. The manager enters the room's actual current electric and water readings when the new tenant moves in (water required even if `water_mode = PER_PERSON`, for history). These are this contract's own opening readings; never reuse or overwrite the previous tenant's closing readings, even on the same day (owner 20/11/2026, MTR-02). Sets `moved_in_at`, status ACTIVE; both readings and audit `contract.move_in` are in the same transaction. First-period utility consumption starts from this baseline, excluding consumption between tenants; monthly billing itself is Phase 4. Ambiguous same-day reset histories are subject to A-24.
 - **CON-11** `readOn` SHOULD equal `start_date`; if different by more than 3 days, require a note. Billing still anchors on `start_date`.
 
 ## Cancel (before move-in)
