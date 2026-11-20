@@ -38,7 +38,7 @@ test('UI-30 · AUTH-10/UI-02: approved image copy and account actions are presen
 
 test('UI-30 · UI-08/KIT-05: layout has labels, focusable actions, 360px image removal and reduced motion', () => {
   assert.ok(page.includes('aria-labelledby="login-title"'))
-  assert.ok(page.includes('<h1 id="login-title">Đăng nhập</h1>'))
+  assert.ok(page.includes('<h1 id="login-title">{title}</h1>')) // title: plain or by entry (AUTH-16)
   assert.match(css, /@media \(max-width: 480px\)[\s\S]*\.auth-login-visual\s*\{\s*display: none;/)
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/)
   assert.ok(!css.includes('overflow-x: auto'))

@@ -17,13 +17,32 @@ export function postLoginPath(role: Role, rawNext: string | null): string {
   return safeNext(rawNext) ?? homeOf(role)
 }
 
+// AUTH-16, D-43: the entry a login came through. `?loi-vao=thue` -> TENANT, `?loi-vao=quan-ly` -> STAFF; anything else is a plain login.
+export type Portal = 'TENANT' | 'STAFF'
+
+export function portalOf(param: string | null): Portal | undefined {
+  if (param === 'thue') return 'TENANT'
+  if (param === 'quan-ly') return 'STAFF'
+  return undefined
+}
+
+// The entry of the area a signed-out visitor tried to open: /thue... and /ql... only.
+export function entryOfPath(pathname: string): 'thue' | 'quan-ly' | null {
+  if (pathname === '/thue' || pathname.startsWith('/thue/')) return 'thue'
+  if (pathname === '/ql' || pathname.startsWith('/ql/')) return 'quan-ly'
+  return null
+}
+
 // Order matters: the forced password change (AUTH-05) is checked before the role (AUTH-06).
 export function guardRedirect(
   user: Pick<Me, 'role' | 'mustChangePassword'> | null,
   location: { pathname: string; search: string },
   allow: readonly Role[] | 'any',
 ): string | null {
-  if (!user) return `/dang-nhap?next=${encodeURIComponent(location.pathname + location.search)}`
+  if (!user) {
+    const entry = entryOfPath(location.pathname)
+    return `/dang-nhap?${entry ? `loi-vao=${entry}&` : ''}next=${encodeURIComponent(location.pathname + location.search)}`
+  }
   if (user.mustChangePassword && location.pathname !== '/doi-mat-khau') return '/doi-mat-khau'
   if (allow !== 'any' && !allow.includes(user.role)) return homeOf(user.role)
   return null

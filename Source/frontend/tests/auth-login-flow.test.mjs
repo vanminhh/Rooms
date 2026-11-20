@@ -563,7 +563,7 @@ test('AUTH-T2/AUTH-06: refresh 401 means signed out with status ready: no error 
   assert.equal(callsTo(app, 'GET', '/auth/me').length, 0, `me is not called after a 401 refresh; calls ${JSON.stringify(app.api.calls.map(c => [c.method, c.url, c.headers.Authorization]))}`)
   assert.equal(callsTo(app, 'POST', '/auth/refresh').length, 1)
   await app.router.navigate('/thue')
-  await settle(app, '/dang-nhap?next=%2Fthue', 'signed-out /thue')
+  await settle(app, '/dang-nhap?loi-vao=thue&next=%2Fthue', 'signed-out /thue')
   await app.stop()
 })
 
@@ -638,8 +638,8 @@ test('Q6-A/A17: with a failed start-up public pages stay usable: "/" shows the h
 // ---------- router runtime flow with the real routes ----------
 test('AUTH-06: route guard table at runtime (signed out -> /dang-nhap?next=, wrong role -> own home)', async () => {
   const table = [
-    [undefined, '/thue', '/dang-nhap?next=%2Fthue'],
-    [undefined, '/ql', '/dang-nhap?next=%2Fql'],
+    [undefined, '/thue', '/dang-nhap?loi-vao=thue&next=%2Fthue'],
+    [undefined, '/ql', '/dang-nhap?loi-vao=quan-ly&next=%2Fql'],
     ['tenant', '/ql', '/thue'],
     ['manager', '/thue', '/ql'],
     ['boss', '/thue', '/ql'],
@@ -795,7 +795,7 @@ test('FE-LOGIN-10/T2: "Đăng xuất" is a type=button; click posts /auth/logout
     assert.ok(app.history.every(p => !p.startsWith('/dang-nhap')), `no visit to /dang-nhap: ${JSON.stringify(app.history)}`)
     await until(() => navLinks(app).some(([label]) => label === 'Đăng nhập'), 'header shows Đăng nhập')
     await app.router.navigate(home)
-    await settle(app, `/dang-nhap?next=${encodeURIComponent(home)}`, `guard after sign-out ${session}`)
+    await settle(app, `/dang-nhap?loi-vao=${home === '/ql' ? 'quan-ly' : 'thue'}&next=${encodeURIComponent(home)}`, `guard after sign-out ${session}`)
     await app.stop()
   }
 })
@@ -985,7 +985,7 @@ test('Q7-A/T2: "Đăng xuất" under the forced form is a type=button that posts
   assert.ok(app.history.every(p => !p.startsWith('/dang-nhap')), `no visit to /dang-nhap: ${JSON.stringify(app.history)}`)
   await until(() => navLinks(app).some(([label]) => label === 'Đăng nhập'), 'header shows Đăng nhập')
   await app.router.navigate('/thue')
-  await settle(app, '/dang-nhap?next=%2Fthue', 'guard after sign-out')
+  await settle(app, '/dang-nhap?loi-vao=thue&next=%2Fthue', 'guard after sign-out')
   await app.stop()
 })
 
@@ -1648,7 +1648,7 @@ test('AUTH-06: right role keeps its account URL (tenant /thue/tai-khoan, manager
 test('AUTH-06: signed out on the account routes goes to /dang-nhap?next=<encoded path>', async () => {
   for (const path of ['/ql/tai-khoan', '/thue/tai-khoan']) {
     const app = await mount(path)
-    await settle(app, `/dang-nhap?next=${encodeURIComponent(path)}`, `signed out ${path}`)
+    await settle(app, `/dang-nhap?loi-vao=${path.startsWith('/ql') ? 'quan-ly' : 'thue'}&next=${encodeURIComponent(path)}`, `signed out ${path}`)
     assert.equal(forms(app).length, 1, 'only the login form is shown')
     await app.stop()
   }
@@ -1704,7 +1704,7 @@ test('AUTH-T2/A6: expired token and a refresh that is refused -> signed out, /da
   app.api.cfg.refreshStatus = 401 // the refresh cookie is gone
   await typeInto(app, 'Số điện thoại liên hệ', '0900000002')
   submitProfile(app)
-  await settle(app, '/dang-nhap?next=%2Fql%2Ftai-khoan', 'after refused refresh')
+  await settle(app, '/dang-nhap?loi-vao=quan-ly&next=%2Fql%2Ftai-khoan', 'after refused refresh')
   assert.equal(patchCalls(app).length, 1, 'no retry when the refresh failed')
   await app.stop()
 })

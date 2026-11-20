@@ -64,7 +64,7 @@ for (const [path, page, layout, roles] of routeCases) {
 
     const location = { pathname: path, search: '?from=menu' }
     const allow = gate[0].route.element.props.allow
-    assert.equal(guardRedirect(null, location, allow), `/dang-nhap?next=${encodeURIComponent(path + location.search)}`)
+    assert.equal(guardRedirect(null, location, allow), `/dang-nhap?loi-vao=${path.startsWith('/ql') ? 'quan-ly' : 'thue'}&next=${encodeURIComponent(path + location.search)}`)
     for (const role of ['BOSS', 'MANAGER', 'TENANT', 'GUEST']) {
       const home = role === 'TENANT' ? '/thue' : role === 'GUEST' ? '/toi' : '/ql'
       assert.equal(guardRedirect({ role, mustChangePassword: false }, location, allow), roles.includes(role) ? null : home, role)

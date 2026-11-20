@@ -32,10 +32,10 @@ export interface PublicContact {
 export type UpdateMeInput = Partial<Record<'email' | 'contactPhone' | 'zaloUrl' | 'facebookUrl', string | null>> & { locale?: 'vi' | 'en' }
 
 // Bodies are built field by field so extra form values (e.g. confirmPassword) are never sent.
-export function loginRequest(input: { phone: string; password: string; remember: boolean }) {
+export function loginRequest(input: { phone: string; password: string; remember: boolean; portal?: 'TENANT' | 'STAFF' }) {
   return apiRequest<{ accessToken: string; user: Me }>('/auth/login', {
     method: 'POST',
-    body: { phone: input.phone, password: input.password, remember: input.remember },
+    body: { phone: input.phone, password: input.password, remember: input.remember, portal: input.portal },
   })
 }
 

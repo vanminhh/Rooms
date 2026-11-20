@@ -38,8 +38,8 @@ async function boot(user, lang = 'vi', videoSrc) {
 // UI-11 and AUTH-06 supply the destinations; SCOPE-05 forbids account mutations.
 for (const [label, user, expected] of [
   ['Tìm phòng', null, '/'],
-  ['Tôi đang thuê', null, '/dang-nhap?next=%2Fthue'],
-  ['Quản lý tòa nhà', null, '/dang-nhap?next=%2Fql'],
+  ['Tôi đang thuê', null, '/dang-nhap?loi-vao=thue&next=%2Fthue'],
+  ['Quản lý tòa nhà', null, '/dang-nhap?loi-vao=quan-ly&next=%2Fql'],
   ['Tôi đang thuê', { role: 'TENANT', mustChangePassword: false }, '/thue'],
   ['Quản lý tòa nhà', { role: 'MANAGER', mustChangePassword: false }, '/ql'],
   ['Quản lý tòa nhà', { role: 'BOSS', mustChangePassword: false }, '/ql'],

@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router'
 import { Checkbox, FormError, IllustrationLabel, PasswordField, RoomsButton, Spinner, TextField } from '../../components'
 import { useAuth } from '../../app/auth-context'
-import { postLoginPath, safeNext } from '../../app/guards'
+import { portalOf, postLoginPath, safeNext } from '../../app/guards'
 import { ContactInfo } from '../../features/auth/ContactInfo'
 import { writePending } from '../../features/auth/pendingVerification'
 import { loginSchema } from '../../features/auth/schemas'
@@ -31,6 +31,10 @@ export function LoginPage() {
   })
   useValidationLanguage(lang, errors, trigger)
   const next = safeNext(params.get('next'))
+  // AUTH-16, D-43: ?loi-vao= makes this page a login of one kind of account; the BE refuses the others (WRONG_PORTAL).
+  const portal = portalOf(params.get('loi-vao'))
+  const title = portal === 'TENANT' ? t('auth.portal.tenantTitle') : portal === 'STAFF' ? t('auth.portal.staffTitle') : t('auth.login')
+  const generalHref = next ? `/dang-nhap?next=${encodeURIComponent(next)}` : '/dang-nhap'
   const signUpHref = next ? `/dang-ky?next=${encodeURIComponent(next)}` : '/dang-ky'
   const passwordReset = (location.state as { notice?: string } | null)?.notice === 'password-reset'
   const managementHref = contact.data?.phone
@@ -44,7 +48,7 @@ export function LoginPage() {
   async function onSubmit(values: LoginValues) {
     setFormError('')
     try {
-      const user = await login(values)
+      const user = await login({ ...values, portal })
       navigate(postLoginPath(user.role, params.get('next')), { replace: true })
     } catch (error) {
       if (error instanceof ApiError && error.code === 'EMAIL_NOT_VERIFIED') {
@@ -71,7 +75,7 @@ export function LoginPage() {
     <section className="auth-login-panel" aria-labelledby="login-title">
       <header className="auth-login-heading">
         <span aria-hidden="true" />
-        <h1 id="login-title">{t('auth.login')}</h1>
+        <h1 id="login-title">{title}</h1>
         <p>{t('auth.welcome')}</p>
       </header>
 
@@ -112,7 +116,9 @@ export function LoginPage() {
         </form>
 
         <div className="auth-login-account-note">
-          <p>{t('auth.noAccount')} <Link to={signUpHref}>{t('auth.register')}</Link></p>
+          {portal
+            ? <p><Link to={generalHref}>{t('auth.portal.general')}</Link></p>
+            : <p>{t('auth.noAccount')} <Link to={signUpHref}>{t('auth.register')}</Link></p>}
           {contact.isLoading && <p className="auth-contact-status" role="status">{t('auth.contactLoading')}</p>}
           {!contact.isLoading && !contact.isError && <ContactInfo contact={contact.data ?? null} />}
           <div className="auth-login-account-actions">

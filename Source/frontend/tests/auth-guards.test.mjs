@@ -46,9 +46,9 @@ test('AUTH-06: homeOf sends each role to its own area', () => {
 test('AUTH-06: not signed in -> /dang-nhap with the encoded original path and query', () => {
   assert.equal(
     guardRedirect(null, { pathname: '/thue/tai-khoan', search: '?a=1' }, ['TENANT']),
-    '/dang-nhap?next=%2Fthue%2Ftai-khoan%3Fa%3D1',
+    '/dang-nhap?loi-vao=thue&next=%2Fthue%2Ftai-khoan%3Fa%3D1' // AUTH-16: the guard adds the entry of the area,
   )
-  assert.equal(guardRedirect(null, { pathname: '/ql', search: '' }, STAFF), '/dang-nhap?next=%2Fql')
+  assert.equal(guardRedirect(null, { pathname: '/ql', search: '' }, STAFF), '/dang-nhap?loi-vao=quan-ly&next=%2Fql')
   assert.equal(guardRedirect(null, { pathname: '/doi-mat-khau', search: '' }, 'any'), '/dang-nhap?next=%2Fdoi-mat-khau')
 })
 
@@ -155,7 +155,7 @@ test('AUTH-06: RequireAuth redirects a signed-out visitor to /dang-nhap?next=, r
   const m = loadRequireAuth({ status: 'ready', user: null, retry() {} }, { pathname: '/thue', search: '' })
   const out = m.RequireAuth({ allow: ['TENANT'] })
   assert.equal(out.type, m.Navigate)
-  assert.equal(out.props.to, '/dang-nhap?next=%2Fthue')
+  assert.equal(out.props.to, '/dang-nhap?loi-vao=thue&next=%2Fthue')
   assert.equal(out.props.replace, true)
 })
 
