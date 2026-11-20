@@ -1,12 +1,13 @@
 import type { INestApplication, LoggerService } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import type { Role } from '@prisma/client';
-import { createDecipheriv } from 'node:crypto';
+import { createDecipheriv, createHash } from 'node:crypto';
 import request from 'supertest';
 import { configureApp } from '../../app.setup.js';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
 import { TokenService } from '../auth/token.service.js';
 import { MailerService } from '../mailer/mailer.service.js';
+import { ContractOccupantsService } from './contract-occupants.service.js';
 
 // A cold Windows transform of the full Nest module graph can exceed 10 seconds.
 vi.setConfig({ hookTimeout: 60_000 });
@@ -120,7 +121,7 @@ function project(row: any, select: any): any {
   }));
 }
 
-describe('BE-P3-23 / CON-13/15/16 / DB-B6: occupants over HTTP', () => {
+describe('BE-P3-23/24 / CON-13/15/16 / DB-B6/B9: occupants over HTTP', () => {
   let app: INestApplication;
   let state = initialState();
   let queue = Promise.resolve();
@@ -211,6 +212,7 @@ describe('BE-P3-23 / CON-13/15/16 / DB-B6: occupants over HTTP', () => {
   beforeEach(() => {
     state = initialState(); queue = Promise.resolve(); failAudit = false; failOccupantWrite = false; reassignAtTransaction = false;
     reassignAfterProvider = false; metadata.clear(); logs.length = 0; vi.clearAllMocks(); vi.stubGlobal('fetch', provider);
+    vi.stubEnv('CLOUDINARY_URL', 'cloudinary://fixture-key:fixture-secret@occupant-fixture');
   });
   afterAll(async () => { await app?.close(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
@@ -239,6 +241,197 @@ describe('BE-P3-23 / CON-13/15/16 / DB-B6: occupants over HTTP', () => {
       expect(text.includes(secret), 'Private fields/assets must not be exposed').toBe(false);
     }
   }
+
+  describe('BE-P3-24 / CON-16 / DB-B9: private ID photo views', () => {
+    const photoPath = '/contracts/42/occupants/90/id-photos';
+
+    it.each([1, 2])('CON-16/DB-B9: staff actor %s gets two signed links valid for 300 seconds and one audit', async actor => {
+      const beforeState = structuredClone({ users: state.users, contracts: state.contracts, occupants: state.occupants });
+      const start = Math.floor(Date.now() / 1000);
+      const result = await api('get', photoPath, actor);
+      const end = Math.floor(Date.now() / 1000);
+      expect(result.status).toBe(200);
+      expect(result.headers['cache-control']).toBe('no-store');
+      expect(Object.keys(result.body.data).sort()).toEqual(['back', 'front']);
+      for (const [side, asset] of [['front', 'private-signer-front'], ['back', 'private-signer-back']] as const) {
+        const photo = result.body.data[side];
+        expect(Object.keys(photo).sort()).toEqual(['expiresAt', 'url']);
+        const url = new URL(photo.url);
+        expect(url.origin).toBe('https://api.cloudinary.com');
+        expect(url.pathname).toBe('/v1_1/occupant-fixture/asset/download');
+        expect(url.searchParams.get('asset_id')).toBe(asset);
+        expect(url.searchParams.get('api_key')).toBe('fixture-key');
+        const timestamp = Number(url.searchParams.get('timestamp'));
+        const expires = Number(url.searchParams.get('expires_at'));
+        expect(timestamp).toBeGreaterThanOrEqual(start); expect(timestamp).toBeLessThanOrEqual(end);
+        expect(expires - timestamp).toBe(300);
+        expect(photo.expiresAt).toBe(new Date(expires * 1000).toISOString());
+        const signature = createHash('sha1').update(`asset_id=${asset}&expires_at=${expires}&timestamp=${timestamp}fixture-secret`).digest('hex');
+        expect(url.searchParams.get('signature')).toBe(signature);
+      }
+      expect(result.body.data.front.expiresAt).toBe(result.body.data.back.expiresAt);
+      expect(state.audits).toHaveLength(1);
+      expect(state.audits[0]).toEqual({ actorId: actor, action: 'occupant.view_id', entity: 'occupant', entityId: 90,
+        ip: expect.any(String) });
+      expect(state.audits[0].ip.length).toBeGreaterThan(0);
+      expect({ users: state.users, contracts: state.contracts, occupants: state.occupants }).toEqual(beforeState);
+      expect(provider).not.toHaveBeenCalled(); expect(mailer.send).not.toHaveBeenCalled();
+      expect(JSON.stringify(result.body).includes(ID_NUMBER)).toBe(false);
+      expect(JSON.stringify(result.body).includes('idNumberEnc')).toBe(false);
+      expect(JSON.stringify(result.body).includes('fixture-secret')).toBe(false);
+      privateOutput(state.audits); privateOutput(logs);
+    });
+
+    it('DB-B9/AUD-01: repeated views each commit one audit row, rather than reusing a logged response', async () => {
+      expect((await api('get', photoPath)).status).toBe(200);
+      expect((await api('get', photoPath)).status).toBe(200);
+      expect(state.audits.map(row => row.action)).toEqual(['occupant.view_id', 'occupant.view_id']);
+      expect(db.auditLog.create).toHaveBeenCalledTimes(2); privateOutput(state.audits);
+    });
+
+    it.each(['front', 'back'] as const)('CON-16: a missing %s side is null and the available side is signed', async side => {
+      const signer = state.occupants[0];
+      if (side === 'front') signer.idFrontAssetId = null; else signer.idBackAssetId = null;
+      const result = await api('get', photoPath);
+      expect(result.status).toBe(200); expect(result.body.data[side]).toBeNull();
+      expect(result.body.data[side === 'front' ? 'back' : 'front'].url).toMatch(/^https:\/\/api\.cloudinary\.com\//);
+      expect(state.audits).toHaveLength(1);
+    });
+
+    it('CON-13/16: a roommate photo can be viewed without making their CCCD number mandatory', async () => {
+      const row = roommate({ idFrontAssetId: 'private-roommate-front' });
+      const result = await api('get', `${path}/${row.id}/id-photos`);
+      expect(result.status).toBe(200); expect(result.body.data.back).toBeNull();
+      expect(new URL(result.body.data.front.url).searchParams.get('asset_id')).toBe('private-roommate-front');
+      expect(state.audits[0]).toMatchObject({ entityId: row.id, action: 'occupant.view_id' });
+      expect(state.occupants.find(value => value.id === row.id)!.idNumberEnc).toBeNull();
+    });
+
+    it.each(['HOLD', 'ACTIVE', 'ENDED', 'CANCELLED'])('CON-16: staff can view %s contract history', async status => {
+      state.contracts.get(42).status = status;
+      expect((await api('get', photoPath)).status).toBe(200); expect(state.audits).toHaveLength(1);
+    });
+
+    it.each([3, 4, 5])('CON-16: tenant/guest actor %s is FORBIDDEN before reading private assets', async actor => {
+      const result = await api('get', photoPath, actor);
+      expect(result.status).toBe(403); expect(result.body.error.code).toBe('FORBIDDEN');
+      expect(db.occupant.findFirst).not.toHaveBeenCalled(); expect(state.audits).toHaveLength(0); privateOutput(result.body);
+    });
+
+    it('CON-16: service authorization also refuses an owning tenant outside the HTTP guards', async () => {
+      await expect(app.get(ContractOccupantsService).idPhotos({ id: 3, role: 'TENANT', buildingIds: [], mustChangePassword: false }, 42, 90))
+        .rejects.toMatchObject({ status: 403, message: 'FORBIDDEN' });
+      expect(db.$transaction).not.toHaveBeenCalled(); expect(db.occupant.findFirst).not.toHaveBeenCalled();
+    });
+
+    it('AUTH-01/CON-16: anonymous requests receive 401 without reading photos or auditing a view', async () => {
+      const result = await request(app.getHttpServer()).get(`/api/v1${photoPath}`);
+      expect(result.status).toBe(401); expect(db.occupant.findFirst).not.toHaveBeenCalled(); expect(state.audits).toHaveLength(0);
+    });
+
+    it('CON-16: the tenant namespace has no photo route and ordinary detail/list responses stay private', async () => {
+      const denied = await api('get', '/me/contracts/42/occupants/90/id-photos', 3);
+      expect(denied.status).toBe(404); privateOutput(denied.body);
+      for (const [url, actor] of [[path, 2], ['/contracts/42', 2], ['/me/contracts/42', 3]] as const) {
+        const result = await api('get', url, actor);
+        expect(result.status).toBe(200); privateOutput(result.body);
+        expect(JSON.stringify(result.body).includes('/asset/download')).toBe(false);
+      }
+      expect(state.audits).toHaveLength(0);
+    });
+
+    it('SCOPE-02/CON-16: another building manager receives OUT_OF_SCOPE before private reads', async () => {
+      const result = await api('get', photoPath, 6);
+      expect(result.status).toBe(403); expect(result.body.error.code).toBe('OUT_OF_SCOPE');
+      expect(db.occupant.findFirst).not.toHaveBeenCalled(); expect(state.audits).toHaveLength(0); privateOutput(result.body);
+    });
+
+    it('SCOPE-02/CON-16: a reassignment after guard evaluation revokes the former manager view', async () => {
+      reassignAtTransaction = true;
+      const result = await api('get', photoPath);
+      expect(result.status).toBe(403); expect(result.body.error.code).toBe('OUT_OF_SCOPE');
+      expect(db.occupant.findFirst).not.toHaveBeenCalled(); expect(state.audits).toHaveLength(0);
+    });
+
+    it('SCOPE-02/CON-16: Boss can view a contract in another manager building', async () => {
+      const result = await api('get', '/contracts/43/occupants/91/id-photos', 1);
+      expect(result.status).toBe(200); expect(state.audits).toHaveLength(1);
+      expect(state.audits[0]).toMatchObject({ actorId: 1, entityId: 91, action: 'occupant.view_id' });
+    });
+
+    it('SCOPE-02/CON-16: manager deactivation after guard evaluation is rechecked inside the transaction', async () => {
+      db.$queryRaw.mockImplementationOnce(async () => { state.users.get(2)!.isActive = false; return []; });
+      const result = await api('get', photoPath);
+      expect(result.status).toBe(403); expect(result.body.error.code).toBe('OUT_OF_SCOPE');
+      expect(db.occupant.findFirst).not.toHaveBeenCalled(); expect(state.audits).toHaveLength(0);
+    });
+
+    it('SCOPE-02/CON-16: inactive building assignment cannot issue photo links', async () => {
+      state.buildings.get(7).isActive = false;
+      const result = await api('get', photoPath);
+      expect(result.status).toBe(403); expect(result.body.error.code).toBe('OUT_OF_SCOPE');
+      expect(db.occupant.findFirst).not.toHaveBeenCalled(); expect(state.audits).toHaveLength(0);
+    });
+
+    it.each([91, 999])('CON-16: foreign/missing occupant %s cannot be viewed through an owned contract', async oid => {
+      const result = await api('get', `${path}/${oid}/id-photos`);
+      expect(result.status).toBe(404); expect(result.body.error.code).toBe('NOT_FOUND');
+      expect(state.audits).toHaveLength(0); privateOutput(result.body);
+    });
+
+    it('CON-16: a missing contract is NOT_FOUND without reading any occupant', async () => {
+      const result = await api('get', '/contracts/999/occupants/90/id-photos');
+      expect(result.status).toBe(404); expect(db.occupant.findFirst).not.toHaveBeenCalled(); expect(state.audits).toHaveLength(0);
+    });
+
+    it('CON-16: an occupant without either photo is NOT_FOUND without a view audit', async () => {
+      const row = roommate(); const result = await api('get', `${path}/${row.id}/id-photos`);
+      expect(result.status).toBe(404); expect(result.body.error.code).toBe('NOT_FOUND'); expect(state.audits).toHaveLength(0);
+    });
+
+    it.each(['0', '-1', '1.5', '2147483648', 'abc'])('API-03/CON-16: invalid contract or occupant id %s is refused', async id => {
+      for (const url of [`/contracts/${id}/occupants/90/id-photos`, `${path}/${id}/id-photos`]) {
+        const result = await api('get', url);
+        expect(result.status).toBe(400); expect(result.body.error.code).toBe('VALIDATION_FAILED');
+      }
+      expect(db.occupant.findFirst).not.toHaveBeenCalled(); expect(state.audits).toHaveLength(0);
+    });
+
+    it('FILE-01/CON-16: missing private upload configuration fails without links or audit', async () => {
+      vi.stubEnv('CLOUDINARY_URL', '');
+      const result = await api('get', photoPath);
+      expect(result.status).toBe(503); expect(result.body.error.code).toBe('UPLOAD_NOT_CONFIGURED');
+      expect(result.body.data).toBeUndefined(); expect(state.audits).toHaveLength(0); privateOutput(result.body); privateOutput(logs);
+    });
+
+    it('CON-16: a malformed stored asset refuses both links without echoing private metadata', async () => {
+      state.occupants[0].idBackAssetId = 'private asset invalid/?';
+      const result = await api('get', photoPath);
+      expect(result.status).toBe(400); expect(result.body.error.code).toBe('VALIDATION_FAILED');
+      expect(result.body.data).toBeUndefined(); expect(state.audits).toHaveLength(0);
+      expect(JSON.stringify(result.body).includes('private asset invalid')).toBe(false);
+      privateOutput(result.body); privateOutput(logs);
+    });
+
+    it('DB-B9/AUD-01: audit failure rolls back its insert and returns no unlogged photo links', async () => {
+      db.auditLog.create.mockImplementationOnce(async ({ data }: any) => {
+        state.audits.push(structuredClone(data));
+        throw new Error(`Failed audit for ${ID_NUMBER}, idFrontAssetId=private-signer-front`);
+      });
+      const result = await api('get', photoPath);
+      expect(result.status).toBe(500); expect(result.body.error.code).toBe('INTERNAL_ERROR');
+      expect(result.body.data).toBeUndefined(); expect(state.audits).toHaveLength(0);
+      privateOutput(result.body); privateOutput(logs);
+    });
+
+    it('CON-16: unexpected read failures never log raw identity or asset metadata', async () => {
+      db.occupant.findFirst.mockRejectedValueOnce(new Error(`Read failed for ${ID_NUMBER}, idFrontAssetId=private-signer-front`));
+      const result = await api('get', photoPath);
+      expect(result.status).toBe(500); expect(result.body.error.code).toBe('INTERNAL_ERROR');
+      expect(result.body.data).toBeUndefined(); expect(state.audits).toHaveLength(0);
+      privateOutput(result.body); privateOutput(logs);
+    });
+  });
 
   it('CON-13: staff lists occupants with safe dates, last4 and no private asset/ciphertext fields', async () => {
     const res = await api('get', path);

@@ -1,5 +1,7 @@
 # BE-P3-23 · Người ở và tenant tự thêm người ở cùng
 
+**Cập nhật sau checkpoint:** owner báo đã commit và yêu cầu tiếp tục; Git xác minh `ab5ebac` cùng workspace sạch trước BE-P3-24. Báo cáo dưới đây lưu kết quả tại điểm dừng BE-P3-23; không coi commit là câu trả lời riêng cho Q-P3-16/17.
+
 20/11/2026, bắt đầu từ `af383a0` (BE-P3-22 đã commit, Git sạch trước các cập nhật tài liệu của lượt này). **BE-P3-23 đã triển khai và kiểm chứng; reviewer DUYỆT mã. Full suite cuối 2405/2405 đạt; chờ owner nghiệm thu A-25/26 và commit.** Chưa làm BE-P3-24..27. Không stage/commit, schema/migration/dependency/env hoặc DB dev changes.
 
 ## Kết quả chức năng

@@ -15,6 +15,12 @@ export class ContractOccupantsController {
     return this.occupants.list(actor, params.id);
   }
 
+  @Get(':oid/id-photos')
+  @Header('Cache-Control', 'no-store')
+  idPhotos(@CurrentUser() actor: AuthUser, @Param() params: OccupantIdParamsDto, @Ip() ip: string) {
+    return this.occupants.idPhotos(actor, params.id, params.oid, ip);
+  }
+
   @Post()
   @Header('Cache-Control', 'no-store')
   create(@CurrentUser() actor: AuthUser, @Param() params: ContractIdParamsDto, @Body() dto: CreateOccupantDto, @Ip() ip: string) {

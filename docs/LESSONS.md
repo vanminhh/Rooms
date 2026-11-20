@@ -6,6 +6,7 @@ Read this before the first task of any part. Each line is a mistake that really 
 
 ## Tests and expected values
 
+- A returned test session ID is not proof of a completed run: asynchronous auto-review blocked the BE-P3-24 full-suite result and no JSON was produced; report the verified scoped results separately from that blocked attempt [BE-P3-24, 20/11/2026].
 - Run scoped noEmit for new HTTP specs as well as Vitest and lint; Supertest.send rejected an unknown-typed test body even though the native HTTP suite passed, fixed with an erased test-only type assertion [BE-P3-20, 20/11/2026].
 - Adding a seeded setting also changes EXPECTED_COUNTS in seed.spec.ts; the draft contract template made the repeatable-seed check fail at two settings instead of the spec's three [BE-P3-18, 19/11/2026].
 - Do not assert a specific dash glyph for optional print data when the spec does not choose one; the missing-signer-details fixture failed on hyphen versus em dash [BE-P3-18, 19/11/2026].

@@ -10,7 +10,7 @@ import { assertOccupantCapacity } from '../../common/rooms/occupant-capacity.js'
 import { scopeWhere } from '../../common/scope/scope.js';
 import { lockViewingMapping } from '../../common/viewings/viewing-lock.js';
 import { AuditService } from '../audit/audit.service.js';
-import { verifyContractAsset } from '../files/files.service.js';
+import { signedContractAssetUrl, verifyContractAsset } from '../files/files.service.js';
 import { assertViewingScope } from '../viewings/viewing-reservations.js';
 import type { CreateOccupantDto, UpdateOccupantDto } from './dto/occupants.dto.js';
 
@@ -89,6 +89,32 @@ export class ContractOccupantsService {
         orderBy: [{ isSigner: 'desc' }, { id: 'asc' }] });
       return rows.map(row => view(row));
     });
+  }
+
+  async idPhotos(actor: AuthUser, id: number, oid: number, ip?: string) {
+    staff(actor);
+    try {
+      return await this.prisma.$transaction(async tx => {
+        await lockViewingMapping(tx);
+        // Coordinate with photo updates and contract transitions before reading assets.
+        await tx.$queryRaw`SELECT id FROM contracts WHERE id = ${id} FOR SHARE`;
+        await this.contract(tx, actor, id);
+        const row = await tx.occupant.findFirst({ where: { id: oid, contractId: id },
+          select: { idFrontAssetId: true, idBackAssetId: true } });
+        if (!row || (!row.idFrontAssetId && !row.idBackAssetId)) throw new NotFoundException(ErrorCode.NOT_FOUND);
+        const now = new Date();
+        const photos = {
+          front: row.idFrontAssetId ? signedContractAssetUrl(row.idFrontAssetId, process.env, now) : null,
+          back: row.idBackAssetId ? signedContractAssetUrl(row.idBackAssetId, process.env, now) : null,
+        };
+        await this.audit.log(actor.id, 'occupant.view_id', 'occupant', oid, undefined, undefined, ip, tx);
+        return photos;
+      });
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      // A failed audit/read must not log private asset IDs or return unlogged links.
+      throw new InternalServerErrorException(ErrorCode.INTERNAL_ERROR);
+    }
   }
 
   async create(actor: AuthUser, id: number, dto: CreateOccupantDto, ip?: string) {
