@@ -17,3 +17,4 @@
 .rooms-theme .public-entry-card h2 { margin: 0 0 1.25rem; line-height: 1.4; }
 .rooms-theme .public-entry-choices { display: grid; gap: 1rem; }
 .rooms-theme .public-entry-choices .rooms-button { white-space: normal; }
+.rooms-theme .public-entry-guest { min-height: 44px; padding: 0; border: 0; background: none; color: var(--rooms-text); font: inherit; font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }

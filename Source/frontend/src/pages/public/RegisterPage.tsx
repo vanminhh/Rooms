@@ -96,6 +96,6 @@ export function RegisterPage() {
         {isSubmitting ? <Spinner label={t('auth.registering')} /> : <span aria-hidden="true">→</span>}
       </RoomsButton>
     </form>
-    <p className="auth-signup-switch">{t('auth.hasAccount')} <Link to={next ? `/dang-nhap?next=${encodeURIComponent(next)}` : '/dang-nhap'}>{t('auth.login')}</Link></p>
+    <p className="auth-signup-switch">{t('auth.hasAccount')} <Link to="/" state={{ entry: true }}>{t('auth.login')}</Link></p>
   </AuthFrame>
 }

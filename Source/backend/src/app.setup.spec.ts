@@ -767,7 +767,7 @@ const EXPECTED: [string, number, string][] = [
   ['PHONE_TAKEN', 409, 'Số điện thoại đã được sử dụng'],
   ['EMAIL_TAKEN', 409, 'Email đã được dùng cho tài khoản khác'],
   ['EMAIL_NOT_VERIFIED', 403, 'Email chưa được xác minh'],
-  ['WRONG_PORTAL', 403, 'Tài khoản này không đăng nhập được ở lối vào này. Hãy chọn đúng lối vào hoặc dùng trang đăng nhập chung.'], // AUTH-16, D-43
+  ['WRONG_PORTAL', 403, 'Tài khoản này không đăng nhập được ở lối vào này. Hãy chọn đúng lối vào.'], // AUTH-16, D-43
   ['OTP_INVALID', 400, 'Mã xác minh không đúng hoặc đã hết hạn'],
   ['MAIL_UNAVAILABLE', 503, 'Chưa gửi được email, vui lòng thử lại sau'],
   ['MANAGER_MAX_2_BUILDINGS', 409, 'Mỗi quản lý chỉ phụ trách tối đa 2 tòa'],

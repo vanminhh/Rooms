@@ -60,6 +60,8 @@ export function EntryScreen({ onChoose, videoSrc }: { onChoose(choice: EntryChoi
         <RoomsButton variant="outline" onClick={() => choose('/thue')}>{t('entry.tenant')}</RoomsButton>
         <RoomsButton variant="outline" onClick={() => choose('/ql')}>{t('entry.staff')}</RoomsButton>
       </div>
+      {/* D-43: a guest with an account logs in on the plain page; this keeps the choice "Tìm phòng" (a guest is a visitor of the rooms). */}
+      <button type="button" className="public-entry-guest" onClick={() => { onChoose('/'); navigate('/dang-nhap') }}>{t('entry.guestLogin')}</button>
       <LanguageSwitch value={lang} onChange={setLang} viLabel={t('nav.vietnamese')} enLabel={t('nav.english')} groupLabel={t('nav.language')} />
       <IllustrationLabel>{t('home.illustration')}</IllustrationLabel>
     </ElevatedCard>

@@ -84,22 +84,22 @@ const submit = (app, phone = '0912345678', password = 'Matkhau@1') => {
 }
 const wrongPortal = new (mod('shared/api.ts').ApiError)({
   code: 'WRONG_PORTAL', status: 403,
-  message: 'Tài khoản này không đăng nhập được ở lối vào này. Hãy chọn đúng lối vào hoặc dùng trang đăng nhập chung.',
+  message: 'Tài khoản này không đăng nhập được ở lối vào này. Hãy chọn đúng lối vào.',
 })
 
-test('AUTH-16, UI-11: ?loi-vao=thue shows "Đăng nhập người thuê", no sign-up link, and the link to the general page keeps next', async () => {
+test('AUTH-16, UI-11: ?loi-vao=thue shows "Đăng nhập người thuê", no sign-up link and no link to a general login (owner 21/11/2026)', async () => {
   const app = await mountLogin('/dang-nhap?loi-vao=thue&next=%2Fphong%2F7', async () => ({ role: 'TENANT' }))
   assert.ok(find(app.container, n => n.tagName === 'H1' && n.textContent === 'Đăng nhập người thuê').length === 1)
   assert.ok(!text(app.container).includes('Chưa có tài khoản?'))
   assert.equal(link(app.container, 'Đăng ký'), undefined)
-  assert.equal(link(app.container, 'Dùng trang đăng nhập chung').attributes.href, '/dang-nhap?next=%2Fphong%2F7')
+  assert.equal(link(app.container, 'Dùng trang đăng nhập chung'), undefined)
   await app.stop()
 })
 
-test('AUTH-16, UI-11: ?loi-vao=quan-ly shows "Đăng nhập quản lý"; the general link without next goes to plain /dang-nhap', async () => {
+test('AUTH-16, UI-11: ?loi-vao=quan-ly shows "Đăng nhập quản lý" and no link to a general login', async () => {
   const app = await mountLogin('/dang-nhap?loi-vao=quan-ly', async () => ({ role: 'MANAGER' }))
   assert.ok(find(app.container, n => n.tagName === 'H1' && n.textContent === 'Đăng nhập quản lý').length === 1)
-  assert.equal(link(app.container, 'Dùng trang đăng nhập chung').attributes.href, '/dang-nhap')
+  assert.equal(link(app.container, 'Dùng trang đăng nhập chung'), undefined)
   await app.stop()
 })
 
@@ -147,7 +147,7 @@ test('AUTH-16: the English page shows its own titles for both entries', async ()
     for (const [entry, title] of [['thue', 'Tenant sign in'], ['quan-ly', 'Staff sign in']]) {
       const app = await mountLogin(`/dang-nhap?loi-vao=${entry}`, async () => ({ role: 'TENANT' }), I18nProvider)
       assert.ok(find(app.container, n => n.tagName === 'H1' && n.textContent === title).length === 1, title)
-      assert.ok(link(app.container, 'Use the general sign-in page'))
+      assert.equal(link(app.container, 'Use the general sign-in page'), undefined)
       await app.stop()
     }
   } finally {

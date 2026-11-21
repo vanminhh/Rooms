@@ -15,17 +15,24 @@ import './layouts.css'
 export function PublicLayout() {
   const { status, user } = useAuth()
   const navigate = useNavigate()
-  const { pathname } = useLocation()
-  const [entryOpen, setEntryOpen] = useState(() => readEntryChoice() === null)
+  const { pathname, state } = useLocation()
+  const [choice, setChoice] = useState(readEntryChoice)
+  const [entryOpen, setEntryOpen] = useState(() => choice === null)
+  // UI-11: a link with state { entry: true } (the sign-up page's "Đã có tài khoản?") opens the entry screen again.
+  const entryRequested = pathname === '/' && (state as { entry?: boolean } | null)?.entry === true
+  const showEntry = pathname === '/' && (entryOpen || entryRequested)
   const contact = usePublicContact()
   const { lang, setLang, t } = useI18n()
+  // UI-11 (owner 21/11/2026): a visitor who chose "Tìm phòng" is a prospective guest, so the corner button offers sign-up (the sign-up page links back to login).
   const account = user
     ? { label: t('nav.myPage'), href: homeOf(user.role) }
-    : { label: t('nav.login'), href: '/dang-nhap' }
+    : choice === '/'
+      ? { label: t('auth.register'), href: '/dang-ky' }
+      : { label: t('nav.login'), href: '/dang-nhap' }
   const links = status === 'loading' ? [] : [{ label: t('nav.findRoom'), href: '/phong' }, account]
 
   return <div className="rooms-theme" onClick={event => handleInternalLinkClick(event, navigate)}>
-    <div inert={pathname === '/' && entryOpen}>
+    <div inert={showEntry}>
     <RoomsHeader
       homeHref="/"
       links={links}
@@ -50,6 +57,11 @@ export function PublicLayout() {
       areaTitle={t('footer.areaTitle')} areaDescription={t('footer.areaDescription')}
       contactTitle={t('footer.contactTitle')} contactEmpty={t('footer.contactEmpty')} bottomLocation={t('footer.location')} />
     </div>
-    {pathname === '/' && entryOpen && <EntryScreen onChoose={choice => { saveEntryChoice(choice); setEntryOpen(false) }} />}
+    {showEntry && <EntryScreen onChoose={picked => {
+      saveEntryChoice(picked)
+      setChoice(picked)
+      setEntryOpen(false)
+      if (entryRequested) navigate('/', { replace: true, state: null })
+    }} />}
   </div>
 }

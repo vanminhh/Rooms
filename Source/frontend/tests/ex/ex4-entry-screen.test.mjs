@@ -64,7 +64,7 @@ test('UI-11, LOC-01: English entry choices come from the dictionary', async () =
   const app = await boot(null, 'en')
   try {
     assert.deepEqual(find(app.container, n => n.tagName === 'BUTTON').map(n => n.textContent),
-      ['Find a room', 'I am a tenant', 'Building management', 'Tiếng Việt', 'English'])
+      ['Find a room', 'I am a tenant', 'Building management', 'Guest with an account? Sign in', 'Tiếng Việt', 'English'])
   } finally { await app.stop() }
 })
 

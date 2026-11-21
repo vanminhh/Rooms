@@ -34,7 +34,6 @@ export function LoginPage() {
   // AUTH-16, D-43: ?loi-vao= makes this page a login of one kind of account; the BE refuses the others (WRONG_PORTAL).
   const portal = portalOf(params.get('loi-vao'))
   const title = portal === 'TENANT' ? t('auth.portal.tenantTitle') : portal === 'STAFF' ? t('auth.portal.staffTitle') : t('auth.login')
-  const generalHref = next ? `/dang-nhap?next=${encodeURIComponent(next)}` : '/dang-nhap'
   const signUpHref = next ? `/dang-ky?next=${encodeURIComponent(next)}` : '/dang-ky'
   const passwordReset = (location.state as { notice?: string } | null)?.notice === 'password-reset'
   const managementHref = contact.data?.phone
@@ -116,9 +115,7 @@ export function LoginPage() {
         </form>
 
         <div className="auth-login-account-note">
-          {portal
-            ? <p><Link to={generalHref}>{t('auth.portal.general')}</Link></p>
-            : <p>{t('auth.noAccount')} <Link to={signUpHref}>{t('auth.register')}</Link></p>}
+          {!portal && <p>{t('auth.noAccount')} <Link to={signUpHref}>{t('auth.register')}</Link></p>}
           {contact.isLoading && <p className="auth-contact-status" role="status">{t('auth.contactLoading')}</p>}
           {!contact.isLoading && !contact.isError && <ContactInfo contact={contact.data ?? null} />}
           <div className="auth-login-account-actions">

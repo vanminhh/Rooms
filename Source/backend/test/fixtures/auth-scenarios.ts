@@ -70,7 +70,7 @@ export async function eachRoleLogsIn(app: INestApplication) {
 // AUTH-16, D-43: the tenant entry takes only a tenant, the staff entry only a manager or the Boss; a refused login opens no session.
 // Uses the seeded accounts before any scenario changes their password (the tenant logs in only at its own entry).
 export async function loginByEntry(app: INestApplication) {
-  const wrong = { error: { code: 'WRONG_PORTAL', message: 'Tài khoản này không đăng nhập được ở lối vào này. Hãy chọn đúng lối vào hoặc dùng trang đăng nhập chung.' } };
+  const wrong = { error: { code: 'WRONG_PORTAL', message: 'Tài khoản này không đăng nhập được ở lối vào này. Hãy chọn đúng lối vào.' } };
   const at = (key: DevAccount['key'], portal: 'TENANT' | 'STAFF', lang?: string) => {
     const a = account(key);
     const req = request(app.getHttpServer()).post('/api/v1/auth/login');
@@ -90,7 +90,7 @@ export async function loginByEntry(app: INestApplication) {
     expect(res.headers['set-cookie'], `${key} at ${portal}: no session`).toBeUndefined();
   }
   const en = await at('manager1', 'TENANT', 'en');
-  expect(en.body.error).toEqual({ code: 'WRONG_PORTAL', message: 'This account cannot sign in through this entry. Choose the right entry or use the general sign-in page.' });
+  expect(en.body.error).toEqual({ code: 'WRONG_PORTAL', message: 'This account cannot sign in through this entry. Please choose the right entry.' });
 }
 
 export async function wrongPasswordEqualsUnknownPhone(app: INestApplication) {

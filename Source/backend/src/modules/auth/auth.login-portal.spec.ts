@@ -19,7 +19,7 @@ const ACCOUNTS = {
   locked: { phone: '0900000005', password: 'TamKhoa@2026' },
   guest: { phone: '0900000006', password: 'Khach@2026' },
 } as const;
-const WRONG_PORTAL_VI = 'Tài khoản này không đăng nhập được ở lối vào này. Hãy chọn đúng lối vào hoặc dùng trang đăng nhập chung.';
+const WRONG_PORTAL_VI = 'Tài khoản này không đăng nhập được ở lối vào này. Hãy chọn đúng lối vào.';
 const WRONG_PORTAL_BODY = { error: { code: 'WRONG_PORTAL', message: WRONG_PORTAL_VI } };
 
 let app: INestApplication;
@@ -122,6 +122,6 @@ describe('AUTH-16: validation and language', () => {
     const res = await login({ ...ACCOUNTS.manager, portal: 'TENANT' }, 'en');
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe('WRONG_PORTAL');
-    expect(res.body.error.message).toBe('This account cannot sign in through this entry. Choose the right entry or use the general sign-in page.');
+    expect(res.body.error.message).toBe('This account cannot sign in through this entry. Please choose the right entry.');
   });
 });
