@@ -75,6 +75,7 @@ describe('CP-5 (BE-P2-33) · GET /dashboard HTTP contract (VIEW-07, SCOPE-04, PR
   const fakePrisma: any = {
     $transaction: vi.fn(async (work: (tx: typeof fakePrisma) => Promise<unknown>) => work(fakePrisma)),
     invoice: { count: vi.fn(async () => 0), findMany: vi.fn(async () => []) },
+    contract: { findMany: vi.fn(async () => []), count: vi.fn(async () => 0) }, // Phase 4 money groups: no contracts in this fixture
     user: { findUnique: vi.fn(async ({ where }: any) => users.get(where.id) ?? null), findFirst: vi.fn(async () => ({ id: 1 })) },
     building: {
       findMany: vi.fn(async ({ where }: any) =>

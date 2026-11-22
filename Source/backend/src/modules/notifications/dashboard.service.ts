@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
-import { formatDateOnly, todayHanoi } from '../../common/date/today.js';
+import { addDays, formatDateOnly, todayHanoi } from '../../common/date/today.js';
+import { monthlyDraftPlan } from '../billing/monthly-drafts.js';
 import { ErrorCode } from '../../common/errors/error-code.js';
 import type { AuthUser } from '../../common/guards/auth.decorators.js';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
@@ -19,6 +20,20 @@ export interface DashboardView {
   depositCancelledViewings: { count: number; items: ViewingView[] };
   unpaidDeposits: { count: number; items: UnpaidDepositItem[] };
   pendingPrices: { count: number; rooms: number; ratePlans: number } | null;
+  // Phase 4 money groups (NOTI-06, BIL-05, BIL-06, BIL-21, D-42, CON-20, CON-21).
+  awaitingReadings: { count: number; late: number; items: PeriodItem[] };
+  missedPeriods: { count: number; items: PeriodItem[] };
+  overdueInvoices: { count: number; items: UnpaidDepositItem[] };
+  expiringContracts: { count: number; items: ContractItem[] };
+  expiredContracts: { count: number; items: ContractItem[] };
+  renewalsWaiting: { count: number; items: ContractItem[] };
+}
+
+type ContractRef = UnpaidDepositItem['contract'];
+export interface ContractItem extends ContractRef { endDate: string }
+export interface PeriodItem {
+  invoiceId: number | null; code: string | null; periodNo: number; periodStart: string; periodEnd: string;
+  billingDate: string; late: boolean; contract: ContractRef;
 }
 
 export interface UnpaidDepositItem {
@@ -36,6 +51,12 @@ export interface UnpaidDepositItem {
 }
 
 const ITEM_LIMIT = 5;
+const CONTRACT_REF = {
+  id: true, code: true,
+  room: { select: { id: true, code: true } },
+  building: { select: { id: true, code: true, name: true } },
+  tenant: { select: { id: true, fullName: true, phone: true } },
+} satisfies Prisma.ContractSelect;
 const UNPAID_DEPOSIT_SELECT = {
   id: true, total: true, dueDate: true,
   contract: { select: {
@@ -75,7 +96,64 @@ export class DashboardService {
       depositCancelledViewings: await this.depositCancelledViewings(user, query.buildingId),
       unpaidDeposits: await this.unpaidDeposits(user, query.buildingId),
       pendingPrices: user.buildingIds === null ? await this.pendingPrices() : null,
+      ...await this.moneyGroups(this.responsible(user, query.buildingId)),
     };
+  }
+
+  // Same responsibility as unpaid deposits: the building's current active manager, Boss for buildings without one (SCOPE-04).
+  private responsible(user: AuthUser, buildingId: number | undefined): Prisma.ContractWhereInput {
+    return user.role === 'BOSS'
+      ? { building: { id: buildingId, ...WITHOUT_ACTIVE_MANAGER } }
+      : { ...scopeWhere(user), building: { id: buildingId, isActive: true, managerId: user.id, manager: { isActive: true } } };
+  }
+
+  private async moneyGroups(contract: Prisma.ContractWhereInput, today = todayHanoi()) {
+    const date = (d: Date) => formatDateOnly(d);
+    return this.prisma.$transaction(async tx => {
+      // D-42: a draft is late (red) from the day after its billing date, i.e. from the 2nd of the month.
+      const drafts = await tx.invoice.findMany({ where: { type: 'MONTHLY', status: 'DRAFT', contract },
+        select: { id: true, periodNo: true, periodStart: true, periodEnd: true, contract: { select: CONTRACT_REF } },
+        orderBy: [{ periodEnd: 'asc' }, { id: 'asc' }] });
+      const draftItems = drafts.map((d): PeriodItem => {
+        const billingDate = addDays(d.periodEnd!, 1);
+        return { invoiceId: d.id, code: `TT${d.id}`, periodNo: d.periodNo, periodStart: date(d.periodStart!), periodEnd: date(d.periodEnd!),
+          billingDate: date(billingDate), late: today > billingDate, contract: d.contract };
+      });
+      // BIL-05/BIL-21: due periods the job no longer creates (over 7 days for ACTIVE; any for ENDED without settlement).
+      const open = await tx.contract.findMany({ where: { AND: [contract, { OR: [{ status: 'ACTIVE' }, { status: 'ENDED', settlement: null }] }] },
+        select: { ...CONTRACT_REF, status: true, startDate: true, termMonths: true,
+          invoices: { where: { type: 'MONTHLY', status: { not: 'CANCELLED' } }, select: { periodNo: true } } } });
+      const missed = open.flatMap(({ status, startDate, termMonths, invoices, ...ref }) => {
+        const plan = monthlyDraftPlan({ startDate, termMonths }, invoices.map(i => i.periodNo), today);
+        return (status === 'ACTIVE' ? plan.missedOld : [...plan.missedOld, ...plan.create]).map((p): PeriodItem => ({
+          invoiceId: null, code: null, periodNo: p.periodNo, periodStart: date(p.periodStart), periodEnd: date(p.periodEnd),
+          billingDate: date(p.billingDate), late: true, contract: ref,
+        }));
+      }).sort((a, b) => a.billingDate.localeCompare(b.billingDate) || a.contract.id - b.contract.id);
+      const overdueWhere: Prisma.InvoiceWhereInput = { type: { not: 'DEPOSIT' }, status: 'UNPAID', dueDate: { lt: today }, contract };
+      const overdueCount = await tx.invoice.count({ where: overdueWhere });
+      const overdue = overdueCount === 0 ? [] : await tx.invoice.findMany({ where: overdueWhere, select: UNPAID_DEPOSIT_SELECT,
+        orderBy: [{ dueDate: 'asc' }, { id: 'asc' }], take: ITEM_LIMIT });
+      const contracts = async (where: Prisma.ContractWhereInput) => {
+        const full: Prisma.ContractWhereInput = { AND: [contract, where] };
+        const count = await tx.contract.count({ where: full });
+        const rows = count === 0 ? [] : await tx.contract.findMany({ where: full, select: { ...CONTRACT_REF, endDate: true },
+          orderBy: [{ endDate: 'asc' }, { id: 'asc' }], take: ITEM_LIMIT });
+        return { count, items: rows.map(({ endDate, ...c }): ContractItem => ({ ...c, endDate: date(endDate) })) };
+      };
+      return {
+        awaitingReadings: { count: draftItems.length, late: draftItems.filter(d => d.late).length, items: draftItems.slice(0, ITEM_LIMIT) },
+        // shortcut: every missed period is returned (the red card lists each one, 30-frontend); paginate if it ever grows large.
+        missedPeriods: { count: missed.length, items: missed },
+        overdueInvoices: { count: overdueCount, items: overdue.map(row => ({ ...row, code: `TT${row.id}`, dueDate: row.dueDate ? date(row.dueDate) : null })) },
+        // CON-20: ACTIVE, end_date within 30 days, no renewal and no settlement.
+        expiringContracts: await contracts({ status: 'ACTIVE', endDate: { gte: today, lte: addDays(today, 30) }, nextContract: null, settlement: null }),
+        // CON-21 (D-13): past end_date without renewal or settlement, red.
+        expiredContracts: await contracts({ status: 'ACTIVE', endDate: { lt: today }, nextContract: null, settlement: null }),
+        // BIL-06 (Q-P4-15): a signed renewal has started but the old contract still waits for its final invoice or handover readings.
+        renewalsWaiting: await contracts({ status: 'ACTIVE', nextContract: { status: 'HOLD', signedAt: { not: null }, startDate: { lte: today } } }),
+      };
+    }, { isolationLevel: 'RepeatableRead' });
   }
 
   // VIEW-07 (Q-P6-2 = A): every NEW viewing counts, whatever its visit date.

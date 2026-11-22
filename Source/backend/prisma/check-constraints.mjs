@@ -60,6 +60,9 @@ const VCALL = `INSERT INTO viewings (room_id,guest_name,guest_phone,visit_at,upd
 
 // [nhóm, tình huống, SQL, kết quả mong đợi: 'ok' hoặc tên ràng buộc/mã lỗi phải xuất hiện]
 const cases = [
+  ['BIL-08', 'Late September invoice keeps October month-end', "INSERT INTO invoices (contract_id,type,period_no,period_start,period_end,status,issue_date,due_date,updated_at) VALUES (1,'MONTHLY',1,'2026-09-15','2026-09-30','UNPAID','2026-11-02','2026-10-31',now())", 'ok'],
+  ['BIL-08', 'Reject arbitrary backdated deadline', "INSERT INTO invoices (contract_id,type,period_no,period_start,period_end,status,issue_date,due_date,updated_at) VALUES (1,'MONTHLY',1,'2026-09-15','2026-09-30','UNPAID','2026-11-02','2026-10-30',now())", 'invoices_issued_dates'],
+  ['BIL-08', 'Deposit still requires ordered dates', "UPDATE invoices SET due_date=issue_date-1 WHERE id=1", 'invoices_issued_dates'],
   ['Viewings', 'VIEW-08: no exact time or legacy slot', `INSERT INTO viewings (room_id,guest_name,guest_phone,updated_at) VALUES (1,'Guest','0900000006',now())`, 'viewings_time_present'],
   ['Viewings', 'VIEW-08: incomplete legacy time', `INSERT INTO viewings (room_id,guest_name,guest_phone,visit_date,updated_at) VALUES (1,'Guest','0900000006','2026-11-15',now())`, 'viewings_time_present'],
   ['Viewings', 'VIEW-08: legacy slot stays valid', `INSERT INTO viewings (room_id,guest_name,guest_phone,visit_date,time_slot,updated_at) VALUES (1,'Guest','0900000006','2026-11-15','MORNING',now())`, 'ok'],

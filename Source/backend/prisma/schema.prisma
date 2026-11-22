@@ -580,6 +580,7 @@ model MeterReading {
   id              Int       @id @default(autoincrement())
   roomId          Int       @map("room_id")
   contractId      Int?      @map("contract_id")
+  invoiceId       Int?      @map("invoice_id")
   kind            MeterKind
   value           Int // số kWh hoặc m³ trên đồng hồ
   readOn          DateTime  @map("read_on") @db.Date
@@ -593,11 +594,13 @@ model MeterReading {
 
   room     Room      @relation(fields: [roomId], references: [id], onDelete: Restrict)
   contract Contract? @relation(fields: [contractId], references: [id], onDelete: SetNull)
+  invoice  Invoice?  @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
   readBy   User      @relation(fields: [readById], references: [id], onDelete: Restrict)
 
   // Opening and regular daily uniqueness are partial indexes in constraints.sql.
   @@index([roomId, kind, readOn])
   @@index([contractId, kind, readOn])
+  @@index([invoiceId])
   @@map("meter_readings")
 }
 
@@ -627,6 +630,7 @@ model Invoice {
   finalOf         Settlement?       @relation("FinalInvoice")
   createdBy       User?             @relation(fields: [createdById], references: [id], onDelete: SetNull)
   lines           InvoiceLine[]
+  meterReadings   MeterReading[]
   payment         Payment?
   bankTransactions BankTransaction[]
 

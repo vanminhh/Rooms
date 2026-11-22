@@ -34,6 +34,7 @@ export const DB_ERROR_MAP: Record<string, DbErrorMapping> = {
   room_prices_one_pending: { code: ErrorCode.CONFLICT_STATE },
   rate_plans_one_pending: { code: ErrorCode.CONFLICT_STATE },
   rate_plans_one_per_day: { code: ErrorCode.CONFLICT_STATE },
+  invoices_one_per_period: { code: ErrorCode.CONFLICT_STATE }, // BIL-21 racing the BIL-05 job
   MANAGER_MAX_2_BUILDINGS: { code: ErrorCode.MANAGER_MAX_2_BUILDINGS },
   BUILDING_MANAGER_ROLE: {
     code: ErrorCode.VALIDATION_FAILED,

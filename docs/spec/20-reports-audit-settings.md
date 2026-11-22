@@ -11,6 +11,18 @@ Modules: `reports`, `audit`, `settings`. Tables: `payments`, `settlements`, `req
 - **RPT-05** Deposits held = sum of paid deposits on HOLD/ACTIVE contracts.
 - **RPT-06** Managers see their buildings; Boss sees all and a per-building comparison.
 
+The Boss monthly summary lists overdue unpaid invoices for the selected billing month in red alongside the revenue total. Outstanding amounts are tracked separately from payments under RPT-01. The summary can be viewed while invoices remain outstanding.
+
+Boss actions on an overdue monthly invoice (owner decision, 22/11/2026):
+
+| Action | Effect |
+|---|---|
+| Sửa | Reissue under BIL-12. Use the corrected amount for the replacement and retain the original and adjustment history. |
+| Xóa | Cancel with a reason. Retain the cancelled invoice in history and remove its amount from outstanding debt. |
+| Cất | Hide the invoice from the Boss's main list. Include its amount in outstanding and overdue totals. The tenant and responsible manager continue to see the red overdue warning while the invoice is unpaid. |
+
+Acceptance example: with 80 million VND collected and one overdue invoice of 5 million VND, archiving the invoice leaves the summary at 80 million collected and 5 million overdue. Cancelling it with a reason leaves 80 million collected and zero overdue.
+
 API: `GET /reports/revenue?buildingId&from&to` (monthly series) · `GET /reports/occupancy?buildingId`.
 
 ## Audit log

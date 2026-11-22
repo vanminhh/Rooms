@@ -35,7 +35,7 @@ period k is partial when it does not cover its whole calendar month; then every 
   amount × days(period k) ÷ days(that calendar month), rounded to the đồng (D-41, A-21)
 ```
 
-- **BIL-01** Example (move-in on the 1st, so no partial month): start 01/09/2026, 6 months → periods 01/09–30/09, 01/10–31/10, …, 01/02–28/02/2027; `end_date` 28/02/2027; invoice for period 1 issued on 01/10/2026, due 09/10/2026.
+- **BIL-01** Example (move-in on the 1st, so no partial month): start 01/09/2026, 6 months → periods 01/09–30/09, 01/10–31/10, …, 01/02–28/02/2027; `end_date` 28/02/2027; invoice for period 1 issued on 01/10/2026, due 31/10/2026.
 - **BIL-02** Example: start 31/01/2027, 3 months → `end_date` 29/04/2027 (31/04 does not exist, so 30/04 − 1); periods 31/01–31/01 (partial: 1 of 31 days), February, March, 01/04–29/04 (partial: 29 of 30 days). With rent 2.500.000: period 1 rent 80.645, periods 2 and 3 rent 2.500.000, period 4 rent 2.416.667.
 - **BIL-03** A renewal's `start_date` = old `end_date` + 1, so the calendar months continue without a gap; when the old contract ended inside a month, the renewal starts with the rest of that month (partial).
 - **BIL-22** Example: start 20/03/2027, 6 months → `end_date` 19/09/2027; periods 20/03–31/03 (12 of 31 days: rent 967.742), April to August (five full months), 01/09–19/09 (19 of 30 days: rent 1.583.333). A move-in on the 1st has no partial first month.
@@ -81,8 +81,8 @@ For occupants already present at period_start, retain the existing departure bou
 | `PARKING` per VEHICLE service | vehicles of that service | service price |
 
 - **BIL-07** `amount = quantity × unit_price` per line; `total` = sum. `meta` stores opening/closing reading ids, values and dates. Owner 20/11/2026 (MTR-02): the first period's electric and PER_M3 water consumption starts at this contract's actual move-in baseline; subsequent periods start at this contract's preceding closing reading. The previous tenant's final reading closes their utilities and stays in their history; it is not the new tenant's baseline. Vacancy consumption between tenants is not assigned to either tenant. Distinct handover and month-end readings may share a date. PER_PERSON water continues to use occupants, not consumption (MTR-06).
-- **BIL-08** <a id="issue"></a>Issue: status `UNPAID`, `issue_date` = today, `due_date` = the 9th of the month the invoice belongs to after its period (the billing month); unpaid after the 9th it is overdue (D-40). Managers enter the readings so that invoices go out on the 1st. Notify tenant (in-app + email) with VietQR.
-- **BIL-09** Worked example (must be a unit test; the BIL-01 contract, so no partial month): start 01/09/2026, rent 2.500.000, readings electric 1.284 → 1.368, water 6 m³ PER_M3 at 15.000, Wifi (ROOM) 100.000, Rác (PERSON) 30.000 × 2, 1 motorbike 100.000, seed tiers → 2.500.000 + 150.000 + 119.000 + 90.000 + 100.000 + 60.000 + 100.000 = **3.119.000 đ**, issued 01/10/2026, due 09/10/2026.
+- **BIL-08** <a id="issue"></a>Issue: status `UNPAID`, `issue_date` = today, `due_date` = the last day of the month the invoice belongs to after its period (the billing month); unpaid after the last day of that month it is overdue (D-40). Managers enter the readings so that invoices go out on the 1st. Notify tenant (in-app + email) with VietQR.
+- **BIL-09** Worked example (must be a unit test; the BIL-01 contract, so no partial month): start 01/09/2026, rent 2.500.000, readings electric 1.284 → 1.368, water 6 m³ PER_M3 at 15.000, Wifi (ROOM) 100.000, Rác (PERSON) 30.000 × 2, 1 motorbike 100.000, seed tiers → 2.500.000 + 150.000 + 119.000 + 90.000 + 100.000 + 60.000 + 100.000 = **3.119.000 đ**, issued 01/10/2026, due 31/10/2026.
 
 ## VietQR
 
@@ -140,6 +140,8 @@ For occupants already present at period_start, retain the existing departure bou
 - [ ] Rate change effective 20/10 leaves the October period (01/10–31/10) on the old rate; November uses the new one (D-09).
 - [ ] Occupant added on 20/10 is first counted in the period starting 01/11.
 - [ ] A move-in on 20/03 is charged 12/31 of the rent and of each fixed service in its first invoice, issued 01/04 (D-41).
-- [ ] An invoice unpaid at the end of the 9th shows "Quá hạn" from the 10th (D-40).
+- [ ] A monthly invoice unpaid at the end of its due date shows "Quá hạn" in red to the tenant and the responsible manager from the following day (Asia/Ho_Chi_Minh) (D-40).
 - [ ] Early move-out on 25/11/2026 for BIL-01 contract (deposit 2.500.000): j = 3 (November), remaining_rent = 3 × 2.500.000 (December to February), net negative → FINAL invoice total = −net.
 - [ ] Reissue keeps exactly one non-cancelled invoice for the period.
+
+BIL-06 clarification (22/11/2026): keep the old contract ACTIVE and show a staff task while the final monthly invoice or handover readings are missing. Switch on the next run once both exist, including when the final invoice is unpaid. Owner 22/11/2026: the handover readings are electricity (kWh) and water (m³) in every building, also under PER_PERSON, where water is recorded but not billed (MTR-06).

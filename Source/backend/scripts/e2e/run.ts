@@ -182,7 +182,7 @@ export function readLogs(dir: string = RUNS_DIR): E2eRunLog[] {
 
 export type E2eCleanupDb = Pick<PrismaClient,
   'viewing' | 'roomPrice' | 'ratePlan' | 'room' | 'service' | 'building' | 'user' | 'session'
-  | 'contract' | 'contractService' | 'vehicle'>;
+  | 'contract' | 'contractService' | 'vehicle' | 'invoice'>;
 
 // Rows with a contract, invoice or contract link: never updated (PLAN 2.9b). reason is shown to the owner.
 export interface SkippedRow { table: E2eTable; id: number; reason: string }
@@ -198,7 +198,9 @@ function contractFixtureWhere(log: E2eRunLog): Prisma.ContractWhereInput {
     createdById: { in: log.ids.users }, createdBy: { fullName: { startsWith: prefix } },
     tenantId: { in: log.ids.users }, tenant: { fullName: { startsWith: prefix } },
     previousContractId: null, nextContract: null,
-    signedAt: null, movedInAt: null, signedScanAssetId: null, invoices: { none: {} },
+    signedAt: null, movedInAt: null, signedScanAssetId: null,
+    // BE-P4-13: a fixture may carry MONTHLY drafts of its own; they must be cancelled by this cleanup first.
+    invoices: { every: { type: 'MONTHLY', status: 'CANCELLED', cancelReason: CLEANUP_NOTE } },
     services: { every: { serviceId: { in: log.ids.services } } },
     vehicles: { every: { plate: { startsWith: E2E_PLATE_PREFIX },
       buildingId: { in: log.ids.buildings }, serviceId: { in: log.ids.services } } },
@@ -212,6 +214,13 @@ function contractFixtureWhere(log: E2eRunLog): Prisma.ContractWhereInput {
 export async function cleanupContractRun(tx: E2eCleanupDb, log: E2eRunLog, removedOn: Date): Promise<SkippedRow[]> {
   if (log.kind !== 'contracts') throw new Error('Expected a contracts e2e run');
   const where = { ...contractFixtureWhere(log), status: 'HOLD' as const };
+  // BE-P4-13: cancel the fixture's own MONTHLY drafts, only on contracts whose every invoice is such a draft or already retired.
+  const drafted = await tx.contract.findMany({ where: { ...where, invoices: { every: { type: 'MONTHLY', OR: [
+    { status: 'DRAFT' }, { status: 'CANCELLED', cancelReason: CLEANUP_NOTE }] } } }, select: { id: true } });
+  if (drafted.length > 0) {
+    await tx.invoice.updateMany({ where: { contractId: { in: drafted.map(c => c.id) }, type: 'MONTHLY', status: 'DRAFT' },
+      data: { status: 'CANCELLED', cancelReason: CLEANUP_NOTE } });
+  }
   const contracts = await tx.contract.findMany({ where, select: { id: true, createdById: true } });
   for (const contract of contracts) {
     const result = await tx.contract.updateMany({

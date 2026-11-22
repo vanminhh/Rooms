@@ -15,6 +15,7 @@ describe('BE-EX-19..23 /me and staff HTTP contract', () => {
     db.prisma.roomPrice = { count: vi.fn(async () => 0) };
     db.prisma.ratePlan = { count: vi.fn(async () => 0) };
     db.prisma.invoice = { count: vi.fn(async () => 0), findMany: vi.fn(async () => []) };
+    db.prisma.contract = { findMany: vi.fn(async () => []), count: vi.fn(async () => 0) }; // Phase 4 dashboard money groups
     vi.stubEnv('JWT_SECRET', 'viewing-http-test-only-0123456789abcdef');
     vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(NOW);
     const module = await Test.createTestingModule({ imports: [AppModule] }).overrideProvider(PrismaService).useValue(db.prisma)

@@ -2,7 +2,7 @@
 
 Nguồn: dòng "4 · Money" của roadmap (`docs/spec/01-architecture.md#roadmap`), `docs/spec/15-meters.md`, `16-billing.md`, `17-bank.md`, `19-notifications.md` (NOTI-04..07, NOTI-10), `12-pricing.md` (bậc điện), phần quyết toán của `14-contracts.md`, các trang tiền của `30-frontend.md`, và các quyết định D-05, D-09..D-14, D-21, D-38, D-40, D-41, D-42, **D-44** trong `docs/spec/00-overview.md`. Kế hoạch chi tiết: [plans/PHASE/PLAN.md](plans/PHASE/PLAN.md).
 
-**Mục tiêu (roadmap):** hóa đơn ví dụ **3.119.000 đ** (BIL-09) và các tháng lẻ của BIL-22 đạt ở unit test; webhook khớp và không khớp đạt; một lần chạy 00:05 bị bỏ được bù lại (BIL-05, BIL-06). Một tháng vận hành đầy đủ: quản lý chốt chỉ số cuối tháng → mùng 1 phát hành hóa đơn → người thuê quét VietQR → webhook ghi nhận → hóa đơn quá hạn từ mùng 10 được nhắc → trả phòng thì quyết toán và ghi đã trả lại cọc.
+**Mục tiêu (roadmap):** hóa đơn ví dụ **3.119.000 đ** (BIL-09) và các tháng lẻ của BIL-22 đạt ở unit test; webhook khớp và không khớp đạt; một lần chạy 00:05 bị bỏ được bù lại (BIL-05, BIL-06). Một tháng vận hành đầy đủ: quản lý chốt chỉ số cuối tháng → mùng 1 phát hành hóa đơn → người thuê quét VietQR → webhook ghi nhận → hóa đơn quá hạn từ ngày đầu tháng kế tiếp được nhắc → trả phòng thì quyết toán và ghi đã trả lại cọc.
 
 **Trạng thái:** chưa bắt đầu (22/11/2026). Tài liệu và câu trả lời đã có; phần tiếp theo là P4-1. Tiến trình: [PROGRESS.md](PROGRESS.md).
 
@@ -10,7 +10,7 @@ Nguồn: dòng "4 · Money" của roadmap (`docs/spec/01-architecture.md#roadmap
 
 ## 1. Quyết định đã chốt
 
-Quyết định cũ vẫn áp dụng: D-05, D-09 (đơn giá theo ngày bắt đầu kỳ), D-10 (không trả một phần), D-11, D-12, D-13, D-14, D-21, D-38 (không ảnh đồng hồ), D-40 (kỳ theo tháng dương lịch, phát hành mùng 1, hạn mùng 9), D-41 (tháng lẻ theo số ngày thực), D-42 (mail Boss thiếu chỉ số từ mùng 2 tới mùng 10), và câu trả lời Phase 3: Q-P3-3 (ghi "đã trả lại tiền" ở Phase 4), Q-P3-12/13 (mốc đầu riêng của từng hợp đồng), Q-P3-18 (người ở mới tính một đơn vị trong tháng vào ở), Q-P3-20 (xe ngừng giữa tháng vẫn thu tháng đó).
+Quyết định cũ vẫn áp dụng: D-05, D-09 (đơn giá theo ngày bắt đầu kỳ), D-10 (không trả một phần), D-11, D-12, D-13, D-14, D-21, D-38 (không ảnh đồng hồ), D-40 (kỳ theo tháng dương lịch, phát hành mùng 1, hạn cuối tháng thu), D-41 (tháng lẻ theo số ngày thực), D-42 (mail Boss thiếu chỉ số từ mùng 2 tới mùng 10), và câu trả lời Phase 3: Q-P3-3 (ghi "đã trả lại tiền" ở Phase 4), Q-P3-12/13 (mốc đầu riêng của từng hợp đồng), Q-P3-18 (người ở mới tính một đơn vị trong tháng vào ở), Q-P3-20 (xe ngừng giữa tháng vẫn thu tháng đó).
 
 Chủ dự án trả lời ngày 22/11/2026 (tất cả theo đề xuất), đã ghi vào spec thành **D-44**:
 
@@ -76,3 +76,5 @@ Module yêu cầu (báo lỗi thanh toán BANK-06, REQ-07), hộp thư trong ứ
 - Trước khi lên production: chọn nhà cung cấp webhook (Q-03), điền `BANK_WEBHOOK_SECRET` trong `.env`, điền `settings.bank_account` thật.
 - Khi có: bảng bậc điện và giá nước thật của từng tòa (Q-02).
 - Ở mỗi ⏸: kiểm chứng, commit và báo lại.
+
+Owner decisions (22/11/2026): Q-P4-14 selects the invoice row for ambiguous readings (MTR-11). Q-P4-15 waits for the final invoice and handover readings before switching a renewal, independently of payment (BIL-06).

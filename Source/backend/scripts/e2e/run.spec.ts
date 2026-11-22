@@ -260,13 +260,14 @@ describe('BE-P3-12 cleanup with contract fixtures', () => {
     const updateViewing = vi.fn(async () => ({ count: 1 }));
     const updateVehicle = vi.spyOn(db.vehicle, 'updateMany');
     const tx = { ...db, contract: { ...db.contract, updateMany: updateContract }, viewing: { ...db.viewing, updateMany: updateViewing } } as unknown as E2eCleanupDb;
-    db.contract.findMany.mockImplementationOnce(async () => [{ id: 7, createdById: 3 }]).mockImplementationOnce(async () => [{ id: 7 }]);
+    db.contract.findMany.mockImplementationOnce(async () => []) // no fixture with MONTHLY drafts
+      .mockImplementationOnce(async () => [{ id: 7, createdById: 3 }]).mockImplementationOnce(async () => [{ id: 7 }]);
 
     const removedOn = new Date('2026-11-20');
     expect(await cleanupContractRun(tx, log, removedOn)).toEqual([]);
     expect(updateContract).toHaveBeenCalledWith({ where: expect.objectContaining({
       id: 7, status: 'HOLD', terms: '[E2E 20261101T1200-TEST] Contract fixture', buildingId: { in: [2] }, roomId: { in: [1] },
-      signedAt: null, invoices: { none: {} }, createdById: { in: [3, 4] }, tenantId: { in: [3, 4] },
+      signedAt: null, invoices: { every: { type: 'MONTHLY', status: 'CANCELLED', cancelReason: CLEANUP_NOTE } }, createdById: { in: [3, 4] }, tenantId: { in: [3, 4] },
       vehicles: { every: { plate: { startsWith: E2E_PLATE_PREFIX }, buildingId: { in: [2] }, serviceId: { in: [5] } } },
     }), data: { status: 'CANCELLED', cancelReason: CLEANUP_NOTE } });
     expect(updateVehicle).toHaveBeenCalledWith({ where: { contractId: 7,
@@ -276,7 +277,25 @@ describe('BE-P3-12 cleanup with contract fixtures', () => {
       where: { id: { in: [6] }, depositCancelledByContractId: 7, calledAt: null },
       data: { calledById: 3, calledAt: expect.any(Date) },
     });
-    expect(db.contract.findMany.mock.calls[2][0].where).toMatchObject({ id: { notIn: [7] } });
+    expect(db.contract.findMany.mock.calls[3][0].where).toMatchObject({ id: { notIn: [7] } });
+  });
+
+  it('BE-P4-13: a HOLD fixture whose only invoices are its own MONTHLY drafts gets them cancelled before the contract', async () => {
+    const log = { ...makeLog({ rooms: [1], buildings: [2], users: [3, 4] }), kind: 'contracts' as const, buildingCodes: ['E2TEST'] };
+    const { db } = fakeCleanupDb([]);
+    const order: string[] = [];
+    const updateInvoice = vi.fn(async () => { order.push('invoice'); return { count: 1 }; });
+    const updateContract = vi.fn(async () => { order.push('contract'); return { count: 1 }; });
+    const tx = { ...db, invoice: { updateMany: updateInvoice }, contract: { ...db.contract, updateMany: updateContract } } as unknown as E2eCleanupDb;
+    db.contract.findMany.mockImplementationOnce(async () => [{ id: 9 }]).mockImplementationOnce(async () => [{ id: 9, createdById: 3 }])
+      .mockImplementationOnce(async () => [{ id: 9 }]);
+
+    expect(await cleanupContractRun(tx, log, new Date('2026-11-22'))).toEqual([]);
+    expect(db.contract.findMany.mock.calls[0][0].where).toMatchObject({ status: 'HOLD', terms: '[E2E 20261101T1200-TEST] Contract fixture',
+      invoices: { every: { type: 'MONTHLY', OR: [{ status: 'DRAFT' }, { status: 'CANCELLED', cancelReason: CLEANUP_NOTE }] } } });
+    expect(updateInvoice).toHaveBeenCalledWith({ where: { contractId: { in: [9] }, type: 'MONTHLY', status: 'DRAFT' },
+      data: { status: 'CANCELLED', cancelReason: CLEANUP_NOTE } });
+    expect(order).toEqual(['invoice', 'contract']);
   });
 
   it('G-05: normal cleanup still protects an open contract in an interrupted contract run', async () => {

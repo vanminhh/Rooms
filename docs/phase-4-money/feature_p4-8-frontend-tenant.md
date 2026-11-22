@@ -38,3 +38,4 @@ Out: "Báo lỗi thanh toán" (Phase 5), the inbox (Phase 5).
 ## Issues log
 
 <!-- When a task is [!], add: date · task ID · what failed · what is needed -->
+- Nghiệm thu hạn cuối tháng (22/11/2026): người thuê thấy hóa đơn tháng của mình chưa trả hiển thị đỏ với nhãn “Quá hạn” từ ngày đầu tháng tiếp theo theo giờ Việt Nam.

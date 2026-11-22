@@ -10,7 +10,7 @@ Nguồn: roadmap dòng "4 · Money" (`docs/spec/01-architecture.md#roadmap`), `d
 
 **Mục tiêu (roadmap):** hóa đơn ví dụ **3.119.000 đ** (BIL-09) và các tháng lẻ của BIL-22 đạt ở unit test; webhook khớp và không khớp đạt; một lần chạy 00:05 bị bỏ được bù lại (BIL-05, BIL-06).
 
-Một tháng vận hành đầy đủ: quản lý chốt chỉ số cuối tháng → mùng 1 hệ thống phát hành hóa đơn → người thuê quét VietQR → webhook ngân hàng ghi nhận → hóa đơn quá hạn từ mùng 10 được nhắc → khi trả phòng thì quyết toán và ghi đã trả lại cọc.
+Một tháng vận hành đầy đủ: quản lý chốt chỉ số cuối tháng → mùng 1 hệ thống phát hành hóa đơn → người thuê quét VietQR → webhook ngân hàng ghi nhận → hóa đơn quá hạn từ ngày đầu tháng kế tiếp được nhắc → khi trả phòng thì quyết toán và ghi đã trả lại cọc.
 
 ### Trong phạm vi
 
@@ -18,7 +18,7 @@ Một tháng vận hành đầy đủ: quản lý chốt chỉ số cuối thán
 |---|---|---|
 | Toán tiền | kỳ theo tháng dương lịch, tháng lẻ, bậc điện, tính hóa đơn | BIL-01..04, BIL-07, BIL-22, D-40, D-41, A-21, "Electric tier calculation" của 12-pricing, RATE-04, D-09 |
 | Chỉ số | danh sách "Chốt chỉ số", nhập theo lô, tiêu thụ qua mốc, thay đồng hồ, cảnh báo bất thường | MTR-02..06, MTR-08..12, D-38 |
-| Hóa đơn tháng | DRAFT bằng cron 00:05 + lúc khởi động, bù 7 ngày, nút "Tạo hóa đơn kỳ này", phát hành mùng 1, hạn mùng 9, quá hạn từ mùng 10 | BIL-05, BIL-06, BIL-08, BIL-21, D-21, A-09, A-10 |
+| Hóa đơn tháng | DRAFT bằng cron 00:05 + lúc khởi động, bù 7 ngày, nút "Tạo hóa đơn kỳ này", phát hành mùng 1, hạn cuối tháng thu, quá hạn từ ngày đầu tháng kế tiếp | BIL-05, BIL-06, BIL-08, BIL-21, D-21, A-09, A-10 |
 | Thu tiền | VietQR cho mọi hóa đơn, ghi thu tay mọi loại hóa đơn, lập lại hóa đơn, nhắc nợ | BIL-10, BIL-11, BIL-12, API-05, G-09 |
 | Ngân hàng | webhook một adapter, khớp theo `TT{id}`, giao dịch không khớp, Boss gán / đánh dấu đã hoàn | BANK-01..07 |
 | Quyết toán | trả phòng với `dryRun`, hóa đơn FINAL, hóa đơn cũ thành SETTLED, ghi "đã trả lại tiền" (Q-P3-3) | BIL-13..20, A-01, A-06 |
@@ -163,7 +163,7 @@ Quy tắc chạy: backend nối tiếp P4-1 → P4-2 → P4-3 → P4-4, sau đó
 
 ### P4-1 · Toán tiền (BE-P4-01..05) — reviewer: có
 
-- **BE-P4-01** Mở rộng `period.ts`: kỳ chứa một ngày (cho j của BIL-13), tháng thu của một kỳ, danh sách kỳ có `billingDate ≤ hôm nay`, hạn trả mùng 9 của tháng thu (BIL-01..04, BIL-22, D-40, D-41).
+- **BE-P4-01** Mở rộng `period.ts`: kỳ chứa một ngày (cho j của BIL-13), tháng thu của một kỳ, danh sách kỳ có `billingDate ≤ hôm nay`, hạn trả ngày cuối của tháng thu (BIL-01..04, BIL-22, D-40, D-41).
   Done when: test `BIL-01`, `BIL-02` (80.645 / 2.500.000 / 2.416.667), `BIL-22` (967.742 … 1.583.333), `BIL-03`, `BIL-04` và một ca năm nhuận 2028 đúng từng ngày.
 - **BE-P4-02** Bậc điện (`12-pricing.md` "Electric tier calculation"): chia theo `up_to` tăng dần, bậc cuối `up_to = null`, nhãn "Điện bậc {n} ({from}–{to} kWh)".
   Done when: 84 kWh → 50 × 3.000 + 34 × 3.500 = 269.000; 0 kWh → đúng một dòng "Điện (0 kWh)" số lượng 0, đơn giá bậc 1, tiền 0.
@@ -180,8 +180,8 @@ Quy tắc chạy: backend nối tiếp P4-1 → P4-2 → P4-3 → P4-4, sau đó
   Done when: manager chỉ thấy tòa của mình, `buildingId` ngoài phạm vi → `OUT_OF_SCOPE`; draft của tháng trước xếp trước draft tháng này.
 - **BE-P4-07** `POST /meter-readings` theo lô (MTR-11): mỗi phần tử kiểm riêng, trả thành công/lỗi theo từng phần tử; `value` < mốc trước và không phải thay đồng hồ → `METER_VALUE_DECREASED` (MTR-03, MTR-04); `read_on ≥ p(k) − 2 ngày` (MTR-10); không cần ảnh (D-38); nước vẫn ghi cả khi `PER_PERSON` (MTR-06).
   Done when: ca nghiệm thu MTR "nhập điện cho tòa PER_PERSON thì phát hành luôn, tòa PER_M3 chờ nước"; hai nhân sự nhập cùng phòng/ngày song song → một bên lỗi, không có hai dòng.
-- **BE-P4-08** Tự tính và phát hành khi đủ chỉ số (BIL-07, BIL-08): `UNPAID`, `issue_date` = hôm nay, `due_date` = mùng 9 của tháng thu, `meta` ghi id/giá trị/ngày của mốc đầu và cuối; MTR-08 thì giữ DRAFT chờ bấm "Phát hành"; thông báo người thuê theo Q-P4-1.
-  Done when: hóa đơn kỳ 01/09–30/09 phát hành 01/10 hạn 09/10 (BIL-01); `total` = tổng dòng (DB-B4); tiêu thụ gấp hơn 2 lần trung bình 3 kỳ trước → vẫn DRAFT kèm cờ.
+- **BE-P4-08** Tự tính và phát hành khi đủ chỉ số (BIL-07, BIL-08): `UNPAID`, `issue_date` = hôm nay, `due_date` = ngày cuối của tháng thu, `meta` ghi id/giá trị/ngày của mốc đầu và cuối; MTR-08 thì giữ DRAFT chờ bấm "Phát hành"; thông báo người thuê theo Q-P4-1.
+  Done when: hóa đơn kỳ 01/09–30/09 phát hành 01/10 hạn 31/10 (BIL-01); `total` = tổng dòng (DB-B4); tiêu thụ gấp hơn 2 lần trung bình 3 kỳ trước → vẫn DRAFT kèm cờ.
 - **BE-P4-09** `POST /invoices/:id/issue`: chỉ DRAFT, tính lại tại thời điểm bấm, nhân sự trong phạm vi, audit `invoice.issue`.
   Done when: DRAFT thiếu chỉ số → `CONFLICT_STATE`; hóa đơn đã UNPAID → `CONFLICT_STATE`; manager tòa khác → `OUT_OF_SCOPE`.
 - **BE-P4-10** Job `monthly-invoice` 00:05 + lúc khởi động (BIL-05, D-21): mọi hợp đồng ACTIVE có k với `hôm nay − 7 ngày ≤ p(k) ≤ hôm nay` và chưa có hóa đơn MONTHLY chưa hủy → tạo DRAFT đúng ngày kỳ k; vi phạm UK = "đã có", không phải lỗi; đếm riêng kỳ quá 7 ngày trong dòng tổng kết.
@@ -198,7 +198,7 @@ Quy tắc chạy: backend nối tiếp P4-1 → P4-2 → P4-3 → P4-4, sau đó
 - **BE-P4-14** Job 08:00 mùng 2→mùng 10 + bù lúc khởi động trong khoảng đó, tối đa một mail/ngày (NOTI-10, D-42): mọi DRAFT MONTHLY đã qua ngày thu ít nhất một ngày trọn, kể cả draft tháng trước; gom theo tòa kèm quản lý; nêu phòng, người thuê, thiếu chỉ số nào; danh sách rỗng hoặc Boss không có email → không gửi, chỉ log; tiếng Việt (LOC-06); lỗi gửi log và thử lại một lần (NOTI-07).
   Done when: test `NOTI-10` cho mùng 2, mùng 10 (gửi) và mùng 11 (không gửi); chạy hai lần trong ngày → một mail; không có draft → không gửi.
 - **BE-P4-15** Job 08:00 nhắc hóa đơn (NOTI-05): đến hạn ngày mai; quá hạn ngày 1, 4, 7… sau `due_date`; hợp đồng hết hạn trong 30 và 7 ngày (người thuê + quản lý); chỉ gửi cho người có email (NOTI-04), ngôn ngữ theo `users.locale` (LOC-06); bù hay bỏ theo Q-P4-4.
-  Done when: hóa đơn hạn 09/10 → nhắc 08/10; quá hạn được nhắc đúng ngày 1/4/7, không nhắc ngày 2, 3; chạy hai lần cùng ngày không nhắc trùng.
+  Done when: hóa đơn hạn 31/10 → nhắc 30/10; quá hạn được nhắc đúng ngày 1/4/7, không nhắc ngày 2, 3; chạy hai lần cùng ngày không nhắc trùng.
 - **BE-P4-16** Mẫu mail trong `settings.email_templates` theo khuôn `emailTemplate` (NOTI-07) với danh sách placeholder bắt buộc; nhớ cập nhật `EXPECTED_COUNTS` nếu seed thêm khóa.
   Done when: mẫu tùy biến thiếu placeholder bắt buộc → dùng mẫu mặc định; test danh sách khóa mẫu khớp spec.
 - **BE-P4-17** ⏸ lint + test + build; reviewer. Done when: output thật, nêu `[ASSUMPTION]`.

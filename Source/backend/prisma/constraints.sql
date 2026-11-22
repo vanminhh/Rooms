@@ -98,7 +98,16 @@ CREATE UNIQUE INDEX meter_readings_contract_daily_key ON meter_readings (room_id
 CREATE UNIQUE INDEX meter_readings_room_daily_unassigned_key ON meter_readings (room_id, kind, read_on) WHERE NOT is_opening AND contract_id IS NULL;
 
 ALTER TABLE invoices ADD CONSTRAINT invoices_total CHECK (total >= 0);
-ALTER TABLE invoices ADD CONSTRAINT invoices_issued_dates CHECK (status IN ('DRAFT', 'CANCELLED') OR (issue_date IS NOT NULL AND due_date IS NOT NULL AND due_date >= issue_date));
+ALTER TABLE invoices ADD CONSTRAINT invoices_issued_dates CHECK (
+  status IN ('DRAFT', 'CANCELLED') OR (
+    issue_date IS NOT NULL AND due_date IS NOT NULL AND (
+      due_date >= issue_date OR (
+        type = 'MONTHLY' AND period_end IS NOT NULL
+        AND due_date = (date_trunc('month', period_end::timestamp) + interval '2 months' - interval '1 day')::date
+      )
+    )
+  )
+);
 ALTER TABLE invoices ADD CONSTRAINT invoices_monthly_period CHECK (type <> 'MONTHLY' OR (period_no >= 1 AND period_start IS NOT NULL AND period_end IS NOT NULL AND period_end >= period_start));
 ALTER TABLE invoices ADD CONSTRAINT invoices_settled_link CHECK ((status = 'SETTLED') = (settlement_id IS NOT NULL));
 ALTER TABLE invoices ADD CONSTRAINT invoices_cancel_reason CHECK (status <> 'CANCELLED' OR cancel_reason IS NOT NULL);

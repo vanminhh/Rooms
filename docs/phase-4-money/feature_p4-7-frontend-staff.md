@@ -42,3 +42,4 @@ Out: tenant pages (P4-8), English (the staff app is Vietnamese only, LOC-01).
 ## Issues log
 
 <!-- When a task is [!], add: date · task ID · what failed · what is needed -->
+- Nghiệm thu hạn cuối tháng (22/11/2026): quản lý thấy hóa đơn tháng chưa trả trong phạm vi tòa hiển thị đỏ với nhãn “Quá hạn” từ ngày đầu tháng tiếp theo theo giờ Việt Nam.

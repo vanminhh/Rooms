@@ -25,7 +25,7 @@ Out: routes, jobs, DB writes (P4-2 onward).
 
 ## Tasks
 
-- [x] **BE-P4-01** Mở rộng `period.ts`: kỳ chứa một ngày (cho j của BIL-13), tháng thu của một kỳ, danh sách kỳ có `billingDate ≤ hôm nay`, hạn trả mùng 9 của tháng thu (BIL-01..04, BIL-22, D-40, D-41).
+- [x] **BE-P4-01** Mở rộng `period.ts`: kỳ chứa một ngày (cho j của BIL-13), tháng thu của một kỳ, danh sách kỳ có `billingDate ≤ hôm nay`, hạn trả ngày cuối của tháng thu (BIL-01..04, BIL-22, D-40, D-41).
   Done when: test `BIL-01`, `BIL-02` (80.645 / 2.500.000 / 2.416.667), `BIL-22` (967.742 … 1.583.333), `BIL-03`, `BIL-04` và một ca năm nhuận 2028 đúng từng ngày.
 - [x] **BE-P4-02** Bậc điện (`12-pricing.md` "Electric tier calculation"): chia theo `up_to` tăng dần, bậc cuối `up_to = null`, nhãn "Điện bậc {n} ({from}–{to} kWh)".
   Done when: 84 kWh → 50 × 3.000 + 34 × 3.500 = 269.000; 0 kWh → đúng một dòng "Điện (0 kWh)" số lượng 0, đơn giá bậc 1, tiền 0.

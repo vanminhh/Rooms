@@ -66,11 +66,11 @@ export function proratedAmount(amount: number, periodStart: Date, periodEnd: Dat
 
 export function dueDateOfBillingMonth(billingMonth: Date): Date {
   const month = toDateOnly(billingMonth);
-  return new Date(Date.UTC(month.getUTCFullYear(), month.getUTCMonth(), 9));
+  return new Date(Date.UTC(month.getUTCFullYear(), month.getUTCMonth() + 1, 0));
 }
 
 // BIL-08, D-40: the billing month is the calendar month after the period's month, also for a last period that
-// ends mid-month (its DRAFT is created on end_date + 1, but it belongs to the next month and is due on its 9th).
+// ends mid-month (its DRAFT is created on end_date + 1, but it belongs to the next month and is due on its last day).
 export function billingMonthOf(period: Pick<ContractPeriod, 'periodEnd'>): Date {
   const end = toDateOnly(period.periodEnd);
   return new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth() + 1, 1));

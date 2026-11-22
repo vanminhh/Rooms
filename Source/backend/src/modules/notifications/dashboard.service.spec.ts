@@ -128,6 +128,7 @@ function makePrisma(
   const prisma = {
     $transaction: vi.fn(async (work: (tx: typeof prisma) => Promise<unknown>) => work(prisma)),
     invoice: { count: vi.fn(async () => 0), findMany: vi.fn(async () => []) },
+    contract: { findMany: vi.fn(async () => []), count: vi.fn(async () => 0) }, // Phase 4 money groups: no contracts in this fixture
     user: { findFirst: vi.fn(async () => ({ id: 1 })) },
     viewing: {
       count: vi.fn(async ({ where }: any) => viewingRows.filter(r => matchWhere(r, where)).length),

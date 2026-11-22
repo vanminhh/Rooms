@@ -9,6 +9,7 @@ function setup() {
   db.prisma.ratePlan = { count: vi.fn(async () => 0) };
   db.prisma.roomPrice = { count: vi.fn(async () => 0) };
   db.prisma.invoice = { count: vi.fn(async () => 0), findMany: vi.fn(async () => []) };
+  db.prisma.contract = { findMany: vi.fn(async () => []), count: vi.fn(async () => 0) };
   return { db, viewings, service: new DashboardService(db.prisma) };
 }
 

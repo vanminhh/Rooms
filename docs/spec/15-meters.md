@@ -26,3 +26,5 @@ Module: `meters`. Table: `meter_readings`.
 - [ ] Reading 1.250 after 1.284 without replacement → `METER_VALUE_DECREASED`.
 - [ ] Replacement on 20/09 (old final 1.300, new start 0), closing 40 on 15/10, opening 1.284 → 16 + 40 = 56 kWh.
 - [ ] Submitting the electric reading for a PER_PERSON building issues the invoice; for a PER_M3 building it waits for the water reading.
+
+MTR-11 clarification (22/11/2026): an item may include invoiceId. Select the only eligible period automatically. When several periods qualify, require the manager to select the invoice row. Validate its room, period and staff scope.

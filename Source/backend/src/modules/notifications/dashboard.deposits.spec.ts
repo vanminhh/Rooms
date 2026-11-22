@@ -44,6 +44,8 @@ function setup() {
   }
   function matches(row: any, where: any): boolean {
     return Object.entries(where).every(([key, expected]: [string, any]) => {
+      if (key === 'type' && typeof expected === 'object') return row.type !== expected.not;
+      if (key === 'dueDate') return row.dueDate < expected.lt;
       if (key === 'type' || key === 'status') return row[key] === expected;
       if (key === 'contract') return Object.entries(expected).every(([field, condition]: [string, any]) => {
         if (field === 'buildingId') return condition.in.includes(row.contract.buildingId);
@@ -57,6 +59,7 @@ function setup() {
     user: { findFirst: vi.fn(async () => ({ id: 1 })) },
     viewing: { findMany: vi.fn(async () => []), count: vi.fn(async () => 0) },
     roomPrice: { count: vi.fn(async () => 0) }, ratePlan: { count: vi.fn(async () => 0) },
+    contract: { findMany: vi.fn(async () => []), count: vi.fn(async () => 0) }, // Phase 4 money groups: no contracts in this fixture
     invoice: {
       count: vi.fn(async ({ where }: any) => invoices.filter(row => matches(row, where)).length),
       findMany: vi.fn(async ({ where, select, take }: any) => invoices.filter(row => matches(row, where))
@@ -164,7 +167,8 @@ describe('BE-P3-18 / NOTI-06: unpaid deposit tasks', () => {
   it('NOTI-06: no matching invoice skips item reads and returns the empty group', async () => {
     const { service, prisma } = setup();
     expect((await service.get(manager, {})).unpaidDeposits).toEqual({ count: 0, items: [] });
-    expect(prisma.invoice.findMany).not.toHaveBeenCalled();
+    // The Phase 4 draft group always lists MONTHLY drafts; no DEPOSIT item read happens.
+    expect(prisma.invoice.findMany.mock.calls.filter(([args]: any) => args.where.type === 'DEPOSIT')).toEqual([]);
   });
 
   it.each(['TENANT', 'GUEST'] as const)('API-07: %s cannot read deposit tasks', async role => {

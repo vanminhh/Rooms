@@ -39,6 +39,10 @@ describe('BE-P2-01 / BE-P2-02: mapDbError, one test per row of PLAN 2.2', () => 
     });
   });
 
+  it('BIL-05/BIL-21: P2002 "invoices_one_per_period" (the button racing the job) -> CONFLICT_STATE', () => {
+    expect(mapDbError(p2002('invoices_one_per_period'))).toEqual({ code: ErrorCode.CONFLICT_STATE });
+  });
+
   it('BLD-03 row 6: trigger message "MANAGER_MAX_2_BUILDINGS: ..." -> dedicated ErrorCode.MANAGER_MAX_2_BUILDINGS (spec wins, PLAN 2.2 note)', () => {
     expect(
       mapDbError(dbMessage('MANAGER_MAX_2_BUILDINGS: manager already has 2 buildings')),
@@ -98,6 +102,7 @@ describe('BE-P2-01 / BE-P2-02: mapDbError, one test per row of PLAN 2.2', () => 
         'meter_readings_contract_daily_key',
         'meter_readings_room_daily_unassigned_key',
         'meter_readings_opening_contract',
+        'invoices_one_per_period',
         'rooms_building_id_code_key',
         'room_prices_one_pending',
         'rate_plans_one_pending',

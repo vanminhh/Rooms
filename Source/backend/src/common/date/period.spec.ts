@@ -13,7 +13,7 @@ describe('BE-P3-01: calendar-month contract periods', () => {
     expect(contractTermProgress(date('2027-01-01'), date('2027-01-31'), date('2027-01-16'))).toEqual({ elapsedDays: 15, totalDays: 31, percent: 48 });
     expect(contractTermProgress(date('2027-01-01'), date('2027-01-31'), date('2027-02-01'))).toEqual({ elapsedDays: 31, totalDays: 31, percent: 100 });
   });
-  it('BIL-01 / BIL-08: six full months end on 28/02/2027 and the first invoice is due on 09/10/2026', () => {
+  it('BIL-01 / BIL-08: six full months end on 28/02/2027 and the first invoice is due on 31/10/2026', () => {
     expect(formatDateOnly(contractEndDate(date('2026-09-01'), 6))).toBe('2027-02-28');
     const periods = contractPeriods(date('2026-09-01'), 6);
     expect(periods.map(({ periodNo, periodStart, periodEnd, billingDate, isPartial }) => ({
@@ -30,7 +30,7 @@ describe('BE-P3-01: calendar-month contract periods', () => {
       { periodNo: 5, start: '2027-01-01', end: '2027-01-31', billing: '2027-02-01', isPartial: false },
       { periodNo: 6, start: '2027-02-01', end: '2027-02-28', billing: '2027-03-01', isPartial: false },
     ]);
-    expect(formatDateOnly(dueDateOfBillingMonth(date('2026-10-01')))).toBe('2026-10-09');
+    expect(formatDateOnly(dueDateOfBillingMonth(date('2026-10-01')))).toBe('2026-10-31');
   });
 
   it('BIL-02: 31/01/2027 for three months clamps to 29/04 and prorates both edges', () => {
@@ -100,14 +100,14 @@ describe('BE-P4-01: billing month, due date, period of a date, periods due', () 
   const p = contractPeriods(new Date('2026-09-01T00:00:00Z'), 6); // BIL-01
   const day = (s: string) => new Date(`${s}T00:00:00Z`);
 
-  it('BIL-01, BIL-08: period 1 (01/09–30/09/2026) belongs to October and is due on 09/10/2026', () => {
+  it('BIL-01, BIL-08: period 1 (01/09–30/09/2026) belongs to October and is due on 31/10/2026', () => {
     expect(billingMonthOf(p[0])).toEqual(day('2026-10-01'));
-    expect(dueDateOfPeriod(p[0])).toEqual(day('2026-10-09'));
+    expect(dueDateOfPeriod(p[0])).toEqual(day('2026-10-31'));
   });
 
-  it('BIL-22, D-40: a last period ending 19/09/2027 belongs to October and is due on 09/10/2027, never before it ends', () => {
+  it('BIL-22, D-40: a last period ending 19/09/2027 belongs to October and is due on 31/10/2027, never before it ends', () => {
     const last = contractPeriods(day('2027-03-20'), 6).at(-1)!;
-    expect(dueDateOfPeriod(last)).toEqual(day('2027-10-09'));
+    expect(dueDateOfPeriod(last)).toEqual(day('2027-10-31'));
   });
 
   it('BIL-13: 25/11/2026 is in period j = 3 (November); on or after end_date it is the last period; before start none', () => {
@@ -122,4 +122,11 @@ describe('BE-P4-01: billing month, due date, period of a date, periods due', () 
     expect(periodsDue(p, day('2026-10-01')).map((x) => x.periodNo)).toEqual([1]);
     expect(periodsDue(p, day('2027-03-01')).map((x) => x.periodNo)).toEqual([1, 2, 3, 4, 5, 6]);
   });
+});
+
+it.each([
+  ['2027-02-01', '2027-02-28'], ['2028-02-01', '2028-02-29'],
+  ['2026-04-01', '2026-04-30'], ['2026-12-01', '2026-12-31'],
+])('D-40: billing month %s ends on %s', (month, expected) => {
+  expect(formatDateOnly(dueDateOfBillingMonth(new Date(month + 'T00:00:00Z')))).toBe(expected);
 });
