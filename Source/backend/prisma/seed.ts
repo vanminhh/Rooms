@@ -263,11 +263,16 @@ export async function seed(prisma: PrismaClient): Promise<void> {
   }
 
   for (const [kind, value] of [['ELECTRIC', 1284], ['WATER', 52]] as const) {
-    await prisma.meterReading.upsert({
-      where: { roomId_kind_readOn: { roomId: room203, kind, readOn: START_DATE } },
-      update: {},
-      create: { roomId: room203, contractId: contract.id, kind, value, readOn: START_DATE, readById: userId.manager1 },
+    // findFirst + create: since BE-P3-20 the daily uniqueness is a partial index (constraints.sql), so Prisma has no unique key to upsert on.
+    const reading = await prisma.meterReading.findFirst({
+      where: { roomId: room203, contractId: contract.id, kind, readOn: START_DATE, isOpening: false },
+      select: { id: true },
     });
+    if (!reading) {
+      await prisma.meterReading.create({
+        data: { roomId: room203, contractId: contract.id, kind, value, readOn: START_DATE, readById: userId.manager1 },
+      });
+    }
   }
 }
 

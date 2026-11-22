@@ -340,10 +340,11 @@ const MODELS: Record<string, Model> = {
       photoUrl: null,
       isMeterReplaced: false,
       oldMeterFinal: null,
+      isOpening: false,
       note: null,
     },
-    unique: [['roomId', 'kind', 'readOn']],
-    compound: { roomId_kind_readOn: ['roomId', 'kind', 'readOn'] },
+    // meter_readings_contract_daily_key (constraints.sql, partial: NOT is_opening AND contract_id IS NOT NULL); the seed writes only such rows.
+    unique: [['roomId', 'contractId', 'kind', 'readOn']],
     check: (r, db) => {
       fk(db, 'room', { id: r.roomId });
       if (r.contractId !== null) fk(db, 'contract', { id: r.contractId });
@@ -1246,5 +1247,17 @@ describe('BE-LOGIN-06: run-guard (import.meta.main)', { timeout: 30_000 }, () =>
     expect(src).toContain('\nif (import.meta.main) await main();\n');
     expect(src).not.toMatch(/pathToFileURL/);
     expect(src).not.toMatch(/process\.argv/);
+  });
+});
+
+describe('BE-LOGIN-06: the fake only accepts keys the real Prisma client has', () => {
+  it('BE-LOGIN-06: every compound key of the fake models is an @@unique or @@id of schema.prisma (a stale key once hid a broken seed)', () => {
+    const schema = readFileSync(new URL('./schema.prisma', import.meta.url), 'utf8');
+    const keys = Object.values(MODELS).flatMap((m) => Object.values(m.compound ?? {}));
+    expect(keys.length).toBeGreaterThan(0);
+    for (const fields of keys) {
+      const list = `[${fields.join(', ')}]`;
+      expect(schema.includes(`@@unique(${list}`) || schema.includes(`@@id(${list}`), list).toBe(true);
+    }
   });
 });

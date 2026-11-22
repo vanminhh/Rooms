@@ -145,6 +145,10 @@ describe('D2-14, BE-P2-09: Buildings and manager API against real Prisma', () =>
       newPassword: `E2e-${e2e.runId}-pw`,
     }, managerSession);
     expect(changed.status).toBe(200);
+    // AUTH-T3, BE-P3-17: a password change voids the access tokens issued before it, so the manager logs in again.
+    const relogin = await send(app, 'post', '/auth/login', { phone: managerPhone, password: `E2e-${e2e.runId}-pw` });
+    expect(relogin.status).toBe(200);
+    managerSession = sessionOf(relogin);
     managerTemporaryPassword = '';
   });
 

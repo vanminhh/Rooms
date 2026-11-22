@@ -1,3 +1,4 @@
+import { txTimeoutMs } from '../../common/prisma/tx-timeout.js';
 import { ConflictException, ForbiddenException, HttpException, HttpStatus, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { addDays, formatDateOnly, HANOI_OFFSET_MS, todayHanoi, type TimeSlot } from '../../common/date/today.js';
@@ -26,7 +27,7 @@ const STATUS_LABELS: Record<ViewingStatus, string> = {
   NEW: 'Chờ xác nhận', CONFIRMED: 'Đã xác nhận', DONE: 'Đã xem', WON: 'Đã chốt', LOST: 'Không thành', CANCELLED: 'Đã hủy',
 };
 const OPEN = ['NEW', 'CONFIRMED'] as const;
-const TX_OPTIONS = { maxWait: 10_000, timeout: 30_000, isolationLevel: 'ReadCommitted' as const };
+const TX_OPTIONS = { maxWait: 10_000, timeout: txTimeoutMs(), isolationLevel: 'ReadCommitted' as const };
 const hanoiMidnight = (day: Date) => new Date(day.getTime() - HANOI_OFFSET_MS);
 const conflict = () => new ConflictException(ErrorCode.CONFLICT_STATE);
 

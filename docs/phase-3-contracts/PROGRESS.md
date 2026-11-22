@@ -22,6 +22,12 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 
 ## Nhật ký điểm dừng
 
+- 22/11/2026 · QA-P3-02 · owner chọn tăng timeout khi test: biến `PRISMA_TX_TIMEOUT_MS` (`src/common/prisma/tx-timeout.ts`, chỉ nhận số nguyên ≥ 30 000, mặc định 30 s) dùng ở `PrismaService` và `viewings.service.ts`; `vitest.config.e2e.ts` đặt 120 000. Unit BE 2671/2671, lint 0 lỗi, build OK; e2e viewings cả file **11/11** (464,79s) · chưa commit
+
+- 22/11/2026 · QA-P3-02 · điều tra VIEW-16/21: chạy riêng ca này **1/1 xanh** (102,70s). Đo DB dev: 0,72–0,79 s mỗi truy vấn ngoài transaction, 0,29–0,64 s trong transaction. Hai lượt đặt cùng tài khoản xếp hàng sau khóa (`lockViewingKey account:…`), thời gian chờ khóa tính vào giới hạn 30 s của transaction (`TX_OPTIONS` trong `viewings.service.ts`), nên lượt thứ hai hết hạn khi DB chậm (31.006 ms) và ra 500. Kết luận: do độ trễ DB dev, không phải sai logic; chưa sửa code
+
+- 22/11/2026 · QA-P3-02 · sửa `prisma/seed.ts` (chỉ số đồng hồ mẫu: `findFirst` + `create` thay cho `upsert` trên khóa unique đã bỏ ở BE-P3-20) và test chặn khóa ghép cũ trong `seed.spec.ts`; sửa `test/buildings.e2e-spec.ts`, `test/pricing.e2e-spec.ts` (đăng nhập lại sau đổi mật khẩu, vì BE-P3-17 làm token cũ hết hiệu lực) · unit BE 2669/2669; e2e từng file một: 56/68 rồi buildings + pricing chạy lại 16/16 → còn 1 ca đỏ VIEW-16/21 (transaction 30 s hết hạn khi 2 lượt đặt song song trên DB dev chậm, lỗi 500) · chưa commit
+
 - 20/11/2026 · QA-P3-02/03 — sau hướng dẫn chạy lại hai runner, owner phản hồi “ok rồi”; ghi nhận xác nhận chung rằng đã chạy ổn, không tự điền số Test Files/Tests hoặc nội dung cleanup chưa được cung cấp. Chuyển sang kiểm trực tiếp luồng staff/tenant, hủy cọc, người ở/xe/dịch vụ, riêng tư, VI/EN/360px và bản in theo checklist. Browser-control vẫn không có trong phiên này, nên phần nghiệm thu trực tiếp cần owner thực hiện. Chưa đóng Phase 3 hoặc stage/commit; lượt này chỉ cập nhật tài liệu, không chạy lại test.
 
 - 20/11/2026 · QA-P3-02 — ảnh chẩn đoán mới của owner: DATABASE_URL cổng 6543 SELECT 1 **OK 1975ms**, DIRECT_URL cổng 5432 **OK 2490ms**, summary cả hai OK. Đây là bằng chứng kết nối thành công ở lượt này, chưa phải kết quả E2E; nguyên nhân lỗi preflight trước đó chưa xác định. Agent thử lại cùng công cụ: runtime FAILED 139ms, direct FAILED 11ms, exit1, nên không khởi tạo fixture. Bước tiếp theo chạy lại hai runner trên máy owner, theo thứ tự và chỉ chạy workflow khi registrations thành công. Không sửa cấu hình hoặc mã ứng dụng.

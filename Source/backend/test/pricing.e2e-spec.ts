@@ -138,8 +138,10 @@ describe('BE-P2-28: Room price proposal, approval and sync against real Prisma',
       newPassword: `E2e-${e2e.runId}-pw`,
     }, tempSession);
     expect(changed.status).toBe(200);
-    // change-password returns no new token (BE-LOGIN-17); the already-issued access token keeps working.
-    managerSession = tempSession;
+    // AUTH-T3, BE-P3-17: a password change voids the access tokens issued before it, so the manager logs in again.
+    const relogin = await send(app, 'post', '/auth/login', { phone: managerPhone, password: `E2e-${e2e.runId}-pw` });
+    expect(relogin.status).toBe(200);
+    managerSession = sessionOf(relogin);
 
     const code = await uniqueBuildingCode(
       async (candidate) => (await prisma.building.findUnique({ where: { code: candidate }, select: { id: true } })) !== null,
