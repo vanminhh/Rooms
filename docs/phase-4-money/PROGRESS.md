@@ -12,8 +12,8 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 |---|---|---|---|---|---|
 | P4-0 Chủ dự án chuẩn bị | đang làm | – | – | Q-03 (nhà cung cấp webhook), `BANK_WEBHOOK_SECRET`, `settings.bank_account` thật, bậc điện thật (Q-02) | Không chặn code |
 | P4-1 Toán tiền | xong | BE-P4-05 ⏸ | `bc60df3` | P4-2 | Q-P4-13: nước PER_PERSON tháng lẻ không nhân tỉ lệ (D-44 (13)) |
-| P4-2 Chỉ số + hóa đơn tháng | chờ commit | BE-P4-13 ⏸ | – | chủ dự án kiểm và commit; rồi M3 (P4-3 Mail) | [Kế hoạch](plans/P4-2/PLAN.md) |
-| P4-3 Mail | chưa làm | – | – | – | |
+| P4-2 Chỉ số + hóa đơn tháng | xong | BE-P4-13 ⏸ | `e853135` | P4-3 | [Kế hoạch](plans/P4-2/PLAN.md); index `contracts_one_open_per_room` chặn gia hạn HOLD (Phase 5) |
+| P4-3 Mail + hộp thư nhân sự (BE) | chờ commit | BE-P4-17 ⏸ | – | chủ dự án kiểm và commit; rồi M4 (P4-4) | Q-P4-16..23; chuông FE ở FE-P4-08a (M7) |
 | P4-4 API hóa đơn + thu tiền | chưa làm | – | – | – | |
 | P4-5 Ngân hàng | chưa làm | – | – | planner `plans/P4-5/PLAN.md` | |
 | P4-6 Quyết toán | chưa làm | – | – | planner `plans/P4-6/PLAN.md` | |
@@ -29,8 +29,8 @@ Mỗi **mốc** kết thúc ở một điểm dừng ⏸: agent báo cáo → ch
 |---|---|---|---|---|---|---|
 | ✅ | M0 Soạn Phase 4 | README, PLAN, 9 file task | Phase 3 xong | Q-P4-1..12 (đã trả lời) | – | `bc60df3` (kèm M1) |
 | ✅ | M1 Toán tiền (P4-1) | BE-P4-01..05 | M0 | Q-P4-13 (đã trả lời) | unit, lint, build, reviewer | `bc60df3` |
-| ▶ | M2 Chỉ số + hóa đơn tháng (P4-2) | BE-P4-06..13 | M1 | – (migration đã áp) | unit, lint, build, check-constraints, e2e nhập chỉ số → phát hành, tranh chấp hai kết nối, 3 ca bù BIL-05, ca BIL-06, ca BIL-21, cleanup list, reviewer | – |
-| ⬜ | M3 Mail (P4-3) | BE-P4-14..17 | M2 | thêm khóa vào seed `settings` (nếu cần) | unit, lint, build, reviewer | – |
+| ✅ | M2 Chỉ số + hóa đơn tháng (P4-2) | BE-P4-06..13 | M1 | – (migration đã áp) | unit, lint, build, check-constraints, e2e nhập chỉ số → phát hành, tranh chấp hai kết nối, 3 ca bù BIL-05, ca BIL-06, ca BIL-21, cleanup list, reviewer | `e853135` |
+| ▶ | M3 Mail (P4-3) | BE-P4-14..17 | M2 | thêm khóa vào seed `settings` (nếu cần) | unit, lint, build, reviewer | – |
 | ⬜ | M4 API hóa đơn + thu tiền (P4-4) | BE-P4-18..23 | M2 | – | + e2e phát hành → ghi thu tay → PAID, reviewer | – |
 | ⬜ | M5 Ngân hàng (P4-5) | BE-P4-24..28 | M4 | chạy planner `plans/P4-5/PLAN.md` rồi hỏi một lượt câu hỏi của nó; migration (nếu có) | + e2e webhook khớp / không khớp, reviewer | – |
 | ⬜ | M6 Quyết toán (P4-6) | BE-P4-29..33 | M4, **sau** M5 (cùng đụng `payments`) | planner `plans/P4-6/PLAN.md` | + e2e dry-run → ghi thật → FINAL → ghi thu, reviewer | – |
@@ -40,23 +40,18 @@ Mỗi **mốc** kết thúc ở một điểm dừng ⏸: agent báo cáo → ch
 
 Việc của chủ dự án chạy song song, không chặn code (P4-0): Q-03 nhà cung cấp webhook, `BANK_WEBHOOK_SECRET` trong `.env`, `settings.bank_account` thật, bậc điện thật (Q-02). Phải xong **trước khi lên production**, không cần xong trước M9.
 
-### ▶ Mốc đang làm: M2 (BE-P4-06..13)
+### ▶ Mốc đang làm: M3 (BE-P4-14a, 14, 15, 16, 14b, 17)
 
-Trạng thái thật lúc soạn (22/11/2026). Code nằm trên các file chính, **chưa commit** (sau `bc60df3`).
+Trạng thái thật (22/11/2026). Code nằm trên các file chính, **chưa commit** (sau `e853135`). Kế hoạch: [plans/P4-3/PLAN.md](plans/P4-3/PLAN.md); câu trả lời Q-P4-16..23 trong README.
 
-- [x] BE-P4-06 `GET /meter-readings/due`: unit 2/2, lint, build đạt
-- [x] Migration `20261122000000_meter_reading_invoice` đã áp lên DB dev (chủ dự án xác nhận)
-- [x] Code `POST /meter-readings` (BE-P4-07), tự phát hành (BE-P4-08), `POST /invoices/:id/issue` (BE-P4-09); đã sửa các điểm reviewer CHẶN; test liên quan 92/92
-- [x] Migration `20261122010000_late_monthly_issue`: reviewer DUYỆT; check-constraints 110/110 trên PostgreSQL nhúng
-- [x] Migration `20261122010000_late_monthly_issue` đã áp lên DB dev (22/11/2026, chủ dự án cho phép); `migrate status`: up to date
-- [x] E2E trên DB dev (rollback, không để lại dòng): nhập chỉ số → phát hành; PER_PERSON phát hành ngay, PER_M3 chờ nước; BIL-09 = 3.119.000 đủ 7 dòng
-- [x] Ca tranh chấp hai kết nối: đúng một dòng chỉ số; dữ liệu thử commit rồi dọn mềm (chủ dự án chọn), lượt `20261122T1711-LXBW` CLEANED
-- [x] Đánh dấu `[x]` BE-P4-07..09 trong file task (thêm test MTR-08)
-- [x] BE-P4-10 job `monthly-invoice` 00:05 + lúc khởi động (3 ca bù BIL-05)
-- [x] BE-P4-11 chuyển ca gia hạn trong cùng job (BIL-06, Q-P4-15)
-- [x] BE-P4-12 `POST /contracts/:id/monthly-invoices` (BIL-21) + nhóm việc hôm nay (NOTI-06)
-- [x] BE-P4-13 lint, unit, build toàn bộ backend, e2e trên DB dev, cleanup list, reviewer một lượt cuối
-- [x] ⏸ Báo cáo M2 → chủ dự án commit (chờ commit)
+- [x] Hỏi chủ dự án Q-P4-16..19, rồi Q-P4-20..23 sau planner (thêm hộp thư nhân sự NOTI-11)
+- [x] BE-P4-14a `claimDailyRun` (`settings.job_state`), ngày nhắc 1/4/7 và mốc 30/7, `responsibleStaffIds` / `notifyBuildingStaff`
+- [x] BE-P4-14 job 08:00 thiếu chỉ số (NOTI-10) + thư hộp thư Boss (ANNOUNCEMENT, Q-P4-21)
+- [x] BE-P4-15 job 08:00 nhắc hóa đơn và hợp đồng (NOTI-05) + thư nhân sự + mail gộp (Q-P4-22)
+- [x] BE-P4-16 5 mẫu mail mới, placeholder bắt buộc, mail nhân sự luôn tiếng Việt
+- [x] BE-P4-14b `GET /me/notifications`, `POST :id/read`, `POST read-all`
+- [x] BE-P4-17 lint 0 lỗi, unit 2793/2793, build pass; reviewer DUYỆT (4 nên sửa: 1 ghi shortcut, 3 ghi vào PLAN)
+- [x] ⏸ Báo cáo M3 → chủ dự án commit (chờ commit)
 
 ### Một vòng mốc (lặp lại cho mọi mốc)
 
@@ -98,3 +93,5 @@ Trạng thái thật lúc soạn (22/11/2026). Code nằm trên các file chính
 - 22/11/2026 · M2 · e2e `test/meters-billing.e2e-spec.ts`: luồng chính (rollback) đạt 72 s; ca tranh chấp (commit + dọn mềm, sửa `scripts/e2e/run.ts` để hủy hóa đơn nháp của hợp đồng thử) đạt; cleanup list không còn dòng của lượt; thêm unit MTR-08; BE-P4-07..09 `[x]`
 - 22/11/2026 · M2 ⏸ BE-P4-13 · job `monthly-invoice` 00:05 + khởi động (BIL-05, bù 7 ngày), chuyển ca gia hạn (BIL-06, Q-P4-15), `POST /contracts/:id/monthly-invoices` (BIL-21), 6 nhóm tiền trong `GET /dashboard` (NOTI-06) · unit 2742/2742, lint 0 lỗi (4 cảnh báo cũ), build pass, e2e `meters-billing` 3/3 trên dev, check-constraints 110/110, cleanup list sạch · reviewer CHẶN 2 lỗi audit (tự phát hành, chuyển ca) + 1 nên sửa (map `invoices_one_per_period`), đã sửa cả 3 · hạn chế: index `contracts_one_open_per_room` chặn hợp đồng gia hạn HOLD (Phase 5)
 - 22/11/2026 · M2 · Chủ dự án quyết: chuyển ca gia hạn chờ cả số điện (kWh) và nước (m³) bàn giao ở mọi tòa, kể cả PER_PERSON (MTR-06); bỏ [ASSUMPTION] cũ, sửa `renewal-switch.ts`, test, 16-billing
+- 22/11/2026 · M3 · chủ dự án trả lời Q-P4-16..23 (thêm hộp thư nhân sự NOTI-11, chuông ở M7); planner viết `plans/P4-3/PLAN.md`; code BE-P4-14a..16, 14b · unit 2793/2793, lint 0 lỗi (4 cảnh báo cũ), build pass
+- 22/11/2026 · M3 ⏸ BE-P4-17 · reviewer DUYỆT, không lỗi chặn; đọc-trước-claim ghi `shortcut:`; P4-4 phải tự chống trùng nhắc tay (Q-P4-7), ghi trong PLAN P4-3 · unit 2793/2793, lint 0 lỗi, build pass

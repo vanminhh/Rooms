@@ -25,13 +25,17 @@ Out: the in-app inbox page (Phase 5).
 
 ## Tasks
 
-- [ ] **BE-P4-14** Job 08:00 mùng 2→mùng 10 + bù lúc khởi động trong khoảng đó, tối đa một mail/ngày (NOTI-10, D-42): mọi DRAFT MONTHLY đã qua ngày thu ít nhất một ngày trọn, kể cả draft tháng trước; gom theo tòa kèm quản lý; nêu phòng, người thuê, thiếu chỉ số nào; danh sách rỗng hoặc Boss không có email → không gửi, chỉ log; tiếng Việt (LOC-06); lỗi gửi log và thử lại một lần (NOTI-07).
+- [x] **BE-P4-14a** Nền dùng chung ([plans/P4-3/PLAN.md](plans/P4-3/PLAN.md) CP-1): `claimDailyRun` trên `settings['job_state']` (Q-P4-16), hàm ngày thuần của nhắc nhở (NOTI-05), helper `notifyBuildingStaff` / `responsibleStaffIds` (NOTI-11, SCOPE-04) để P4-4/P4-5 gọi lại cho PAYMENT_RECEIVED.
+  Done when: test CP-1 pass.
+- [x] **BE-P4-14** Job 08:00 mùng 2→mùng 10 + bù lúc khởi động trong khoảng đó, tối đa một mail/ngày (NOTI-10, D-42): mọi DRAFT MONTHLY đã qua ngày thu ít nhất một ngày trọn, kể cả draft tháng trước; gom theo tòa kèm quản lý; nêu phòng, người thuê, thiếu chỉ số nào; danh sách rỗng hoặc Boss không có email → không gửi, chỉ log; tiếng Việt (LOC-06); lỗi gửi log và thử lại một lần (NOTI-07).
   Done when: test `NOTI-10` cho mùng 2, mùng 10 (gửi) và mùng 11 (không gửi); chạy hai lần trong ngày → một mail; không có draft → không gửi.
-- [ ] **BE-P4-15** Job 08:00 nhắc hóa đơn (NOTI-05): đến hạn ngày mai; quá hạn ngày 1, 4, 7… sau `due_date`; hợp đồng hết hạn trong 30 và 7 ngày (người thuê + quản lý); chỉ gửi cho người có email (NOTI-04), ngôn ngữ theo `users.locale` (LOC-06); bù hay bỏ theo Q-P4-4.
+- [x] **BE-P4-15** Job 08:00 nhắc hóa đơn (NOTI-05): đến hạn ngày mai; quá hạn ngày 1, 4, 7… sau `due_date`; hợp đồng hết hạn trong 30 và 7 ngày (người thuê + quản lý); chỉ gửi cho người có email (NOTI-04), ngôn ngữ theo `users.locale` (LOC-06); bù hay bỏ theo Q-P4-4.
   Done when: hóa đơn hạn 31/10 → nhắc 30/10; quá hạn được nhắc đúng ngày 1/4/7, không nhắc ngày 2, 3; chạy hai lần cùng ngày không nhắc trùng.
-- [ ] **BE-P4-16** Mẫu mail trong `settings.email_templates` theo khuôn `emailTemplate` (NOTI-07) với danh sách placeholder bắt buộc; nhớ cập nhật `EXPECTED_COUNTS` nếu seed thêm khóa.
+- [x] **BE-P4-16** Mẫu mail trong `settings.email_templates` theo khuôn `emailTemplate` (NOTI-07) với danh sách placeholder bắt buộc; nhớ cập nhật `EXPECTED_COUNTS` nếu seed thêm khóa.
   Done when: mẫu tùy biến thiếu placeholder bắt buộc → dùng mẫu mặc định; test danh sách khóa mẫu khớp spec.
-- [ ] **BE-P4-17** ⏸ lint + test + build; reviewer. Done when: output thật, nêu `[ASSUMPTION]`.
+- [x] **BE-P4-14b** Hộp thư nhân sự (NOTI-11, Q-P4-18): `GET /me/notifications?unread&page&limit` (kèm `unreadCount`), `POST /me/notifications/:id/read`, `POST /me/notifications/read-all` cho BOSS/MANAGER/TENANT, chỉ dòng của chính mình (SCOPE-03).
+  Done when: test CP-5 của plan pass.
+- [x] **BE-P4-17** ⏸ lint + test + build; reviewer. Done when: output thật, nêu `[ASSUMPTION]`.
 
 ## Questions for the owner
 

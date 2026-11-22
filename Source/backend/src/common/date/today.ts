@@ -38,6 +38,9 @@ export function formatDateOnly(d: Date): string {
   return toDateOnly(d).toISOString().slice(0, 10);
 }
 
+// LOC-05: dd/mm/yyyy in user-facing text.
+export const formatDateVn = (d: Date): string => formatDateOnly(d).split('-').reverse().join('/');
+
 const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 // Rejects impossible days (2026-02-30) by checking the parsed parts still match.

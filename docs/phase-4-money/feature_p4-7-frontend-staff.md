@@ -33,6 +33,7 @@ Out: tenant pages (P4-8), English (the staff app is Vietnamese only, LOC-01).
 - [ ] **FE-P4-06** Quyết toán trong `/ql/hop-dong/:id`: form ngày trả phòng, chỉ số cuối, hư hỏng, cọc giữ lại; xem trước bằng `dryRun` rồi xác nhận; nút "Đã trả lại tiền" khi `net > 0`.
 - [ ] **FE-P4-07** `/ql/giao-dich` (Boss): không khớp lên đầu, gán vào hóa đơn, đánh dấu đã hoàn (chỗ của "báo lỗi thanh toán" để trống tới Phase 5).
 - [ ] **FE-P4-08** `/thue` phần "hóa đơn cần trả" + ngày thu kế tiếp (dòng Phase 4 của 30-frontend) — làm cùng FE-P4-01 nếu tiện, nếu không thì thuộc P4-8.
+- [ ] **FE-P4-08a** Chuông hộp thư nhân sự trong `StaffLayout` (NOTI-11, Q-P4-18, Q-P4-20): chấm đỏ + số chưa đọc, bấm mở popup nhỏ thả xuống kiểu Facebook web, đã đọc thì mờ nhưng vẫn giữ; hỏi chủ dự án hành vi khi bấm từng thư trước khi làm. Cần BE-P4-14b đã commit. Chi tiết: [plans/P4-3/PLAN.md](plans/P4-3/PLAN.md) CP-7.
 - [ ] **FE-P4-09** ⏸ `npm run lint`, `npm run build`, `npm run test:components` (chạy lại một lượt khi có ca nhạy thời gian, bài học 13/11).
 
 ## Questions for the owner

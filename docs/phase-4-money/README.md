@@ -29,6 +29,14 @@ Chủ dự án trả lời ngày 22/11/2026 (tất cả theo đề xuất), đã
 | Q-P4-11 | Công tắc bật/tắt webhook | Không có; muốn tắt thì đổi secret | D-44 | P4-5 |
 | Q-P4-12 | Hạn trả hóa đơn FINAL | Hôm nay + 7 ngày | D-44, BIL-18 | P4-6 |
 | Q-P4-13 | Nước PER_PERSON trong tháng lẻ | Không nhân tỉ lệ ngày: số người × giá nước đủ tháng | D-44, BIL-07, D-41 | P4-1 |
+| Q-P4-16 | Nhớ "hôm nay job mail đã chạy" | Một dòng `settings` khóa `job_state` (JSON ngày chạy gần nhất của từng job), tự tạo ở lần chạy đầu; không migration, không đổi seed | NOTI-10, NOTI-05, Q-P4-4 | P4-3 |
+| Q-P4-17 | Nhắc "đến hạn ngày mai" | Chỉ email; quá hạn và hợp đồng sắp hết hạn ghi cả thông báo + email | NOTI-05 | P4-3 |
+| Q-P4-18 | Nhắc nhân sự | **Hộp thư nhân sự** (Boss + quản lý) trên web, kiểu chuông Facebook: chấm đỏ + số chưa đọc, danh sách thả xuống, đã đọc thì mờ nhưng vẫn giữ. Tách hẳn với email: đọc mail không làm thư trong app thành đã đọc. Không push, chỉ thấy khi đăng nhập. Sự kiện: hợp đồng sắp hết hạn 30/7 ngày, hóa đơn quá hạn, đã nhận tiền (cho quản lý tòa, Boss nếu tòa không có quản lý), thiếu chỉ số mùng 2→10 (Boss). BE ở M3, chuông ở M7 | NOTI-01, NOTI-05, NOTI-10 | P4-3, P4-7 |
+| Q-P4-19 | Nhắc hết hạn cho hợp đồng đã gia hạn / đã quyết toán | Không nhắc, giống CON-20 | NOTI-05, CON-20 | P4-3 |
+| Q-P4-20 | Bấm vào thư nhân sự | Bấm chuông mở popup nhỏ thả xuống như Facebook web. Hành vi khi bấm từng thư chốt ở M7; BE vẫn lưu `link` trang nhân sự (`/ql/hoa-don/{id}`, `/ql/hop-dong/{id}`, `/ql/chi-so`) [ASSUMPTION] | NOTI-11 | P4-3, P4-7 |
+| Q-P4-21 | Loại thư "thiếu chỉ số" | Dùng lại `ANNOUNCEMENT` (`announcement_id` null), không migration | NOTI-11, NOTI-10 | P4-3 |
+| Q-P4-22 | Mail "sắp hết hạn" cho nhân sự | Một mail gộp mỗi quản lý (hoặc Boss) mỗi ngày; thư trong app vẫn một thư mỗi hợp đồng | NOTI-05, NOTI-11 | P4-3 |
+| Q-P4-23 | Nhắc áp cho loại hóa đơn nào | Mọi hóa đơn UNPAID có hạn: DEPOSIT, MONTHLY, FINAL | NOTI-05 | P4-3 |
 
 ## 2. Câu hỏi còn mở
 

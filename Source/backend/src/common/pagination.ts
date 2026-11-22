@@ -8,6 +8,7 @@ export interface ListMeta {
   page: number;
   limit: number;
   total: number;
+  unreadCount?: number; // GET /me/notifications (NOTI-11)
 }
 
 // [ASSUMPTION A2-3] Vietnamese wording of the validation messages is proposed by the plan.
