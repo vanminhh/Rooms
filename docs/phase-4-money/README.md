@@ -49,6 +49,21 @@ Chủ dự án trả lời ngày 22/11/2026 (tất cả theo đề xuất), đã
 | Q-P4-33 | Giờ không có múi giờ từ nhà cung cấp | Hiểu là giờ Asia/Ho_Chi_Minh | G-02 | P4-5 |
 | Q-P4-34 | `mark-refunded` áp cho trạng thái nào | Chỉ `UNMATCHED`; còn lại `CONFLICT_STATE` | BANK-05 | P4-5 |
 | Q-P4-35 | Mã lỗi khi `BANK_WEBHOOK_SECRET` trống | Thêm `WEBHOOK_NOT_CONFIGURED` (503) | BANK-01 | P4-5 |
+| Q-P4-36 | Kỳ trước kỳ dọn đi còn DRAFT | Thu đủ tiền phòng + dịch vụ/xe của mọi kỳ chưa phát hành ≤ j (tháng lẻ chia ngày); điện nước gộp một khoảng | BIL-14 | P4-6 |
+| Q-P4-37 | Tháng lẻ khi quyết toán | Chia tỉ lệ ngày từng kỳ (D-41), làm tròn một lần mỗi kỳ; mỗi kỳ còn lại một dòng REMAINING_RENT | BIL-15, D-41 | P4-6 |
+| Q-P4-38 | Dịch vụ/xe/nước PER_PERSON kỳ dọn đi chưa phát hành | Thu đủ kỳ (A-01); nước PER_PERSON = số người × giá đủ tháng | BIL-14, A-01, Q-P4-13 | P4-6 |
+| Q-P4-39 | Đơn giá phần quyết toán | Giá hiệu lực tại period_start của kỳ j; bậc điện một lần trên tổng kWh của cả khoảng | RATE-04, D-09 | P4-6 |
+| Q-P4-40 | Cọc của chuỗi gia hạn | Tiền thực thu của hóa đơn DEPOSIT PAID trong chuỗi; không có → 0 | BIL-17 | P4-6 |
+| Q-P4-41 | Nợ hợp đồng trước trong chuỗi | Gộp hóa đơn UNPAID của cả chuỗi vào previous_debt và SETTLED | BIL-16 | P4-6 |
+| Q-P4-42 | Quyết toán hợp đồng ENDED chưa quyết toán | Không: chỉ ACTIVE; còn lại CONFLICT_STATE (HOLD dùng CON-12) | BIL-13 | P4-6 |
+| Q-P4-43 | Chỉ số cuối | read_on = moveOutDate, invoice_id null; trùng ngày/loại → CONFLICT_STATE | MTR, BIL-19 | P4-6 |
+| Q-P4-44 | Chỉ số cuối nhỏ hơn mốc trước | METER_VALUE_DECREASED; thay đồng hồ thì nhập qua POST /meter-readings trước | MTR-03, MTR-04 | P4-6 |
+| Q-P4-45 | Hư hỏng và cọc giữ lại | damages ≥ 0; depositForfeit 0..cọc đã nhận; note bắt buộc khi có một trong hai; nhãn dòng theo PLAN P4-6 | BIL-18, BIL-20 | P4-6 |
+| Q-P4-46 | Thông báo khi quyết toán | net < 0: INVOICE_ISSUED + mail VietQR; net ≥ 0: ANNOUNCEMENT "Đã quyết toán… Hoàn lại…" + mail; cả hai thêm thư nhân sự tòa | BIL-19, NOTI-11 | P4-6 |
+| Q-P4-47 | Ngày đi của người ở và xe | Chỉ dòng còn trống: max(moveOutDate, ngày vào); xe đang hoạt động ngừng từ max(moveOutDate, ngày đăng ký) | BIL-19 | P4-6 |
+| Q-P4-48 | Khóa tài khoản người thuê (xung đột BIL-19 ↔ D-26/A-16) | Giữ tài khoản, không thu hồi session; sửa BIL-19 | D-26, A-16, BIL-19 | P4-6 |
+| Q-P4-49 | Lưu cách trả lại cọc | Audit settlement.refund_paid + nối một câu vào settlements.note; không migration | Q-P4-8 | P4-6 |
+| Q-P4-50 | Đã có hóa đơn kỳ sau ngày dọn đi | CONFLICT_STATE "Còn hóa đơn của kỳ sau ngày dọn đi, hãy hủy hoặc lập lại hóa đơn đó trước" | BIL-15 | P4-6 |
 
 ## 2. Câu hỏi còn mở
 
