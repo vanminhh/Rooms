@@ -25,17 +25,17 @@ Out: bank webhook (P4-5), settlement (P4-6).
 
 ## Tasks
 
-- [ ] **BE-P4-18** `GET /invoices?buildingId&status&type&overdue&period` + `GET /invoices/:id` (nhân sự trong phạm vi): phân trang API-02, "Quá hạn" là trạng thái suy ra (không lưu), chi tiết có dòng, mốc chỉ số, VietQR khi UNPAID.
+- [x] **BE-P4-18** `GET /invoices?buildingId&status&type&overdue&period` + `GET /invoices/:id` (nhân sự trong phạm vi): phân trang API-02, "Quá hạn" là trạng thái suy ra (không lưu), chi tiết có dòng, mốc chỉ số, VietQR khi UNPAID.
   Done when: lọc `overdue=true` chỉ ra UNPAID có `due_date` < hôm nay (giờ Hà Nội); manager tòa khác → `OUT_OF_SCOPE`.
-- [ ] **BE-P4-19** `GET /me/invoices` + `GET /me/invoices/:id` (SCOPE-03, API-07): ẩn DRAFT, GUEST → `FORBIDDEN`, hóa đơn của người khác → `NOT_FOUND`, `Cache-Control: no-store`, VietQR + `qrImageUrl` (BIL-10).
+- [x] **BE-P4-19** `GET /me/invoices` + `GET /me/invoices/:id` (SCOPE-03, API-07): ẩn DRAFT, GUEST → `FORBIDDEN`, hóa đơn của người khác → `NOT_FOUND`, `Cache-Control: no-store`, VietQR + `qrImageUrl` (BIL-10).
   Done when: DRAFT không xuất hiện ở cả list và detail; hóa đơn hợp đồng khác của cùng người thuê vẫn xem được.
-- [ ] **BE-P4-20** Mở `POST /invoices/:id/payment` cho mọi loại hóa đơn (BIL-11): số tiền luôn bằng tổng, `method` CASH/BANK_TRANSFER/CARD/OTHER, trigger đặt PAID, idempotency API-05, audit `payment.record`, thông báo người thuê theo Q-P4-1.
+- [x] **BE-P4-20** Mở `POST /invoices/:id/payment` cho mọi loại hóa đơn (BIL-11): số tiền luôn bằng tổng, `method` CASH/BANK_TRANSFER/CARD/OTHER, trigger đặt PAID, idempotency API-05, audit `payment.record`, thông báo người thuê theo Q-P4-1.
   Done when: hóa đơn MONTHLY và FINAL ghi thu được; ghi hai lần (song song) → một bên `INVOICE_NOT_UNPAID`, chỉ một `payments`; hóa đơn PAID/CANCELLED → `INVOICE_NOT_UNPAID`.
-- [ ] **BE-P4-21** `POST /invoices/:id/reissue { reason, corrections }` (BIL-12): chỉ DRAFT/UNPAID; hủy kèm `cancel_reason`, sửa chỉ số theo Q-P4-6, tạo hóa đơn mới cùng kỳ với `replaces_id`, tính lại, phát hành; PAID → `CONFLICT_STATE`.
+- [x] **BE-P4-21** `POST /invoices/:id/reissue { reason, corrections }` (BIL-12): chỉ DRAFT/UNPAID; hủy kèm `cancel_reason`, sửa chỉ số theo Q-P4-6, tạo hóa đơn mới cùng kỳ với `replaces_id`, tính lại, phát hành; PAID → `CONFLICT_STATE`.
   Done when: ca nghiệm thu "lập lại để lại đúng một hóa đơn chưa hủy cho kỳ đó" (UK `invoices_one_per_period`); audit `invoice.reissue`.
-- [ ] **BE-P4-22** `POST /invoices/:id/remind` theo Q-P4-7.
+- [x] **BE-P4-22** `POST /invoices/:id/remind` theo Q-P4-7.
   Done when: hóa đơn không UNPAID → `CONFLICT_STATE`; quá giới hạn trong ngày → `TOO_MANY_REQUESTS`.
-- [ ] **BE-P4-23** ⏸ lint + test + build + e2e (phát hành → ghi thu tay → PAID); reviewer.
+- [x] **BE-P4-23** ⏸ lint + test + build + e2e (phát hành → ghi thu tay → PAID); reviewer.
 
 ## Questions for the owner
 
@@ -44,3 +44,5 @@ Out: bank webhook (P4-5), settlement (P4-6).
 ## Issues log
 
 <!-- When a task is [!], add: date · task ID · what failed · what is needed -->
+- 22/11/2026 · BE-P4-20 · Ca ghi thu song song chỉ kiểm trên fake (hàng đợi giao dịch trong billing.payment.http.spec.ts); trên DB thật được bảo đảm bởi FOR UPDATE + UK payments.invoice_id + trigger, chưa có e2e hai kết nối (cần fixture commit; hóa đơn PAID làm cleanupContractRun không dọn được hợp đồng thử).
+- 22/11/2026 · BE-P4-21 · [ASSUMPTION] Không cho sửa chỉ số của kỳ k khi kỳ k+1 đã phát hành (chỉ số cuối kỳ k là chỉ số đầu kỳ k+1) → CONFLICT_STATE; lập lại kỳ k+1 trước.

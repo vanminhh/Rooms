@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { AuditModule } from '../audit/audit.module.js';
+import { MailerModule } from '../mailer/mailer.module.js';
 import { BillingService } from './billing.service.js';
-import { InvoicesController } from './invoices.controller.js';
+import { InvoiceQueriesService } from './invoice-queries.service.js';
+import { InvoicesController, MeInvoicesController } from './invoices.controller.js';
 
-@Module({ imports: [AuditModule], controllers: [InvoicesController], providers: [BillingService] })
+@Module({ imports: [AuditModule, MailerModule], controllers: [InvoicesController, MeInvoicesController], providers: [BillingService, InvoiceQueriesService] })
 export class BillingModule {}

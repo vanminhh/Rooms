@@ -22,6 +22,7 @@ function initialState() {
     ]),
     payments: [] as any[],
     audits: [] as any[],
+    notifications: [] as any[],
     receipts: new Map<string, any>(),
   };
 }
@@ -39,15 +40,19 @@ function receiptKey(scope: { actorId: number; route: string; key: string }) {
   return `${scope.actorId}|${scope.route}|${scope.key}`;
 }
 
-describe('BE-P3-16 / BIL-11 / API-05: manual deposit payments through HTTP', () => {
+describe('BE-P3-16, BE-P4-20 / BIL-11 / API-05: manual payments through HTTP', () => {
   let app: INestApplication;
   let state = initialState();
   let queue = Promise.resolve();
   const db: any = {
     user: { findUnique: vi.fn(async ({ where }: any) => roles.has(where.id)
       ? { id: where.id, role: roles.get(where.id), isActive: true, mustChangePassword: false } : null) },
-    building: { findMany: vi.fn(async ({ where }: any) => [...state.buildings].filter(([, building]) =>
-      building.managerId === where.managerId && building.isActive).map(([id]) => ({ id }))) },
+    building: { findMany: vi.fn(async ({ where }: any) => where.id?.in
+      // NOTI-11 responsible staff lookup (SCOPE-04)
+      ? where.id.in.map((id: number) => ({ id, ...state.buildings.get(id) }))
+      : [...state.buildings].filter(([, building]) => building.managerId === where.managerId && building.isActive).map(([id]) => ({ id }))) },
+    notification: { create: vi.fn(async ({ data }: any) => { state.notifications.push(data); return data; }) },
+    setting: { findUnique: vi.fn(async () => null) },
     invoice: { findUnique: vi.fn(async ({ where, select }: any) => {
       const row = state.invoices.get(where.id);
       const scope = where.contract?.is ?? where.contract;
@@ -56,7 +61,8 @@ describe('BE-P3-16 / BIL-11 / API-05: manual deposit payments through HTTP', () 
     }), findUniqueOrThrow: vi.fn(async ({ where, select }: any) => {
       const row = state.invoices.get(where.id);
       if (!row) throw new Error('Missing fixture invoice');
-      return project(row, select);
+      return project({ ...row, contract: { buildingId: row.buildingId, tenantId: 9, room: { code: `P${row.id}` },
+        tenant: { role: 'TENANT', locale: 'vi', email: null, emailVerifiedAt: null } } }, select);
     }) },
     payment: { create: vi.fn(async ({ data, select }: any) => {
       // Simulate the existing payment trigger at the DB boundary, never the service under test.
@@ -229,11 +235,29 @@ describe('BE-P3-16 / BIL-11 / API-05: manual deposit payments through HTTP', () 
     expect(state.audits).toEqual([]);
   });
 
-  it.each(['MONTHLY', 'FINAL'])('D-35/BIL-11: %s payments remain unavailable until Phase 4', async type => {
+  it.each(['MONTHLY', 'FINAL'])('BIL-11 (Phase 4): %s invoices are recorded like deposits', async type => {
     state.invoices.get(70).type = type;
     const result = await pay();
-    expect(result.status).toBe(409);
-    expect(result.body.error.code).toBe('CONFLICT_STATE');
+    expect(result.status).toBe(201);
+    expect(state.invoices.get(70).status).toBe('PAID');
+    expect(state.payments).toHaveLength(1);
+  });
+
+  it('Q-P4-1, Q-P4-27, NOTI-11: a payment writes "Đã nhận tiền" for the tenant and for the building staff, even the recorder', async () => {
+    expect((await pay()).status).toBe(201);
+    expect(state.notifications).toEqual([
+      { userId: 9, kind: 'PAYMENT_RECEIVED', title: 'Đã nhận 2.500.000 đ cho hóa đơn TT70', link: '/thue/hoa-don/70' },
+      { userId: 2, kind: 'PAYMENT_RECEIVED', title: 'Đã nhận 2.500.000 đ cho hóa đơn TT70 phòng P70', link: '/ql/hoa-don/70' },
+    ]);
+  });
+
+  it('BIL-11: PAID and CANCELLED invoices → INVOICE_NOT_UNPAID with no payment', async () => {
+    for (const status of ['PAID', 'CANCELLED']) {
+      state.invoices.get(70).status = status;
+      const result = await pay();
+      expect(result.status).toBe(409);
+      expect(result.body.error.code).toBe('INVOICE_NOT_UNPAID');
+    }
     expect(db.payment.create).not.toHaveBeenCalled();
   });
 

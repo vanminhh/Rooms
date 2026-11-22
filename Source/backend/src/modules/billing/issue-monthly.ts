@@ -4,6 +4,7 @@ import { contractPeriods, dueDateOfPeriod } from '../../common/date/period.js';
 import { formatDateOnly, todayHanoi } from '../../common/date/today.js';
 import { ErrorCode } from '../../common/errors/error-code.js';
 import { consumption, isAbnormal } from '../../common/money/consumption.js';
+import { formatMoney } from '../../common/money/format.js';
 import { monthlyInvoiceLines } from '../../common/money/invoice-calc.js';
 import { ratesAt } from '../../common/rates/rates-at.js';
 import { depositInvoiceView } from '../contracts/deposit-invoice.js';
@@ -85,7 +86,7 @@ export async function issueMonthly(tx: Prisma.TransactionClient, invoiceId: numb
   const setting = await tx.setting.findUnique({ where: { key: 'bank_account' } });
   const view = depositInvoiceView(updated, setting?.value);
   const title = `Hóa đơn TT${invoiceId} đã phát hành`;
-  const body = `Số tiền ${total.toLocaleString('vi-VN')} đ. Hạn thanh toán ${view.dueDate}.`;
+  const body = `Số tiền ${formatMoney(total)}. Hạn thanh toán ${view.dueDate}.`;
   await tx.notification.create({ data: { kind: 'INVOICE_ISSUED', title, body, userId: c.tenantId, link: `/thue/hoa-don/${invoiceId}` } });
   return { status: 'UNPAID', mail: c.tenant.email && c.tenant.emailVerifiedAt
     ? { to: c.tenant.email, subject: title, text: `${body}\nVietQR: ${view.qrImageUrl}` } : null };

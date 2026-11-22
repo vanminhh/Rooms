@@ -90,7 +90,8 @@ For occupants already present at period_start, retain the existing departure bou
 
 ## Manual payment
 
-- **BIL-11** `POST /invoices/:id/payment` `{ method: CASH|BANK_TRANSFER|CARD|OTHER, paidAt?, note? }` by staff in scope. Amount is always the invoice total (no partial, D-10). DB trigger sets PAID. Errors: `INVOICE_NOT_UNPAID`, `PAYMENT_AMOUNT_MISMATCH`. Notify tenant "Đã nhận tiền". Phase 3 (D-35) builds this route for `DEPOSIT` invoices only; any other type returns `CONFLICT_STATE` until Phase 4, and the tenant notice waits for the inbox of Phase 5.
+- **BIL-11** `POST /invoices/:id/payment` `{ method: CASH|BANK_TRANSFER|CARD|OTHER, paidAt?, note? }` by staff in scope. Amount is always the invoice total (no partial, D-10). DB trigger sets PAID. Errors: `INVOICE_NOT_UNPAID`, `PAYMENT_AMOUNT_MISMATCH`. Notify tenant "Đã nhận tiền". Phase 3 (D-35) built this route for `DEPOSIT` invoices only; Phase 4 opens it for every type. The tenant gets an in-app row and an email (Q-P4-1), and the building's responsible staff an inbox row, also when they recorded it themselves (Q-P4-27, NOTI-11).
+- **BIL-12a** Phase 4 answers (22/11/2026): only `MONTHLY` invoices are reissued (Q-P4-25). Corrections change this invoice's closing readings in place and move them to the replacement; before/after values go to the `invoice.reissue` audit (Q-P4-24). `POST /invoices/:id/remind` resends the mail and in-app row of an `UNPAID` invoice, at most once per invoice per Hà Nội day counting only manual reminders (Q-P4-7, Q-P4-26); otherwise `CONFLICT_STATE` / `TOO_MANY_REQUESTS`.
 
 ## Reissue
 

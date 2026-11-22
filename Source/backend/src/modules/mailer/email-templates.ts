@@ -4,7 +4,8 @@ import type { Mail } from './mailer.service.js';
 
 type Text = Pick<Mail, 'subject' | 'text'>;
 type Kind = 'emailCode' | 'passwordReset' | 'viewingNew' | 'viewingConfirmed'
-  | 'lateReadings' | 'invoiceDueTomorrow' | 'invoiceOverdue' | 'contractExpiringTenant' | 'contractExpiringStaff';
+  | 'lateReadings' | 'invoiceDueTomorrow' | 'invoiceOverdue' | 'contractExpiringTenant' | 'contractExpiringStaff'
+  | 'invoiceReminder' | 'paymentReceived';
 interface TemplateReader {
   setting: { findUnique(args: { where: { key: string }; select: { value: true } }): Promise<{ value: unknown } | null> };
 }
@@ -40,6 +41,15 @@ const defaults: Record<Kind, Partial<Record<Lang, Text>>> = {
     subject: 'Có {count} hợp đồng sắp hết hạn – Trọ Thông Minh',
     text: 'Các hợp đồng tới mốc nhắc ngày {date}:\n\n{list}',
   } },
+  // Q-P4-7 "Nhắc thanh toán" and BIL-11 "Đã nhận tiền" (P4-4).
+  invoiceReminder: {
+    vi: { subject: 'Nhắc thanh toán hóa đơn {code} – Trọ Thông Minh', text: 'Hóa đơn {code} phòng {room}: {total}.\nHạn thanh toán: {dueDate}.\nMã VietQR: {qr}' },
+    en: { subject: 'Payment reminder for invoice {code} – Trọ Thông Minh', text: 'Invoice {code} for room {room}: {total}.\nDue date: {dueDate}.\nVietQR: {qr}' },
+  },
+  paymentReceived: {
+    vi: { subject: 'Đã nhận {total} cho hóa đơn {code} – Trọ Thông Minh', text: 'Trọ Thông Minh đã nhận {total} cho hóa đơn {code} phòng {room}. Cảm ơn bạn.' },
+    en: { subject: 'Received {total} for invoice {code} – Trọ Thông Minh', text: 'Trọ Thông Minh received {total} for invoice {code}, room {room}. Thank you.' },
+  },
 };
 // LOC-06: mails to staff are always Vietnamese.
 const STAFF_ONLY: ReadonlySet<Kind> = new Set(['viewingNew', 'lateReadings', 'contractExpiringStaff']);
@@ -57,6 +67,8 @@ const requiredPlaceholders: Record<Kind, readonly string[]> = {
   invoiceOverdue: ['code', 'total', 'days'],
   contractExpiringTenant: ['code', 'endDate', 'days'],
   contractExpiringStaff: ['count', 'list'],
+  invoiceReminder: ['code', 'total', 'dueDate'],
+  paymentReceived: ['code', 'total'],
 };
 
 // NOTI-07/08: read only settings.email_templates; missing entries use the recipient's language defaults.

@@ -37,6 +37,10 @@ Chủ dự án trả lời ngày 22/11/2026 (tất cả theo đề xuất), đã
 | Q-P4-21 | Loại thư "thiếu chỉ số" | Dùng lại `ANNOUNCEMENT` (`announcement_id` null), không migration | NOTI-11, NOTI-10 | P4-3 |
 | Q-P4-22 | Mail "sắp hết hạn" cho nhân sự | Một mail gộp mỗi quản lý (hoặc Boss) mỗi ngày; thư trong app vẫn một thư mỗi hợp đồng | NOTI-05, NOTI-11 | P4-3 |
 | Q-P4-23 | Nhắc áp cho loại hóa đơn nào | Mọi hóa đơn UNPAID có hạn: DEPOSIT, MONTHLY, FINAL | NOTI-05 | P4-3 |
+| Q-P4-24 | Lập lại kèm sửa chỉ số | Sửa tại chỗ trên dòng chỉ số, gắn sang hóa đơn mới; giá trị cũ/mới ghi trong audit `invoice.reissue`; hóa đơn cũ giữ dòng tiền cũ; không migration | BIL-12, Q-P4-6, Q-P4-9 | P4-4 |
+| Q-P4-25 | Loại hóa đơn được lập lại | Chỉ MONTHLY; DEPOSIT, FINAL → `CONFLICT_STATE` | BIL-12 | P4-4 |
+| Q-P4-26 | Giới hạn nút "Nhắc thanh toán" | Chỉ đếm nhắc tay (audit `invoice.remind` trong ngày Hà Nội); nhắc tự động 08:00 không tính | Q-P4-7, NOTI-05 | P4-4 |
+| Q-P4-27 | Thư nhân sự khi ghi thu tay | Luôn ghi thư `PAYMENT_RECEIVED` cho người phụ trách tòa, kể cả khi chính họ ghi | NOTI-11, BIL-11 | P4-4 |
 
 ## 2. Câu hỏi còn mở
 

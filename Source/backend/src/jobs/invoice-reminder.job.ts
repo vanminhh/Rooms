@@ -3,6 +3,7 @@ import { Cron } from '@nestjs/schedule';
 import type { Prisma } from '@prisma/client';
 import { addDays, formatDateOnly, formatDateVn, hanoiMinutesOfDay, todayHanoi } from '../common/date/today.js';
 import { mailLocale } from '../common/i18n/locale.js';
+import { formatMoney } from '../common/money/format.js';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { emailTemplate } from '../modules/mailer/email-templates.js';
 import { MailerService, type Mail } from '../modules/mailer/mailer.service.js';
@@ -16,7 +17,7 @@ export interface ReminderSummary { status: 'NOTHING_DUE' | 'ALREADY_RAN' | 'DONE
 const TENANT = { select: { id: true, fullName: true, role: true, locale: true, email: true, emailVerifiedAt: true } } satisfies Prisma.UserDefaultArgs;
 const INVOICE = { id: true, total: true, dueDate: true,
   contract: { select: { buildingId: true, room: { select: { code: true } }, tenant: TENANT } } } satisfies Prisma.InvoiceSelect;
-const money = (n: number) => `${n.toLocaleString('vi-VN')} đ`;
+const money = formatMoney;
 // Same rule as the invoice-issued mail (issue-monthly.ts): tenants get mail only at a verified address (NOTI-04).
 const tenantEmail = (t: { email: string | null; emailVerifiedAt: Date | null }) => (t.email && t.emailVerifiedAt ? t.email : null);
 
