@@ -33,6 +33,7 @@ export const ERRORS_EN: Record<ErrorCode, string> = {
   INVALID_CREDENTIALS: 'Incorrect phone number or password',
   ACCOUNT_LOCKED: 'Your account is locked. Please contact the manager.',
   UPLOAD_NOT_CONFIGURED: 'Image uploads have not been configured',
+  WEBHOOK_NOT_CONFIGURED: 'Bank payments have not been configured',
   INTERNAL_ERROR: 'Something went wrong. Please try again later',
 };
 

@@ -14,8 +14,8 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 | P4-1 Toán tiền | xong | BE-P4-05 ⏸ | `bc60df3` | P4-2 | Q-P4-13: nước PER_PERSON tháng lẻ không nhân tỉ lệ (D-44 (13)) |
 | P4-2 Chỉ số + hóa đơn tháng | xong | BE-P4-13 ⏸ | `e853135` | P4-3 | [Kế hoạch](plans/P4-2/PLAN.md); index `contracts_one_open_per_room` chặn gia hạn HOLD (Phase 5) |
 | P4-3 Mail + hộp thư nhân sự (BE) | xong | BE-P4-17 ⏸ | `3e4596c` | P4-4 | Q-P4-16..23; chuông FE ở FE-P4-08a (M7) |
-| P4-4 API hóa đơn + thu tiền | chờ commit | BE-P4-23 ⏸ | – | chủ dự án kiểm và commit; rồi M5 (planner P4-5) | Q-P4-24..27 | |
-| P4-5 Ngân hàng | chưa làm | – | – | planner `plans/P4-5/PLAN.md` | |
+| P4-4 API hóa đơn + thu tiền | xong | BE-P4-23 ⏸ | `085dd6f` | P4-5 | Q-P4-24..27 | |
+| P4-5 Ngân hàng | chờ commit | BE-P4-28 ⏸ | – | chủ dự án kiểm và commit; rồi M6 (planner P4-6) | Q-P4-28..35; BANK-08 chưa làm (Q-P4-3) | |
 | P4-6 Quyết toán | chưa làm | – | – | planner `plans/P4-6/PLAN.md` | |
 | P4-7 FE nhân sự | chưa làm | – | – | planner `plans/P4-7/PLAN.md` | |
 | P4-8 FE người thuê | chưa làm | – | – | – | |
@@ -31,8 +31,8 @@ Mỗi **mốc** kết thúc ở một điểm dừng ⏸: agent báo cáo → ch
 | ✅ | M1 Toán tiền (P4-1) | BE-P4-01..05 | M0 | Q-P4-13 (đã trả lời) | unit, lint, build, reviewer | `bc60df3` |
 | ✅ | M2 Chỉ số + hóa đơn tháng (P4-2) | BE-P4-06..13 | M1 | – (migration đã áp) | unit, lint, build, check-constraints, e2e nhập chỉ số → phát hành, tranh chấp hai kết nối, 3 ca bù BIL-05, ca BIL-06, ca BIL-21, cleanup list, reviewer | `e853135` |
 | ✅ | M3 Mail (P4-3) | BE-P4-14..17 | M2 | thêm khóa vào seed `settings` (nếu cần) | unit, lint, build, reviewer | `3e4596c` |
-| ▶ | M4 API hóa đơn + thu tiền (P4-4) | BE-P4-18..23 | M2 | – | + e2e phát hành → ghi thu tay → PAID, reviewer | – |
-| ⬜ | M5 Ngân hàng (P4-5) | BE-P4-24..28 | M4 | chạy planner `plans/P4-5/PLAN.md` rồi hỏi một lượt câu hỏi của nó; migration (nếu có) | + e2e webhook khớp / không khớp, reviewer | – |
+| ✅ | M4 API hóa đơn + thu tiền (P4-4) | BE-P4-18..23 | M2 | – | + e2e phát hành → ghi thu tay → PAID, reviewer | `085dd6f` |
+| ▶ | M5 Ngân hàng (P4-5) | BE-P4-24..28 | M4 | chạy planner `plans/P4-5/PLAN.md` rồi hỏi một lượt câu hỏi của nó; migration (nếu có) | + e2e webhook khớp / không khớp, reviewer | – |
 | ⬜ | M6 Quyết toán (P4-6) | BE-P4-29..33 | M4, **sau** M5 (cùng đụng `payments`) | planner `plans/P4-6/PLAN.md` | + e2e dry-run → ghi thật → FINAL → ghi thu, reviewer | – |
 | ⬜ | M7 FE nhân sự (P4-7) | FE-P4-01..09 | M4, M5, M6 | planner `plans/P4-7/PLAN.md` | FE lint, build, test:components (chạy lại một lượt nếu có ca nhạy thời gian) | – |
 | ⬜ | M8 FE người thuê (P4-8) | FE-P4-10..14 | FE-P4-01 (M7) | – | FE lint, build, test:components, kiểm tay 360 px | – |
@@ -40,18 +40,17 @@ Mỗi **mốc** kết thúc ở một điểm dừng ⏸: agent báo cáo → ch
 
 Việc của chủ dự án chạy song song, không chặn code (P4-0): Q-03 nhà cung cấp webhook, `BANK_WEBHOOK_SECRET` trong `.env`, `settings.bank_account` thật, bậc điện thật (Q-02). Phải xong **trước khi lên production**, không cần xong trước M9.
 
-### ▶ Mốc đang làm: M4 (BE-P4-18..23)
+### ▶ Mốc đang làm: M5 (BE-P4-24..28)
 
-Trạng thái thật (22/11/2026). Code nằm trên các file chính, **chưa commit** (sau `3e4596c`). Câu trả lời Q-P4-24..27 trong README.
+Trạng thái thật (22/11/2026). Code nằm trên các file chính, **chưa commit** (sau `085dd6f`). Kế hoạch: [plans/P4-5/PLAN.md](plans/P4-5/PLAN.md); câu trả lời Q-P4-28..35 trong README.
 
-- [x] Hỏi chủ dự án Q-P4-24..27
-- [x] BE-P4-18 `GET /invoices` (lọc tòa, trạng thái, loại, quá hạn suy ra, kỳ) + `GET /invoices/:id` (dòng, chỉ số, VietQR khi UNPAID)
-- [x] BE-P4-19 `GET /me/invoices` + `/:id` (ẩn DRAFT, GUEST 403, của người khác 404, no-store)
-- [x] BE-P4-20 ghi thu tay mọi loại hóa đơn + thư/mail người thuê + thư nhân sự (Q-P4-27)
-- [x] BE-P4-21 lập lại hóa đơn tháng, sửa chỉ số tại chỗ (Q-P4-24/25)
-- [x] BE-P4-22 nhắc thanh toán 1 lần/hóa đơn/ngày (Q-P4-7/26)
-- [x] BE-P4-23 unit 2805/2805, lint 0 lỗi, build pass, e2e `invoices-payments` 1/1 + `meters-billing` 3/3 trên dev; reviewer DUYỆT
-- [x] ⏸ Báo cáo M4 → chủ dự án commit (chờ commit)
+- [x] Planner viết PLAN P4-5; hỏi chủ dự án Q-P4-28..35 (đều theo đề xuất)
+- [x] BE-P4-24 adapter giả (header `X-Webhook-Secret`, so sánh hằng thời gian), giờ không múi = giờ Hà Nội
+- [x] BE-P4-25 `POST /webhooks/bank`: mỗi giao dịch một transaction, chèn trước, trùng → bỏ qua; 401/503 `WEBHOOK_NOT_CONFIGURED`
+- [x] BE-P4-26 khớp `TT{id}` + đúng tổng → MATCHED + payments WEBHOOK + thông báo; còn lại UNMATCHED có lý do
+- [x] BE-P4-27 Boss: `GET /bank-transactions`, `assign`, `mark-refunded`
+- [x] BE-P4-28 unit 2816/2816, lint 0 lỗi, build pass, e2e `bank-webhook` 1/1 trên dev; reviewer DUYỆT
+- [x] ⏸ Báo cáo M5 → chủ dự án commit (chờ commit)
 
 ### Một vòng mốc (lặp lại cho mọi mốc)
 
@@ -98,3 +97,6 @@ Trạng thái thật (22/11/2026). Code nằm trên các file chính, **chưa co
 - 22/11/2026 · M3 commit `3e4596c`; ▶ sang M4 (P4-4)
 - 22/11/2026 · M4 · chủ dự án trả lời Q-P4-24..27; code BE-P4-18..22; fixture tháng chuyển sang `test/fixtures/monthly-fixture.ts` · unit 2805/2805, lint 0 lỗi (4 cảnh báo cũ), build pass, e2e `invoices-payments` 1/1 và `meters-billing` 3/3 trên dev (ca tranh chấp của M2 lại commit fixture rồi dọn mềm)
 - 22/11/2026 · M4 ⏸ BE-P4-23 · reviewer DUYỆT, 0 lỗi chặn; đã gộp định dạng tiền vào `formatMoney` (issue-monthly) · ca ghi thu song song trên DB thật chưa có e2e (ghi ở Issues log P4-4)
+- 22/11/2026 · M4 commit `085dd6f`; ▶ sang M5 (P4-5), bắt đầu bằng planner
+- 22/11/2026 · M5 · planner viết `plans/P4-5/PLAN.md`; chủ dự án trả lời Q-P4-28..35; code BE-P4-24..27, thêm mã lỗi `WEBHOOK_NOT_CONFIGURED`, tách `payment-notice.ts` dùng chung · unit 2816/2816, lint 0 lỗi, build pass, e2e `bank-webhook` 1/1 trên dev (rollback)
+- 22/11/2026 · M5 ⏸ BE-P4-28 · reviewer DUYỆT, 0 lỗi chặn; thêm Idempotency-Key cho mark-refunded theo góp ý, e2e chạy lại 1/1 · BANK-08 chưa làm (Q-P4-3); chưa có e2e hai kết nối (QA-P4-03)

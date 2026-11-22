@@ -14,11 +14,11 @@ import { depositInvoiceView } from '../contracts/deposit-invoice.js';
 import { emailTemplate } from '../mailer/email-templates.js';
 import { MailerService, type Mail } from '../mailer/mailer.service.js';
 import { sendWithRetry } from '../mailer/send-mail.js';
-import { notifyBuildingStaff } from '../notifications/notify.js';
 import { hashRequest, runIdempotent } from '../pricing/pricing-idempotency.js';
 import { assertViewingScope } from '../viewings/viewing-reservations.js';
 import type { RecordPaymentDto, ReissueInvoiceDto } from './dto/record-payment.dto.js';
 import { issueMonthly } from './issue-monthly.js';
+import { paymentReceivedNotice } from './payment-notice.js';
 
 const PAYMENT_SELECT = {
   id: true, invoiceId: true, amount: true, method: true, source: true,
@@ -83,12 +83,7 @@ export class BillingService {
         }, select: PAYMENT_SELECT });
         const result = { ...payment, paidAt: payment.paidAt.toISOString() };
         await this.audit.log(actor.id, 'payment.record', 'payment', payment.id, undefined, result, ip, tx);
-        const { contract: c } = invoice;
-        const total = formatMoney(invoice.total);
-        await tx.notification.create({ data: { userId: c.tenantId, kind: 'PAYMENT_RECEIVED', title: `Đã nhận ${total} cho hóa đơn TT${id}`, link: `/thue/hoa-don/${id}` } });
-        await notifyBuildingStaff(tx, c.buildingId, { kind: 'PAYMENT_RECEIVED', title: `Đã nhận ${total} cho hóa đơn TT${id} phòng ${c.room.code}`, link: `/ql/hoa-don/${id}` });
-        const to = verifiedEmail(c.tenant);
-        if (to) mail = { to, ...await emailTemplate(tx, 'paymentReceived', mailLocale(c.tenant), { code: `TT${id}`, total, room: c.room.code }) };
+        mail = await paymentReceivedNotice(tx, id);
         return result;
       });
     });

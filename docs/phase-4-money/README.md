@@ -41,6 +41,14 @@ Chủ dự án trả lời ngày 22/11/2026 (tất cả theo đề xuất), đã
 | Q-P4-25 | Loại hóa đơn được lập lại | Chỉ MONTHLY; DEPOSIT, FINAL → `CONFLICT_STATE` | BIL-12 | P4-4 |
 | Q-P4-26 | Giới hạn nút "Nhắc thanh toán" | Chỉ đếm nhắc tay (audit `invoice.remind` trong ngày Hà Nội); nhắc tự động 08:00 không tính | Q-P4-7, NOTI-05 | P4-4 |
 | Q-P4-27 | Thư nhân sự khi ghi thu tay | Luôn ghi thư `PAYMENT_RECEIVED` cho người phụ trách tòa, kể cả khi chính họ ghi | NOTI-11, BIL-11 | P4-4 |
+| Q-P4-28 | Adapter giả | Header `X-Webhook-Secret` so sánh hằng thời gian với `BANK_WEBHOOK_SECRET`; ghi `provider = SEPAY`; không migration, không raw body | D-44, Q-P4-2, BANK-01 | P4-5 |
+| Q-P4-29 | Tiền vào số tài khoản khác `settings.bank_account` | Vẫn lưu `UNMATCHED` để Boss thấy; `bank_account` trống/sai định dạng → 503, không ghi gì | 17-bank Adapter | P4-5 |
+| Q-P4-30 | Mã TT đúng nhưng lệch tiền / hóa đơn đã trả | `UNMATCHED` kèm lý do tiếng Việt trong `note` | BANK-04 | P4-5 |
+| Q-P4-31 | Thư nhân sự khi webhook khớp | Có, giống thu tay (Q-P4-27) | NOTI-11, BANK-03 | P4-5 |
+| Q-P4-32 | Cọc trả qua webhook | Không gì thêm: PAID + thông báo | BIL-11, D-35 | P4-5 |
+| Q-P4-33 | Giờ không có múi giờ từ nhà cung cấp | Hiểu là giờ Asia/Ho_Chi_Minh | G-02 | P4-5 |
+| Q-P4-34 | `mark-refunded` áp cho trạng thái nào | Chỉ `UNMATCHED`; còn lại `CONFLICT_STATE` | BANK-05 | P4-5 |
+| Q-P4-35 | Mã lỗi khi `BANK_WEBHOOK_SECRET` trống | Thêm `WEBHOOK_NOT_CONFIGURED` (503) | BANK-01 | P4-5 |
 
 ## 2. Câu hỏi còn mở
 

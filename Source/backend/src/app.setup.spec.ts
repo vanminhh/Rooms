@@ -782,6 +782,7 @@ const EXPECTED: [string, number, string][] = [
   ['PRICE_NOT_APPROVED', 409, 'Phòng chưa có giá được duyệt'],
   ['PRICE_PROPOSAL_EXPIRED', 409, 'Đề xuất đã quá ngày hiệu lực, vui lòng đề xuất lại'],
   ['UPLOAD_NOT_CONFIGURED', 503, 'Chưa cấu hình tải ảnh'],
+  ['WEBHOOK_NOT_CONFIGURED', 503, 'Chưa cấu hình nhận tiền qua ngân hàng'], // Q-P4-35
   ['RATE_PLAN_MISSING', 409, 'Chưa có đơn giá được duyệt cho kỳ này'],
   ['PENDING_REQUEST_EXISTS', 409, 'Đã có yêu cầu đang chờ xử lý'],
   ['WEBHOOK_SIGNATURE_INVALID', 401, 'Chữ ký webhook không hợp lệ'],
@@ -791,9 +792,9 @@ const EXPECTED: [string, number, string][] = [
 ];
 
 describe('01-architecture#error-codes: ErrorCode and ERRORS table', () => {
-  it('01-architecture: ErrorCode has exactly 32 members including WRONG_PORTAL (AUTH-16), value = name', () => {
+  it('01-architecture: ErrorCode has exactly 33 members including WRONG_PORTAL (AUTH-16) and WEBHOOK_NOT_CONFIGURED (Q-P4-35), value = name', () => {
     const members = Object.entries(ErrorCode);
-    expect(members).toHaveLength(32);
+    expect(members).toHaveLength(33);
     expect(members.every(([k, v]) => k === v)).toBe(true);
     expect(Object.keys(ErrorCode).sort()).toEqual(EXPECTED.map((e) => e[0]).sort());
   });

@@ -13,6 +13,7 @@ import { NotificationsModule } from '../../modules/notifications/notifications.m
 import { ContractsModule } from '../../modules/contracts/contracts.module.js';
 import { BillingModule } from '../../modules/billing/billing.module.js';
 import { MetersModule } from '../../modules/meters/meters.module.js';
+import { BankModule } from '../../modules/bank/bank.module.js';
 
 // The real PrismaService is built from the generated client (it does not connect
 // until the first query). Only the DB edge ($disconnect) is replaced with a spy.
@@ -46,11 +47,11 @@ describe('BE-LOGIN-05: PrismaService', () => {
     expect(Reflect.getMetadata('exports', PrismaModule)).toEqual([PrismaService]);
     expect(Reflect.getMetadata('providers', PrismaModule)).toEqual([PrismaService]);
   });
-  it('BE-P3-05/16, BE-P4-06: AppModule registers ContractsModule, BillingModule and MetersModule alongside existing modules', () => {
+  it('BE-P3-05/16, BE-P4-06, BE-P4-25: AppModule registers ContractsModule, BillingModule, MetersModule and BankModule alongside existing modules', () => {
     // ScheduleModule (cron) is registered only outside tests.
     expect(Reflect.getMetadata('imports', AppModule)).toEqual([
       PrismaModule, AuthModule, SettingsModule, FilesModule, BuildingsModule,
-      RoomsModule, PricingModule, ViewingsModule, NotificationsModule, ContractsModule, BillingModule, MetersModule,
+      RoomsModule, PricingModule, ViewingsModule, NotificationsModule, ContractsModule, BillingModule, MetersModule, BankModule,
     ]);
     expect(Reflect.getMetadata('controllers', AppModule)).toBeUndefined();
     expect(Reflect.getMetadata('providers', AppModule)).toBeUndefined();

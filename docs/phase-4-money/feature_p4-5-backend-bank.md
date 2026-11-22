@@ -25,15 +25,15 @@ Out: reconciliation job BANK-08 (D-44), "Báo lỗi thanh toán" BANK-06 (Phase 
 
 ## Tasks
 
-- [ ] **BE-P4-24** Adapter `BankWebhookAdapter` (17-bank) với `verify` so sánh hằng thời gian bằng `BANK_WEBHOOK_SECRET` và `parse` nhiều giao dịch; chỉ xử lý giao dịch **ghi có** vào số tài khoản trong `settings.bank_account`; nhà cung cấp theo Q-P4-2; nếu cần raw body thì chỉ cho route này.
+- [x] **BE-P4-24** Adapter `BankWebhookAdapter` (17-bank) với `verify` so sánh hằng thời gian bằng `BANK_WEBHOOK_SECRET` và `parse` nhiều giao dịch; chỉ xử lý giao dịch **ghi có** vào số tài khoản trong `settings.bank_account`; nhà cung cấp theo Q-P4-2; nếu cần raw body thì chỉ cho route này.
   Done when: chữ ký sai → 401 `WEBHOOK_SIGNATURE_INVALID`, không ghi dòng nào; giao dịch ghi nợ hoặc sai số tài khoản → bỏ qua; `BANK_WEBHOOK_SECRET` trống → route trả 503 và app vẫn khởi động.
-- [ ] **BE-P4-25** `POST /webhooks/bank` (BANK-01, BANK-02): mỗi giao dịch một DB transaction, chèn `bank_transactions` trước, trùng UK `(provider, provider_tx_id)` → bỏ qua; luôn trả 200 nhanh khi chữ ký đúng; `raw` được lưu, bí mật không bao giờ vào DB (BANK-07).
+- [x] **BE-P4-25** `POST /webhooks/bank` (BANK-01, BANK-02): mỗi giao dịch một DB transaction, chèn `bank_transactions` trước, trùng UK `(provider, provider_tx_id)` → bỏ qua; luôn trả 200 nhanh khi chữ ký đúng; `raw` được lưu, bí mật không bao giờ vào DB (BANK-07).
   Done when: cùng webhook gửi hai lần → một dòng giao dịch, một `payments`; một webhook chứa 3 giao dịch được xử lý độc lập, một lỗi không cuốn hai cái còn lại.
-- [ ] **BE-P4-26** Khớp (BANK-03, BANK-04): tìm `/TT(\d+)/i` trong `content`; chỉ khớp khi hóa đơn tồn tại, `UNPAID` và `total = amount` → `MATCHED` + `payments` (`source = WEBHOOK`, `method = BANK_TRANSFER`, `bank_transaction_id`) → trigger PAID + thông báo; còn lại `UNMATCHED`.
+- [x] **BE-P4-26** Khớp (BANK-03, BANK-04): tìm `/TT(\d+)/i` trong `content`; chỉ khớp khi hóa đơn tồn tại, `UNPAID` và `total = amount` → `MATCHED` + `payments` (`source = WEBHOOK`, `method = BANK_TRANSFER`, `bank_transaction_id`) → trigger PAID + thông báo; còn lại `UNMATCHED`.
   Done when: 4 ca nghiệm thu của 17-bank ("TT1523 P203" đúng tổng → PAID; thiếu 1 đ → UNMATCHED và hóa đơn vẫn UNPAID; chuyển lần hai cho hóa đơn đã PAID → UNMATCHED; chữ ký sai → 401 không có dòng).
-- [ ] **BE-P4-27** `GET /bank-transactions?status&from&to`, `POST /bank-transactions/:id/assign { invoiceId }`, `POST /bank-transactions/:id/mark-refunded { note }` — **chỉ BOSS** (BANK-05, API-07): gán khi hóa đơn UNPAID và `total = amount`, trạng thái `ASSIGNED`, `payments.source = ASSIGNED`, `recorded_by_id` = Boss; audit.
+- [x] **BE-P4-27** `GET /bank-transactions?status&from&to`, `POST /bank-transactions/:id/assign { invoiceId }`, `POST /bank-transactions/:id/mark-refunded { note }` — **chỉ BOSS** (BANK-05, API-07): gán khi hóa đơn UNPAID và `total = amount`, trạng thái `ASSIGNED`, `payments.source = ASSIGNED`, `recorded_by_id` = Boss; audit.
   Done when: MANAGER gọi → `FORBIDDEN`; gán sai số tiền → `PAYMENT_AMOUNT_MISMATCH`; đã gán rồi → `CONFLICT_STATE`; đánh dấu đã hoàn cần `note`.
-- [ ] **BE-P4-28** ⏸ lint + test + build + e2e webhook (khớp và không khớp); reviewer. Ghi rõ BANK-08 chưa làm (Q-P4-3).
+- [x] **BE-P4-28** ⏸ lint + test + build + e2e webhook (khớp và không khớp); reviewer. Ghi rõ BANK-08 chưa làm (Q-P4-3).
 
 ## Questions for the owner
 
@@ -42,3 +42,5 @@ Out: reconciliation job BANK-08 (D-44), "Báo lỗi thanh toán" BANK-06 (Phase 
 ## Issues log
 
 <!-- When a task is [!], add: date · task ID · what failed · what is needed -->
+- 22/11/2026 · BE-P4-28 · BANK-08 (job đối chiếu giao dịch bỏ sót) **chưa làm** theo Q-P4-3/D-44; chờ Q-03/Q-04. Ca hai kết nối cùng gửi một webhook chưa có e2e (UK `(provider, provider_tx_id)` bảo đảm trên DB thật), chuyển sang QA-P4-03.
+- 22/11/2026 · BE-P4-27 · [ASSUMPTION] Danh sách giao dịch xếp `receivedAt` mới nhất trước; "không khớp lên đầu" làm bằng bộ lọc `status=UNMATCHED`. `from`/`to` là ngày Hà Nội, tính cả hai đầu.
