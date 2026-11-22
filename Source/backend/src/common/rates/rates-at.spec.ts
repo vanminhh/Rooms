@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
-import { ratesAfter } from './rates-at.js';
+import { contractPeriods } from '../date/period.js';
+import { ratesAfter, ratesAt } from './rates-at.js';
 
 // CP-2 (BE-P2-30) · PUB-03: ratesAfter is new in this checkpoint (ratesAt/currentRoomPrice already
 // covered by the main suite's src/common/rates/rates-at.spec.ts, which the draft-first overlay runs
@@ -16,8 +17,9 @@ function matchesWhere(row: Record<string, unknown>, where: Record<string, unknow
   return Object.entries(where).every(([key, cond]) => {
     const value = row[key];
     if (cond !== null && typeof cond === 'object') {
-      const c = cond as { gt?: Date };
+      const c = cond as { gt?: Date; lte?: Date };
       if ('gt' in c) return (value as Date).getTime() > (c.gt as Date).getTime();
+      if ('lte' in c) return (value as Date).getTime() <= (c.lte as Date).getTime();
     }
     return value === cond;
   });
@@ -116,5 +118,23 @@ describe('CP-2 (BE-P2-30) · ratesAfter (PUB-03)', () => {
   it('Biên: no future plan at all -> empty array, not null', async () => {
     const out = await ratesAfter(fakeDb([]), 10, d('2026-11-01'));
     expect(out).toEqual([]);
+  });
+});
+
+describe('BE-P4-04 · D-09, RATE-04: a monthly period uses the rates effective at its period_start', () => {
+  const plan = (id: number, effectiveFrom: string, unitPrice: number): FakeRatePlanRow => ({
+    id, buildingId: 1, kind: 'WATER', serviceId: null, effectiveFrom: d(effectiveFrom), status: 'APPROVED', reviewedAt: d(effectiveFrom),
+    tiers: [{ tierNo: 1, upTo: null, unitPrice }],
+  });
+  const db = fakeDb([plan(1, '2026-09-01', 15_000), plan(2, '2026-10-20', 18_000)]);
+  const [, october, november] = contractPeriods(d('2026-09-01'), 6);
+
+  it('D-09: a price effective 20/10 is not applied to 01/10–31/10, and is applied to November', async () => {
+    expect((await ratesAt(db, 1, october.periodStart)).water?.tiers[0].unitPrice).toBe(15_000);
+    expect((await ratesAt(db, 1, november.periodStart)).water?.tiers[0].unitPrice).toBe(18_000);
+  });
+
+  it('RATE-04: before any approved plan there is no rate (billing turns it into RATE_PLAN_MISSING)', async () => {
+    expect((await ratesAt(db, 1, d('2026-08-01'))).water).toBeNull();
   });
 });

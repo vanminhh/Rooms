@@ -1,5 +1,5 @@
 import { formatDateOnly, parseDateOnly } from './today.js';
-import { contractEndDate, contractPeriods, contractTermProgress, dueDateOfBillingMonth, proratedAmount } from './period.js';
+import { billingMonthOf, contractEndDate, contractPeriods, contractTermProgress, dueDateOfBillingMonth, dueDateOfPeriod, periodContaining, periodsDue, proratedAmount } from './period.js';
 
 function date(value: string): Date {
   const parsed = parseDateOnly(value);
@@ -93,5 +93,33 @@ describe('BE-P3-01: calendar-month contract periods', () => {
     expect(proratedAmount(15, date('2027-04-01'), date('2027-04-01'))).toBe(1);
     expect(() => proratedAmount(-1, date('2027-04-01'), date('2027-04-30'))).toThrow(RangeError);
     expect(() => proratedAmount(1.5, date('2027-04-01'), date('2027-04-30'))).toThrow(RangeError);
+  });
+});
+
+describe('BE-P4-01: billing month, due date, period of a date, periods due', () => {
+  const p = contractPeriods(new Date('2026-09-01T00:00:00Z'), 6); // BIL-01
+  const day = (s: string) => new Date(`${s}T00:00:00Z`);
+
+  it('BIL-01, BIL-08: period 1 (01/09–30/09/2026) belongs to October and is due on 09/10/2026', () => {
+    expect(billingMonthOf(p[0])).toEqual(day('2026-10-01'));
+    expect(dueDateOfPeriod(p[0])).toEqual(day('2026-10-09'));
+  });
+
+  it('BIL-22, D-40: a last period ending 19/09/2027 belongs to October and is due on 09/10/2027, never before it ends', () => {
+    const last = contractPeriods(day('2027-03-20'), 6).at(-1)!;
+    expect(dueDateOfPeriod(last)).toEqual(day('2027-10-09'));
+  });
+
+  it('BIL-13: 25/11/2026 is in period j = 3 (November); on or after end_date it is the last period; before start none', () => {
+    expect(periodContaining(p, day('2026-11-25'))?.periodNo).toBe(3);
+    expect(periodContaining(p, day('2027-02-28'))?.periodNo).toBe(6);
+    expect(periodContaining(p, day('2027-05-01'))?.periodNo).toBe(6);
+    expect(periodContaining(p, day('2026-08-31'))).toBeNull();
+  });
+
+  it('BIL-05: on 30/09 no period is due; on 01/10 period 1 is; on 01/03/2027 all six are', () => {
+    expect(periodsDue(p, day('2026-09-30'))).toEqual([]);
+    expect(periodsDue(p, day('2026-10-01')).map((x) => x.periodNo)).toEqual([1]);
+    expect(periodsDue(p, day('2027-03-01')).map((x) => x.periodNo)).toEqual([1, 2, 3, 4, 5, 6]);
   });
 });

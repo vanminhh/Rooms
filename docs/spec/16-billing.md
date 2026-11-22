@@ -58,7 +58,7 @@ The job runs at 00:05 daily **and at app start** (D-21, owner 04/11/2026): the s
 
 ## Calculation (issue)
 
-For MONTHLY period k, rates = approved plans effective at `period_start` (RATE-04). In a partial contract month (D-41) every fixed line (rent, ROOM, PERSON and VEHICLE services) keeps its quantity and uses the prorated unit price; electricity and water use the readings as usual.
+For MONTHLY period k, rates = approved plans effective at `period_start` (RATE-04). In a partial contract month (D-41) every fixed line (rent, ROOM, PERSON and VEHICLE services) keeps its quantity and uses the prorated unit price; electricity and water use the readings as usual. Owner 22/11/2026 (D-44 (13)): PER_PERSON water is **not** prorated in a partial month: occupants × the full water price.
 
 Owner 20/11/2026 revises the old rule that additions only count from the next period: a newly added occupant's selected PERSON fees are included in the calendar month they move in, calculated when that month is closed. Rent, room electricity and ROOM-unit services remain room-based; adding an occupant never multiplies them. Parking requires an actual registered vehicle with its VEHICLE service, not a vehicle inferred from a new person; added parking charges belong to its registration month. Water mode PER_PERSON/PER_M3 is unchanged.
 
@@ -94,7 +94,7 @@ For occupants already present at period_start, retain the existing departure bou
 
 ## Reissue
 
-- **BIL-12** <a id="reissue"></a>`POST /invoices/:id/reissue` `{ reason, corrections }` on DRAFT or UNPAID only: cancel it (`cancel_reason`), apply reading corrections, create a new invoice for the same period with `replaces_id`, recompute, issue. PAID invoices cannot be reissued.
+- **BIL-12** <a id="reissue"></a>`POST /invoices/:id/reissue` `{ reason, corrections }` on DRAFT or UNPAID only: cancel it (`cancel_reason`), apply reading corrections (only that period's readings, meter replacement fields included; D-44), create a new invoice for the same period with `replaces_id`, recompute, issue. PAID invoices cannot be reissued.
 
 ## Settlement
 
@@ -109,7 +109,7 @@ For occupants already present at period_start, retain the existing departure bou
 - **BIL-15** `remaining_rent` = the rent of every period after j (a partial last period prorated, D-41) if `moveOutDate` < `end_date`, else 0. Utilities and services are not charged for those periods [ASSUMPTION A-01].
 - **BIL-16** `previous_debt` = sum of UNPAID invoice totals of this contract (deposit invoice excluded); those invoices become `SETTLED` with `settlement_id`.
 - **BIL-17** `deposit` = the deposit actually paid on this contract chain (renewals carry it). `net = deposit − last_period_amount − remaining_rent − previous_debt − damages − deposit_forfeit` (DB CHECK).
-- **BIL-18** net < 0 → `FINAL` invoice, UNPAID, due today + `due_days`, lines: the period-j lines, one `REMAINING_RENT` line per remaining period (qty 1, unit = that period's rent), one `PREVIOUS_DEBT` per settled invoice, `DAMAGE`, `DEPOSIT_FORFEIT`, and `DEPOSIT_OFFSET` (qty 1, unit −deposit). Sum = −net. net ≥ 0 → no invoice; refund = net, staff records `refund_paid_at` when paid out.
+- **BIL-18** net < 0 → `FINAL` invoice, UNPAID, due today + 7 days (D-44), lines: the period-j lines, one `REMAINING_RENT` line per remaining period (qty 1, unit = that period's rent), one `PREVIOUS_DEBT` per settled invoice, `DAMAGE`, `DEPOSIT_FORFEIT`, and `DEPOSIT_OFFSET` (qty 1, unit −deposit). Sum = −net. net ≥ 0 → no invoice; refund = net, staff records `refund_paid_at` when paid out.
 - **BIL-19** Same transaction: final readings, settlement row, contract `ENDED` + `ended_at`, occupants `move_out_date`, vehicles inactive, room back to "Trống", tenant account deactivated if no other HOLD/ACTIVE contract (sessions revoked), audit log, tenant notification.
 - **BIL-20** Stays after `end_date` are not charged automatically [ASSUMPTION A-06]; staff may add them as damages with a note.
 

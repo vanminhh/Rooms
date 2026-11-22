@@ -68,3 +68,28 @@ export function dueDateOfBillingMonth(billingMonth: Date): Date {
   const month = toDateOnly(billingMonth);
   return new Date(Date.UTC(month.getUTCFullYear(), month.getUTCMonth(), 9));
 }
+
+// BIL-08, D-40: the billing month is the calendar month after the period's month, also for a last period that
+// ends mid-month (its DRAFT is created on end_date + 1, but it belongs to the next month and is due on its 9th).
+export function billingMonthOf(period: Pick<ContractPeriod, 'periodEnd'>): Date {
+  const end = toDateOnly(period.periodEnd);
+  return new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth() + 1, 1));
+}
+
+export function dueDateOfPeriod(period: Pick<ContractPeriod, 'periodEnd'>): Date {
+  return dueDateOfBillingMonth(billingMonthOf(period));
+}
+
+// BIL-13: j = the period that contains the date; a date on or after end_date gives the last period (j = N).
+// A date before the first period has no period: null.
+export function periodContaining(periods: readonly ContractPeriod[], date: Date): ContractPeriod | null {
+  const day = toDateOnly(date);
+  if (periods.length === 0 || compareDates(day, periods[0].periodStart) < 0) return null;
+  return periods.find((p) => compareDates(day, p.periodEnd) <= 0) ?? periods[periods.length - 1];
+}
+
+// BIL-05, BIL-21: periods whose billing date has come (p(k) ≤ today).
+export function periodsDue(periods: readonly ContractPeriod[], today: Date): ContractPeriod[] {
+  const day = toDateOnly(today);
+  return periods.filter((p) => compareDates(p.billingDate, day) <= 0);
+}
