@@ -36,10 +36,12 @@ Out: other request buttons ("Báo trả phòng", "Xin gia hạn", other occupant
 - [x] **FE-P3-12** ⏸ `/thue/hop-dong` and `/thue/hop-dong/:id` (CON-13/15/16, CON-22): current and past contracts, term progress, deposit, occupants with only the signer's CCCD last 4 digits, vehicles read only, "Xem bản hợp đồng đã ký" through the signed view, link to the print page. Include a form to add a roommate directly through POST `/me/contracts/:id/occupants`, without request approval; roommate CCCD/photos are optional and do not expose stored private values. Show backend validation and lifecycle rules after Q-P3-16/17 are settled. Other request buttons remain Phase 5; monthly fee calculation remains Phase 4.
   KIỂM MỚI 20/11/2026: full frontend981/981,0fail/skip, gồm dictionary equality/EX3 scan, own-tenant page/API/privacy/VI-EN; reviewer DUYỆT source/test fixes. FE13/14 còn manual print/360px/desktop/dev workflow; không suy unit pass thành manual. [Checkpoint](plans/P3-6/CHECKPOINT-FE-P3-03-14.md), [QA](p3-8-qa-checklist.md).
   Done when: page tests; another tenant's id shows the not-found state; nothing on the page shows a full CCCD number or a photo. Stop and report FE-P3-10..12.
-- [!] **FE-P3-13** Tenant print page `/thue/hop-dong/:id/in`, reusing the P3-6 print component with the tenant routes.
+- [x] **FE-P3-13** Tenant print page `/thue/hop-dong/:id/in`, reusing the P3-6 print component with the tenant routes.
+  22/11/2026: chủ dự án báo đã kiểm tay xong và đạt ("tui kiểm tay rồi ok"); không có chi tiết từng dòng.
   KIỂM MỚI 20/11/2026: full frontend981/981,0fail/skip, gồm dictionary equality/EX3 scan, own-tenant page/API/privacy/VI-EN; reviewer DUYỆT source/test fixes. FE13/14 còn manual print/360px/desktop/dev workflow; không suy unit pass thành manual. [Checkpoint](plans/P3-6/CHECKPOINT-FE-P3-03-14.md), [QA](p3-8-qa-checklist.md).
   Done when: page test; manual print preview in both languages (the contract text itself stays Vietnamese, LOC-01).
-- [!] **FE-P3-14** ⏸ `npm run lint`, `npm run build`, `npm run test:components`.
+- [x] **FE-P3-14** ⏸ `npm run lint`, `npm run build`, `npm run test:components`.
+  22/11/2026: chủ dự án báo đã kiểm tay xong và đạt ("tui kiểm tay rồi ok"); không có chi tiết từng dòng.
   KIỂM MỚI 20/11/2026: full frontend981/981,0fail/skip, gồm dictionary equality/EX3 scan, own-tenant page/API/privacy/VI-EN; reviewer DUYỆT source/test fixes. FE13/14 còn manual print/360px/desktop/dev workflow; không suy unit pass thành manual. [Checkpoint](plans/P3-6/CHECKPOINT-FE-P3-03-14.md), [QA](p3-8-qa-checklist.md).
   Done when: all pass with real output quoted; manual walk with the tenant account created in the P3-6 walk: first login forces the password change, then overview with the deposit VietQR, then after the staff records the deposit and move-in, the contract pages; at 360 px and desktop, Vietnamese and English.
 

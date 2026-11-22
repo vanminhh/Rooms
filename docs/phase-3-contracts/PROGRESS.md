@@ -22,6 +22,10 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 
 ## Nhật ký điểm dừng
 
+- 22/11/2026 · QA-P3-05, QA-P3-06 · dọn lượt e2e bị ngắt `20261120T2324-2HAX` (`cleanup.mjs --apply`, chủ dự án đồng ý; liệt kê lại: không còn lượt chờ dọn; các dòng `[E2E …]` cũ 03–06/11 không có nhật ký vẫn để nguyên). Đóng phase: cập nhật trạng thái ở `CLAUDE.md`, `AGENTS.md`, `docs/spec/README.md`, `README.md` · chờ chủ dự án duyệt chữ
+
+- 22/11/2026 · QA-P3-02 · trên commit `a30a53d`, e2e trọn bộ chạy từng file: **67/68**, 10/11 file (1706,17s). Ca đỏ duy nhất: buildings BLD-02 hết 60 s, cùng lúc log báo `Can't reach database server` (mất kết nối DB dev). Chạy riêng lại file buildings: **6/6** (103,03s). Không còn lỗi do code; e2e của QA-P3-02 coi như đạt khi DB dev ổn định
+
 - 22/11/2026 · QA-P3-02 · owner chọn tăng timeout khi test: biến `PRISMA_TX_TIMEOUT_MS` (`src/common/prisma/tx-timeout.ts`, chỉ nhận số nguyên ≥ 30 000, mặc định 30 s) dùng ở `PrismaService` và `viewings.service.ts`; `vitest.config.e2e.ts` đặt 120 000. Unit BE 2671/2671, lint 0 lỗi, build OK; e2e viewings cả file **11/11** (464,79s) · chưa commit
 
 - 22/11/2026 · QA-P3-02 · điều tra VIEW-16/21: chạy riêng ca này **1/1 xanh** (102,70s). Đo DB dev: 0,72–0,79 s mỗi truy vấn ngoài transaction, 0,29–0,64 s trong transaction. Hai lượt đặt cùng tài khoản xếp hàng sau khóa (`lockViewingKey account:…`), thời gian chờ khóa tính vào giới hạn 30 s của transaction (`TX_OPTIONS` trong `viewings.service.ts`), nên lượt thứ hai hết hạn khi DB chậm (31.006 ms) và ra 500. Kết luận: do độ trễ DB dev, không phải sai logic; chưa sửa code

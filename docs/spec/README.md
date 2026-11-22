@@ -46,6 +46,8 @@ Schema files: [Source/backend/prisma/schema.prisma](../../Source/backend/prisma/
 
 Phase 1 (Foundation), Phase 2 (Rooms) and **Phase Extra (Home101) are complete**. On 16/11/2026 the owner accepted EX-6, EX-7, EX-8 and EX-9, including the phone-whitespace fix, booking-success popup and acknowledged cross-building overlap warning. The final record is [ex-9-qa-checklist.md](../phase-extra-home101/ex-9-qa-checklist.md); [PROGRESS.md](../phase-extra-home101/PROGRESS.md) keeps the dated history.
 
+**Phase 3 (Contracts) is complete**: the owner accepted the manual walk on 22/11/2026. Record: [p3-8-qa-checklist.md](../phase-3-contracts/p3-8-qa-checklist.md); history: [PROGRESS.md](../phase-3-contracts/PROGRESS.md). Next: Phase 4 · Money ([roadmap](01-architecture.md#roadmap)).
+
 Recorded verification: frontend **864/864**, lint/build pass; backend after option B **169/169 offline**, lint/build pass; host baseline before B **1806/1806** and dev e2e **54/54**; DB checker **82/82** on 15/11/2026. The owner's acceptance is recorded separately from test output, without inventing a new HTTP/e2e run.
 
 Next: **Phase 3 · Contracts** (owner decisions D-35..D-42, 16/11/2026: deposit loop, print page, private scan, meters without photos, "Đã gọi" task, calendar-month billing, late-readings email); parts and progress in `docs/phase-3-contracts/`. Contract workflows, billing and operations remain in their roadmap phases. Phase 1/2 history stays in `docs/phase-1-foundation/` and `docs/phase-2-rooms/`. Roadmap: [01-architecture.md#roadmap](01-architecture.md#roadmap).

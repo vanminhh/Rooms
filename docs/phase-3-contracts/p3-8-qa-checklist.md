@@ -157,3 +157,15 @@ try {
 Các lệnh trên là bước owner chạy và gửi output, không phải bằng chứng đã chạy. Bộ E2E toàn ứng dụng ngoài hai suite hợp đồng vẫn là gate hồi quy cần bổ sung khi chốt QA-P3-02. Q-15 mẫu hợp đồng thật còn mở; không sửa status root/spec thành Phase3done trước khi các gate được nghiệm thu.
 
 Nếu `check-db.mjs` chỉ báo DIRECT_URL thất bại còn DATABASE_URL OK, có thể chạy riêng runner registrations và workflow để lấy bằng chứng E2E runtime; runner tự SELECT1 trước tạo fixtures. **Offline checker không cần cả hai URL** và đã đạt107/107; không coi kết quả offline hoặc E2E runtime là bằng chứng direct/migration URL đã đạt. Môi trường agent hiện cả hai URL đều thất bại.
+
+## Kết quả kiểm tra tự động (QA-P3-02, 22/11/2026, commit `a30a53d`)
+
+| Kiểm tra | Kết quả |
+|---|---|
+| Backend `npm run test` | 116 file, **2671/2671** |
+| Backend `npm run lint` / `npm run build` | 0 lỗi (4 cảnh báo cũ) / đạt |
+| Backend e2e trọn bộ, từng file | **67/68**, 10/11 file (1706 s); ca đỏ: buildings BLD-02 hết 60 s lúc mất kết nối DB dev, chạy riêng lại **6/6** |
+| `node prisma/check-constraints.mjs . prisma` | **107/107** |
+| Frontend `npm run lint` / `npm run build` | 0 lỗi / đạt |
+| Frontend `npm run test:components` | **997/997** |
+| Kiểm tay (QA-P3-03, QA-P3-04) | chủ dự án xác nhận đạt 22/11/2026 |
