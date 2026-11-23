@@ -89,6 +89,12 @@ export function periodContaining(periods: readonly ContractPeriod[], date: Date)
 }
 
 // BIL-05, BIL-21: periods whose billing date has come (p(k) ≤ today).
+// FE-P4-08 (30-frontend /thue): the next billing date from today on (BIL-05); null once every period has been billed.
+export function nextBillingDate(periods: readonly ContractPeriod[], today: Date): Date | null {
+  const day = toDateOnly(today);
+  return periods.find((p) => compareDates(p.billingDate, day) >= 0)?.billingDate ?? null;
+}
+
 export function periodsDue(periods: readonly ContractPeriod[], today: Date): ContractPeriod[] {
   const day = toDateOnly(today);
   return periods.filter((p) => compareDates(p.billingDate, day) <= 0);

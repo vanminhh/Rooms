@@ -729,7 +729,7 @@ test('D-5: clicking "Tìm phòng" in the header changes the route to /phong with
 test('FE-LOGIN-10, FE-P3-01, Q2-A: TenantLayout menu includes "Hợp đồng" alongside overview, account and viewings; no building line; no footer; inside .rooms-theme with the kit logo', async () => {
   const app = await mount('/thue', { session: 'tenant' })
   await until(() => app.text().includes('Xin chào'), 'tenant home')
-  assert.deepEqual(navLinks(app), [['Tổng quan', '/thue'], ['Hợp đồng', '/thue/hop-dong'], ['Tài khoản', '/thue/tai-khoan'], ['Lịch hẹn xem phòng', '/toi']]) // FE-P3-01 adds contracts; EX-2 keeps the guest area link.
+  assert.deepEqual(navLinks(app), [['Tổng quan', '/thue'], ['Hợp đồng', '/thue/hop-dong'], ['Hóa đơn', '/thue/hoa-don'], ['Tài khoản', '/thue/tai-khoan'], ['Lịch hẹn xem phòng', '/toi']]) // FE-P3-01 adds contracts, FE-P4-10 invoices; EX-2 keeps the guest area link.
   assert.ok(!app.text().includes('Tòa đang quản lý'))
   assert.ok(!app.text().includes('Chưa được giao tòa nào'))
   assert.equal(find(app.container, n => n.tagName === 'FOOTER').length, 0)

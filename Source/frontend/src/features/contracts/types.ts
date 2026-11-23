@@ -97,6 +97,7 @@ export interface SettlementView {
 
 export interface ContractDetail extends ContractSummary {
   settlement?: ContractSettlement | null
+  nextBillingDate?: string | null // FE-P4-08: from the BE, ACTIVE contracts only
   progress?: { elapsedDays: number; totalDays: number; percent: number }
   terms: string | null
   signedAt: string | null

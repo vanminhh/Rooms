@@ -3,7 +3,7 @@ import type { Prisma } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
 import { encryptCccd, last4 } from '../../common/crypto/cccd.js';
 import { hashPassword, PENDING_TENANT_PASSWORD_HASH } from '../../common/crypto/password.js';
-import { contractEndDate, contractTermProgress } from '../../common/date/period.js';
+import { contractEndDate, contractPeriods, contractTermProgress, nextBillingDate } from '../../common/date/period.js';
 import { formatDateOnly, parseDateOnly, todayHanoi } from '../../common/date/today.js';
 import { isUniqueOn } from '../../common/errors/db-errors.js';
 import { ErrorCode } from '../../common/errors/error-code.js';
@@ -167,6 +167,8 @@ export class ContractsService {
     return {
       ...toContractSummary(summary),
       progress: contractTermProgress(summary.startDate, summary.endDate, todayHanoi()),
+      // Shown on /thue for a contract in force; computed here so the FE never does date math (UI-06).
+      nextBillingDate: summary.status === 'ACTIVE' ? dateOnlyOrNull(nextBillingDate(contractPeriods(summary.startDate, summary.termMonths), todayHanoi())) : null,
       terms, signedAt: signedAt?.toISOString() ?? null, movedInAt: movedInAt?.toISOString() ?? null,
       occupants: occupants.map(occupant => ({
         ...occupant, dateOfBirth: dateOnlyOrNull(occupant.dateOfBirth),

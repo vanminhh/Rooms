@@ -5,6 +5,10 @@ import type { InvoiceDetail, InvoiceListQuery, InvoiceSummary, ReadingCorrection
 export const listInvoices = (q: InvoiceListQuery) => apiRequestPage<InvoiceSummary>(listPath('/invoices', {
   buildingId: q.buildingId, status: q.status, type: q.type, overdue: q.overdue, period: q.period, total: q.total, page: q.page, limit: q.limit,
 }))
+// BE-P4-19 · tenant: own invoices only, DRAFT hidden by the BE.
+// shortcut: first 100 invoices only (about 8 years of monthly bills); page the list if a tenant ever has more.
+export const listMyInvoices = () => apiRequestPage<InvoiceSummary>(listPath('/me/invoices', { limit: 100 }))
+export const getMyInvoice = (id: number) => apiRequest<InvoiceDetail>(`/me/invoices/${id}`)
 export const getInvoice = (id: number) => apiRequest<InvoiceDetail>(`/invoices/${id}`)
 export const issueInvoice = (id: number) => apiRequest<{ invoiceId: number; status: string }>(`/invoices/${id}/issue`, { method: 'POST' })
 export const recordPayment = (id: number, body: { method: PaymentMethod; paidAt?: string; note?: string }, idempotencyKey: string) =>

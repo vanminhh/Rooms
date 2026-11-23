@@ -39,6 +39,8 @@ import { BankTransactionsPage } from '../pages/staff/BankTransactionsPage'
 import { TenantContractsPage } from '../pages/tenant/TenantContractsPage'
 import { TenantContractDetailPage } from '../pages/tenant/TenantContractDetailPage'
 import { TenantContractPrintPage } from '../pages/tenant/TenantContractPrintPage'
+import { TenantInvoicesPage } from '../pages/tenant/TenantInvoicesPage'
+import { TenantInvoiceDetailPage } from '../pages/tenant/TenantInvoiceDetailPage'
 import { GuestOnly, RequireAuth } from './RequireAuth'
 
 export const routes: RouteObject[] = [
@@ -70,6 +72,8 @@ export const routes: RouteObject[] = [
         { path: 'hop-dong', element: <TenantContractsPage /> },
         { path: 'hop-dong/:id', element: <TenantContractDetailPage /> },
         { path: 'hop-dong/:id/in', element: <TenantContractPrintPage /> },
+        { path: 'hoa-don', element: <TenantInvoicesPage /> },
+        { path: 'hoa-don/:id', element: <TenantInvoiceDetailPage /> },
       ],
     }],
   },

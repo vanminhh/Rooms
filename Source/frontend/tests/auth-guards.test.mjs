@@ -342,7 +342,7 @@ test('A2: PublicLayout root onClick turns an in-app link click into navigate, le
   assert.equal(prevented, 1)
 })
 
-test('Q3-A, Q2-A, FE-P3-01: TenantLayout has the 4 menu items including contracts, the sign-out button and no footer', () => {
+test('Q3-A, Q2-A, FE-P3-01: TenantLayout has the 5 menu items including contracts and invoices, the sign-out button and no footer', () => {
   const calls = []
   const { exports, fakes } = loadLayout('../src/layouts/TenantLayout.tsx', { signOutState: { signOut: () => calls.push('out'), signingOut: false } })
   const root = exports.TenantLayout()
@@ -350,7 +350,7 @@ test('Q3-A, Q2-A, FE-P3-01: TenantLayout has the 4 menu items including contract
   const header = headerOf(root, fakes)
   assert.equal(header.props.homeHref, '/thue')
   assert.equal(header.props.logoSrc, '/images/rooms-logo.webp')
-  assert.deepEqual(header.props.links, [{ label: 'Tổng quan', href: '/thue' }, { label: 'Hợp đồng', href: '/thue/hop-dong' }, { label: 'Tài khoản', href: '/thue/tai-khoan' }, { label: 'Lịch hẹn xem phòng', href: '/toi' }])
+  assert.deepEqual(header.props.links, [{ label: 'Tổng quan', href: '/thue' }, { label: 'Hợp đồng', href: '/thue/hop-dong' }, { label: 'Hóa đơn', href: '/thue/hoa-don' }, { label: 'Tài khoản', href: '/thue/tai-khoan' }, { label: 'Lịch hẹn xem phòng', href: '/toi' }])
   assert.equal(find(root, n => n.type === fakes.RoomsFooter), undefined)
   assert.equal(find(root, n => n.props?.className === 'layout-buildings'), undefined)
   const button = find(header.props.action, n => n.type === fakes.RoomsButton)
@@ -614,6 +614,8 @@ test('AUTH-06 / T3 / FE-P2-01: routes wire guards and layouts (tenant area TENAN
     '../pages/tenant/TenantContractsPage': stub('TenantContractsPage'),
     '../pages/tenant/TenantContractDetailPage': stub('TenantContractDetailPage'),
     '../pages/tenant/TenantContractPrintPage': stub('TenantContractPrintPage'),
+    '../pages/tenant/TenantInvoicesPage': stub('TenantInvoicesPage'),
+    '../pages/tenant/TenantInvoiceDetailPage': stub('TenantInvoiceDetailPage'),
     '../pages/public/LoginPage': stub('LoginPage'),
     '../pages/public/ChangePasswordPage': stub('ChangePasswordPage'),
     '../pages/public/ForgotPasswordPage': stub('ForgotPasswordPage'),

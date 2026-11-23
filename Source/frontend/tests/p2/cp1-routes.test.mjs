@@ -88,6 +88,8 @@ function compileRoutes() {
     '../pages/tenant/TenantContractsPage': stub('TenantContractsPage'),
     '../pages/tenant/TenantContractDetailPage': stub('TenantContractDetailPage'),
     '../pages/tenant/TenantContractPrintPage': stub('TenantContractPrintPage'),
+    '../pages/tenant/TenantInvoicesPage': stub('TenantInvoicesPage'),
+    '../pages/tenant/TenantInvoiceDetailPage': stub('TenantInvoiceDetailPage'),
     '../pages/public/LoginPage': stub('LoginPage'),
     '../pages/public/ChangePasswordPage': stub('ChangePasswordPage'),
     '../pages/public/ForgotPasswordPage': stub('ForgotPasswordPage'),

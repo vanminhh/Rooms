@@ -25,11 +25,11 @@ Out: "Báo lỗi thanh toán" (Phase 5), the inbox (Phase 5).
 
 ## Tasks
 
-- [ ] **FE-P4-10** `/thue/hoa-don`: danh sách, chưa thanh toán/quá hạn lên đầu, 4 trạng thái UI-03.
-- [ ] **FE-P4-11** `/thue/hoa-don/:id`: dòng + dòng bậc điện + mốc chỉ số (kèm ảnh nếu có, D-38), ảnh VietQR và nội dung `TT{id}` có nút copy, tự làm mới trạng thái khi focus.
-- [ ] **FE-P4-12** Song ngữ (LOC-01, UI-12): toàn bộ chữ mới vào từ điển vi/en, tiền `2.984.000 đ` và ngày `dd/mm/yyyy` ở cả hai (LOC-05).
-- [ ] **FE-P4-13** Nút "Báo lỗi thanh toán" ẩn tới Phase 5 (REQ-07 thuộc Phase 5) `[ASSUMPTION]`.
-- [ ] **FE-P4-14** ⏸ lint + build + test:components; kiểm tay ở 360 px.
+- [x] **FE-P4-10** `/thue/hoa-don`: danh sách, chưa thanh toán/quá hạn lên đầu, 4 trạng thái UI-03.
+- [x] **FE-P4-11** `/thue/hoa-don/:id`: dòng + dòng bậc điện + mốc chỉ số (kèm ảnh nếu có, D-38), ảnh VietQR và nội dung `TT{id}` có nút copy, tự làm mới trạng thái khi focus.
+- [x] **FE-P4-12** Song ngữ (LOC-01, UI-12): toàn bộ chữ mới vào từ điển vi/en, tiền `2.984.000 đ` và ngày `dd/mm/yyyy` ở cả hai (LOC-05).
+- [x] **FE-P4-13** Nút "Báo lỗi thanh toán" ẩn tới Phase 5 (REQ-07 thuộc Phase 5) `[ASSUMPTION]`.
+- [x] **FE-P4-14** ⏸ lint + build + test:components; kiểm tay ở 360 px.
 
 ## Questions for the owner
 
@@ -38,4 +38,7 @@ Out: "Báo lỗi thanh toán" (Phase 5), the inbox (Phase 5).
 ## Issues log
 
 <!-- When a task is [!], add: date · task ID · what failed · what is needed -->
+- 23/11/2026 · FE-P4-08 (chuyển từ P4-7) · Khối "Hóa đơn cần trả" + "Ngày thu kế tiếp" ở `/thue`; ngày do BE trả (`nextBillingDate` trong `GET /me/contracts/:id`, chỉ hợp đồng ACTIVE), FE không tính ngày.
+- 23/11/2026 · FE-P4-10..12 · [ASSUMPTION] Menu người thuê thêm "Hóa đơn / Invoices" sau "Hợp đồng". Tiếng Anh dịch các dòng cố định (tiền phòng, điện theo bậc, nước, nợ cũ, cọc…); tên dịch vụ giữ như đã nhập (A-12); tiếng Việt giữ nhãn của BE. Danh sách lấy 100 hóa đơn đầu (ghi `shortcut:`), xếp chưa trả/quá hạn lên đầu ở FE.
+- 23/11/2026 · FE-P4-14 · Chủ dự án tự kiểm tay trang người thuê ở 360 px: đạt.
 - Nghiệm thu hạn cuối tháng (22/11/2026): người thuê thấy hóa đơn tháng của mình chưa trả hiển thị đỏ với nhãn “Quá hạn” từ ngày đầu tháng tiếp theo theo giờ Việt Nam.

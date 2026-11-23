@@ -8,6 +8,7 @@ import { SelectField } from '../../features/buildings/fields'
 import { listMyContracts } from '../../features/contracts/api'
 import { allPages } from '../../features/contracts/forms'
 import { TenantContractView } from '../../features/contracts/TenantContractView'
+import { TenantMoneyBlock } from '../../features/invoices/TenantMoneyBlock'
 import '../../features/contracts/contracts.css'
 
 export function TenantHomePage() {
@@ -33,6 +34,7 @@ function TenantOverview({ scope, name, enabled }: { scope: string; name?: string
         {query.data.map(contract => <option key={contract.id} value={contract.id}>{contract.building.name} · {contract.room.code} · {t(`contract.status.${contract.status}`)}</option>)}
       </SelectField>}
       {id && <TenantContractView key={id} id={id} scope={scope} overview />}
+      {id && <TenantMoneyBlock key={`money-${id}`} contractId={id} scope={scope} />}
       <Link to="/thue/hop-dong">{t('contracts.back')}</Link>
     </>}
   </>

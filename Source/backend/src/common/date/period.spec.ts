@@ -130,3 +130,13 @@ it.each([
 ])('D-40: billing month %s ends on %s', (month, expected) => {
   expect(formatDateOnly(dueDateOfBillingMonth(new Date(month + 'T00:00:00Z')))).toBe(expected);
 });
+
+describe('FE-P4-08 next billing date', () => {
+  it('BIL-05: the first billing date from today on; none once every period is billed (BIL-01 contract)', async () => {
+    const { contractPeriods, nextBillingDate } = await import('./period.js');
+    const periods = contractPeriods(new Date('2026-09-01T00:00:00Z'), 6);
+    expect(nextBillingDate(periods, new Date('2026-10-01T00:00:00Z'))?.toISOString().slice(0, 10)).toBe('2026-10-01');
+    expect(nextBillingDate(periods, new Date('2026-10-02T00:00:00Z'))?.toISOString().slice(0, 10)).toBe('2026-11-01');
+    expect(nextBillingDate(periods, new Date('2027-03-02T00:00:00Z'))).toBeNull();
+  });
+});
