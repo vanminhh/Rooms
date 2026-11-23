@@ -739,9 +739,9 @@ test('FE-LOGIN-10, FE-P3-01, Q2-A: TenantLayout menu includes "Hợp đồng" al
   await app.stop()
 })
 
-test('FE-LOGIN-10, FE-P3-01, Q2-A, Q5-A: StaffLayout menu follows role (manager 8 items, Boss 10), no read-only building line, no footer', async () => {
-  const common = [['Việc hôm nay', '/ql'], ['Tòa nhà', '/ql/toa-nha'], ['Phòng', '/ql/phong'], ['Đơn giá', '/ql/don-gia'], ['Lịch hẹn', '/ql/lich-hen'], ['Hợp đồng', '/ql/hop-dong'], ['Tra cứu xe', '/ql/xe'], ['Tài khoản', '/ql/tai-khoan']]
-  const boss = [['Việc hôm nay', '/ql'], ['Tòa nhà', '/ql/toa-nha'], ['Nhân sự', '/ql/nhan-su'], ['Phòng', '/ql/phong'], ['Đơn giá', '/ql/don-gia'], ['Duyệt giá', '/ql/duyet-gia'], ['Lịch hẹn', '/ql/lich-hen'], ['Hợp đồng', '/ql/hop-dong'], ['Tra cứu xe', '/ql/xe'], ['Tài khoản', '/ql/tai-khoan']]
+test('FE-LOGIN-10, FE-P3-01, Q2-A, Q5-A: StaffLayout menu follows role (manager 10 items, Boss 13), no read-only building line, no footer', async () => {
+  const common = [['Việc hôm nay', '/ql'], ['Tòa nhà', '/ql/toa-nha'], ['Phòng', '/ql/phong'], ['Đơn giá', '/ql/don-gia'], ['Lịch hẹn', '/ql/lich-hen'], ['Hợp đồng', '/ql/hop-dong'], ['Chốt chỉ số', '/ql/chi-so'], ['Hóa đơn', '/ql/hoa-don'], ['Tra cứu xe', '/ql/xe'], ['Tài khoản', '/ql/tai-khoan']]
+  const boss = [['Việc hôm nay', '/ql'], ['Tòa nhà', '/ql/toa-nha'], ['Nhân sự', '/ql/nhan-su'], ['Phòng', '/ql/phong'], ['Đơn giá', '/ql/don-gia'], ['Duyệt giá', '/ql/duyet-gia'], ['Lịch hẹn', '/ql/lich-hen'], ['Hợp đồng', '/ql/hop-dong'], ['Chốt chỉ số', '/ql/chi-so'], ['Hóa đơn', '/ql/hoa-don'], ['Giao dịch ngân hàng', '/ql/giao-dich'], ['Tra cứu xe', '/ql/xe'], ['Tài khoản', '/ql/tai-khoan']]
   for (const [session, links] of [['manager', common], ['managerEmpty', common], ['bossThree', boss], ['boss', boss]]) {
     const app = await mount('/ql', { session })
     await until(() => app.text().includes('Xin chào'), `staff home ${session}`)

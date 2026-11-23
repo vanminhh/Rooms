@@ -25,6 +25,20 @@ export function roomImageFolder(buildingId: number, roomId: number): string {
   return `rooms/${buildingId}/${roomId}`;
 }
 
+// Q-P4-58: meter photos of one room, apart from the room gallery.
+export function meterPhotoFolder(buildingId: number, roomId: number): string {
+  return `meters/${buildingId}/${roomId}`;
+}
+
+// Q-P4-58 (D-38): a stored meter photo must be a delivery URL of that room's meter folder in our cloud.
+// shortcut: checked by URL shape only (the BE signs the folder), not by a Cloudinary metadata call; add that if staff misuse it.
+export function isMeterPhotoUrl(url: string, cloudName: string, buildingId: number, roomId: number): boolean {
+  const prefix = `https://res.cloudinary.com/${cloudName}/image/upload/`;
+  const folder = `${meterPhotoFolder(buildingId, roomId)}/`;
+  const path = url.startsWith(prefix) ? url.slice(prefix.length).replace(/^v\d+\//, '') : '';
+  return path.startsWith(folder) && /^[A-Za-z0-9_-]+\.(jpg|png|webp)$/.test(path.slice(folder.length));
+}
+
 export function contractAssetFolder(buildingId: number, contractId: number): string {
   return `contracts/${buildingId}/${contractId}`;
 }

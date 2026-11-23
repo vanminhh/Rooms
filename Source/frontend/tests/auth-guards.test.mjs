@@ -262,6 +262,7 @@ function loadLayout(file, { auth = { status: 'ready', user: null }, contact = {}
     '../features/auth/ContactInfo': { ContactInfo: fakes.ContactInfo },
     '../features/auth/usePublicContact': { usePublicContact: () => contact },
     '../features/auth/useSignOut': { useSignOut: () => signOutState },
+    '../features/notifications/NotificationBell': { NotificationBell: function NotificationBell() { return null } }, // NOTI-11, tested in tests/p4
     '../features/buildings/BuildingSelector': { BuildingSelector: fakes.BuildingSelector },
     '../features/buildings/BuildingSelectionProvider': { BuildingSelectionProvider: fakes.BuildingSelectionProvider },
     './internal-links': internalLinks,
@@ -379,18 +380,23 @@ test('Q2-A, FE-P3-01: StaffLayout menu follows role (manager: 10 minus Nhân s�
     { label: 'Đơn giá', href: '/ql/don-gia' },
     { label: 'Lịch hẹn', href: '/ql/lich-hen' },
     { label: 'Hợp đồng', href: '/ql/hop-dong' },
+    { label: 'Chốt chỉ số', href: '/ql/chi-so' },
+    { label: 'Hóa đơn', href: '/ql/hoa-don' },
     { label: 'Tra cứu xe', href: '/ql/xe' },
     { label: 'Tài khoản', href: '/ql/tai-khoan' },
   ])
   assert.equal(find(root, n => n.type === fakes.RoomsFooter), undefined)
-  assert.equal(header.props.action.type, fakes.RoomsButton)
-  assert.equal(header.props.action.props.disabled, true)
-  assert.equal(header.props.action.props.type, 'button')
-  assert.equal(textOf(header.props.action.props.children), 'Đăng xuất')
+  // FE-P4-08a: the header action is the staff bell (NOTI-11) followed by the sign-out button.
+  const [bell, signOutButton] = header.props.action.props.children
+  assert.equal(bell.type.name, 'NotificationBell')
+  assert.equal(signOutButton.type, fakes.RoomsButton)
+  assert.equal(signOutButton.props.disabled, true)
+  assert.equal(signOutButton.props.type, 'button')
+  assert.equal(textOf(signOutButton.props.children), 'Đăng xuất')
   assert.ok(find(find(root, n => n.type === 'main'), n => n.type === fakes.Outlet))
 })
 
-test('Q2-A, FE-P3-01: a Boss gets all 10 menu items, including Nhân sự and Duyệt giá', () => {
+test('Q2-A, FE-P3-01, FE-P4-01: a Boss gets all 13 menu items, including Nhân sự, Duyệt giá and Giao dịch ngân hàng', () => {
   const { exports, fakes } = loadLayout('../src/layouts/StaffLayout.tsx', { auth: { status: 'ready', user: { role: 'BOSS', buildings: [] } } })
   const header = headerOf(exports.StaffLayout(), fakes)
   assert.deepEqual(header.props.links, [
@@ -402,6 +408,9 @@ test('Q2-A, FE-P3-01: a Boss gets all 10 menu items, including Nhân sự and Du
     { label: 'Duyệt giá', href: '/ql/duyet-gia' },
     { label: 'Lịch hẹn', href: '/ql/lich-hen' },
     { label: 'Hợp đồng', href: '/ql/hop-dong' },
+    { label: 'Chốt chỉ số', href: '/ql/chi-so' },
+    { label: 'Hóa đơn', href: '/ql/hoa-don' },
+    { label: 'Giao dịch ngân hàng', href: '/ql/giao-dich' },
     { label: 'Tra cứu xe', href: '/ql/xe' },
     { label: 'Tài khoản', href: '/ql/tai-khoan' },
   ])
@@ -598,6 +607,10 @@ test('AUTH-06 / T3 / FE-P2-01: routes wire guards and layouts (tenant area TENAN
     '../pages/staff/ContractDetailPage': stub('ContractDetailPage'),
     '../pages/staff/ContractPrintPage': stub('ContractPrintPage'),
     '../pages/staff/VehiclesPage': stub('VehiclesPage'),
+    '../pages/staff/MetersPage': stub('MetersPage'),
+    '../pages/staff/InvoicesPage': stub('InvoicesPage'),
+    '../pages/staff/InvoiceDetailPage': stub('InvoiceDetailPage'),
+    '../pages/staff/BankTransactionsPage': stub('BankTransactionsPage'),
     '../pages/tenant/TenantContractsPage': stub('TenantContractsPage'),
     '../pages/tenant/TenantContractDetailPage': stub('TenantContractDetailPage'),
     '../pages/tenant/TenantContractPrintPage': stub('TenantContractPrintPage'),

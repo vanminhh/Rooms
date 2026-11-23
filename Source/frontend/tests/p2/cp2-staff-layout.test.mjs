@@ -73,6 +73,7 @@ function loadStaffLayout(user) {
     '../features/buildings/BuildingSelector': { BuildingSelector: fakes.BuildingSelector },
     '../features/buildings/BuildingSelectionProvider': { BuildingSelectionProvider: fakes.BuildingSelectionProvider },
     '../features/auth/useSignOut': { useSignOut: () => ({ signOut() {}, signingOut: false }) },
+    '../features/notifications/NotificationBell': { NotificationBell: function NotificationBell() { return null } }, // NOTI-11, tested in tests/p4
     './internal-links': { handleInternalLinkClick: () => {} },
     './layouts.css': {},
   }
@@ -90,19 +91,22 @@ const BOSS_MENU = [
   { label: 'Duyệt giá', href: '/ql/duyet-gia' },
   { label: 'Lịch hẹn', href: '/ql/lich-hen' },
   { label: 'Hợp đồng', href: '/ql/hop-dong' },
+  { label: 'Chốt chỉ số', href: '/ql/chi-so' },
+  { label: 'Hóa đơn', href: '/ql/hoa-don' },
+  { label: 'Giao dịch ngân hàng', href: '/ql/giao-dich' },
   { label: 'Tra cứu xe', href: '/ql/xe' },
   { label: 'Tài khoản', href: '/ql/tai-khoan' },
 ]
-const MANAGER_MENU = BOSS_MENU.filter(item => item.label !== 'Nhân sự' && item.label !== 'Duyệt giá')
+const MANAGER_MENU = BOSS_MENU.filter(item => !['Nhân sự', 'Duyệt giá', 'Giao dịch ngân hàng'].includes(item.label))
 
-test('FE-P2-02/FE-P3-01: Boss sees the 10 menu items including contracts and vehicle lookup', () => {
+test('FE-P2-02/FE-P3-01/FE-P4-01: Boss sees the 13 menu items including contracts, money pages and vehicle lookup', () => {
   assert.deepEqual(loadStaffLayout({ role: 'BOSS', buildings: [] }), BOSS_MENU)
-  assert.equal(BOSS_MENU.length, 10)
+  assert.equal(BOSS_MENU.length, 13)
 })
 
-test('FE-P2-02/FE-P3-01: a manager sees the same menu minus "Nhân sự" and "Duyệt giá" (8 items)', () => {
+test('FE-P2-02/FE-P3-01/FE-P4-01: a manager sees the same menu minus "Nhân sự", "Duyệt giá" and "Giao dịch ngân hàng" (10 items)', () => {
   assert.deepEqual(loadStaffLayout({ role: 'MANAGER', buildings: [] }), MANAGER_MENU)
-  assert.equal(MANAGER_MENU.length, 8)
+  assert.equal(MANAGER_MENU.length, 10)
   assert.ok(!MANAGER_MENU.some(item => item.label === 'Nhân sự' || item.label === 'Duyệt giá'))
 })
 

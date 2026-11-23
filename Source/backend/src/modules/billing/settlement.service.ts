@@ -17,6 +17,7 @@ import { MailerService, type Mail } from '../mailer/mailer.service.js';
 import { sendWithRetry } from '../mailer/send-mail.js';
 import { notifyBuildingStaff } from '../notifications/notify.js';
 import { hashRequest, runIdempotent } from '../pricing/pricing-idempotency.js';
+import { assertMeterPhoto } from '../meters/save-reading.js';
 import { assertViewingScope } from '../viewings/viewing-reservations.js';
 import type { RefundPaidDto, SettlementDto } from './dto/settlement.dto.js';
 
@@ -158,6 +159,8 @@ export class SettlementService {
     const { contract: c, amounts: a } = q;
     const today = todayHanoi();
     const readingIds: number[] = [];
+    assertMeterPhoto(dto.finalReadings.electricPhotoUrl, c.buildingId, c.roomId);
+    assertMeterPhoto(dto.finalReadings.waterPhotoUrl, c.buildingId, c.roomId);
     for (const [kind, value, photoUrl] of [['ELECTRIC', dto.finalReadings.electric, dto.finalReadings.electricPhotoUrl], ['WATER', dto.finalReadings.water, dto.finalReadings.waterPhotoUrl]] as const) {
       // Q-P4-43: read on the move-out date, not linked to an invoice; a same-day reading → CONFLICT_STATE (DB_ERROR_MAP).
       const r = await tx.meterReading.create({ data: { roomId: c.roomId, contractId: c.id, kind, value, readOn: q.moveOutDate,

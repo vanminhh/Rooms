@@ -16,8 +16,8 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 | P4-3 Mail + hộp thư nhân sự (BE) | xong | BE-P4-17 ⏸ | `3e4596c` | P4-4 | Q-P4-16..23; chuông FE ở FE-P4-08a (M7) |
 | P4-4 API hóa đơn + thu tiền | xong | BE-P4-23 ⏸ | `085dd6f` | P4-5 | Q-P4-24..27 | |
 | P4-5 Ngân hàng | xong | BE-P4-28 ⏸ | `dddc66c` | P4-6 | Q-P4-28..35; BANK-08 chưa làm (Q-P4-3) | |
-| P4-6 Quyết toán | chờ commit | BE-P4-33 ⏸ | – | chủ dự án kiểm và commit; rồi M7 (planner P4-7) | Q-P4-36..50 |
-| P4-7 FE nhân sự | chưa làm | – | – | planner `plans/P4-7/PLAN.md` | |
+| P4-6 Quyết toán | xong | BE-P4-33 ⏸ | `c62bdec` | P4-7 | Q-P4-36..50 |
+| P4-7 FE nhân sự | chờ commit | FE-P4-09 ⏸ | – | chủ dự án kiểm và commit; rồi M8 (P4-8) | Q-P4-51..61; FE-P4-08 sang P4-8 |
 | P4-8 FE người thuê | chưa làm | – | – | – | |
 | P4-9 QA | chưa làm | – | – | – | |
 
@@ -33,24 +33,25 @@ Mỗi **mốc** kết thúc ở một điểm dừng ⏸: agent báo cáo → ch
 | ✅ | M3 Mail (P4-3) | BE-P4-14..17 | M2 | thêm khóa vào seed `settings` (nếu cần) | unit, lint, build, reviewer | `3e4596c` |
 | ✅ | M4 API hóa đơn + thu tiền (P4-4) | BE-P4-18..23 | M2 | – | + e2e phát hành → ghi thu tay → PAID, reviewer | `085dd6f` |
 | ✅ | M5 Ngân hàng (P4-5) | BE-P4-24..28 | M4 | chạy planner `plans/P4-5/PLAN.md` rồi hỏi một lượt câu hỏi của nó; migration (nếu có) | + e2e webhook khớp / không khớp, reviewer | `dddc66c` |
-| ▶ | M6 Quyết toán (P4-6) | BE-P4-29..33 | M4, **sau** M5 (cùng đụng `payments`) | planner `plans/P4-6/PLAN.md` | + e2e dry-run → ghi thật → FINAL → ghi thu, reviewer | – |
-| ⬜ | M7 FE nhân sự (P4-7) | FE-P4-01..09 | M4, M5, M6 | planner `plans/P4-7/PLAN.md` | FE lint, build, test:components (chạy lại một lượt nếu có ca nhạy thời gian) | – |
+| ✅ | M6 Quyết toán (P4-6) | BE-P4-29..33 | M4, **sau** M5 (cùng đụng `payments`) | planner `plans/P4-6/PLAN.md` | + e2e dry-run → ghi thật → FINAL → ghi thu, reviewer | `c62bdec` |
+| ▶ | M7 FE nhân sự (P4-7) | FE-P4-01..09 | M4, M5, M6 | planner `plans/P4-7/PLAN.md` | FE lint, build, test:components (chạy lại một lượt nếu có ca nhạy thời gian) | – |
 | ⬜ | M8 FE người thuê (P4-8) | FE-P4-10..14 | FE-P4-01 (M7) | – | FE lint, build, test:components, kiểm tay 360 px | – |
 | ⬜ | M9 QA + chốt phase (P4-9) | QA-P4-01..06 | M1..M8 | `cleanup.mjs --apply` (chỉ khi đồng ý) | acceptance, check-constraints (số thật), e2e dev, hồi quy, đi tay cùng chủ dự án | – |
 
 Việc của chủ dự án chạy song song, không chặn code (P4-0): Q-03 nhà cung cấp webhook, `BANK_WEBHOOK_SECRET` trong `.env`, `settings.bank_account` thật, bậc điện thật (Q-02). Phải xong **trước khi lên production**, không cần xong trước M9.
 
-### ▶ Mốc đang làm: M6 (BE-P4-29..33)
+### ▶ Mốc đang làm: M7 (FE-P4-01..09, FE-P4-08a)
 
-Trạng thái thật (22/11/2026). Code nằm trên các file chính, **chưa commit** (sau `dddc66c`). Kế hoạch: [plans/P4-6/PLAN.md](plans/P4-6/PLAN.md); câu trả lời Q-P4-36..50 trong README.
+Trạng thái thật (23/11/2026). Code nằm trên các file chính, **chưa commit** (sau `c62bdec`). Kế hoạch: [plans/P4-7/PLAN.md](plans/P4-7/PLAN.md); câu trả lời Q-P4-51..61 trong README.
 
-- [x] Planner viết PLAN P4-6; hỏi chủ dự án Q-P4-36..50 (đều theo đề xuất); sửa BIL-19 theo Q-P4-48
-- [x] BE-P4-29 hàm thuần `settlement-calc.ts` (ví dụ BIL-18, BIL-14, BIL-22)
-- [x] BE-P4-30 `POST /contracts/:id/settlement?dryRun=true`: không ghi, A-10, Q-P4-10, Q-P4-50, phạm vi
-- [x] BE-P4-31 ghi thật một transaction: chỉ số cuối, FINAL hạn +7, SETTLED/CANCELLED "Gộp vào thanh lý", ENDED, người ở/xe, audit, thông báo
-- [x] BE-P4-32 `POST /settlements/:id/refund-paid` một lần, chỉ net > 0
-- [x] BE-P4-33 unit 2829/2829, lint 0 lỗi, build pass, e2e `settlement` 1/1 trên dev, check-constraints 110/110; reviewer DUYỆT
-- [x] ⏸ Báo cáo M6 → chủ dự án commit (chờ commit)
+- [x] Planner viết PLAN P4-7; hỏi chủ dự án Q-P4-51..61 (Q-P4-58: thêm tải ảnh đồng hồ ngay; Q-P4-59: chọn hóa đơn từ danh sách)
+- [x] BE nhỏ: `settlement` trong chi tiết hợp đồng, lọc `total` cho hóa đơn, ký + kiểm ảnh đồng hồ
+- [x] FE-P4-01 route + menu (3 mục mới, `/ql/giao-dich` chỉ Boss), sửa test mảng menu/route
+- [x] FE-P4-02 `/ql/chi-so` · FE-P4-03 `/ql/hoa-don` · FE-P4-04 `/ql/hoa-don/:id` (phát hành, ghi thu tay, lập lại, nhắc)
+- [x] FE-P4-05 thẻ tiền ở `/ql` · FE-P4-06 thẻ quyết toán · FE-P4-07 `/ql/giao-dich` · FE-P4-08a chuông
+- [!] FE-P4-08 chuyển sang P4-8
+- [x] FE-P4-09 FE lint sạch, build pass, test:components 1010/1010 (lượt 2: 1009/1010, ca nhạy thời gian FE-P2-15 #2, chạy riêng 18/18); BE 2833/2833; kiểm tay trên trình duyệt; reviewer DUYỆT
+- [x] ⏸ Báo cáo M7 → chủ dự án commit (chờ commit)
 
 ### Một vòng mốc (lặp lại cho mọi mốc)
 
@@ -103,3 +104,6 @@ Trạng thái thật (22/11/2026). Code nằm trên các file chính, **chưa co
 - 22/11/2026 · M5 commit `dddc66c`; ▶ sang M6 (P4-6), bắt đầu bằng planner
 - 22/11/2026 · M6 · planner viết `plans/P4-6/PLAN.md`; chủ dự án trả lời Q-P4-36..50; code BE-P4-29..32 · unit 2829/2829, lint 0 lỗi, build pass, e2e `settlement` 1/1 trên dev (rollback), check-constraints 110/110
 - 22/11/2026 · M6 ⏸ BE-P4-33 · reviewer DUYỆT, 0 lỗi chặn; 1 nên cân nhắc: xem trước (dryRun) cũng khóa FOR UPDATE như lượt ghi (giữ, để hai lượt ra cùng số) · chưa có e2e hai kết nối (QA-P4-03)
+- 23/11/2026 · M6 commit `c62bdec`; ▶ sang M7 (P4-7), bắt đầu bằng planner
+- 23/11/2026 · M7 · planner viết `plans/P4-7/PLAN.md`; chủ dự án trả lời Q-P4-51..61; code FE-P4-01..07, 08a + 3 thay đổi BE nhỏ · FE 1010/1010, BE 2833/2833, e2e `settlement` 1/1; kiểm tay: sửa popup chuông tràn trái và menu điện thoại tự đóng
+- 23/11/2026 · M7 ⏸ FE-P4-09 · reviewer DUYỆT, 0 lỗi chặn (nêu: ảnh đồng hồ chỉ kiểm hình dạng URL; Math.abs chỉ đổi dấu để hiển thị)

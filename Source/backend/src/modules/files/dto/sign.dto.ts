@@ -21,8 +21,9 @@ function UploadTargetId(field: 'roomId' | 'contractId', message: string): Proper
 
 // [ASSUMPTION] Vietnamese wording of these messages is proposed; the owner may edit it.
 export class SignUploadDto {
-  @IsIn(['ROOM_IMAGE', 'CONTRACT_SCAN', 'ID_PHOTO'], { message: 'Mục đích tải ảnh không hợp lệ' })
-  purpose: 'ROOM_IMAGE' | ContractUploadPurpose;
+  // METER_PHOTO (Q-P4-58) is signed per room like ROOM_IMAGE, in the room's meter folder.
+  @IsIn(['ROOM_IMAGE', 'METER_PHOTO', 'CONTRACT_SCAN', 'ID_PHOTO'], { message: 'Mục đích tải ảnh không hợp lệ' })
+  purpose: 'ROOM_IMAGE' | 'METER_PHOTO' | ContractUploadPurpose;
 
   @Type(() => Number)
   @UploadTargetId('roomId', 'Mã phòng không hợp lệ')

@@ -74,7 +74,29 @@ export interface ContractService {
 }
 export interface SelectedContractService extends ContractService { isActive: boolean }
 
+// Q-P4-54: the settlement row, also after a reload (BIL-13..19, CON-12).
+export interface ContractSettlement {
+  id: number; moveOutDate: string; deposit: number; lastPeriodAmount: number; remainingRent: number; previousDebt: number
+  damages: number; depositForfeit: number; net: number; finalInvoiceId: number | null; refundPaidAt: string | null; note: string | null
+}
+
+export interface SettlementInput {
+  moveOutDate: string
+  finalReadings: { electric: number; water: number; electricPhotoUrl?: string; waterPhotoUrl?: string }
+  damages: number; depositForfeit: number; note?: string
+}
+
+// Mirrors settlement.service.ts view(); the FE shows these numbers as they are (UI-06).
+export interface SettlementView {
+  dryRun: boolean; moveOutDate: string; periodNo: number
+  lastPeriodAmount: number; remainingRent: number; previousDebt: number; deposit: number; damages: number; depositForfeit: number; net: number; refund: number
+  lines: { kind: string; label: string; quantity: number; unitPrice: number; amount: number }[]
+  mergedDrafts: number[]; settledInvoices: number[]
+  settlementId: number | null; finalInvoice: { id: number; code: string; total: number; dueDate: string } | null
+}
+
 export interface ContractDetail extends ContractSummary {
+  settlement?: ContractSettlement | null
   progress?: { elapsedDays: number; totalDays: number; percent: number }
   terms: string | null
   signedAt: string | null

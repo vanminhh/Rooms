@@ -64,6 +64,17 @@ Chủ dự án trả lời ngày 22/11/2026 (tất cả theo đề xuất), đã
 | Q-P4-48 | Khóa tài khoản người thuê (xung đột BIL-19 ↔ D-26/A-16) | Giữ tài khoản, không thu hồi session; sửa BIL-19 | D-26, A-16, BIL-19 | P4-6 |
 | Q-P4-49 | Lưu cách trả lại cọc | Audit settlement.refund_paid + nối một câu vào settlements.note; không migration | Q-P4-8 | P4-6 |
 | Q-P4-50 | Đã có hóa đơn kỳ sau ngày dọn đi | CONFLICT_STATE "Còn hóa đơn của kỳ sau ngày dọn đi, hãy hủy hoặc lập lại hóa đơn đó trước" | BIL-15 | P4-6 |
+| Q-P4-51 | Bấm một thư trong popup chuông | Đánh dấu đã đọc rồi mở trang theo `link` | NOTI-11 | P4-7 |
+| Q-P4-52 | Vị trí menu mới | Sau "Hợp đồng": "Chốt chỉ số", "Hóa đơn"; "Giao dịch ngân hàng" chỉ Boss | 30-frontend | P4-7 |
+| Q-P4-53 | Form quyết toán | Thẻ "Quyết toán trả phòng" cuối trang hợp đồng, thu gọn, chỉ hợp đồng ACTIVE | BIL-13, UI-06 | P4-7 |
+| Q-P4-54 | Dữ liệu quyết toán sau khi tải lại trang | Thêm `settlement` vào `GET /contracts/:id` (BE nhỏ, không migration) | Q-P4-8 | P4-7 |
+| Q-P4-55 | Kết quả lưu lô chỉ số | Tại chỗ từng dòng: dòng xong rời danh sách, dòng lỗi giữ số và hiện lỗi dưới ô sai, kèm tóm tắt | MTR-11 | P4-7 |
+| Q-P4-56 | Lọc mặc định trang Hóa đơn | Không lọc sẵn, mới nhất trước | BE-P4-18 | P4-7 |
+| Q-P4-57 | Nhắc lần hai trong ngày | FE đổi câu 429 thành "Hôm nay đã nhắc hóa đơn này, hãy thử lại vào ngày mai" | Q-P4-7 | P4-7 |
+| Q-P4-58 | Ảnh đồng hồ | Thêm tải ảnh ngay: mục đích upload mới ở BE (ký Cloudinary, kiểm ảnh trước khi lưu) + ô ảnh ở FE | D-38, MTR | P4-7 |
+| Q-P4-59 | Chọn hóa đơn khi gán giao dịch | Chọn từ danh sách hóa đơn chưa trả cùng số tiền (BE thêm bộ lọc `total` cho `GET /invoices`) | BANK-05 | P4-7 |
+| Q-P4-60 | Xác nhận khi lưu lô chỉ số | Có hộp xác nhận nêu số phòng và cảnh báo phát hành + gửi mail | UI-04 | P4-7 |
+| Q-P4-61 | Khi nào hiện nút Phát hành | Mọi hóa đơn nháp; cảnh báo khi chờ duyệt bất thường; thiếu chỉ số thì hiện lỗi của BE | BIL-08, MTR-08 | P4-7 |
 
 ## 2. Câu hỏi còn mở
 

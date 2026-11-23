@@ -1,0 +1,14 @@
+/* UI-07: one vertical card per room at 360 px, more columns from 768 px. Kit tokens only. */
+.rooms-theme .meters-list { display: grid; gap: 16px; padding-bottom: 80px; }
+.rooms-theme .meters-card { padding: 16px; min-width: 0; overflow-wrap: anywhere; }
+.rooms-theme .meters-card-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.rooms-theme .meters-card-head h3 { margin: 0; }
+.rooms-theme .meters-card--late { border-left: 4px solid var(--rooms-error); }
+.rooms-theme .meters-field input[type='number'] { min-height: 44px; }
+.rooms-theme .meters-hint { margin: 4px 0 8px; font-size: 14px; color: var(--rooms-muted); }
+.rooms-theme .meters-warning { color: var(--rooms-error); }
+.rooms-theme .meters-photo { display: grid; gap: 4px; font-size: 14px; margin-bottom: 12px; }
+.rooms-theme .meters-savebar { position: sticky; bottom: 0; display: grid; gap: 8px; padding-block: 12px; background: var(--rooms-paper); }
+.rooms-theme .meters-summary { font-weight: 600; }
+.rooms-theme .meters-state { display: grid; gap: 8px; justify-items: start; }
+@media (min-width: 768px) { .rooms-theme .meters-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

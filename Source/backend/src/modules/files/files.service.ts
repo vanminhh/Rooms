@@ -45,6 +45,7 @@ export async function signRoomImageUpload(
   dto: { roomId: number },
   env: NodeJS.ProcessEnv = process.env,
   now: Date = new Date(),
+  folderOf: (buildingId: number, roomId: number) => string = roomImageFolder,
 ): Promise<SignedUpload> {
   const cfg = cloudinaryConfig(env);
 
@@ -59,7 +60,7 @@ export async function signRoomImageUpload(
   }
 
   const timestamp = Math.floor(now.getTime() / 1000);
-  const folder = roomImageFolder(room.buildingId, room.id);
+  const folder = folderOf(room.buildingId, room.id);
   const allowedFormats = ALLOWED_FORMATS.join(',');
   const transformation = INCOMING_TRANSFORMATION;
   const signature = signParams(

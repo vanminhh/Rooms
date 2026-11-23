@@ -32,6 +32,10 @@ import { ContractCreatePage } from '../pages/staff/ContractCreatePage'
 import { ContractDetailPage } from '../pages/staff/ContractDetailPage'
 import { ContractPrintPage } from '../pages/staff/ContractPrintPage'
 import { VehiclesPage } from '../pages/staff/VehiclesPage'
+import { MetersPage } from '../pages/staff/MetersPage'
+import { InvoicesPage } from '../pages/staff/InvoicesPage'
+import { InvoiceDetailPage } from '../pages/staff/InvoiceDetailPage'
+import { BankTransactionsPage } from '../pages/staff/BankTransactionsPage'
 import { TenantContractsPage } from '../pages/tenant/TenantContractsPage'
 import { TenantContractDetailPage } from '../pages/tenant/TenantContractDetailPage'
 import { TenantContractPrintPage } from '../pages/tenant/TenantContractPrintPage'
@@ -87,10 +91,14 @@ export const routes: RouteObject[] = [
         { path: 'hop-dong/:id', element: <ContractDetailPage /> },
         { path: 'hop-dong/:id/in', element: <ContractPrintPage /> },
         { path: 'xe', element: <VehiclesPage /> },
+        { path: 'chi-so', element: <MetersPage /> },
+        { path: 'hoa-don', element: <InvoicesPage /> },
+        { path: 'hoa-don/:id', element: <InvoiceDetailPage /> },
         // Boss-only pages: the guard blocks a manager who types the URL, not only the menu (AUTH-06, UI-08).
         { element: <RequireAuth allow={['BOSS']} />, children: [
           { path: 'nhan-su', element: <ManagersPage /> },
           { path: 'duyet-gia', element: <ApprovalsPage /> },
+          { path: 'giao-dich', element: <BankTransactionsPage /> },
         ] },
       ],
     }],

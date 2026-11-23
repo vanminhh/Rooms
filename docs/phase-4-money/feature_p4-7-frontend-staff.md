@@ -25,16 +25,16 @@ Out: tenant pages (P4-8), English (the staff app is Vietnamese only, LOC-01).
 
 ## Tasks
 
-- [ ] **FE-P4-01** Khung route và menu của cả phase: `/ql/chi-so`, `/ql/hoa-don`, `/ql/hoa-don/:id`, `/ql/giao-dich` (Boss); cập nhật mọi test đọc `routes[0..2]`, stub trang mới và mảng menu mong đợi (bài học FE-EX-03, FE-P3-01). Done when: `npm run test:components` và `npm run build` đạt, guard theo vai trò đúng.
-- [ ] **FE-P4-02** `/ql/chi-so` (MTR-09, MTR-11, UI-07 — 360 px trước): danh sách draft đến hạn, ô số điện/nước, ảnh tùy chọn, cờ bất thường, phòng còn thiếu sau mùng 1 hiện đỏ (D-42), lưu theo lô và hiện kết quả từng dòng. Done when: 4 trạng thái UI-03; lỗi `METER_VALUE_DECREASED` hiện đúng ô.
-- [ ] **FE-P4-03** `/ql/hoa-don`: lọc theo tòa/trạng thái/loại/quá hạn/kỳ, nhãn trạng thái từ bản đồ chung (UI-02). Done when: nhãn "Nháp/Chưa thanh toán/Đã thanh toán/Đã quyết toán/Đã hủy/Quá hạn" đúng 16-billing.
-- [ ] **FE-P4-04** `/ql/hoa-don/:id`: dòng hóa đơn, dòng bậc điện, mốc chỉ số, VietQR; "Phát hành", "Ghi thu tay" (chọn phương thức + hộp xác nhận nêu số tiền, UI-04), "Lập lại", "Nhắc". Done when: mọi hành động tiền đều có hộp xác nhận nêu số tiền; không có phép tính nào ở FE (UI-06).
-- [ ] **FE-P4-05** Thẻ tiền ở `/ql` (NOTI-06): "Chờ chỉ số", thẻ đỏ "Kỳ chưa có hóa đơn" liệt kê từng kỳ thiếu kèm nút "Tạo hóa đơn kỳ này" (xác nhận rồi mở "Chốt chỉ số"), "Hóa đơn quá hạn", "Hợp đồng quá hạn".
-- [ ] **FE-P4-06** Quyết toán trong `/ql/hop-dong/:id`: form ngày trả phòng, chỉ số cuối, hư hỏng, cọc giữ lại; xem trước bằng `dryRun` rồi xác nhận; nút "Đã trả lại tiền" khi `net > 0`.
-- [ ] **FE-P4-07** `/ql/giao-dich` (Boss): không khớp lên đầu, gán vào hóa đơn, đánh dấu đã hoàn (chỗ của "báo lỗi thanh toán" để trống tới Phase 5).
-- [ ] **FE-P4-08** `/thue` phần "hóa đơn cần trả" + ngày thu kế tiếp (dòng Phase 4 của 30-frontend) — làm cùng FE-P4-01 nếu tiện, nếu không thì thuộc P4-8.
-- [ ] **FE-P4-08a** Chuông hộp thư nhân sự trong `StaffLayout` (NOTI-11, Q-P4-18, Q-P4-20): chấm đỏ + số chưa đọc, bấm mở popup nhỏ thả xuống kiểu Facebook web, đã đọc thì mờ nhưng vẫn giữ; hỏi chủ dự án hành vi khi bấm từng thư trước khi làm. Cần BE-P4-14b đã commit. Chi tiết: [plans/P4-3/PLAN.md](plans/P4-3/PLAN.md) CP-7.
-- [ ] **FE-P4-09** ⏸ `npm run lint`, `npm run build`, `npm run test:components` (chạy lại một lượt khi có ca nhạy thời gian, bài học 13/11).
+- [x] **FE-P4-01** Khung route và menu của cả phase: `/ql/chi-so`, `/ql/hoa-don`, `/ql/hoa-don/:id`, `/ql/giao-dich` (Boss); cập nhật mọi test đọc `routes[0..2]`, stub trang mới và mảng menu mong đợi (bài học FE-EX-03, FE-P3-01). Done when: `npm run test:components` và `npm run build` đạt, guard theo vai trò đúng.
+- [x] **FE-P4-02** `/ql/chi-so` (MTR-09, MTR-11, UI-07 — 360 px trước): danh sách draft đến hạn, ô số điện/nước, ảnh tùy chọn, cờ bất thường, phòng còn thiếu sau mùng 1 hiện đỏ (D-42), lưu theo lô và hiện kết quả từng dòng. Done when: 4 trạng thái UI-03; lỗi `METER_VALUE_DECREASED` hiện đúng ô.
+- [x] **FE-P4-03** `/ql/hoa-don`: lọc theo tòa/trạng thái/loại/quá hạn/kỳ, nhãn trạng thái từ bản đồ chung (UI-02). Done when: nhãn "Nháp/Chưa thanh toán/Đã thanh toán/Đã quyết toán/Đã hủy/Quá hạn" đúng 16-billing.
+- [x] **FE-P4-04** `/ql/hoa-don/:id`: dòng hóa đơn, dòng bậc điện, mốc chỉ số, VietQR; "Phát hành", "Ghi thu tay" (chọn phương thức + hộp xác nhận nêu số tiền, UI-04), "Lập lại", "Nhắc". Done when: mọi hành động tiền đều có hộp xác nhận nêu số tiền; không có phép tính nào ở FE (UI-06).
+- [x] **FE-P4-05** Thẻ tiền ở `/ql` (NOTI-06): "Chờ chỉ số", thẻ đỏ "Kỳ chưa có hóa đơn" liệt kê từng kỳ thiếu kèm nút "Tạo hóa đơn kỳ này" (xác nhận rồi mở "Chốt chỉ số"), "Hóa đơn quá hạn", "Hợp đồng quá hạn".
+- [x] **FE-P4-06** Quyết toán trong `/ql/hop-dong/:id`: form ngày trả phòng, chỉ số cuối, hư hỏng, cọc giữ lại; xem trước bằng `dryRun` rồi xác nhận; nút "Đã trả lại tiền" khi `net > 0`.
+- [x] **FE-P4-07** `/ql/giao-dich` (Boss): không khớp lên đầu, gán vào hóa đơn, đánh dấu đã hoàn (chỗ của "báo lỗi thanh toán" để trống tới Phase 5).
+- [!] **FE-P4-08** `/thue` phần "hóa đơn cần trả" + ngày thu kế tiếp (dòng Phase 4 của 30-frontend) — làm cùng FE-P4-01 nếu tiện, nếu không thì thuộc P4-8.
+- [x] **FE-P4-08a** Chuông hộp thư nhân sự trong `StaffLayout` (NOTI-11, Q-P4-18, Q-P4-20): chấm đỏ + số chưa đọc, bấm mở popup nhỏ thả xuống kiểu Facebook web, đã đọc thì mờ nhưng vẫn giữ; hỏi chủ dự án hành vi khi bấm từng thư trước khi làm. Cần BE-P4-14b đã commit. Chi tiết: [plans/P4-3/PLAN.md](plans/P4-3/PLAN.md) CP-7.
+- [x] **FE-P4-09** ⏸ `npm run lint`, `npm run build`, `npm run test:components` (chạy lại một lượt khi có ca nhạy thời gian, bài học 13/11).
 
 ## Questions for the owner
 
@@ -43,4 +43,7 @@ Out: tenant pages (P4-8), English (the staff app is Vietnamese only, LOC-01).
 ## Issues log
 
 <!-- When a task is [!], add: date · task ID · what failed · what is needed -->
+- 23/11/2026 · FE-P4-08 · Chuyển sang P4-8 (planner P4-7): khối hóa đơn ở `/thue` cần api/type người thuê và từ điển vi/en của FE-P4-10/11.
+- 23/11/2026 · FE-P4-02/06 · Ảnh đồng hồ (Q-P4-58): BE ký upload `METER_PHOTO` theo phòng vào thư mục `meters/{tòa}/{phòng}` và kiểm URL trước khi lưu (chỉ kiểm hình dạng URL, ghi `shortcut:`). Thêm `settlement` vào `GET /contracts/:id` (Q-P4-54) và lọc `total` cho `GET /invoices` (Q-P4-59).
+- 23/11/2026 · FE-P4-08a · Menu điện thoại của kit đóng khi bấm trong vùng `action`; chuông chặn sự kiện ở nút mở và "đọc tất cả", bấm một thư thì menu đóng và chuyển trang.
 - Nghiệm thu hạn cuối tháng (22/11/2026): quản lý thấy hóa đơn tháng chưa trả trong phạm vi tòa hiển thị đỏ với nhãn “Quá hạn” từ ngày đầu tháng tiếp theo theo giờ Việt Nam.

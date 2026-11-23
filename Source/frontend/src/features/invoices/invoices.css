@@ -1,0 +1,17 @@
+.rooms-theme .invoices-list, .rooms-theme .invoices-state, .rooms-theme .invoices-detail { display: grid; gap: 16px; }
+.rooms-theme .invoices-toolbar, .rooms-theme .invoices-actions, .rooms-theme .invoices-card-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.rooms-theme .invoices-toolbar { align-items: flex-end; margin-bottom: 24px; }
+.rooms-theme .invoices-toolbar .rooms-field { flex: 1 1 180px; }
+.rooms-theme .invoices-card { padding: 16px; min-width: 0; overflow-wrap: anywhere; }
+.rooms-theme .invoices-card-head { justify-content: space-between; }
+.rooms-theme .invoices-card-head h2, .rooms-theme .invoices-card-head h3 { margin: 0; }
+.rooms-theme .invoices-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.rooms-theme .invoices-facts dt { color: var(--rooms-muted); font-size: 12px; font-weight: 500; }
+.rooms-theme .invoices-facts dd { margin: 4px 0 0; font-weight: 600; }
+.rooms-theme .invoices-lines { width: 100%; border-collapse: collapse; }
+.rooms-theme .invoices-lines th, .rooms-theme .invoices-lines td { padding: 8px 4px; border-bottom: 1px solid var(--rooms-line); text-align: left; }
+.rooms-theme .invoices-lines td.invoices-num, .rooms-theme .invoices-lines th.invoices-num { text-align: right; white-space: nowrap; }
+.rooms-theme .invoices-table-wrap { overflow-x: auto; }
+.rooms-theme .invoices-qr { width: 240px; max-width: 100%; height: auto; display: block; margin-block: 12px; }
+.rooms-theme .invoices-photo { width: 160px; max-width: 100%; height: auto; display: block; margin-top: 8px; }
+.rooms-theme .invoices-form { display: grid; gap: 12px; max-width: 640px; }

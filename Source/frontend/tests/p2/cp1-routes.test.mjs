@@ -81,6 +81,10 @@ function compileRoutes() {
     '../pages/staff/ContractDetailPage': stub('ContractDetailPage'),
     '../pages/staff/ContractPrintPage': stub('ContractPrintPage'),
     '../pages/staff/VehiclesPage': stub('VehiclesPage'),
+    '../pages/staff/MetersPage': stub('MetersPage'),
+    '../pages/staff/InvoicesPage': stub('InvoicesPage'),
+    '../pages/staff/InvoiceDetailPage': stub('InvoiceDetailPage'),
+    '../pages/staff/BankTransactionsPage': stub('BankTransactionsPage'),
     '../pages/tenant/TenantContractsPage': stub('TenantContractsPage'),
     '../pages/tenant/TenantContractDetailPage': stub('TenantContractDetailPage'),
     '../pages/tenant/TenantContractPrintPage': stub('TenantContractPrintPage'),
@@ -160,4 +164,17 @@ test('AUTH-06, UI-08: routes.tsx nests nhan-su/duyet-gia behind allow=["BOSS"], 
     assert.equal(guards.guardRedirect(manager, { pathname: path, search: '' }, bossGroup.element.props.allow), '/ql', `manager hitting ${path} directly must be redirected, not just hidden from the menu`)
     assert.equal(guards.guardRedirect(boss, { pathname: path, search: '' }, bossGroup.element.props.allow), null, `Boss must be let through ${path}`)
   }
+})
+
+test('FE-P4-01/AUTH-06/BANK-05: money pages sit in the staff area; /ql/giao-dich is inside the Boss-only guard', () => {
+  const { routes, mods } = compileRoutes()
+  const staffChildren = routes[2].children[0].children
+  const byStaffPath = Object.fromEntries(staffChildren.filter(r => r.path).map(r => [r.path, r.element.type]))
+  assert.equal(byStaffPath['chi-so'], mods['../pages/staff/MetersPage'].MetersPage)
+  assert.equal(byStaffPath['hoa-don'], mods['../pages/staff/InvoicesPage'].InvoicesPage)
+  assert.equal(byStaffPath['hoa-don/:id'], mods['../pages/staff/InvoiceDetailPage'].InvoiceDetailPage)
+  assert.equal(byStaffPath['giao-dich'], undefined, 'not reachable by a manager')
+  const bossGroup = staffChildren.find(r => r.element?.type === mods['./RequireAuth'].RequireAuth)
+  assert.deepEqual(bossGroup.element.props.allow, ['BOSS'])
+  assert.equal(Object.fromEntries(bossGroup.children.map(r => [r.path, r.element.type]))['giao-dich'], mods['../pages/staff/BankTransactionsPage'].BankTransactionsPage)
 })

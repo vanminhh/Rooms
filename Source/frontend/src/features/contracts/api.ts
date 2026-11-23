@@ -3,7 +3,7 @@ import { buildingIdQuery } from '../buildings/api'
 import type {
   CancelContractInput, CancelContractResult, CancelPreview, ContractAsset, ContractDetail, ContractListQuery,
   ContractPrintData, ContractSummary, CreateContractInput, CreateOccupantInput, CreateVehicleInput,
-  MoveInInput, MoveInResult, OccupantChanges, OccupantView, PaymentReceipt, RecordDepositInput,
+  MoveInInput, MoveInResult, OccupantChanges, OccupantView, PaymentMethod, PaymentReceipt, RecordDepositInput, SettlementInput, SettlementView,
   SelectedContractService, SignContractResult, SignedDocument, VehicleChanges, VehicleLookupQuery,
   VehicleLookupView, VehicleView,
 } from './types'
@@ -65,6 +65,14 @@ export function cancelContract(id: number, input: CancelContractInput, idempoten
     method: 'POST', body: { reason: input.reason, depositKept: input.depositKept, expectedDepositReceived: input.expectedDepositReceived }, idempotencyKey,
   })
 }
+
+// BIL-13..19: the dry run writes nothing and sends no Idempotency-Key; the real write sends one per confirmation (API-05).
+export const previewSettlement = (contractId: number, input: SettlementInput) =>
+  apiRequest<SettlementView>(`/contracts/${contractId}/settlement?dryRun=true`, { method: 'POST', body: input })
+export const settleContract = (contractId: number, input: SettlementInput, idempotencyKey: string) =>
+  apiRequest<SettlementView>(`/contracts/${contractId}/settlement?dryRun=false`, { method: 'POST', body: input, idempotencyKey })
+export const markRefundPaid = (settlementId: number, body: { method: PaymentMethod; note?: string }, idempotencyKey: string) =>
+  apiRequest<{ settlementId: number; net: number; refundPaidAt: string }>(`/settlements/${settlementId}/refund-paid`, { method: 'POST', body, idempotencyKey })
 
 export function recordDepositPayment(invoiceId: number, input: RecordDepositInput, idempotencyKey: string) {
   return apiRequest<PaymentReceipt>(`/invoices/${invoiceId}/payment`, {

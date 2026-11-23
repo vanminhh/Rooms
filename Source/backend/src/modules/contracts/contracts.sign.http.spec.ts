@@ -27,6 +27,7 @@ function initialState() {
 
 // The Prisma edge projects each actual SELECT, including the nested tenant projection.
 function project(row: any, select: any): any {
+  if (row == null) return null; // e.g. no settlement yet (Q-P4-54)
   if (Array.isArray(row)) return row.map(value => project(value, select));
   if (!select) return structuredClone(row);
   return Object.fromEntries(Object.entries(select).filter(([, value]) => value).map(([key, value]: [string, any]) =>
@@ -56,7 +57,7 @@ describe('BE-P3-13..15: staff signing through HTTP', () => {
         if (!row || (where.buildingId && !where.buildingId.in.includes(7))) return null;
         return project({ ...row, tenant: state.tenant, room: { id: 30, code: 'P301' },
           building: { id: 7, code: 'CG01', name: 'Tòa A', isActive: true, managerId: state.managerId, manager: { isActive: true } },
-          occupants: [], vehicles: [], services: [], invoices: state.invoices, terms: null, movedInAt: null,
+          occupants: [], vehicles: [], services: [], invoices: state.invoices, settlement: null, terms: null, movedInAt: null,
         }, select);
       }),
       update: vi.fn(async ({ where, data, select }: any) => {

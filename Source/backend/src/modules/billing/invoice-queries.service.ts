@@ -51,6 +51,7 @@ export class InvoiceQueriesService {
       contract: { ...scopeWhere(actor), ...(buildingId === undefined ? {} : { buildingId }) },
       ...(query.status ? { status: query.status } : {}),
       ...(query.type ? { type: query.type } : {}),
+      ...(query.total ? { total: query.total } : {}),
       ...(query.period ? { periodStart: { gte: new Date(Date.UTC(y, m - 1, 1)), lt: new Date(Date.UTC(y, m, 1)) } } : {}),
     };
     const filtered: Prisma.InvoiceWhereInput = query.overdue === undefined ? where

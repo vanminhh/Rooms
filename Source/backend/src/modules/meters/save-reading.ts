@@ -3,6 +3,7 @@ import type { InvoiceStatus, MeterKind, Prisma } from '@prisma/client';
 import { addDays, parseDateOnly, todayHanoi } from '../../common/date/today.js';
 import { ErrorCode } from '../../common/errors/error-code.js';
 import type { AuthUser } from '../../common/guards/auth.decorators.js';
+import { isMeterPhotoUrl, parseCloudinaryUrl } from '../files/cloudinary.js';
 
 function invalid(): never { throw new BadRequestException(ErrorCode.VALIDATION_FAILED); }
 function conflict(): never { throw new ConflictException(ErrorCode.CONFLICT_STATE); }
@@ -16,6 +17,13 @@ function optionalText(value: unknown): string | undefined {
   if (value === undefined) return undefined;
   if (typeof value !== 'string') invalid();
   return value;
+}
+
+// Q-P4-58 (D-38): an optional photo must come from this room's signed meter folder.
+export function assertMeterPhoto(photoUrl: string | null | undefined, buildingId: number, roomId: number, env: NodeJS.ProcessEnv = process.env) {
+  if (!photoUrl) return;
+  const cfg = parseCloudinaryUrl(env.CLOUDINARY_URL);
+  if (!cfg || !isMeterPhotoUrl(photoUrl, cfg.cloudName, buildingId, roomId)) invalid();
 }
 
 export function parseReading(raw: unknown, today = todayHanoi()) {
@@ -39,6 +47,7 @@ export async function saveReading(tx: Prisma.TransactionClient, actor: AuthUser,
   const { roomId, invoiceId, kind, readOn } = item;
   const rooms = await tx.$queryRaw<{ building_id: number }[]>`SELECT building_id FROM rooms WHERE id = ${roomId} FOR UPDATE`;
   if (!rooms.length) throw new NotFoundException(ErrorCode.NOT_FOUND);
+  assertMeterPhoto(item.photoUrl, rooms[0].building_id, roomId);
   if (actor.role !== 'BOSS') {
     const building = await tx.building.findFirst({ where: { id: rooms[0].building_id, managerId: actor.id, isActive: true } });
     if (!building) throw new ForbiddenException(ErrorCode.OUT_OF_SCOPE);

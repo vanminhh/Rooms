@@ -140,6 +140,9 @@ describe('BE-P4-29..32 settlement on real PostgreSQL with outer rollback', () =>
           expect(paid.body.data).toMatchObject({ settlementId: sid, net: 7_344_000, method: 'CASH' });
           expect((await tx.settlement.findUniqueOrThrow({ where: { id: sid } })).note).toContain('Đã trả lại 7.344.000 đ bằng tiền mặt ngày'); // Q-P4-49
           await api('post', `/settlements/${sid}/refund-paid`, manager.token).send({ method: 'CASH' }).expect(409);
+          // Q-P4-54: the contract page reads the settlement after a reload.
+          const detailB = (await api('get', `/contracts/${b.contractId}`, manager.token).expect(200)).body.data;
+          expect(detailB.settlement).toMatchObject({ id: sid, net: 7_344_000, finalInvoiceId: null, refundPaidAt: expect.any(String) });
           await api('post', `/settlements/${settlementId}/refund-paid`, manager.token).send({ method: 'CASH' }).expect(409); // net < 0
           finished = true;
         } finally {

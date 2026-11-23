@@ -6,6 +6,7 @@ import { useAuth } from '../app/auth-context'
 import { BuildingSelector } from '../features/buildings/BuildingSelector'
 import { BuildingSelectionProvider } from '../features/buildings/BuildingSelectionProvider'
 import { useSignOut } from '../features/auth/useSignOut'
+import { NotificationBell } from '../features/notifications/NotificationBell'
 import { I18nProvider } from '../shared/i18n'
 import { handleInternalLinkClick } from './internal-links'
 import './layouts.css'
@@ -25,6 +26,10 @@ export function StaffLayout() {
     ...(isBoss ? [{ label: 'Duyệt giá', href: '/ql/duyet-gia' }] : []),
     { label: 'Lịch hẹn', href: '/ql/lich-hen' },
     { label: 'Hợp đồng', href: '/ql/hop-dong' },
+    // Q-P4-52: the money pages follow "Hợp đồng"; bank transactions are Boss only (BANK-05).
+    { label: 'Chốt chỉ số', href: '/ql/chi-so' },
+    { label: 'Hóa đơn', href: '/ql/hoa-don' },
+    ...(isBoss ? [{ label: 'Giao dịch ngân hàng', href: '/ql/giao-dich' }] : []),
     { label: 'Tra cứu xe', href: '/ql/xe' },
     { label: 'Tài khoản', href: '/ql/tai-khoan' },
   ]
@@ -34,7 +39,7 @@ export function StaffLayout() {
       homeHref="/ql"
       logoSrc="/images/rooms-logo.webp"
       links={links}
-      action={<RoomsButton variant="outline" type="button" disabled={signingOut} onClick={() => void signOut()}>Đăng xuất</RoomsButton>}
+      action={<><NotificationBell /><RoomsButton variant="outline" type="button" disabled={signingOut} onClick={() => void signOut()}>Đăng xuất</RoomsButton></>}
     />
     <main className="layout-main">
       <BuildingSelectionProvider>

@@ -10,6 +10,7 @@ import { DocumentAccess } from '../../features/contracts/ContractDocuments'
 import { DepositCard } from '../../features/contracts/DepositCard'
 import { CancelContractForm, DepositPaymentForm, MoveInForm, ResetPasswordAction, SignContractForm, TemporaryPassword } from '../../features/contracts/StaffContractActions'
 import { StaffOccupants, StaffServices, StaffVehicles } from '../../features/contracts/StaffContractRegistrations'
+import { SettlementCard } from '../../features/contracts/SettlementCard'
 import '../../features/contracts/contracts.css'
 
 export function ContractDetailPage() {
@@ -45,6 +46,7 @@ function ContractDetail({ id, scope }: { id: number; scope: string }) {
       <StaffOccupants contract={contract} scope={scope} />
       <StaffVehicles contract={contract} scope={scope} />
       <StaffServices contract={contract} scope={scope} />
+      <SettlementCard contract={contract} />
     </div>}
   </>
 }

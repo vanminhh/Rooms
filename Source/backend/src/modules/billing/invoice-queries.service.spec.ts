@@ -44,6 +44,8 @@ describe('BE-P4-18 staff invoice list', () => {
     await service.list(manager, { period: '2026-10', type: 'MONTHLY' });
     expect(prisma.invoice.count.mock.calls[0][0].where).toEqual({ contract: { buildingId: { in: [10] } }, type: 'MONTHLY',
       periodStart: { gte: d('2026-10-01'), lt: d('2026-11-01') } });
+    await service.list(manager, { status: 'UNPAID', total: 2_799_000 }); // Q-P4-59
+    expect(prisma.invoice.count.mock.calls[1][0].where).toEqual({ contract: { buildingId: { in: [10] } }, status: 'UNPAID', total: 2_799_000 });
   });
 });
 

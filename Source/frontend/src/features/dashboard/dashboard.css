@@ -6,3 +6,5 @@
 .rooms-theme .dashboard-card ul { margin: 0; padding-left: 18px; font-size: 13px; }
 .rooms-theme .dashboard-card a { justify-self: start; display: inline-flex; align-items: center; min-height: 44px; color: var(--rooms-gold-text); font-weight: 600; text-decoration: underline; }
 .rooms-theme .dashboard-state { display: grid; gap: 12px; justify-items: start; margin-top: 24px; }
+.rooms-theme .dashboard-card--red { border-color: var(--rooms-error); border-left-width: 4px; }
+.rooms-theme .dashboard-card li .rooms-button { margin-left: 8px; }

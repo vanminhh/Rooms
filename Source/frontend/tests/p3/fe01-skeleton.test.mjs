@@ -91,6 +91,7 @@ function loadLayout(name, role, initialLanguage = 'vi') {
     '../components': kit,
     '../app/auth-context': { useAuth: () => ({ user: { role } }) },
     '../features/auth/useSignOut': { useSignOut: () => ({ signOut() {}, signingOut: false }) },
+    '../features/notifications/NotificationBell': { NotificationBell: function NotificationBell() { return null } }, // NOTI-11, tested in tests/p4
     '../features/buildings/BuildingSelector': { BuildingSelector: () => null },
     '../features/buildings/BuildingSelectionProvider': { BuildingSelectionProvider: () => null },
     '../shared/i18n': {

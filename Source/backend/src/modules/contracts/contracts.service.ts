@@ -52,6 +52,11 @@ const CONTRACT_DETAIL = {
     where: { type: 'DEPOSIT' }, orderBy: { id: 'desc' }, take: 1,
     select: DEPOSIT_INVOICE_SELECT,
   },
+  // Q-P4-54: the contract page keeps "Đã trả lại tiền" after a reload (BIL-13..19, CON-12, Q-P3-3).
+  settlement: {
+    select: { id: true, moveOutDate: true, deposit: true, lastPeriodAmount: true, remainingRent: true, previousDebt: true,
+      damages: true, depositForfeit: true, net: true, finalInvoiceId: true, refundPaidAt: true, note: true },
+  },
 } satisfies Prisma.ContractSelect;
 
 function toContractSummary(contract: Prisma.ContractGetPayload<{ select: typeof CONTRACT_SUMMARY }>) {
@@ -156,7 +161,7 @@ export class ContractsService {
   }
 
   private async contractDetail(contract: Prisma.ContractGetPayload<{ select: typeof CONTRACT_DETAIL }>) {
-    const { terms, signedAt, movedInAt, occupants, vehicles, services, invoices: [depositInvoice], ...summary } = contract;
+    const { terms, signedAt, movedInAt, occupants, vehicles, services, invoices: [depositInvoice], settlement, ...summary } = contract;
     const bank = depositInvoice?.status === 'UNPAID'
       ? await this.prisma.setting.findUnique({ where: { key: 'bank_account' }, select: { value: true } }) : null;
     return {
@@ -172,6 +177,7 @@ export class ContractsService {
       })),
       services: services.map(({ service }) => service),
       depositInvoice: depositInvoice ? depositInvoiceView(depositInvoice, bank?.value) : null,
+      settlement: settlement && { ...settlement, moveOutDate: formatDateOnly(settlement.moveOutDate), refundPaidAt: settlement.refundPaidAt?.toISOString() ?? null },
     };
   }
 

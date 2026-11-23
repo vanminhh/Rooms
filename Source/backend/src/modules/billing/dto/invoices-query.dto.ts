@@ -25,6 +25,14 @@ export class InvoicesQueryDto extends PaginationQuery {
   @IsBoolean({ message: 'Bộ lọc quá hạn không hợp lệ' })
   overdue?: boolean;
 
+  // Q-P4-59: Boss picks an unpaid invoice with the bank transaction's exact amount.
+  @Type(() => Number)
+  @IsOptional()
+  @IsInt({ message: 'Số tiền không hợp lệ' })
+  @Min(1, { message: 'Số tiền không hợp lệ' })
+  @Max(2147483647, { message: 'Số tiền không hợp lệ' })
+  total?: number;
+
   // The month the period starts in, YYYY-MM (MONTHLY invoices).
   @IsOptional()
   @Matches(/^\d{4}-(0[1-9]|1[0-2])$/, { message: 'Kỳ phải có dạng YYYY-MM' })
