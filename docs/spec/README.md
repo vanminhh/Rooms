@@ -46,7 +46,7 @@ Schema files: [Source/backend/prisma/schema.prisma](../../Source/backend/prisma/
 
 Phase 1 (Foundation), Phase 2 (Rooms) and **Phase Extra (Home101) are complete**. On 16/11/2026 the owner accepted EX-6, EX-7, EX-8 and EX-9, including the phone-whitespace fix, booking-success popup and acknowledged cross-building overlap warning. The final record is [ex-9-qa-checklist.md](../phase-extra-home101/ex-9-qa-checklist.md); [PROGRESS.md](../phase-extra-home101/PROGRESS.md) keeps the dated history.
 
-**Phase 3 (Contracts) is complete**: the owner accepted the manual walk on 22/11/2026. Record: [p3-8-qa-checklist.md](../phase-3-contracts/p3-8-qa-checklist.md); history: [PROGRESS.md](../phase-3-contracts/PROGRESS.md). Phase 4 · Money: M1–M8 committed. Final regression passed (75/75 across 16 E2E files). The dev database cleanup listing is pending before sign-off ([checklist](../phase-4-money/p4-9-qa-checklist.md)).
+**Phase 3 (Contracts) is complete**: the owner accepted the manual walk on 22/11/2026. Record: [p3-8-qa-checklist.md](../phase-3-contracts/p3-8-qa-checklist.md); history: [PROGRESS.md](../phase-3-contracts/PROGRESS.md). **Phase 4 (Money) is complete.** Final regression passed (75/75 across 16 E2E files). The owner confirmed the dev database cleanup listing showed CLEANED on 24/11/2026 ([checklist](../phase-4-money/p4-9-qa-checklist.md)).
 
 Recorded verification: frontend **864/864**, lint/build pass; backend after option B **169/169 offline**, lint/build pass; host baseline before B **1806/1806** and dev e2e **54/54**; DB checker **82/82** on 15/11/2026. The owner's acceptance is recorded separately from test output, without inventing a new HTTP/e2e run.
 

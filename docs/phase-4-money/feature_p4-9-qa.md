@@ -29,8 +29,8 @@ Out: new features.
 - [x] **QA-P4-02** `node prisma/check-constraints.mjs . prisma` — báo **số thật** bộ kiểm in ra (gần nhất 107/107); thêm kịch bản nếu có đổi ràng buộc.
 - [x] **QA-P4-03** e2e trên DB dev theo lệnh trong `docs/LESSONS.md` (`.env` ở `Source/backend`): chốt chỉ số → phát hành → webhook khớp → quyết toán; chạy riêng ca nghi ngờ trước khi kết luận lỗi logic (bài học QA-P3-02 về khóa advisory và timeout 30 s).
 - [x] **QA-P4-04** Hồi quy: đăng nhập 4 vai trò + lối vào (D-43), lịch hẹn, giá và duyệt giá, trang công khai, vòng cọc của Phase 3 (ký → thu cọc → vào ở → hủy).
-- [!] **QA-P4-05** `scripts/e2e/cleanup.mjs` chế độ list (chỉ `--apply` khi chủ dự án đồng ý); dọn dữ liệu thử của lượt này.
-- [~] **QA-P4-06** ⏸ Cập nhật `PROGRESS.md`, `docs/spec/README.md` mục Status, `02-database.md` nếu schema đổi, `LESSONS.md`; viết `p4-9-qa-checklist.md`; đề nghị thông điệp commit kèm mã task và mã spec.
+- [x] **QA-P4-05** `scripts/e2e/cleanup.mjs` chế độ list (chỉ `--apply` khi chủ dự án đồng ý); dọn dữ liệu thử của lượt này.
+- [x] **QA-P4-06** ⏸ Cập nhật `PROGRESS.md`, `docs/spec/README.md` mục Status, `02-database.md` nếu schema đổi, `LESSONS.md`; viết `p4-9-qa-checklist.md`; đề nghị thông điệp commit kèm mã task và mã spec.
 
 ## Questions for the owner
 
@@ -40,4 +40,4 @@ Out: new features.
 
 <!-- When a task is [!], add: date · task ID · what failed · what is needed -->
 
-23/11/2026 — QA-P4-05 chờ kết nối dev. Bằng chứng từng mục ở [checklist](p4-9-qa-checklist.md).
+23/11/2026 — Phiên QA gặp lỗi kết nối dev. Ngày 24/11/2026 chủ dự án xác nhận kết quả CLEANED và đóng QA-P4-05. Bằng chứng từng mục ở [checklist](p4-9-qa-checklist.md).

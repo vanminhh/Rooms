@@ -1,6 +1,6 @@
 # P4-9 · Checklist nghiệm thu Phase 4
 
-Ngày kiểm 23/11/2026. M1–M8 đã commit. M9 đang nghiệm thu.
+Ngày kiểm 23/11/2026. M1–M8 đã commit. M9 đã nghiệm thu ngày 24/11/2026 (commit `8c5e12f`).
 
 ## Đối chiếu Acceptance
 
@@ -59,8 +59,8 @@ Mỗi dòng dẫn tới test tương ứng. Bằng chứng chạy trên DB dev �
 
 - QA-P4-02 đạt 110/110 trên PostgreSQL nhúng.
 - QA-P4-03/04: đạt 75/75 ca trong 16/16 file trên DB dev, mã thoát 0 (log bayo6alxe.output).
-- QA-P4-05: cả 9 nhật ký ngày 23/11 ghi CLEANED, gồm lượt cuối 20261123T2245-RCP3. Sau hồi quy, cleanup ở chế độ list thoát 1 tại bảng buildings vì phiên QA không kết nối được Supabase qua cổng 6543. Chờ kết quả list trên máy có kết nối dev.
-- QA-P4-06: đã lập checklist và cập nhật Status, LESSONS, PROGRESS. Chờ kết quả kiểm tra cuối để chốt M9.
+- QA-P4-05: cả 9 nhật ký ngày 23/11 ghi CLEANED, gồm lượt cuối 20261123T2245-RCP3. Sau hồi quy, cleanup ở chế độ list thoát 1 tại bảng buildings vì phiên QA không kết nối được Supabase qua cổng 6543. Ngày 24/11/2026 chủ dự án xác nhận kết quả list là CLEANED.
+- QA-P4-06: đã lập checklist và cập nhật Status, LESSONS, PROGRESS. Đã chốt M9 ngày 24/11/2026.
 - Bộ test cục bộ sau sửa: backend 137 file, 2.837/2.837 đạt; frontend 1.017/1.017 đạt. Frontend build thành công, lint hai ứng dụng thoát 0 (backend có 4 cảnh báo).
 
 ## Rà soát QA-P4-01
@@ -89,6 +89,6 @@ Reviewer DUYỆT phạm vi tiền sau khi chạy lại 9/9 test backend và 13/1
 | viewings | 11 |
 | **Tổng** | **75/75** |
 
-Commit đề xuất sau khi kiểm tra cleanup:
+Commit M9 `8c5e12f`
 
 test(phase-4): verify money workflows and overdue invoice alerts (QA-P4-01..06, BIL-08, MTR-02, D-40)

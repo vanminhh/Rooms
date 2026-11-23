@@ -19,7 +19,7 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 | P4-6 Quyết toán | xong | BE-P4-33 ⏸ | `c62bdec` | P4-7 | Q-P4-36..50 |
 | P4-7 FE nhân sự | xong | FE-P4-09 ⏸ | `c9bebf9` | P4-8 | Q-P4-51..61; FE-P4-08 sang P4-8 |
 | P4-8 FE người thuê | xong | FE-P4-14 ⏸ | `bb67e3e` | P4-9 | gồm FE-P4-08 |
-| P4-9 QA | chờ cleanup list | QA-P4-01..04 đạt | – | QA-P4-05 rồi chốt M9 | [Checklist](p4-9-qa-checklist.md) |
+| P4-9 QA | xong | QA-P4-06 ⏸ | `8c5e12f` | Phase 5 | [Checklist](p4-9-qa-checklist.md) |
 
 ## Lộ trình mốc (làm liền mạch)
 
@@ -36,7 +36,7 @@ Mỗi **mốc** kết thúc ở một điểm dừng ⏸: agent báo cáo → ch
 | ✅ | M6 Quyết toán (P4-6) | BE-P4-29..33 | M4, **sau** M5 (cùng đụng `payments`) | planner `plans/P4-6/PLAN.md` | + e2e dry-run → ghi thật → FINAL → ghi thu, reviewer | `c62bdec` |
 | ✅ | M7 FE nhân sự (P4-7) | FE-P4-01..09 | M4, M5, M6 | planner `plans/P4-7/PLAN.md` | FE lint, build, test:components (chạy lại một lượt nếu có ca nhạy thời gian) | `c9bebf9` |
 | ✅ | M8 FE người thuê (P4-8) | FE-P4-10..14 | FE-P4-01 (M7) | – | FE lint, build, test:components, kiểm tay 360 px | `bb67e3e` |
-| ▶ | M9 QA + chốt phase (P4-9) | QA-P4-01..06 | M1..M8 | `cleanup.mjs --apply` (chỉ khi đồng ý) | acceptance, check-constraints (số thật), e2e dev, hồi quy, đi tay cùng chủ dự án | – |
+| ✅ | M9 QA + chốt phase (P4-9) | QA-P4-01..06 | M1..M8 | `cleanup.mjs --apply` (chỉ khi đồng ý) | acceptance, check-constraints (số thật), e2e dev, hồi quy, đi tay cùng chủ dự án | `8c5e12f` |
 
 Việc của chủ dự án chạy song song, không chặn code (P4-0): Q-03 nhà cung cấp webhook, `BANK_WEBHOOK_SECRET` trong `.env`, `settings.bank_account` thật, bậc điện thật (Q-02). Phải xong **trước khi lên production**, không cần xong trước M9.
 
@@ -113,3 +113,4 @@ Trạng thái thật (23/11/2026). Code nằm trên các file chính, **chưa co
 - 23/11/2026 — Chốt lại Acceptance theo Q-P3-18. QA-P4-02 đạt 110/110. Log nền xác nhận 3 file đầu; chờ bằng chứng phần còn lại. Cleanup list bị chặn ở kết nối dev.
 
 - 23/11/2026 · M9 đạt 75/75 E2E trên dev (16 file, mã thoát 0), 9 nhật ký CLEANED. Đã cập nhật checklist và tài liệu chốt. Còn QA-P4-05: cleanup list sau hồi quy lỗi kết nối Supabase cổng 6543.
+- 24/11/2026 · Chủ dự án xác nhận cleanup list trên dev trả về CLEANED. Chốt M9 và Phase 4 tại commit 8c5e12f.
