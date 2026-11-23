@@ -25,12 +25,12 @@ Out: new features.
 
 ## Tasks
 
-- [ ] **QA-P4-01** Chạy hết mục "Acceptance" của `15-meters.md`, `16-billing.md` (16 dòng), `17-bank.md` (5 dòng) và các dòng tiền của `14-contracts.md`; đánh dấu từng dòng kèm tên test.
-- [ ] **QA-P4-02** `node prisma/check-constraints.mjs . prisma` — báo **số thật** bộ kiểm in ra (gần nhất 107/107); thêm kịch bản nếu có đổi ràng buộc.
-- [ ] **QA-P4-03** e2e trên DB dev theo lệnh trong `docs/LESSONS.md` (`.env` ở `Source/backend`): chốt chỉ số → phát hành → webhook khớp → quyết toán; chạy riêng ca nghi ngờ trước khi kết luận lỗi logic (bài học QA-P3-02 về khóa advisory và timeout 30 s).
-- [ ] **QA-P4-04** Hồi quy: đăng nhập 4 vai trò + lối vào (D-43), lịch hẹn, giá và duyệt giá, trang công khai, vòng cọc của Phase 3 (ký → thu cọc → vào ở → hủy).
-- [ ] **QA-P4-05** `scripts/e2e/cleanup.mjs` chế độ list (chỉ `--apply` khi chủ dự án đồng ý); dọn dữ liệu thử của lượt này.
-- [ ] **QA-P4-06** ⏸ Cập nhật `PROGRESS.md`, `docs/spec/README.md` mục Status, `02-database.md` nếu schema đổi, `LESSONS.md`; viết `p4-9-qa-checklist.md`; đề nghị thông điệp commit kèm mã task và mã spec.
+- [x] **QA-P4-01** Chạy hết mục "Acceptance" của `15-meters.md`, `16-billing.md` (16 dòng), `17-bank.md` (5 dòng) và các dòng tiền của `14-contracts.md`; đánh dấu từng dòng kèm tên test.
+- [x] **QA-P4-02** `node prisma/check-constraints.mjs . prisma` — báo **số thật** bộ kiểm in ra (gần nhất 107/107); thêm kịch bản nếu có đổi ràng buộc.
+- [x] **QA-P4-03** e2e trên DB dev theo lệnh trong `docs/LESSONS.md` (`.env` ở `Source/backend`): chốt chỉ số → phát hành → webhook khớp → quyết toán; chạy riêng ca nghi ngờ trước khi kết luận lỗi logic (bài học QA-P3-02 về khóa advisory và timeout 30 s).
+- [x] **QA-P4-04** Hồi quy: đăng nhập 4 vai trò + lối vào (D-43), lịch hẹn, giá và duyệt giá, trang công khai, vòng cọc của Phase 3 (ký → thu cọc → vào ở → hủy).
+- [!] **QA-P4-05** `scripts/e2e/cleanup.mjs` chế độ list (chỉ `--apply` khi chủ dự án đồng ý); dọn dữ liệu thử của lượt này.
+- [~] **QA-P4-06** ⏸ Cập nhật `PROGRESS.md`, `docs/spec/README.md` mục Status, `02-database.md` nếu schema đổi, `LESSONS.md`; viết `p4-9-qa-checklist.md`; đề nghị thông điệp commit kèm mã task và mã spec.
 
 ## Questions for the owner
 
@@ -39,3 +39,5 @@ Out: new features.
 ## Issues log
 
 <!-- When a task is [!], add: date · task ID · what failed · what is needed -->
+
+23/11/2026 — QA-P4-05 chờ kết nối dev. Bằng chứng từng mục ở [checklist](p4-9-qa-checklist.md).

@@ -171,7 +171,7 @@ test('FE-P3-01/UI-02/BIL: five invoice statuses match spec 16; overdue is a sepa
   assert.deepEqual(labels.invoiceStatusTones, { DRAFT: 'maintenance', UNPAID: 'reserved', PAID: 'available', SETTLED: 'occupied', CANCELLED: 'maintenance' })
   assert.equal('OVERDUE' in labels.invoiceStatusLabels || 'overdue' in labels.invoiceStatusLabels, false)
   assert.deepEqual(labels.derivedInvoiceLabels, { overdue: 'Quá hạn' })
-  assert.deepEqual(labels.derivedInvoiceTones, { overdue: 'reserved' })
+  assert.deepEqual(labels.derivedInvoiceTones, { overdue: 'overdue' })
   const english = { DRAFT: 'Draft', UNPAID: 'Unpaid', PAID: 'Paid', SETTLED: 'Settled', CANCELLED: 'Cancelled' }
   for (const [status, text] of Object.entries(invoiceLabels)) {
     assert.equal(t(`invoice.status.${status}`, undefined, 'vi'), text)

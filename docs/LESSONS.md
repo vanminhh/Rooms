@@ -133,3 +133,5 @@ Read this before the first task of any part. Each line is a mistake that really 
 - In edit scripts, `replace(a, b)` reads dollar-sign sequences in `b` as patterns (dollar-backtick inserts the text before the match), which mangled a whole file. Always use a function replacer: `replace(a, () => b)` [FE-P4/BE, 23/11/2026].
 - Frontend test files use CRLF: exact-text edits must normalise line endings first or they silently miss [FE-P4-01, 23/11/2026].
 - The kit `RoomsHeader` closes the mobile menu on any click in `action`; a control that opens a popup there must stop propagation. `RoomsButton` has no ref: focus it through a wrapper [FE-P4-08a, 23/11/2026].
+
+- 23/11/2026 (QA-P4-03/04): Bộ nhớ kết quả Vitest tích lũy theo file qua nhiều lượt. Khi chạy hồi quy nền, lưu tên từng file, mã thoát và tổng số file hoàn tất vào log theo lượt để có thể nghiệm thu sau khi đóng terminal.

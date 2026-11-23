@@ -57,7 +57,7 @@ export function MoneyCards({ data }: { data: DashboardView }) {
     </section>}
     {!!overdue?.count && <section className="dashboard-card dashboard-card--red"><h3>Hóa đơn quá hạn</h3>
       <p>{overdue.count} hóa đơn quá hạn</p>
-      <ul>{overdue.items.map(item => <li key={item.id}><Link to={`/ql/hoa-don/${item.id}`}>{item.code}</Link> · {item.contract.room.code} · {item.contract.tenant.fullName} · {formatMoney(item.total)}{item.dueDate && <> · hạn {formatDate(item.dueDate)}</>} · <StatusBadge tone="reserved">Quá hạn</StatusBadge></li>)}</ul>
+      <ul>{overdue.items.map(item => <li key={item.id}><Link to={`/ql/hoa-don/${item.id}`}>{item.code}</Link> · {item.contract.room.code} · {item.contract.tenant.fullName} · {formatMoney(item.total)}{item.dueDate && <> · hạn {formatDate(item.dueDate)}</>} · <StatusBadge tone="overdue">Quá hạn</StatusBadge></li>)}</ul>
       <Link to="/ql/hoa-don?overdue=true">Xem hóa đơn quá hạn</Link>
     </section>}
     <ContractCard title="Hợp đồng sắp hết hạn" data={data.expiringContracts} />

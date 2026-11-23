@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import {
   e2eServiceName, uniqueBuildingCode, uniquePhone, cleanupRun, cleanupContractRun, linkedRows, planCleanup,
   skippedReport, E2eRun, readAllLogs, readLogs, E2E_TABLES, LINKED_TITLE, CLEANUP_NOTE,
-  uniqueVehiclePlate, E2E_PLATE_PREFIX, type E2eRunLog, type E2eCleanupDb, type SkippedRow, type CleanupFacts,
+  uniqueVehiclePlate, E2E_PLATE_PREFIX, contractFixtureTerms, type E2eRunLog, type E2eCleanupDb, type SkippedRow, type CleanupFacts,
 } from './run.js';
 
 // CP-7 (BE-P2-09) · scripts/e2e/run.ts, scripts/e2e/cleanup.mjs. Outside edge mocked only:
@@ -229,6 +229,18 @@ describe('BE-P3-12 cleanup with contract fixtures', () => {
     await linkedRows(db, log);
     expect(db.vehicle.findMany).toHaveBeenCalledWith({ where: { serviceId: { in: [5] }, contract: { id: { notIn: [7] } } },
       select: { serviceId: true, contract: { select: { code: true } } } });
+  });
+  it('QA-P4-03/Q-P4-62: a fixture contract the test settled counts as retired, still matched by the run identity', async () => {
+    const log = { ...makeLog({ rooms: [1], buildings: [2], users: [3] }), kind: 'contracts' as const, buildingCodes: ['E2TEST'] };
+    const { db } = fakeCleanupDb([]);
+    db.contract.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+    await linkedRows(db, log);
+    const [cancelled, settled] = db.contract.findMany.mock.calls[0][0].where.AND[1].OR;
+    expect(cancelled).toMatchObject({ status: 'CANCELLED', cancelReason: CLEANUP_NOTE, signedAt: null, terms: contractFixtureTerms(log.runId) });
+    expect(settled).toMatchObject({ status: 'ENDED', settlement: { isNot: null }, terms: contractFixtureTerms(log.runId), roomId: { in: [1] },
+      building: { code: { in: ['E2TEST'] } } });
+    expect(settled).not.toHaveProperty('signedAt');
+    expect(settled).not.toHaveProperty('invoices');
   });
   it('BE-P3-27/G-05: a synthetic plate fits the DB column and retries an existing plate', async () => {
     const seen: string[] = [];

@@ -70,6 +70,7 @@
 .rooms-status--available { border-color: #afc9aa; background: #e7f0e4; color: #24432e; }
 .rooms-status--occupied { border-color: #b7c8d1; background: #e7edf0; color: #29434f; }
 .rooms-status--reserved { border-color: #dac18f; background: #f7ecd4; color: #624817; }
+.rooms-status--overdue { border-color: #dba3a3; background: #fbeaea; color: #912828; }
 .rooms-status--maintenance { border-color: #c9c0b9; background: #eee9e5; color: #514944; }
 
 @media (hover: hover) and (pointer: fine) {

@@ -128,21 +128,21 @@ For occupants already present at period_start, retain the existing departure bou
 
 ## Acceptance
 
-- [ ] BIL-09 example computes 3.119.000 đ with the listed lines.
-- [ ] Period dates and amounts for BIL-01, BIL-02 and BIL-22 match exactly (unit test on the date helper, including leap year 2028).
-- [ ] Cron run twice on the same day creates one DRAFT.
-- [ ] BIL-05 catch-up: server off from 23:50 30/09 to 01:00 01/10/2026 → the start-up run creates the period-1 DRAFT of the BIL-01 contract with period 01/09–30/09.
-- [ ] BIL-05 catch-up: no run on 01/10 and 02/10 → the run on 03/10 creates that DRAFT once; running again creates nothing.
-- [ ] BIL-05 limit: a period whose billing date was 8 days ago with no invoice is not created; it is counted in the summary line and shown in "Việc hôm nay".
-- [ ] BIL-21: server off from 30/09 to 11/10/2026 → no automatic DRAFT for period 1 of the BIL-01 contract; "Việc hôm nay" shows it red; "Tạo hóa đơn kỳ này" creates it with period 01/09–30/09; pressing again → `CONFLICT_STATE`.
-- [ ] BIL-21: `periodNo` whose billing date is in the future → `CONFLICT_STATE`; a manager of another building → `OUT_OF_SCOPE`.
-- [ ] A-10: settlement of a contract with a missing period → `CONFLICT_STATE`; after the button creates it, settlement works.
-- [ ] BIL-06 catch-up: a renewal whose switch day was missed is switched by the next run, after the old contract's period-N DRAFT was created.
-- [ ] Rate change effective 20/10 leaves the October period (01/10–31/10) on the old rate; November uses the new one (D-09).
-- [ ] Occupant added on 20/10 is first counted in the period starting 01/11.
-- [ ] A move-in on 20/03 is charged 12/31 of the rent and of each fixed service in its first invoice, issued 01/04 (D-41).
-- [ ] A monthly invoice unpaid at the end of its due date shows "Quá hạn" in red to the tenant and the responsible manager from the following day (Asia/Ho_Chi_Minh) (D-40).
-- [ ] Early move-out on 25/11/2026 for BIL-01 contract (deposit 2.500.000): j = 3 (November), remaining_rent = 3 × 2.500.000 (December to February), net negative → FINAL invoice total = −net.
-- [ ] Reissue keeps exactly one non-cancelled invoice for the period.
+- [x] BIL-09 example computes 3.119.000 đ with the listed lines.
+- [x] Period dates and amounts for BIL-01, BIL-02 and BIL-22 match exactly (unit test on the date helper, including leap year 2028).
+- [x] Cron run twice on the same day creates one DRAFT.
+- [x] BIL-05 catch-up: server off from 23:50 30/09 to 01:00 01/10/2026 → the start-up run creates the period-1 DRAFT of the BIL-01 contract with period 01/09–30/09.
+- [x] BIL-05 catch-up: no run on 01/10 and 02/10 → the run on 03/10 creates that DRAFT once; running again creates nothing.
+- [x] BIL-05 limit: a period whose billing date was 8 days ago with no invoice is not created; it is counted in the summary line and shown in "Việc hôm nay".
+- [x] BIL-21: server off from 30/09 to 11/10/2026 → no automatic DRAFT for period 1 of the BIL-01 contract; "Việc hôm nay" shows it red; "Tạo hóa đơn kỳ này" creates it with period 01/09–30/09; pressing again → `CONFLICT_STATE`.
+- [x] BIL-21: `periodNo` whose billing date is in the future → `CONFLICT_STATE`; a manager of another building → `OUT_OF_SCOPE`.
+- [x] A-10: settlement of a contract with a missing period → `CONFLICT_STATE`; after the button creates it, settlement works.
+- [x] BIL-06 catch-up: a renewal whose switch day was missed is switched by the next run, after the old contract's period-N DRAFT was created.
+- [x] Rate change effective 20/10 leaves the October period (01/10–31/10) on the old rate; November uses the new one (D-09).
+- [x] An occupant moving in on 20/10 counts once for per-person charges in the 01/10–31/10 period (Q-P3-18), billed in November.
+- [x] A move-in on 20/03 is charged 12/31 of the rent and of each fixed service in its first invoice, issued 01/04 (D-41).
+- [x] A monthly invoice unpaid at the end of its due date shows "Quá hạn" in red to the tenant and the responsible manager from the following day (Asia/Ho_Chi_Minh) (D-40).
+- [x] Early move-out on 25/11/2026 for BIL-01 contract (deposit 2.500.000): j = 3 (November), remaining_rent = 3 × 2.500.000 (December to February), net negative → FINAL invoice total = −net.
+- [x] Reissue keeps exactly one non-cancelled invoice for the period.
 
 BIL-06 clarification (22/11/2026): keep the old contract ACTIVE and show a staff task while the final monthly invoice or handover readings are missing. Switch on the next run once both exist, including when the final invoice is unpaid. Owner 22/11/2026: the handover readings are electricity (kWh) and water (m³) in every building, also under PER_PERSON, where water is recorded but not billed (MTR-06).

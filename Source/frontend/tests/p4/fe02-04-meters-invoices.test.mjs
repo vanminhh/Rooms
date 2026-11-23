@@ -60,6 +60,7 @@ test('FE-P4-03/UI-02/D-40: labels follow 16-billing and "Quá hạn" comes only 
   ], { page: 1, limit: 20, total: 6 }) }] })
   try {
     await until(() => app.container.textContent.includes('TT6'), 'rows')
+    assert.equal(find(app.container, n => n.getAttribute?.('class')?.split(' ').includes('rooms-status--overdue'))[0]?.textContent, 'Quá hạn')
     for (const label of ['Nháp', 'Chưa thanh toán', 'Quá hạn', 'Đã thanh toán', 'Đã quyết toán', 'Đã hủy']) assert.ok(app.container.textContent.includes(label), label)
     assert.match(app.container.textContent, /3\.119\.000 đ/)
     assert.equal(queryOf(app.calls[0].url).get('status'), null, 'Q-P4-56: no default filter')

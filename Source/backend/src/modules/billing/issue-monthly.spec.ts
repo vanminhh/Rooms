@@ -22,7 +22,7 @@ function fixture(mode: 'PER_PERSON' | 'PER_M3', withWater = false) {
     setting: { findUnique: vi.fn().mockResolvedValue({ value: { bankBin: '970436', accountNo: '1234', accountName: 'ROOMS' } }) },
     notification: { create: vi.fn() }, invoiceLine: { deleteMany: vi.fn(), createMany: vi.fn() },
   };
-  return { db, tx: db as unknown as Prisma.TransactionClient };
+  return { db, tx: db as unknown as Prisma.TransactionClient, invoice };
 }
 describe('BIL-07/08/09 monthly issue', () => {
   afterEach(() => vi.useRealTimers());
@@ -36,6 +36,26 @@ describe('BIL-07/08/09 monthly issue', () => {
     expect(db.invoiceLine.createMany).toHaveBeenCalledWith({ data: expect.arrayContaining([expect.objectContaining({
       kind: 'ELECTRIC', amount: 30000, meta: expect.objectContaining({ consumption: 15, opening: expect.objectContaining({ id: 1 }), closing: expect.objectContaining({ id: 3 }) }),
     })]) });
+  });
+  it.each(['PER_M3', 'PER_PERSON'] as const)('MTR-02/06: same-day water handover in %s excludes vacancy usage', async mode => {
+    const { db, tx, invoice } = fixture(mode, true);
+    const readOn = day('2026-09-30');
+    invoice.periodStart = readOn;
+    invoice.contract.startDate = readOn;
+    const closing = invoice.meterReadings.find(r => r.kind === 'WATER')!;
+    Object.assign(closing, { value: 110, readOn });
+    const opening = { ...closing, id: 20, contractId: 8, invoiceId: null, value: 105, isOpening: true };
+    const former = { ...opening, id: 19, contractId: 6, value: 100, isOpening: false };
+    const stored = [former, opening, { ...closing, contractId: 8, invoiceId: 7 }];
+    const electric = { ...opening, id: 21, kind: 'ELECTRIC', value: 100 };
+    db.meterReading.findMany.mockImplementation(async ({ where }) =>
+      [electric, ...stored].filter(r => r.contractId === where.contractId && r.invoiceId === where.invoiceId));
+    await expect(issueMonthly(tx, 7)).resolves.toMatchObject({ status: 'UNPAID' });
+    const water = db.invoiceLine.createMany.mock.calls[0][0].data.find((r: { kind: string }) => r.kind === 'WATER');
+    expect(water).toMatchObject(mode === 'PER_M3'
+      ? { quantity: 5, amount: 75000, meta: { opening: { id: 20 }, closing: { id: 4 } } }
+      : { quantity: 1, amount: 15000 });
+    expect(stored.map(r => [r.contractId, r.value])).toEqual([[6, 100], [8, 105], [8, 110]]);
   });
   it('MTR-05, BIL-08: waits for missing metered water and refuses manual issue', async () => {
     const { db, tx } = fixture('PER_M3');

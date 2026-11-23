@@ -103,12 +103,12 @@ stateDiagram-v2
 
 ## Acceptance
 
-- [ ] Guest signs: tenant account exists, temporary password shown once, deposit invoice UNPAID with VietQR.
-- [ ] Move-in before deposit paid → `DEPOSIT_NOT_PAID`.
+- [x] Guest signs: tenant account exists, temporary password shown once, deposit invoice UNPAID with VietQR.
+- [x] Move-in before deposit paid → `DEPOSIT_NOT_PAID`.
 - [ ] Same phone renting a second room reuses the account and its password.
 - [ ] A manager's phone used as signer → `PHONE_TAKEN`.
 - [ ] A guest with a verified email signs after the staff member confirms the account is theirs: the same account becomes TENANT, keeps its password and its viewings, and no temporary password is returned (CON-07, D-26).
 - [ ] Cancelling that guest's HOLD contract leaves the account active with its viewings; cancelling the contract of an account created for it and never activated deactivates it (CON-12).
 - [ ] A never-verified self-registered account with the signer's phone gives no access to the contract: its password is unusable after the contract is created; when staff do not confirm an existing guest account the contract is refused with `PHONE_TAKEN` (CON-07).
-- [ ] Cancel after deposit paid with 1.000.000 kept from 2.500.000 → settlement net 1.500.000, room public again.
+- [x] Cancel after deposit paid with 1.000.000 kept from 2.500.000 → settlement net 1.500.000, room public again.
 - [ ] Renewal switches on `start_date` without a new deposit invoice; tenant keeps one account and sees both contracts.

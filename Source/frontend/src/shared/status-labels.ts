@@ -1,5 +1,5 @@
-// The 4 tones of StatusBadge (KIT-06).
-export type StatusTone = 'available' | 'occupied' | 'reserved' | 'maintenance'
+// KIT-06 status tones, including the overdue warning for invoices (D-40).
+export type StatusTone = 'available' | 'occupied' | 'reserved' | 'maintenance' | 'overdue'
 
 export type RoomStatus = 'Đang thuê' | 'Đã cọc' | 'Bảo trì' | 'Trống'
 export type ViewingStatus = 'NEW' | 'CONFIRMED' | 'DONE' | 'WON' | 'LOST' | 'CANCELLED'
@@ -60,4 +60,4 @@ export const invoiceStatusTones: Record<InvoiceStatus, StatusTone> = {
 
 // Overdue is a derived display label, not an invoice status stored in the DB. No date calculation here.
 export const derivedInvoiceLabels = { overdue: 'Quá hạn' } as const
-export const derivedInvoiceTones = { overdue: 'reserved' } as const satisfies Record<'overdue', StatusTone>
+export const derivedInvoiceTones = { overdue: 'overdue' } as const satisfies Record<'overdue', StatusTone>

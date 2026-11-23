@@ -17,6 +17,7 @@ test('FE-P4-10/30-frontend/UI-02: unpaid and overdue invoices come first; labels
     await until(() => app.container.textContent.includes('TT6'), 'rows')
     const order = find(app.container, n => n.tagName === 'A' && /^\/thue\/hoa-don\/\d+$/.test(n.getAttribute('href') ?? '')).map(n => n.textContent)
     assert.deepEqual(order, ['TT5', 'TT4', 'TT3', 'TT6'])
+    assert.equal(find(app.container, n => n.getAttribute?.('class')?.split(' ').includes('rooms-status--overdue'))[0]?.textContent, 'Quá hạn')
     for (const label of ['Quá hạn', 'Chưa thanh toán', 'Đã thanh toán', 'Đã quyết toán']) assert.ok(app.container.textContent.includes(label), label)
     assert.match(app.container.textContent, /3\.119\.000 đ/)
   } finally { await app.stop() }

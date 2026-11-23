@@ -32,8 +32,8 @@ Source files (verified): [schema.prisma](../../Source/backend/prisma/schema.pris
 | | `occupants` | People living in the room incl. signer | 1 signer per contract |
 | | `vehicles` | Registered vehicles | same building; plate unique while active |
 | | `requests` | Incidents and requests | status valid per type; cost only on INCIDENT; 1 pending MOVE_OUT/RENEW per contract |
-| Money | `meter_readings` | Electric/water readings | BE-P3-20: one opening per contract/kind; ordinary readings unique per contract/room/kind/day, unassigned per room/kind/day. Replaced meter needs old final value. Owner acceptance and deployment evidence recorded in the BE-P3-20 checkpoint |
-| | `invoices` | DEPOSIT / MONTHLY / FINAL | 1 non-cancelled per (contract, type, period_no); issued needs dates; cancelled needs reason; SETTLED ⇔ settlement_id |
+| Money | `meter_readings` | Electric/water readings | BE-P3-20: one opening per contract/kind; ordinary readings unique per contract/room/kind/day, unassigned per room/kind/day. Replaced meter needs old final value. Phase 4 adds an optional indexed invoice_id referencing invoices with ON DELETE RESTRICT. Owner acceptance and deployment evidence recorded in the BE-P3-20 checkpoint |
+| | `invoices` | DEPOSIT / MONTHLY / FINAL | 1 non-cancelled per (contract, type, period_no); issued needs dates; a late MONTHLY invoice can keep a due date before issue only when it is the last day of the month following period_end; cancelled needs reason; SETTLED ⇔ settlement_id |
 | | `invoice_lines` | Lines | amount = quantity × unit_price; only DEPOSIT_OFFSET may be negative |
 | | `bank_transactions` | Webhook payloads | UK (provider, provider_tx_id); invoice_id iff MATCHED/ASSIGNED |
 | | `payments` | Exactly one per paid invoice | UK invoice_id, UK bank_transaction_id; source/column consistency; trigger: invoice UNPAID + exact total, then sets PAID |

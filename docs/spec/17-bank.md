@@ -38,8 +38,8 @@ Only incoming (credit) transactions to the account in `settings.bank_account` ar
 
 ## Acceptance
 
-- [ ] Content "TT1523 P203" with exact total → invoice 1523 PAID, tenant notified.
-- [ ] Same webhook delivered twice → one transaction row, one payment.
-- [ ] Amount 1 đ less → UNMATCHED, invoice stays UNPAID.
-- [ ] Second transfer for an already-paid invoice → UNMATCHED (Boss refunds).
-- [ ] Bad signature → 401, no row.
+- [x] Content "TT1523 P203" with exact total → invoice 1523 PAID, tenant notified.
+- [x] Same webhook delivered twice → one transaction row, one payment.
+- [x] Amount 1 đ less → UNMATCHED, invoice stays UNPAID.
+- [x] Second transfer for an already-paid invoice → UNMATCHED (Boss refunds).
+- [x] Bad signature → 401, no row.

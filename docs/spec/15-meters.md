@@ -22,9 +22,9 @@ Module: `meters`. Table: `meter_readings`.
 
 ## Acceptance
 
-- [ ] Same room/day: old tenant closes electric at 1.284, new tenant opens at 1.290, new tenant closes at 1.350. All three records remain separate; new tenant's usage is 60 kWh, and the 6 kWh between handovers is not added to either tenant's invoice. Repeat for water under PER_M3; PER_PERSON retains readings for history.
-- [ ] Reading 1.250 after 1.284 without replacement → `METER_VALUE_DECREASED`.
-- [ ] Replacement on 20/09 (old final 1.300, new start 0), closing 40 on 15/10, opening 1.284 → 16 + 40 = 56 kWh.
-- [ ] Submitting the electric reading for a PER_PERSON building issues the invoice; for a PER_M3 building it waits for the water reading.
+- [x] Same room/day: old tenant closes electric at 1.284, new tenant opens at 1.290, new tenant closes at 1.350. All three records remain separate; new tenant's usage is 60 kWh, and the 6 kWh between handovers is not added to either tenant's invoice. Repeat for water under PER_M3; PER_PERSON retains readings for history.
+- [x] Reading 1.250 after 1.284 without replacement → `METER_VALUE_DECREASED`.
+- [x] Replacement on 20/09 (old final 1.300, new start 0), closing 40 on 15/10, opening 1.284 → 16 + 40 = 56 kWh.
+- [x] Submitting the electric reading for a PER_PERSON building issues the invoice; for a PER_M3 building it waits for the water reading.
 
 MTR-11 clarification (22/11/2026): an item may include invoiceId. Select the only eligible period automatically. When several periods qualify, require the manager to select the invoice row. Validate its room, period and staff scope.

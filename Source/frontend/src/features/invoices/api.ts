@@ -17,4 +17,4 @@ export const reissueInvoice = (id: number, body: { reason: string; corrections: 
   apiRequest<{ invoiceId: number; replacesId: number; status: string; total: number }>(`/invoices/${id}/reissue`, { method: 'POST', body, idempotencyKey })
 export const remindInvoice = (id: number) => apiRequest<{ invoiceId: number; remindedAt: string; email: boolean }>(`/invoices/${id}/remind`, { method: 'POST' })
 export const createMissedInvoice = (contractId: number, periodNo: number) =>
-  apiRequest<{ id: number }>(`/contracts/${contractId}/monthly-invoices`, { method: 'POST', body: { periodNo } })
+  apiRequest<{ invoiceId: number }>(`/contracts/${contractId}/monthly-invoices`, { method: 'POST', body: { periodNo } })

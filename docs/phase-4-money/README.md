@@ -75,6 +75,7 @@ Chủ dự án trả lời ngày 22/11/2026 (tất cả theo đề xuất), đã
 | Q-P4-59 | Chọn hóa đơn khi gán giao dịch | Chọn từ danh sách hóa đơn chưa trả cùng số tiền (BE thêm bộ lọc `total` cho `GET /invoices`) | BANK-05 | P4-7 |
 | Q-P4-60 | Xác nhận khi lưu lô chỉ số | Có hộp xác nhận nêu số phòng và cảnh báo phát hành + gửi mail | UI-04 | P4-7 |
 | Q-P4-61 | Khi nào hiện nút Phát hành | Mọi hóa đơn nháp; cảnh báo khi chờ duyệt bất thường; thiếu chỉ số thì hiện lỗi của BE | BIL-08, MTR-08 | P4-7 |
+| Q-P4-62 | Ca đua hai kết nối trong QA | Chạy đủ 4 ca (ghi thu, webhook trùng, quyết toán song song, job 08:00) với dữ liệu thử commit, dọn mềm; hóa đơn/thanh toán [E2E] còn lại làm lịch sử | QA-P4-03 | P4-9 |
 
 ## 2. Câu hỏi còn mở
 

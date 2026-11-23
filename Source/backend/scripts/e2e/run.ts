@@ -209,6 +209,13 @@ function contractFixtureWhere(log: E2eRunLog): Prisma.ContractWhereInput {
   };
 }
 
+// QA-P4-03 (Q-P4-62): a fixture contract the test itself settled (ENDED with a settlement row). Same identity checks as
+// contractFixtureWhere; signing, move-in and its invoices are allowed because settling needs them. Its PAID invoices stay as history.
+function settledFixtureWhere(log: E2eRunLog): Prisma.ContractWhereInput {
+  const { signedAt: _signedAt, movedInAt: _movedInAt, signedScanAssetId: _scan, invoices: _invoices, ...identity } = contractFixtureWhere(log);
+  return { ...identity, status: 'ENDED', settlement: { isNot: null } };
+}
+
 // BE-P3-12 / G-05. The test's transaction locks the fixture rooms before this step.
 // Keep the contract, signer, service links and audit history.
 export async function cleanupContractRun(tx: E2eCleanupDb, log: E2eRunLog, removedOn: Date): Promise<SkippedRow[]> {
@@ -245,10 +252,10 @@ export async function linkedRows(
 ): Promise<SkippedRow[]> {
   const { rooms, buildings, users, services, viewings } = log.ids;
   const retired = log.kind === 'contracts' ? await db.contract.findMany({
-    where: {
-      ...contractFixtureWhere(log), status: 'CANCELLED', cancelReason: CLEANUP_NOTE,
-      AND: { depositCancelledViewings: { none: { calledAt: null } } },
-    }, select: { id: true },
+    where: { AND: [
+      { depositCancelledViewings: { none: { calledAt: null } } },
+      { OR: [{ ...contractFixtureWhere(log), status: 'CANCELLED', cancelReason: CLEANUP_NOTE }, settledFixtureWhere(log)] },
+    ] }, select: { id: true },
   }) : [];
   const protectedContract = retired.length === 0 ? {} : { id: { notIn: retired.map(contract => contract.id) } };
   const contracts = await db.contract.findMany({

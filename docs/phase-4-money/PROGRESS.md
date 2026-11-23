@@ -18,8 +18,8 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 | P4-5 Ngân hàng | xong | BE-P4-28 ⏸ | `dddc66c` | P4-6 | Q-P4-28..35; BANK-08 chưa làm (Q-P4-3) | |
 | P4-6 Quyết toán | xong | BE-P4-33 ⏸ | `c62bdec` | P4-7 | Q-P4-36..50 |
 | P4-7 FE nhân sự | xong | FE-P4-09 ⏸ | `c9bebf9` | P4-8 | Q-P4-51..61; FE-P4-08 sang P4-8 |
-| P4-8 FE người thuê | chờ commit | FE-P4-14 ⏸ | – | chủ dự án kiểm và commit; rồi M9 (QA) | gồm FE-P4-08 |
-| P4-9 QA | chưa làm | – | – | – | |
+| P4-8 FE người thuê | xong | FE-P4-14 ⏸ | `bb67e3e` | P4-9 | gồm FE-P4-08 |
+| P4-9 QA | chờ cleanup list | QA-P4-01..04 đạt | – | QA-P4-05 rồi chốt M9 | [Checklist](p4-9-qa-checklist.md) |
 
 ## Lộ trình mốc (làm liền mạch)
 
@@ -35,8 +35,8 @@ Mỗi **mốc** kết thúc ở một điểm dừng ⏸: agent báo cáo → ch
 | ✅ | M5 Ngân hàng (P4-5) | BE-P4-24..28 | M4 | chạy planner `plans/P4-5/PLAN.md` rồi hỏi một lượt câu hỏi của nó; migration (nếu có) | + e2e webhook khớp / không khớp, reviewer | `dddc66c` |
 | ✅ | M6 Quyết toán (P4-6) | BE-P4-29..33 | M4, **sau** M5 (cùng đụng `payments`) | planner `plans/P4-6/PLAN.md` | + e2e dry-run → ghi thật → FINAL → ghi thu, reviewer | `c62bdec` |
 | ✅ | M7 FE nhân sự (P4-7) | FE-P4-01..09 | M4, M5, M6 | planner `plans/P4-7/PLAN.md` | FE lint, build, test:components (chạy lại một lượt nếu có ca nhạy thời gian) | `c9bebf9` |
-| ▶ | M8 FE người thuê (P4-8) | FE-P4-10..14 | FE-P4-01 (M7) | – | FE lint, build, test:components, kiểm tay 360 px | – |
-| ⬜ | M9 QA + chốt phase (P4-9) | QA-P4-01..06 | M1..M8 | `cleanup.mjs --apply` (chỉ khi đồng ý) | acceptance, check-constraints (số thật), e2e dev, hồi quy, đi tay cùng chủ dự án | – |
+| ✅ | M8 FE người thuê (P4-8) | FE-P4-10..14 | FE-P4-01 (M7) | – | FE lint, build, test:components, kiểm tay 360 px | `bb67e3e` |
+| ▶ | M9 QA + chốt phase (P4-9) | QA-P4-01..06 | M1..M8 | `cleanup.mjs --apply` (chỉ khi đồng ý) | acceptance, check-constraints (số thật), e2e dev, hồi quy, đi tay cùng chủ dự án | – |
 
 Việc của chủ dự án chạy song song, không chặn code (P4-0): Q-03 nhà cung cấp webhook, `BANK_WEBHOOK_SECRET` trong `.env`, `settings.bank_account` thật, bậc điện thật (Q-02). Phải xong **trước khi lên production**, không cần xong trước M9.
 
@@ -107,3 +107,9 @@ Trạng thái thật (23/11/2026). Code nằm trên các file chính, **chưa co
 - 23/11/2026 · M7 commit `c9bebf9`; ▶ sang M8 (P4-8)
 - 23/11/2026 · M8 ⏸ FE-P4-14 · trang hóa đơn người thuê vi/en, khối hóa đơn ở /thue, BE `nextBillingDate` · FE 1017/1017, BE 2834/2834; chưa kiểm tay 360 px (tài khoản người thuê seed phải đổi mật khẩu)
 - 23/11/2026 · M8 · chủ dự án kiểm tay trang người thuê ở 360 px: đạt
+- 23/11/2026 · M8 commit `bb67e3e` (thông điệp ghi "M7 phase 4" nhưng là nội dung M8); ▶ sang M9 (P4-9 QA)
+- 23/11/2026 · M9 (đang làm) · Q-P4-62 = chạy đủ ca đua, dọn mềm. Xong: bộ dọn e2e nhận hợp đồng thử đã quyết toán (run.spec 43/43); `test/money-races.e2e-spec.ts` 1/1 trên dev (4 ca đua, dọn CLEANED); lượt lỗi 20261123T2146-6XNL đã quyết toán + dọn CLEANED; check-constraints 110/110. Còn: kết quả hồi quy e2e 16 file (đang chạy nền lúc dừng), đối chiếu Acceptance (QA-P4-01; dòng "Occupant added on 20/10…" của 16-billing mâu thuẫn với Q-P3-18, cần sửa spec), cleanup list (QA-P4-05), p4-9-qa-checklist.md và tài liệu chốt (QA-P4-06)
+
+- 23/11/2026 — Chốt lại Acceptance theo Q-P3-18. QA-P4-02 đạt 110/110. Log nền xác nhận 3 file đầu; chờ bằng chứng phần còn lại. Cleanup list bị chặn ở kết nối dev.
+
+- 23/11/2026 · M9 đạt 75/75 E2E trên dev (16 file, mã thoát 0), 9 nhật ký CLEANED. Đã cập nhật checklist và tài liệu chốt. Còn QA-P4-05: cleanup list sau hồi quy lỗi kết nối Supabase cổng 6543.
