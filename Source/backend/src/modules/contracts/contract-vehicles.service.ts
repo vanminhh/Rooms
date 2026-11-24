@@ -81,7 +81,7 @@ export class ContractVehiclesService {
     });
   }
 
-  async create(actor: AuthUser, id: number, dto: CreateVehicleDto, ip?: string) {
+  async create(actor: AuthUser, id: number, dto: CreateVehicleDto, ip?: string, transaction?: Prisma.TransactionClient) {
     staff(actor);
     return this.mutate(actor, id, async (tx, contract) => {
       const registeredAt = actualDate(dto.registeredAt, 'registeredAt', todayHanoi());
@@ -92,10 +92,10 @@ export class ContractVehiclesService {
       const response = view(row);
       await this.audit.log(actor.id, 'vehicle.create', 'vehicle', row.id, undefined, { contractId: id, ...response }, ip, tx);
       return response;
-    });
+    }, transaction);
   }
 
-  async update(actor: AuthUser, id: number, vid: number, dto: UpdateVehicleDto, ip?: string) {
+  async update(actor: AuthUser, id: number, vid: number, dto: UpdateVehicleDto, ip?: string, transaction?: Prisma.TransactionClient) {
     staff(actor);
     return this.mutate(actor, id, async (tx, contract) => {
       const current = await tx.vehicle.findFirst({ where: { id: vid, contractId: id }, select: VEHICLE_SELECT });
@@ -126,7 +126,7 @@ export class ContractVehiclesService {
       await this.audit.log(actor.id, dto.isActive === false ? 'vehicle.remove' : 'vehicle.update', 'vehicle', vid,
         view(current), { contractId: id, ...response }, ip, tx);
       return response;
-    });
+    }, transaction);
   }
 
   private async service(tx: Prisma.TransactionClient, buildingId: number, id: number) {
@@ -137,17 +137,18 @@ export class ContractVehiclesService {
   }
 
   private async mutate<T>(actor: AuthUser, id: number,
-    action: (tx: Prisma.TransactionClient, contract: Prisma.ContractGetPayload<{ select: typeof CONTRACT_SELECT }>) => Promise<T>) {
+    action: (tx: Prisma.TransactionClient, contract: Prisma.ContractGetPayload<{ select: typeof CONTRACT_SELECT }>) => Promise<T>, transaction?: Prisma.TransactionClient) {
     return this.transaction(async tx => {
       await tx.$queryRaw`SELECT id FROM contracts WHERE id = ${id} FOR UPDATE`;
       const contract = await this.contract(tx, actor, id);
       if (contract.status !== 'HOLD' && contract.status !== 'ACTIVE') throw new ConflictException(ErrorCode.CONFLICT_STATE);
       return action(tx, contract);
-    });
+    }, transaction);
   }
 
-  private async transaction<T>(action: (tx: Prisma.TransactionClient) => Promise<T>) {
+  private async transaction<T>(action: (tx: Prisma.TransactionClient) => Promise<T>, transaction?: Prisma.TransactionClient) {
     try {
+      if (transaction) return await action(transaction);
       return await this.prisma.$transaction(async tx => { await lockViewingMapping(tx); return action(tx); });
     } catch (error) {
       if (error instanceof HttpException) throw error;

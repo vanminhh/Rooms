@@ -126,6 +126,7 @@ function makePrisma(
   ratePlanRows: { status: string; effectiveFrom: Date }[] = [],
 ) {
   const prisma = {
+    request: { count: vi.fn(async () => 0), findMany: vi.fn(async () => []) },
     $transaction: vi.fn(async (work: (tx: typeof prisma) => Promise<unknown>) => work(prisma)),
     invoice: { count: vi.fn(async () => 0), findMany: vi.fn(async () => []) },
     contract: { findMany: vi.fn(async () => []), count: vi.fn(async () => 0) }, // Phase 4 money groups: no contracts in this fixture

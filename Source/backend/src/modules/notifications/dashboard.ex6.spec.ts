@@ -6,6 +6,7 @@ afterEach(() => vi.useRealTimers());
 
 function setup() {
   const { db, service: viewings } = setupViewings();
+  db.prisma.request = { count: vi.fn(async () => 0), findMany: vi.fn(async () => []) };
   db.prisma.ratePlan = { count: vi.fn(async () => 0) };
   db.prisma.roomPrice = { count: vi.fn(async () => 0) };
   db.prisma.invoice = { count: vi.fn(async () => 0), findMany: vi.fn(async () => []) };

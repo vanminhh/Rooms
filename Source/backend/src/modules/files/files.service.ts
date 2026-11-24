@@ -59,8 +59,22 @@ export async function signRoomImageUpload(
     throw new ForbiddenException(ErrorCode.OUT_OF_SCOPE);
   }
 
-  const timestamp = Math.floor(now.getTime() / 1000);
   const folder = folderOf(room.buildingId, room.id);
+  return signImageFolder(cfg, folder, now);
+}
+
+export function requestPhotoFolder(tenantId: number, contractId: number) {
+  return `requests/${tenantId}/${contractId}`;
+}
+
+export async function signRequestPhoto(db: Pick<PrismaClient, 'contract'>, tenantId: number, contractId: number) {
+  const owned = await db.contract.findFirst({ where: { id: contractId, tenantId, status: { in: ['HOLD', 'ACTIVE'] } }, select: { id: true } });
+  if (!owned) throw new NotFoundException(ErrorCode.NOT_FOUND);
+  return signImageFolder(cloudinaryConfig(process.env), requestPhotoFolder(tenantId, contractId), new Date());
+}
+
+function signImageFolder(cfg: CloudinaryConfig, folder: string, now: Date) {
+  const timestamp = Math.floor(now.getTime() / 1000);
   const allowedFormats = ALLOWED_FORMATS.join(',');
   const transformation = INCOMING_TRANSFORMATION;
   const signature = signParams(
@@ -196,7 +210,10 @@ export async function verifyRoomImage(
   });
   if (!room) throw new NotFoundException(ErrorCode.NOT_FOUND);
 
-  const folder = roomImageFolder(room.buildingId, room.id);
+  return verifyImageInFolder(roomImageFolder(room.buildingId, room.id), image, cfg);
+}
+
+export async function verifyImageInFolder(folder: string, image: RoomImageUploadMetadata, cfg = cloudinaryConfig(process.env)) {
   const rest = typeof image.publicId === 'string' && image.publicId.startsWith(`${folder}/`)
     ? image.publicId.slice(folder.length + 1)
     : '';

@@ -14,5 +14,5 @@ import { ContractVehiclesService } from './contract-vehicles.service.js';
 import { ContractServicesController } from './contract-services.controller.js';
 import { ContractServicesService } from './contract-services.service.js';
 
-@Module({ imports: [AuditModule], controllers: [ContractsController, MeContractsController, ContractOccupantsController, MeContractOccupantsController, ContractVehiclesController, VehiclesController, ContractServicesController], providers: [ContractsService, ContractPasswordService, ContractDocumentsService, ContractMoveInService, ContractCancelService, ContractOccupantsService, ContractVehiclesService, ContractServicesService] })
+@Module({ imports: [AuditModule], controllers: [ContractsController, MeContractsController, ContractOccupantsController, MeContractOccupantsController, ContractVehiclesController, VehiclesController, ContractServicesController], providers: [ContractsService, ContractPasswordService, ContractDocumentsService, ContractMoveInService, ContractCancelService, ContractOccupantsService, ContractVehiclesService, ContractServicesService], exports: [ContractOccupantsService, ContractVehiclesService] })
 export class ContractsModule {}

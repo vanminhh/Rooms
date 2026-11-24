@@ -15,6 +15,9 @@ import type { DashboardQueryDto } from './dto/dashboard.dto.js';
 
 // "Việc hôm nay" (NOTI-06).
 export interface DashboardView {
+  pendingRequests: RequestGroup;
+  approvedRenewals: RequestGroup;
+  escalatedPaymentIssues?: RequestGroup;
   newViewings: { count: number; items: ViewingView[] };
   overlappingViewings: { count: number; items: ViewingView[] };
   depositCancelledViewings: { count: number; items: ViewingView[] };
@@ -28,6 +31,7 @@ export interface DashboardView {
   expiredContracts: { count: number; items: ContractItem[] };
   renewalsWaiting: { count: number; items: ContractItem[] };
 }
+type RequestGroup = { count: number; items: { id: number; title: string; contractId: number; type: string }[] };
 
 type ContractRef = UnpaidDepositItem['contract'];
 export interface ContractItem extends ContractRef { endDate: string }
@@ -97,6 +101,26 @@ export class DashboardService {
       unpaidDeposits: await this.unpaidDeposits(user, query.buildingId),
       pendingPrices: user.buildingIds === null ? await this.pendingPrices() : null,
       ...await this.moneyGroups(this.responsible(user, query.buildingId)),
+      ...await this.requestGroups(user, query.buildingId),
+    };
+  }
+
+  private async requestGroups(actor: AuthUser, buildingId?: number) {
+    const contract = this.responsible(actor, buildingId);
+    const select = { id: true, type: true, title: true, contractId: true } as const;
+    const orderBy = [{ createdAt: 'desc' }, { id: 'desc' }] as const;
+    const group = async (where: Prisma.RequestWhereInput): Promise<RequestGroup> => {
+      const count = await this.prisma.request.count({ where });
+      const items = count ? await this.prisma.request.findMany({ where, select, orderBy: [...orderBy], take: ITEM_LIMIT }) : [];
+      return { count, items };
+    };
+    const renewals = await this.prisma.request.findMany({ where: { contract, status: 'APPROVED', type: 'RENEW' },
+      select: { ...select, payload: true }, orderBy: [...orderBy] });
+    const open = renewals.filter(row => !(row.payload as Prisma.JsonObject)?.contractId);
+    return {
+      pendingRequests: await group({ contract, status: 'PENDING' }),
+      approvedRenewals: { count: open.length, items: open.slice(0, ITEM_LIMIT).map(({ payload: _payload, ...item }) => item) },
+      ...(actor.role === 'BOSS' ? { escalatedPaymentIssues: await group({ type: 'PAYMENT_ISSUE', status: 'ESCALATED', contract: { buildingId } }) } : {}),
     };
   }
 

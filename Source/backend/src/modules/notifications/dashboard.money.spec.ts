@@ -11,6 +11,7 @@ const ref = (id: number) => ({ id, code: `HD${id}`, room: { id: 100 + id, code: 
 
 function setup(rows: { drafts?: unknown[]; open?: unknown[]; contracts?: unknown[] } = {}) {
   const prisma: any = {
+    request: { count: vi.fn(async () => 0), findMany: vi.fn(async () => []) },
     user: { findFirst: vi.fn(async () => ({ id: 1 })) },
     viewing: { findMany: vi.fn(async () => []), count: vi.fn(async () => 0) },
     roomPrice: { count: vi.fn(async () => 0) }, ratePlan: { count: vi.fn(async () => 0) },

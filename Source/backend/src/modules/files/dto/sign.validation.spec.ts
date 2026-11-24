@@ -8,7 +8,7 @@ const pipe = new ValidationPipe({
 const validate = (body: unknown) => pipe.transform(body, { type: 'body', metatype: SignUploadDto });
 
 describe('BE-P3-04 / FILE-01 / API-04: upload purpose and target validation', () => {
-  it.each(['CONTRACT_SCAN', 'ID_PHOTO'])('accepts a contract ID for %s', async (purpose) => {
+  it.each(['CONTRACT_SCAN', 'ID_PHOTO', 'REQUEST_PHOTO'])('accepts a contract ID for %s', async (purpose) => {
     await expect(validate({ purpose, contractId: '42' })).resolves.toMatchObject({ purpose, contractId: 42 });
   });
 

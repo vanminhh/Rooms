@@ -52,7 +52,7 @@ export class BillingService {
   }
 
   // NOTI-07: after commit; a failed mail never undoes the action.
-  private async deliver(mail: Mail | null, key: string) {
+  async deliver(mail: Mail | null, key: string) {
     if (!mail) return;
     try { await sendWithRetry(this.mailer, mail, key); }
     catch { this.logger.warn(`${key}: email delivery failed after retry`); }
@@ -73,22 +73,29 @@ export class BillingService {
       return runIdempotent(tx, {
         actorId: actor.id, route: 'POST /invoices/:id/payment', key: idempotencyKey, statusCode: 201,
       }, requestHash, async () => {
-        await tx.$queryRaw`SELECT id FROM invoices WHERE id = ${id} FOR UPDATE`;
-        const invoice = await tx.invoice.findUniqueOrThrow({ where: { id }, select: NOTICE_SELECT });
-        if (invoice.status !== 'UNPAID') throw new ConflictException(ErrorCode.INVOICE_NOT_UNPAID);
-        // BIL-11: the DB trigger checks exact total and changes UNPAID to PAID on INSERT.
-        const payment = await tx.payment.create({ data: {
-          invoiceId: id, amount: invoice.total, method: dto.method, source: 'MANUAL',
-          bankTransactionId: null, recordedById: actor.id, paidAt: paidAt ?? new Date(), note: dto.note ?? null,
-        }, select: PAYMENT_SELECT });
-        const result = { ...payment, paidAt: payment.paidAt.toISOString() };
-        await this.audit.log(actor.id, 'payment.record', 'payment', payment.id, undefined, result, ip, tx);
-        mail = await paymentReceivedNotice(tx, id);
+        const written = await this.writePayment(tx, actor, id, dto, paidAt, ip);
+        mail = written.mail;
+        const result = written.result;
         return result;
       });
     });
     await this.deliver(mail, `payment-received-${id}`); // set only on the first write, never on an idempotent replay
     return receipt;
+  }
+
+  async writePayment(tx: Prisma.TransactionClient, actor: AuthUser, id: number, dto: RecordPaymentDto, paidAt: Date | null, ip?: string) {
+    await tx.$queryRaw`SELECT id FROM invoices WHERE id = ${id} FOR UPDATE`;
+    const invoice = await tx.invoice.findUniqueOrThrow({ where: { id }, select: NOTICE_SELECT });
+    if (invoice.status !== 'UNPAID') throw new ConflictException(ErrorCode.INVOICE_NOT_UNPAID);
+    // BIL-11: the DB trigger checks exact total and changes UNPAID to PAID on INSERT.
+    const payment = await tx.payment.create({ data: {
+      invoiceId: id, amount: invoice.total, method: dto.method, source: 'MANUAL',
+      bankTransactionId: null, recordedById: actor.id, paidAt: paidAt ?? new Date(), note: dto.note ?? null,
+    }, select: PAYMENT_SELECT });
+    const result = { ...payment, paidAt: payment.paidAt.toISOString() };
+    await this.audit.log(actor.id, 'payment.record', 'payment', payment.id, undefined, result, ip, tx);
+    const mail = await paymentReceivedNotice(tx, id);
+    return { result, mail };
   }
 
   // BIL-12 (Q-P4-6, Q-P4-24, Q-P4-25): MONTHLY DRAFT/UNPAID only. Corrections are applied in place on this invoice's

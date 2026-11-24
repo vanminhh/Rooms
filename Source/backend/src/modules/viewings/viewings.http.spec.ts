@@ -13,6 +13,7 @@ describe('BE-EX-19..23 /me and staff HTTP contract', () => {
   const db = viewingPrisma();
   beforeAll(async () => {
     db.prisma.roomPrice = { count: vi.fn(async () => 0) };
+    db.prisma.request = { findMany: vi.fn(async () => []), count: vi.fn(async () => 0) };
     db.prisma.ratePlan = { count: vi.fn(async () => 0) };
     db.prisma.invoice = { count: vi.fn(async () => 0), findMany: vi.fn(async () => []) };
     db.prisma.contract = { findMany: vi.fn(async () => []), count: vi.fn(async () => 0) }; // Phase 4 dashboard money groups

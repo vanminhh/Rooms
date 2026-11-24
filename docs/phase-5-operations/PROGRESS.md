@@ -22,7 +22,7 @@ Trạng thái:
 | P5-0 Chủ dự án | đang làm | Q-P5-1..16 đã trả lời (D-45) | – | Duyệt M1/M2/M3 khi tới phần; duyệt gói biểu đồ | Không chặn M1 |
 | P5-1 Thông báo chung (BE) | xong | M1 · BE-P5-01..04 | `9b67fa3` | Kiểm tay cùng đợt sau | 2852/2852 test, lint và build đạt |
 | P5-2 Gia hạn (BE) | chờ kiểm đồng thời | BE-P5-05..08 xong, reviewer duyệt code | `0935309` (CP-1) | BE-P5-09: kiểm tranh chấp hai kết nối | Backend 2871/2871, DB nhúng 115/115, E2E nhúng 1/1 |
-| P5-3 Yêu cầu (BE) | chưa làm | – | – | planner `plans/P5-3/PLAN.md` | |
+| P5-3 Yêu cầu (BE) | implemented; dev verification pending | – | – | planner `plans/P5-3/PLAN.md` | |
 | P5-4 Đánh giá sửa chữa (BE) | chưa làm | – | – | – | migration M2 |
 | P5-5 Báo cáo, nhật ký, cài đặt (BE) | chưa làm | – | – | – | migration M3 |
 | P5-6 FE nhân sự: vận hành | chưa làm | – | – | planner `plans/P5-6/PLAN.md` | khung route của cả phase |
@@ -85,3 +85,6 @@ Làm các mốc theo thứ tự từ trên xuống. Ký hiệu: ✅ xong (đã c
 - 24/11/2026 — BE-P5-06: implemented renewal creation and room reservation guard. Full backend suite 2863/2863 (139 files), renewal suite 11/11, build passed, lint 0 errors and 4 existing warnings. BE-P5-07 next.
 - 24/11/2026 — M2 CP-3..5: BE-P5-07/08 complete; reviewer approved code after signer and vehicle rollover fixes. Build passed, lint 0 errors (4 existing warnings), unit/HTTP 2871/2871, offline DB checker 115/115, embedded PostgreSQL E2E 1/1. Dev E2E and list-only cleanup blocked by connectivity. Two-session races pending; M2 is not accepted yet.
 - 24/11/2026 — Owner reports both host checks passed (renewal dev E2E and list-only cleanup). The two independent-connection cases were not part of those commands. P5-3 plan preparation started.
+
+- 24/11/2026 - P5-2 commit 30dd68b confirmed. P5-3 BE-P5-10..18 implemented and reviewed. Embedded PostgreSQL HTTP E2E passed, including webhook payment confirmation, latest repair cost, move-out, duplicate plate rollback and scheduled closure. Dev E2E, list-only cleanup and two independent database sessions remain unverified.
+- P5-3 verification: 2,882/2,882 tests (140 files), build passed, lint 0 errors and 4 existing warnings. Embedded E2E passed 1/1.

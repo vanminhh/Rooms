@@ -54,29 +54,35 @@ export class BankTransactionsService {
     const result = await this.prisma.$transaction(async tx => runIdempotent(tx,
       { actorId: actor.id, route: 'POST /bank-transactions/:id/assign', key: idempotencyKey, statusCode: 201 },
       hashRequest({ id, invoiceId }), async () => {
-        const bankTx = await this.locked(tx, id);
-        if (bankTx.status !== 'UNMATCHED') throw new ConflictException(ErrorCode.CONFLICT_STATE);
-        await tx.$queryRaw`SELECT id FROM invoices WHERE id = ${invoiceId} FOR UPDATE`;
-        const invoice = await tx.invoice.findUnique({ where: { id: invoiceId }, select: { status: true, total: true } });
-        if (!invoice) throw new NotFoundException(ErrorCode.NOT_FOUND);
-        if (invoice.status !== 'UNPAID') throw new ConflictException(ErrorCode.INVOICE_NOT_UNPAID);
-        if (invoice.total !== bankTx.amount) throw new ConflictException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
-        const now = new Date();
-        const updated = await tx.bankTransaction.updateMany({ where: { id, status: 'UNMATCHED' },
-          data: { status: 'ASSIGNED', invoiceId, handledById: actor.id, handledAt: now } });
-        if (updated.count !== 1) throw new ConflictException(ErrorCode.CONFLICT_STATE);
-        const payment = await tx.payment.create({ data: { invoiceId, amount: bankTx.amount, method: 'BANK_TRANSFER', source: 'ASSIGNED',
-          bankTransactionId: id, recordedById: actor.id, paidAt: bankTx.receivedAt }, select: { id: true } });
-        await this.audit.log(actor.id, 'payment.assign', 'payment', payment.id, { bankTransactionId: id, status: 'UNMATCHED' },
-          { bankTransactionId: id, status: 'ASSIGNED', invoiceId, amount: bankTx.amount }, ip, tx);
-        mail = await paymentReceivedNotice(tx, invoiceId);
-        return { bankTransactionId: id, invoiceId, paymentId: payment.id, status: 'ASSIGNED' as const };
+        const assigned = await this.assignInTransaction(tx, actor, id, invoiceId, ip);
+        mail = assigned.mail;
+        return assigned.result;
       }));
     if (mail) {
       try { await sendWithRetry(this.mailer, mail, `payment-received-${invoiceId}`); }
       catch { this.logger.warn(`Invoice TT${invoiceId}: payment email failed after retry`); }
     }
     return result;
+  }
+
+  async assignInTransaction(tx: Prisma.TransactionClient, actor: AuthUser, id: number, invoiceId: number, ip?: string) {
+    const bankTx = await this.locked(tx, id);
+    if (bankTx.status !== 'UNMATCHED') throw new ConflictException(ErrorCode.CONFLICT_STATE);
+    await tx.$queryRaw`SELECT id FROM invoices WHERE id = ${invoiceId} FOR UPDATE`;
+    const invoice = await tx.invoice.findUnique({ where: { id: invoiceId }, select: { status: true, total: true } });
+    if (!invoice) throw new NotFoundException(ErrorCode.NOT_FOUND);
+    if (invoice.status !== 'UNPAID') throw new ConflictException(ErrorCode.INVOICE_NOT_UNPAID);
+    if (invoice.total !== bankTx.amount) throw new ConflictException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
+    const now = new Date();
+    const updated = await tx.bankTransaction.updateMany({ where: { id, status: 'UNMATCHED' },
+      data: { status: 'ASSIGNED', invoiceId, handledById: actor.id, handledAt: now } });
+    if (updated.count !== 1) throw new ConflictException(ErrorCode.CONFLICT_STATE);
+    const payment = await tx.payment.create({ data: { invoiceId, amount: bankTx.amount, method: 'BANK_TRANSFER', source: 'ASSIGNED',
+      bankTransactionId: id, recordedById: actor.id, paidAt: bankTx.receivedAt }, select: { id: true } });
+    await this.audit.log(actor.id, 'payment.assign', 'payment', payment.id, { bankTransactionId: id, status: 'UNMATCHED' },
+      { bankTransactionId: id, status: 'ASSIGNED', invoiceId, amount: bankTx.amount }, ip, tx);
+    const mail = await paymentReceivedNotice(tx, invoiceId);
+    return { result: { bankTransactionId: id, invoiceId, paymentId: payment.id, status: 'ASSIGNED' as const }, mail };
   }
 
   // Q-P4-34: only UNMATCHED money (never linked to an invoice) can be marked refunded; nothing is sent.

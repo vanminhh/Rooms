@@ -287,6 +287,13 @@ export class ContractsService {
       const target = await tx.contract.findUnique({ where: { id }, select: { roomId: true, buildingId: true } });
       if (!target) throw new NotFoundException(ErrorCode.NOT_FOUND);
       if (actor.buildingIds && !actor.buildingIds.includes(target.buildingId)) throw new ForbiddenException(ErrorCode.OUT_OF_SCOPE);
+      let approvedRequest: { id: number; payload: Prisma.JsonValue } | null = null;
+      if (dto.requestId != null) {
+        await tx.$queryRaw`SELECT id FROM requests WHERE id = ${dto.requestId} FOR UPDATE`;
+        approvedRequest = await tx.request.findFirst({ where: { id: dto.requestId, contractId: id, type: 'RENEW', status: 'APPROVED' },
+          select: { id: true, payload: true } });
+        if (!approvedRequest || (approvedRequest.payload as Prisma.JsonObject)?.contractId) throw new ConflictException(ErrorCode.CONFLICT_STATE);
+      }
       await tx.$queryRaw`SELECT id FROM rooms WHERE id = ${target.roomId} FOR UPDATE`;
       await tx.$queryRaw`SELECT id FROM contracts WHERE id = ${id} FOR UPDATE`;
       const source = await tx.contract.findUniqueOrThrow({
@@ -310,6 +317,8 @@ export class ContractsService {
       });
       const code = `HD${String(created.id).padStart(6, '0')}`;
       const saved = await tx.contract.update({ where: created, data: { code }, select: CONTRACT_SUMMARY });
+      if (approvedRequest) await tx.request.update({ where: { id: approvedRequest.id },
+        data: { payload: { ...approvedRequest.payload as Prisma.JsonObject, contractId: created.id } } });
       await this.audit.log(actor.id, 'contract.create', 'contract', created.id, undefined, {
         code, previousContractId: id, roomId: source.roomId, buildingId: source.buildingId, tenantId: source.tenantId,
       }, ip, tx);

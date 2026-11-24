@@ -29,6 +29,8 @@ Status labels: PENDING "Chờ xử lý", IN_PROGRESS "Đang xử lý", RESOLVED 
 - **REQ-08** Every status change notifies the tenant (`REQUEST_UPDATED`). REJECTED needs `decision_note`.
 - **REQ-09** Repair review (owner 12/11/2026, D-33; Phase 5; details to confirm: Q-13). After an `INCIDENT` is `CLOSED`, the tenant who created it may rate the repair [ASSUMPTION A-17]: 1–5 stars and an optional comment, once per incident, editable for 7 days after the first rating. Only staff in scope read reviews; nothing is shown publicly. Staff may hide a comment with a reason; the review and the hide are kept and audited. A review is separate from "Đã sửa xong" (REQ-06): a low rating does not reopen the incident, change its `cost` (D-15) or cause any refund. Incidents closed by the 3-day cron can be reviewed too. No other thing is reviewed (not viewings, rooms, buildings or staff).
 
+Owner decisions (24/11/2026). Under REQ-06, resolving a reopened incident records the cost of the latest repair visit. If visits cost 200,000 and 100,000 đồng, the current request shows 100,000 đồng after the second resolution. Under REQ-07, if the webhook already paid the invoice in full while the issue was pending, staff can confirm that payment and resolve the issue without recording another payment. Boss handles an escalated issue.
+
 ## API
 
 | Method | Path | Who |
@@ -40,6 +42,8 @@ Status labels: PENDING "Chờ xử lý", IN_PROGRESS "Đang xử lý", RESOLVED 
 | GET | `/requests?buildingId&type&status` | staff |
 | PATCH | `/requests/:id` (incident status, cost) | staff |
 | POST | `/requests/:id/approve` · `/reject` · `/escalate` | staff |
+| POST | `/requests/:id/resolve` | Staff resolve a payment issue. Only Boss may resolve an escalated issue. |
+| POST | `/contracts/:id/renew` | Staff may pass `requestId` to link the approved renewal request. |
 
 ## Acceptance
 

@@ -9,5 +9,5 @@ import { SettlementService } from './settlement.service.js';
 
 @Module({ imports: [AuditModule, MailerModule],
   controllers: [InvoicesController, MeInvoicesController, SettlementController, SettlementsController],
-  providers: [BillingService, InvoiceQueriesService, SettlementService] })
+  providers: [BillingService, InvoiceQueriesService, SettlementService], exports: [BillingService] })
 export class BillingModule {}

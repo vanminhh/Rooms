@@ -128,8 +128,8 @@ export class ContractOccupantsService {
     }
   }
 
-  async create(actor: AuthUser, id: number, dto: CreateOccupantDto, ip?: string) {
-    const initial = await this.contract(this.prisma, actor, id);
+  async create(actor: AuthUser, id: number, dto: CreateOccupantDto, ip?: string, transaction?: Prisma.TransactionClient, identity?: { idNumberEnc: string; idNumberLast4: string }) {
+    const initial = await this.contract(transaction ?? this.prisma, actor, id);
     writable(initial.status);
     const dates = businessDates(dto);
     const assets = await this.assets(id, dto);
@@ -137,22 +137,22 @@ export class ContractOccupantsService {
       const row = await tx.occupant.create({ data: {
         contractId: id, fullName: dto.fullName, phone: dto.phone ?? null,
         dateOfBirth: dates.dateOfBirth, moveInDate: dates.moveInDate, moveOutDate: dates.moveOutDate,
-        isSigner: false, idNumberEnc: dto.idNumber ? encryptCccd(dto.idNumber) : null,
-        idNumberLast4: dto.idNumber ? last4(dto.idNumber) : null,
+        isSigner: false, idNumberEnc: identity?.idNumberEnc ?? (dto.idNumber ? encryptCccd(dto.idNumber) : null),
+        idNumberLast4: identity?.idNumberLast4 ?? (dto.idNumber ? last4(dto.idNumber) : null),
         idFrontAssetId: assets.idFrontAssetId ?? null, idBackAssetId: assets.idBackAssetId ?? null,
       }, select: OCCUPANT_SELECT });
       await assertOccupantCapacity(tx, contract.roomId, contract.room.maxOccupants, row.moveInDate, row.moveOutDate);
       await this.audit.log(actor.id, 'occupant.create', 'occupant', row.id, undefined,
         { contractId: id, moveInDate: formatDateOnly(row.moveInDate), moveOutDate: row.moveOutDate ? formatDateOnly(row.moveOutDate) : null }, ip, tx);
       return view(row, actor.role === 'TENANT');
-    });
+    }, transaction);
   }
 
-  async update(actor: AuthUser, id: number, oid: number, dto: UpdateOccupantDto, ip?: string) {
+  async update(actor: AuthUser, id: number, oid: number, dto: UpdateOccupantDto, ip?: string, transaction?: Prisma.TransactionClient) {
     staff(actor);
-    const initial = await this.contract(this.prisma, actor, id);
+    const initial = await this.contract(transaction ?? this.prisma, actor, id);
     writable(initial.status);
-    if (!await this.prisma.occupant.findFirst({ where: { id: oid, contractId: id }, select: { id: true } })) {
+    if (!await (transaction ?? this.prisma).occupant.findFirst({ where: { id: oid, contractId: id }, select: { id: true } })) {
       throw new NotFoundException(ErrorCode.NOT_FOUND);
     }
     const assets = await this.assets(id, dto);
@@ -180,7 +180,7 @@ export class ContractOccupantsService {
         { contractId: id, fields: Object.entries(dto).filter(([, value]) => value !== undefined).map(([key]) => key), moveInDate: formatDateOnly(row.moveInDate),
           moveOutDate: row.moveOutDate ? formatDateOnly(row.moveOutDate) : null }, ip, tx);
       return view(row);
-    });
+    }, transaction);
   }
 
   private async assets(id: number, dto: CreateOccupantDto | UpdateOccupantDto) {
@@ -193,9 +193,9 @@ export class ContractOccupantsService {
   }
 
   private async mutate<T>(actor: AuthUser, id: number,
-    action: (tx: Prisma.TransactionClient, contract: Prisma.ContractGetPayload<{ select: typeof CONTRACT_SELECT }>) => Promise<T>) {
+    action: (tx: Prisma.TransactionClient, contract: Prisma.ContractGetPayload<{ select: typeof CONTRACT_SELECT }>) => Promise<T>, transaction?: Prisma.TransactionClient) {
     try {
-      return await this.prisma.$transaction(async tx => {
+      const run = async (tx: Prisma.TransactionClient) => {
         await lockViewingMapping(tx);
         const pointer = await this.contract(tx, actor, id);
         await tx.$queryRaw`SELECT id FROM rooms WHERE id = ${pointer.roomId} FOR UPDATE`;
@@ -206,7 +206,8 @@ export class ContractOccupantsService {
           throw new ConflictException(ErrorCode.CONFLICT_STATE);
         }
         return action(tx, contract);
-      });
+      };
+      return await (transaction ? run(transaction) : this.prisma.$transaction(run));
     } catch (error) {
       if (error instanceof HttpException) throw error;
       if (isUniqueOn(error, 'occupants_one_signer', 'contractId', 'contract_id')) {

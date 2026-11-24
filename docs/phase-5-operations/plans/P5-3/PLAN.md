@@ -2,12 +2,11 @@
 
 Prepared 24 November 2026 for BE-P5-10..18. P5-2 provides contract renewal creation. P5-4 consumes CLOSED incidents for repair reviews; P5-5 consumes the incident cost. This part uses the existing requests table and its constraints. The feature checklist remains the implementation and acceptance record.
 
-## Owner decisions before implementation
+## Owner decisions (24 November 2026)
 
-| Question | Proposed behavior | Alternative | Affected work |
-|---|---|---|---|
-| A tenant submitted a payment issue for an unpaid invoice. While staff review it, the webhook pays that invoice in full. How should staff close the issue? | Let staff explicitly confirm the existing full payment and resolve the issue, recording the payment reference. A second payment is never created. Retain the existing Boss-only restriction after escalation. | Reject the now-obsolete issue with a reason identifying the confirmed payment. | BE-P5-15, staff UI. BANK-05 covers assignment only while UNPAID; REQ-07 does not specify this race. |
-| What repair cost should staff enter when an incident reopens? | Keep the previous amount visible and enter the **total cost for the incident** at the next resolution. Two visits costing 200,000 and 100,000 đồng result in 300,000 đồng once in reports. Allow an explicit zero for a free repair. | Record only the most recent visit's amount. If separate per-visit/month reporting is required, revisit the data model with the owner before proposing a migration. | BE-P5-13/16 and RPT-03. The current schema has one cost and one resolution timestamp. |
+REQ-06 stores the most recent repair cost. Resolving a reopened incident for 100,000 VND replaces the previous 200,000 VND.
+
+If the webhook has already paid the invoice in full, staff confirm the existing payment and resolve the request. Only Boss can resolve an escalated issue.
 
 Settled rules include the 5-photo limit, tenant-only incidents, owner-paid repairs, in-app request notifications, full-month vehicle charge on registration, and opening the renewal form only after approval. A-P5-1..3 specify 08:00, calendar days in Hà Nội, and ACTIVE eligibility with the HOLD deposit exception. The actual unique index covers both MOVE_OUT and RENEW in one slot per contract.
 

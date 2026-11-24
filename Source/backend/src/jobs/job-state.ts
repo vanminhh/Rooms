@@ -1,7 +1,7 @@
 import type { Prisma } from '@prisma/client';
 import { formatDateOnly } from '../common/date/today.js';
 
-export type DailyJob = 'late_readings' | 'invoice_reminders';
+export type DailyJob = 'late_readings' | 'invoice_reminders' | 'close_incidents';
 
 // Q-P4-16: settings['job_state'] = { "<job>": "YYYY-MM-DD" } (Hà Nội date of the last run), created on first use.
 // One statement: a second caller the same day waits for the row lock, re-checks WHERE and updates 0 rows.

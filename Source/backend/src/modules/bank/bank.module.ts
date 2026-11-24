@@ -5,5 +5,5 @@ import { BankTransactionsController, WebhookController } from './bank.controller
 import { BankTransactionsService } from './bank-transactions.service.js';
 import { BankService } from './bank.service.js';
 
-@Module({ imports: [AuditModule, MailerModule], controllers: [WebhookController, BankTransactionsController], providers: [BankService, BankTransactionsService] })
+@Module({ imports: [AuditModule, MailerModule], controllers: [WebhookController, BankTransactionsController], providers: [BankService, BankTransactionsService], exports: [BankTransactionsService] })
 export class BankModule {}
