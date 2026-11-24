@@ -170,7 +170,8 @@ describe('CON-01..03: create HOLD', () => {
     g.tx.room.findFirst.mockResolvedValueOnce(null);
     await expectCode(g.create(), 'ROOM_NOT_AVAILABLE');
     expect(g.tx.room.findFirst).toHaveBeenCalledWith(expect.objectContaining({
-      where: { id: 11, isActive: true, underMaintenance: false, price: { not: null }, building: {
+      where: { id: 11, isActive: true, underMaintenance: false, price: { not: null },
+        contracts: { none: { status: { in: ['HOLD', 'ACTIVE'] } } }, building: {
         isActive: true, AND: ['ELECTRIC', 'WATER'].map(kind => ({
           ratePlans: { some: { kind, status: 'APPROVED', effectiveFrom: { lte: new Date('2026-11-17') } } },
         })),

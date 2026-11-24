@@ -16,12 +16,12 @@ function fixture(opts: { waterMode?: 'PER_M3' | 'PER_PERSON'; final?: boolean; r
       { id: 1, contractId: 10, createdAt: d('2026-09-01'), fullName: 'An', isSigner: true, moveInDate: d('2026-09-01'), moveOutDate: null },
       { id: 2, contractId: 10, createdAt: d('2026-09-01'), fullName: 'Bình', isSigner: false, moveInDate: d('2026-10-05'), moveOutDate: d('2026-12-01') },
     ],
-    vehicles: [{ id: 5, contractId: 10, buildingId: 3, serviceId: 7, plate: '29A12345', type: 'MOTORBIKE', isActive: true }] };
+    vehicles: [{ id: 5, contractId: 10, buildingId: 3, serviceId: 7, plate: '29A12345', type: 'MOTORBIKE', isActive: true, registeredAt: d('2026-09-01') }] };
   const reading = (id: number, kind: string, value: number) => ({ id, kind, value, roomId: 4, readOn: d('2027-02-28'), isOpening: false, readById: 2 });
   const tx = {
     $queryRaw: vi.fn(async () => []),
     contract: {
-      findUnique: vi.fn(async () => ({ previousContractId: 10 })),
+      findUnique: vi.fn(async () => ({ previousContractId: 10, roomId: 4 })),
       findUniqueOrThrow: vi.fn(async ({ where }: { where: { id: number } }) => (where.id === 20 ? next : old)),
       updateMany: vi.fn(async () => ({ count: 1 })),
     },
@@ -31,10 +31,27 @@ function fixture(opts: { waterMode?: 'PER_M3' | 'PER_PERSON'; final?: boolean; r
     vehicle: { update: vi.fn(), create: vi.fn() },
     auditLog: { create: vi.fn() },
   };
-  return { tx, run: () => switchRenewal(tx as unknown as Prisma.TransactionClient, 20, d('2027-03-03'), NOW) };
+  return { tx, old, run: () => switchRenewal(tx as unknown as Prisma.TransactionClient, 20, d('2027-03-03'), NOW) };
 }
 
 describe('BIL-06 renewal switch', () => {
+  it('CON-19: late switch retains the actual date for a newly registered vehicle', async () => {
+    const { old, tx, run } = fixture();
+    old.vehicles[0].registeredAt = d('2027-03-02');
+    await run();
+    expect(tx.vehicle.update).toHaveBeenCalledWith({ where: { id: 5 }, data: { isActive: false, removedAt: d('2027-03-02') } });
+    expect(tx.vehicle.create).toHaveBeenCalledWith({ data: expect.objectContaining({ registeredAt: d('2027-03-02') }) });
+  });
+  it('CON-19/22: preserves a departed signer and includes a roommate through the departure day', async () => {
+    const { tx, old, run } = fixture();
+    old.occupants[0].moveOutDate = d('2027-02-27');
+    old.occupants[1].moveOutDate = d('2027-03-01');
+    await run();
+    const copied = tx.occupant.createMany.mock.calls[0][0].data;
+    expect(copied).toHaveLength(2);
+    expect(copied).toContainEqual(expect.objectContaining({ isSigner: true, moveOutDate: d('2027-02-27') }));
+    expect(copied).toContainEqual(expect.objectContaining({ isSigner: false, moveOutDate: d('2027-03-01') }));
+  });
   it('BIL-06 catch-up: a missed switch day is switched by the next run once the period-N invoice and readings exist', async () => {
     const { tx, run } = fixture();
     expect(await run()).toBe('SWITCHED');

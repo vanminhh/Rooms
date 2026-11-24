@@ -27,6 +27,15 @@ describe('BIL-13 settlement refusals', () => {
   afterEach(() => vi.useRealTimers());
   const at = () => vi.useFakeTimers({ toFake: ['Date'] }).setSystemTime(new Date('2026-11-22T05:00:00Z'));
 
+  it.each([true, false])('D-45: signed HOLD renewal blocks settlement dryRun=%s before money writes', async dryRun => {
+    const { service, tx } = setup({ nextContract: { status: 'HOLD', signedAt: d('2026-11-20') } });
+    await expect(service.settle(boss, 9, body as never, dryRun)).rejects.toMatchObject({
+      status: 409, publicMessage: 'Hợp đồng đã có gia hạn, hãy hủy gia hạn trước',
+    });
+    expect(tx.invoice.findMany).not.toHaveBeenCalled();
+    expect(tx.settlement.create).not.toHaveBeenCalled();
+  });
+
   it('BIL-13, Q-P4-42: only an ACTIVE contract without a settlement is settled (HOLD uses CON-12)', async () => {
     at();
     for (const contract of [{ status: 'HOLD' }, { status: 'ENDED' }, { status: 'CANCELLED' }, { settlement: { id: 3 } }]) {

@@ -240,6 +240,20 @@ describe('BE-P3-18 / CON-16 / CON-22: contract scans and printable documents ove
     expect(result.body.data.content).not.toMatch(/null|undefined|6789|0912345678|02\/01\/1995/);
   });
 
+  it('CON-22/D-46: a waiting renewal prints its own terms and the source signer', async () => {
+    const [signer] = state.occupants;
+    Object.assign(state.contract, { roomId: 30, previousContract: {
+      roomId: 30, buildingId: 7, tenantId: 4, occupants: [signer],
+    } });
+    state.contract.terms = 'Renewal terms';
+    state.occupants = [];
+    const result = await get('/contracts/42/print');
+    expect(result.status).toBe(200);
+    expect(result.body.data.content).toContain(signer.fullName);
+    expect(result.body.data.content).toContain('Renewal terms');
+    expect(result.body.data.content).not.toContain(PRIVATE_CIPHERTEXT);
+  });
+
   it.each(['missing signer', 'invalid last4'])('CON-22: %s fails closed rather than printing unsafe identity data', async invalid => {
     if (invalid === 'missing signer') state.occupants = [];
     else state.occupants[0].idNumberLast4 = FULL_ID_NUMBER;

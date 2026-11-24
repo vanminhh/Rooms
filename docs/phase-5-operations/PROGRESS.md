@@ -21,7 +21,7 @@ Trạng thái:
 |---|---|---|---|---|---|
 | P5-0 Chủ dự án | đang làm | Q-P5-1..16 đã trả lời (D-45) | – | Duyệt M1/M2/M3 khi tới phần; duyệt gói biểu đồ | Không chặn M1 |
 | P5-1 Thông báo chung (BE) | xong | M1 · BE-P5-01..04 | `9b67fa3` | Kiểm tay cùng đợt sau | 2852/2852 test, lint và build đạt |
-| P5-2 Gia hạn (BE) | đang làm | M2 · CP-1 kiểm M1 offline | – | Chờ duyệt áp migration M1 lên DB dev | 115/115 ca, replay migration và review đạt |
+| P5-2 Gia hạn (BE) | chờ kiểm đồng thời | BE-P5-05..08 xong, reviewer duyệt code | `0935309` (CP-1) | BE-P5-09: kiểm tranh chấp hai kết nối | Backend 2871/2871, DB nhúng 115/115, E2E nhúng 1/1 |
 | P5-3 Yêu cầu (BE) | chưa làm | – | – | planner `plans/P5-3/PLAN.md` | |
 | P5-4 Đánh giá sửa chữa (BE) | chưa làm | – | – | – | migration M2 |
 | P5-5 Báo cáo, nhật ký, cài đặt (BE) | chưa làm | – | – | – | migration M3 |
@@ -76,3 +76,12 @@ Làm các mốc theo thứ tự từ trên xuống. Ký hiệu: ✅ xong (đã c
 - 24/11/2026 · M1 · Xong BE-P5-01..04. Gửi theo phòng, tòa hoặc toàn chuỗi. Danh sách có số đã đọc và tổng người nhận. Kiểm tra quyền hộp thư người thuê đạt. Đã sửa điểm chặn PUB-05 của reviewer. Backend đạt 2852/2852 ca trên HTTP trong bộ nhớ, lint 4 cảnh báo cũ và 0 lỗi, build đạt. Chờ chủ dự án kiểm và commit.
 - 24/11/2026 · M1 · Xác nhận commit `9b67fa3`. Chủ dự án sẽ kiểm tay cùng đợt sau.
 - 24/11/2026 · M2 CP-1 · Đã ghi kế hoạch P5-2 và quyết định Q-P5-17 (D-46). Chủ dự án duyệt tạo M1. Bộ kiểm ràng buộc tăng từ 110/110 lên 115/115, replay 12 migration trước rồi áp M1 trên PostgreSQL nhúng đạt, lint 4 cảnh báo cũ và 0 lỗi. Reviewer DUYỆT CP-1. Chờ duyệt riêng để áp M1 lên DB dev.
+- 24/11/2026 · M2 CP-1 · Xác nhận commit `0935309` cho migration M1 và kiểm thử offline. CP-2 chờ duyệt áp migration lên DB dev.
+- 24/11/2026 · M2 CP-2 · Kiểm chỉ đọc từ cấu hình dev trả `P1001`. Kiểm kết nối đến cả địa chỉ ứng dụng và địa chỉ trực tiếp đều trả `ENOTFOUND`. Trạng thái áp M1 trên dev chưa xác minh được.
+- 24/11/2026 — M2 CP-2 retry: local Prisma migrate status exited 1 (P1001). DNS lookup returned ENOTFOUND for both DATABASE_URL and DIRECT_URL from this session. Dev migration state remains unverified.
+- 24/11/2026 — M2 CP-2: owner verified dev migration status from PowerShell. Of 13 local migrations, only 20261124000000_renewal_open_room is pending. Awaiting approval for dev deployment and read-only preflight for existing HOLD renewals.
+- 24/11/2026 — CP-2: owner approved applying M1 to dev. Pending host-side HOLD renewal preflight, deployment and catalog verification.
+- 24/11/2026 — CP-2 verified on the owner host: M1 applied, migration status up to date and both unique indexes match.
+- 24/11/2026 — BE-P5-06: implemented renewal creation and room reservation guard. Full backend suite 2863/2863 (139 files), renewal suite 11/11, build passed, lint 0 errors and 4 existing warnings. BE-P5-07 next.
+- 24/11/2026 — M2 CP-3..5: BE-P5-07/08 complete; reviewer approved code after signer and vehicle rollover fixes. Build passed, lint 0 errors (4 existing warnings), unit/HTTP 2871/2871, offline DB checker 115/115, embedded PostgreSQL E2E 1/1. Dev E2E and list-only cleanup blocked by connectivity. Two-session races pending; M2 is not accepted yet.
+- 24/11/2026 — Owner reports both host checks passed (renewal dev E2E and list-only cleanup). The two independent-connection cases were not part of those commands. P5-3 plan preparation started.

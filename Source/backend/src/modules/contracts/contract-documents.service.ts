@@ -11,13 +11,17 @@ import { signedContractAssetUrl } from '../files/files.service.js';
 import { assertViewingScope } from '../viewings/viewing-reservations.js';
 import { renderContractPrint } from './contract-print.js';
 
+const printSigner = { where: { isSigner: true }, take: 1, select: {
+  fullName: true, phone: true, dateOfBirth: true, idNumberLast4: true,
+} } satisfies Prisma.Contract$occupantsArgs;
+
 const PRINT_SELECT = {
+  tenantId: true, roomId: true, buildingId: true,
+  previousContract: { select: { tenantId: true, roomId: true, buildingId: true, occupants: printSigner } },
   code: true, startDate: true, endDate: true, termMonths: true, rent: true, deposit: true, terms: true,
   room: { select: { code: true } },
   building: { select: { code: true, name: true, address: true, district: true, ward: true } },
-  occupants: { where: { isSigner: true }, take: 1, select: {
-    fullName: true, phone: true, dateOfBirth: true, idNumberLast4: true,
-  } },
+  occupants: printSigner,
 } satisfies Prisma.ContractSelect;
 
 const printDate = (date: Date) => formatDateOnly(date).split('-').reverse().join('/');
@@ -43,7 +47,10 @@ export class ContractDocumentsService {
       await lockViewingMapping(tx);
       await this.authorize(tx, actor, id);
       const contract = await tx.contract.findUniqueOrThrow({ where: { id }, select: PRINT_SELECT });
-      const signer = contract.occupants[0];
+      const source = contract.previousContract;
+      const sameTenancy = source && source.tenantId === contract.tenantId &&
+        source.roomId === contract.roomId && source.buildingId === contract.buildingId;
+      const signer = contract.occupants[0] ?? (sameTenancy ? source.occupants[0] : undefined);
       if (!signer || (signer.idNumberLast4 !== null && !/^\d{4}$/.test(signer.idNumberLast4))) {
         throw new InternalServerErrorException(ErrorCode.INTERNAL_ERROR);
       }

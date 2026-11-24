@@ -5,6 +5,7 @@ import { ContractIdParamsDto, ContractsQueryDto } from './dto/contracts-query.dt
 import { ContractDatesQueryDto } from './dto/contract-dates.dto.js';
 import { CreateContractDto } from './dto/create-contract.dto.js';
 import { SignContractDto } from './dto/sign-contract.dto.js';
+import { RenewContractDto } from './dto/renew-contract.dto.js';
 import { ContractPasswordService } from './contract-password.service.js';
 import { ContractDocumentsService } from './contract-documents.service.js';
 import { ContractMoveInService } from './contract-move-in.service.js';
@@ -49,6 +50,11 @@ export class ContractsController {
   @Post()
   create(@CurrentUser() actor: AuthUser, @Body() dto: CreateContractDto, @Ip() ip: string) {
     return this.contracts.create(actor, dto, ip);
+  }
+
+  @Post(':id/renew')
+  renew(@CurrentUser() actor: AuthUser, @Param() params: ContractIdParamsDto, @Body() dto: RenewContractDto, @Ip() ip: string) {
+    return this.contracts.renew(actor, params.id, dto, ip);
   }
 
   @Post(':id/sign')

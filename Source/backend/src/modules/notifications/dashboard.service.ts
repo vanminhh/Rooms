@@ -147,9 +147,9 @@ export class DashboardService {
         missedPeriods: { count: missed.length, items: missed },
         overdueInvoices: { count: overdueCount, items: overdue.map(row => ({ ...row, code: `TT${row.id}`, dueDate: row.dueDate ? date(row.dueDate) : null })) },
         // CON-20: ACTIVE, end_date within 30 days, no renewal and no settlement.
-        expiringContracts: await contracts({ status: 'ACTIVE', endDate: { gte: today, lte: addDays(today, 30) }, nextContract: null, settlement: null }),
+        expiringContracts: await contracts({ status: 'ACTIVE', endDate: { gte: today, lte: addDays(today, 30) }, OR: [{ nextContract: null }, { nextContract: { status: 'CANCELLED' } }], settlement: null }),
         // CON-21 (D-13): past end_date without renewal or settlement, red.
-        expiredContracts: await contracts({ status: 'ACTIVE', endDate: { lt: today }, nextContract: null, settlement: null }),
+        expiredContracts: await contracts({ status: 'ACTIVE', endDate: { lt: today }, OR: [{ nextContract: null }, { nextContract: { status: 'CANCELLED' } }], settlement: null }),
         // BIL-06 (Q-P4-15): a signed renewal has started but the old contract still waits for its final invoice or handover readings.
         renewalsWaiting: await contracts({ status: 'ACTIVE', nextContract: { status: 'HOLD', signedAt: { not: null }, startDate: { lte: today } } }),
       };

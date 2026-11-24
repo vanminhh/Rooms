@@ -353,6 +353,17 @@ describe('BE-P3-21 / CON-12 / BIL-17 / API-05: HOLD cancellation over HTTP', () 
     expect(result.status).toBe(201); expect(result.body.data.settlement).toBeNull();
     expect(result.body.data.depositInvoice).toBeNull(); expect(state.users.get(3)).toEqual(user);
   });
+  it.each([true, false])('D-45: cancelling a renewal signed=%s retains the source deposit', async signed => {
+    state.contract.previousContractId = 19;
+    if (!signed) state.contract.signedAt = null;
+    state.invoices = [];
+    const result = await cancel({ reason: BODY.reason, expectedDepositReceived: 0, depositKept: 0 });
+    expect(result.status).toBe(201);
+    expect(result.body.data).toMatchObject({ status: 'CANCELLED', depositInvoice: null, settlement: null });
+    expect(state.contract.previousContractId).toBe(19);
+    expect(state.settlements).toEqual([]);
+  });
+
   it('CON-12: zero deposit requires no invoice and no settlement', async () => {
     state.contract.deposit = 0; state.invoices = [];
     expect((await cancel({ reason: BODY.reason, depositKept: 0 })).status).toBe(201);

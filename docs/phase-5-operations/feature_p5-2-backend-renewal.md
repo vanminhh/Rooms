@@ -25,15 +25,17 @@ Out: the renewal request (P5-3), FE.
 
 ## Tasks
 
-- [~] **BE-P5-05** Migration M1 (D-45 (1)), only after the owner approves creating it: `contracts_one_open_per_room` becomes `WHERE status = 'ACTIVE' OR (status = 'HOLD' AND previous_contract_id IS NULL)`; update `constraints.sql`; add/adjust `check-constraints.mjs` scenarios (renewal HOLD beside ACTIVE allowed; a second new contract for an ACTIVE/HOLD room blocked). Check offline (PGlite + `migrate diff`); apply to dev only after the second approval. Owner approved file creation and offline checks on 24/11/2026.
+- [x] **BE-P5-05** Migration M1 (D-45 (1)), only after the owner approves creating it: `contracts_one_open_per_room` becomes `WHERE status = 'ACTIVE' OR (status = 'HOLD' AND previous_contract_id IS NULL)`; update `constraints.sql`; add/adjust `check-constraints.mjs` scenarios (renewal HOLD beside ACTIVE allowed; a second new contract for an ACTIVE/HOLD room blocked). Check offline (PGlite + `migrate diff`); apply to dev only after the second approval. Owner approved file creation and offline checks on 24/11/2026.
+  CP-2 verified on the owner host: M1 applied, 13 migrations up to date, both unique index definitions confirmed.
   Done when: the DB checker prints its real count and every scenario passes; the report says whether M1 is applied on dev.
-- [ ] **BE-P5-06** `POST /contracts/:id/renew` (CON-17): from an ACTIVE contract in scope create a HOLD contract with `previousContractId`, same room and tenant, same rent (DB-B1) and deposit, `startDate` = old `endDate` + 1 (DB-B7), `termMonths ≥ 3`, services copied and editable, **no** deposit invoice; lock old contract + room in one transaction; audit `contract.create`. Omitted `terms` copies the old clauses, a string replaces them and explicit `null` clears them (D-46). Also block a brand-new contract for a room whose old contract has ended while its renewal is still HOLD (D-45 (1)).
+- [x] **BE-P5-06** `POST /contracts/:id/renew` (CON-17): from an ACTIVE contract in scope create a HOLD contract with `previousContractId`, same room and tenant, same rent (DB-B1) and deposit, `startDate` = old `endDate` + 1 (DB-B7), `termMonths ≥ 3`, services copied and editable, **no** deposit invoice; lock old contract + room in one transaction; audit `contract.create`. Omitted `terms` copies the old clauses, a string replaces them and explicit `null` clears them (D-46). Also block a brand-new contract for a room whose old contract has ended while its renewal is still HOLD (D-45 (1)).
   Done when: second renewal of the same contract → `CONFLICT_STATE`; HOLD/ENDED source → `CONFLICT_STATE`; `termMonths = 2` → `CONTRACT_TERM_TOO_SHORT`; other building → `OUT_OF_SCOPE`; no `DEPOSIT` invoice; `startDate` right across a leap February.
-- [ ] **BE-P5-07** Sign a renewal (CON-18) through the existing CON-06 path (print page CON-22, private scan, no new account, no deposit, no move-in step).
+- [x] **BE-P5-07** Sign a renewal (CON-18) through the existing CON-06 path (print page CON-22, private scan, no new account, no deposit, no move-in step).
   Done when: after signing `signedAt` is set and status stays HOLD; `switchDueRenewals` with `today ≥ startDate`, the final invoice of period N and handover readings → `SWITCHED`, occupants and vehicles copied (CON-19); without the final invoice → `WAITING_FINAL_INVOICE`, no throw.
-- [ ] **BE-P5-08** Cancel a not-yet-switched renewal with the existing `POST /contracts/:id/cancel` (D-45 (10): CANCELLED, no settlement, no refund, audit). Settlement of a contract with a signed renewal → `CONFLICT_STATE` "Hợp đồng đã có gia hạn, hãy hủy gia hạn trước" (D-45 (9), `settlement.service.ts`). Re-check CON-20, CON-21: `expiringContracts`, `expiredContracts` and the 30/7-day reminders skip a contract that has a renewal; list any gap left.
+- [x] **BE-P5-08** Cancel a not-yet-switched renewal with the existing `POST /contracts/:id/cancel` (D-45 (10): CANCELLED, no settlement, no refund, audit). Settlement of a contract with a signed renewal → `CONFLICT_STATE` "Hợp đồng đã có gia hạn, hãy hủy gia hạn trước" (D-45 (9), `settlement.service.ts`). Re-check CON-20, CON-21: `expiringContracts`, `expiredContracts` and the 30/7-day reminders skip a contract that has a renewal; list any gap left.
   Done when: a contract with a signed renewal is not in `expiringContracts` and gets no expiry reminder; after cancelling the renewal it is back and the room is not wrongly locked; settlement with a renewal → `CONFLICT_STATE`.
-- [ ] **BE-P5-09** ⏸ lint + test + build + check-constraints + e2e (create renewal → sign → run the switch job); reviewer.
+- [!] **BE-P5-09** ⏸ lint + test + build + check-constraints + e2e (create renewal → sign → run the switch job); reviewer.
+  Owner reports the host dev E2E and list-only cleanup passed; independent two-session races remain unverified. See CP-5 below.
   Done when: real output; `scripts/e2e/cleanup.mjs` list clean for the run.
 
 ## CP-1 kiểm migration offline (24/11/2026)
@@ -66,3 +68,24 @@ Out: the renewal request (P5-3), FE.
 ## Issues log
 
 <!-- When a task is [!], add: date · task ID · what failed · what is needed -->
+
+- 24/11/2026 · BE-P5-05 · The dev read-only status check returned `P1001` and both configured hosts returned `ENOTFOUND`. CP-2 needs a reachable dev connection and the owner's separate approval to apply M1.
+- 24/11/2026 — CP-2: owner approved applying M1 to dev. Pending host-side HOLD renewal preflight, deployment and catalog verification.
+- BE-P5-06: POST /contracts/:id/renew implemented. Focused renewal suite: 11/11. New room bookings now check all HOLD and ACTIVE contracts while the room is locked. Real dev HTTP e2e is deferred to BE-P5-09.
+
+## CP-3..5 — 24/11/2026
+
+BE-P5-07 and BE-P5-08 implemented. The waiting renewal prints the source signer after checking the tenancy, signs with the existing tenant account and stays HOLD. Settlement checks the signed successor while holding the room lock. Cancelling the successor restores the source to the expiry dashboard and reminders. The switch and staff operations lock the room before contract rows.
+
+- Full backend suite: 139 files, 2871/2871 passed. Build passed. Lint: 0 errors, 4 existing warnings. DB checker: 115/115 offline.
+- Dedicated HTTP + Prisma E2E: 1/1 passed on embedded PostgreSQL, single connection, with a mocked private scan provider. The test created only its own fixture in an outer rollback, handled missing period-N invoice, switched once when readings were present and verified fixture removal.
+- Dev E2E and list-only cleanup could not connect to Supabase from this session. M1 applied on dev was verified separately in CP-2. Independent two-connection switch/switch and sign/settle races remain open. A serial retry test does not establish transaction isolation across connections.
+- Host verification from Source/backend: node --env-file=.env node_modules/vitest/vitest.mjs run --config vitest.config.e2e.ts test/contracts-renewal.e2e-spec.ts, followed by node --env-file=.env scripts/e2e/cleanup.mjs (list only).
+
+### Independent reviewer, final report
+
+**DUYỆT phần code P5-2.** Hai lỗi chặn đã được sửa và có ca hồi quy. Bản gia hạn giữ thông tin người ký cùng ngày ra thực tế. Xe đăng ký trong lúc chờ chuyển giữ đúng ngày đăng ký, cả trên bản ghi nguồn lẫn bản ghi mới.
+
+Fixture E2E riêng chỉ tác động đến hợp đồng thử. Nó kiểm tra từ tạo, in, ký đến chuyển hợp đồng, xác nhận đủ hai chỉ số mở đầu, đúng một người ký và không phát sinh hóa đơn cọc. Sau rollback, fixture kiểm lại số phòng và hợp đồng thử còn lại bằng 0. Git diff --check đạt.
+
+**Nghiệm thu DB dev còn mở.** Kết quả do phiên chính ghi nhận gồm 2.871/2.871 test backend, 115/115 ca ràng buộc và E2E 1/1 trên PostgreSQL nhúng qua một kết nối Prisma. Còn phải xác minh E2E trên DB dev và các ca tranh chấp qua hai kết nối độc lập.

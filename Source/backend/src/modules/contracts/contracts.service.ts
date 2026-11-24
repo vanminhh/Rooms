@@ -4,7 +4,7 @@ import { randomBytes } from 'node:crypto';
 import { encryptCccd, last4 } from '../../common/crypto/cccd.js';
 import { hashPassword, PENDING_TENANT_PASSWORD_HASH } from '../../common/crypto/password.js';
 import { contractEndDate, contractPeriods, contractTermProgress, nextBillingDate } from '../../common/date/period.js';
-import { formatDateOnly, parseDateOnly, todayHanoi } from '../../common/date/today.js';
+import { addDays, formatDateOnly, parseDateOnly, todayHanoi } from '../../common/date/today.js';
 import { isUniqueOn } from '../../common/errors/db-errors.js';
 import { ErrorCode } from '../../common/errors/error-code.js';
 import type { AuthUser } from '../../common/guards/auth.decorators.js';
@@ -21,6 +21,7 @@ import { resolveContractTenant } from './contract-tenant.js';
 import type { ContractsQueryDto } from './dto/contracts-query.dto.js';
 import type { CreateContractDto } from './dto/create-contract.dto.js';
 import type { SignContractDto } from './dto/sign-contract.dto.js';
+import type { RenewContractDto } from './dto/renew-contract.dto.js';
 import { DEPOSIT_INVOICE_SELECT, depositInvoiceView } from './deposit-invoice.js';
 
 const CONTRACT_SUMMARY = {
@@ -85,6 +86,10 @@ export class ContractsService {
   private dates(value: string, termMonths: number, today = todayHanoi()) {
     const startDate = parseDateOnly(value);
     if (!startDate || startDate < today) throw fieldError('startDate', 'Ngày vào ở phải từ hôm nay trở đi');
+    return this.termDates(startDate, termMonths);
+  }
+
+  private termDates(startDate: Date, termMonths: number) {
     if (termMonths < 3) throw new BadRequestException(ErrorCode.CONTRACT_TERM_TOO_SHORT);
     const endDate = contractEndDate(startDate, termMonths);
     if (!Number.isFinite(endDate.getTime()) || endDate.getUTCFullYear() > 9999) {
@@ -211,9 +216,8 @@ export class ContractsService {
       const rent = room.price;
       if (rent === null) throw new ConflictException(ErrorCode.PRICE_NOT_APPROVED);
 
-      // CON-02: the DB's partial unique index enforces the excluded open-contract rule.
-      const { contracts: _openContracts, ...publicEligibility } = publicRoomWhere(today);
-      const eligible = await tx.room.findFirst({ where: { id: room.id, ...publicEligibility }, select: { id: true } });
+      // D-45: a waiting renewal reserves the room even after the source contract ends.
+      const eligible = await tx.room.findFirst({ where: { id: room.id, ...publicRoomWhere(today) }, select: { id: true } });
       if (!eligible) throw new ConflictException(ErrorCode.ROOM_NOT_AVAILABLE);
       if (dto.serviceIds.length) {
         const services = await tx.service.findMany({
@@ -276,9 +280,46 @@ export class ContractsService {
     });
   }
 
+  async renew(actor: AuthUser, id: number, dto: RenewContractDto, ip?: string) {
+    assertStaff(actor);
+    return this.prisma.$transaction(async tx => {
+      await lockViewingMapping(tx, true);
+      const target = await tx.contract.findUnique({ where: { id }, select: { roomId: true, buildingId: true } });
+      if (!target) throw new NotFoundException(ErrorCode.NOT_FOUND);
+      if (actor.buildingIds && !actor.buildingIds.includes(target.buildingId)) throw new ForbiddenException(ErrorCode.OUT_OF_SCOPE);
+      await tx.$queryRaw`SELECT id FROM rooms WHERE id = ${target.roomId} FOR UPDATE`;
+      await tx.$queryRaw`SELECT id FROM contracts WHERE id = ${id} FOR UPDATE`;
+      const source = await tx.contract.findUniqueOrThrow({
+        where: { id },
+        select: {
+          roomId: true, buildingId: true, tenantId: true, rent: true, deposit: true, terms: true, endDate: true, status: true,
+          building: { select: { isActive: true, managerId: true, manager: { select: { isActive: true } } } },
+          services: { select: { serviceId: true } }, nextContract: { select: { id: true } },
+        },
+      });
+      assertViewingScope(actor, source);
+      if (source.status !== 'ACTIVE' || source.nextContract) throw new ConflictException(ErrorCode.CONFLICT_STATE);
+      const dates = this.termDates(addDays(source.endDate, 1), dto.termMonths);
+      const created = await tx.contract.create({
+        data: {
+          code: `tmp-${randomBytes(12).toString('base64url')}`, previousContractId: id, status: 'HOLD', ...dates,
+          termMonths: dto.termMonths, roomId: source.roomId, buildingId: source.buildingId, tenantId: source.tenantId,
+          deposit: source.deposit, rent: source.rent, terms: dto.terms === undefined ? source.terms : dto.terms,
+          createdById: actor.id, services: { create: source.services },
+        }, select: { id: true },
+      });
+      const code = `HD${String(created.id).padStart(6, '0')}`;
+      const saved = await tx.contract.update({ where: created, data: { code }, select: CONTRACT_SUMMARY });
+      await this.audit.log(actor.id, 'contract.create', 'contract', created.id, undefined, {
+        code, previousContractId: id, roomId: source.roomId, buildingId: source.buildingId, tenantId: source.tenantId,
+      }, ip, tx);
+      return { ...toContractSummary(saved), previousContractId: id };
+    });
+  }
+
   async sign(actor: AuthUser, id: number, dto: SignContractDto, ip?: string) {
     assertStaff(actor);
-    const existing = await this.prisma.contract.findUnique({ where: { id, ...scopeWhere(actor) }, select: { id: true, status: true, signedAt: true } });
+    const existing = await this.prisma.contract.findUnique({ where: { id, ...scopeWhere(actor) }, select: { id: true, status: true, signedAt: true, previousContractId: true, roomId: true } });
     if (!existing) {
       if (await this.prisma.contract.findUnique({ where: { id }, select: { id: true } })) {
         throw new ForbiddenException(ErrorCode.OUT_OF_SCOPE);
@@ -291,22 +332,29 @@ export class ContractsService {
     const assetId = await verifyContractAsset(this.prisma, id, 'CONTRACT_SCAN', dto);
     return this.prisma.$transaction(async tx => {
       await lockViewingMapping(tx);
-      await tx.$queryRaw`SELECT id FROM contracts WHERE id = ${id} FOR UPDATE`;
+      if (existing.previousContractId !== null) {
+        await tx.$queryRaw`SELECT id FROM rooms WHERE id = ${existing.roomId} FOR UPDATE`;
+        await tx.$queryRaw`SELECT id FROM contracts WHERE id IN (${id}, ${existing.previousContractId}) ORDER BY id FOR UPDATE`;
+      } else {
+        await tx.$queryRaw`SELECT id FROM contracts WHERE id = ${id} FOR UPDATE`;
+      }
       const contract = await tx.contract.findUnique({
         where: { id, ...scopeWhere(actor) }, select: {
           id: true, status: true, signedAt: true, startDate: true, deposit: true, previousContractId: true,
-          tenantId: true, tenant: { select: { phone: true } },
+          previousContract: { select: { status: true } }, tenantId: true, tenant: { select: { phone: true } },
           building: { select: { isActive: true, managerId: true, manager: { select: { isActive: true } } } },
         },
       });
       if (!contract) throw new ForbiddenException(ErrorCode.OUT_OF_SCOPE);
       assertViewingScope(actor, contract);
       if (contract.status !== 'HOLD' || contract.signedAt !== null) throw new ConflictException(ErrorCode.CONFLICT_STATE);
+      if (contract.previousContractId !== null && contract.previousContract?.status !== 'ACTIVE') throw new ConflictException(ErrorCode.CONFLICT_STATE);
 
       await lockOtpKey(tx, `phone:${contract.tenant.phone}`);
       await tx.$queryRaw`SELECT id FROM users WHERE id = ${contract.tenantId} FOR UPDATE`;
       const tenant = await tx.user.findUniqueOrThrow({ where: { id: contract.tenantId } });
       const pending = tenant.passwordHash === PENDING_TENANT_PASSWORD_HASH;
+      if (pending && contract.previousContractId !== null) throw new ConflictException(ErrorCode.CONFLICT_STATE);
       if (!tenant.isActive && !pending) throw new ForbiddenException(ErrorCode.ACCOUNT_LOCKED);
       if (tenant.role !== 'TENANT') throw new ConflictException(ErrorCode.CONFLICT_STATE);
       let temporaryPassword: string | undefined;

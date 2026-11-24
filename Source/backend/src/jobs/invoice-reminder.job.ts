@@ -47,7 +47,7 @@ export class InvoiceReminderJob implements OnApplicationBootstrap {
     const overdue = (await this.prisma.invoice.findMany({ where: { ...unpaid, dueDate: { lt: today } }, select: INVOICE, orderBy: { id: 'asc' } }))
       .filter(i => isOverdueReminderDay(i.dueDate!, today));
     const expiring = await this.prisma.contract.findMany({
-      where: { status: 'ACTIVE', endDate: { in: [addDays(today, 30), addDays(today, 7)] }, nextContract: null, settlement: null },
+      where: { status: 'ACTIVE', endDate: { in: [addDays(today, 30), addDays(today, 7)] }, OR: [{ nextContract: null }, { nextContract: { status: 'CANCELLED' } }], settlement: null },
       select: { id: true, code: true, endDate: true, buildingId: true, room: { select: { code: true } }, building: { select: { name: true } }, tenant: TENANT },
       orderBy: [{ endDate: 'asc' }, { id: 'asc' }] });
     const summary: ReminderSummary = { status: 'DONE', dueTomorrow: due.length, overdue: overdue.length, expiring: expiring.length, mails: 0, mailFailures: 0 };

@@ -10,6 +10,7 @@ import { isTranslatedPath, localeOf } from '../i18n/locale.js';
 import { errorMessage, translateField } from '../i18n/messages.js';
 import { mapDbError } from './db-errors.js';
 import { ERRORS, ErrorCode } from './error-code.js';
+import { SignedRenewalConflict } from './signed-renewal-conflict.js';
 
 export interface ErrorBody {
   error: { code: ErrorCode; message: string; fields?: Record<string, string> };
@@ -79,7 +80,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const req = host.switchToHttp().getRequest<Request>();
     const lang = isTranslatedPath(req?.path) ? localeOf(req) : 'vi';
     const { status } = ERRORS[code];
-    const message = errorMessage(code, lang);
+    const message = exception instanceof SignedRenewalConflict ? exception.publicMessage : errorMessage(code, lang);
     const error: ErrorBody['error'] = { code, message };
     if (fields) error.fields = Object.fromEntries(Object.entries(fields).map(([key, text]) => [key, translateField(text, lang)]));
     host.switchToHttp().getResponse<Response>().status(status).json({ error } satisfies ErrorBody);

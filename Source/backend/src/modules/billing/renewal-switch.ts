@@ -9,9 +9,10 @@ export interface RenewalSummary { candidates: number; switched: number; waiting:
 // The old contract stays ACTIVE until its period-N MONTHLY invoice (any status but CANCELLED) and the handover
 // readings on it exist: ELECTRIC (kWh) and WATER (m³) in every building; PER_PERSON water is read but not billed (MTR-06).
 export async function switchRenewal(tx: Prisma.TransactionClient, renewalId: number, today: Date, now = new Date()): Promise<RenewalOutcome> {
-  const renewal = await tx.contract.findUnique({ where: { id: renewalId }, select: { previousContractId: true } });
+  const renewal = await tx.contract.findUnique({ where: { id: renewalId }, select: { previousContractId: true, roomId: true } });
   if (!renewal?.previousContractId) return 'CHANGED';
   const ids = [renewalId, renewal.previousContractId].sort((a, b) => a - b);
+  await tx.$queryRaw`SELECT id FROM rooms WHERE id = ${renewal.roomId} FOR UPDATE`;
   await tx.$queryRaw`SELECT id FROM contracts WHERE id IN (${ids[0]}, ${ids[1]}) ORDER BY id FOR UPDATE`;
   const next = await tx.contract.findUniqueOrThrow({ where: { id: renewalId } });
   const old = await tx.contract.findUniqueOrThrow({ where: { id: renewal.previousContractId },
@@ -37,7 +38,7 @@ export async function switchRenewal(tx: Prisma.TransactionClient, renewalId: num
       readOn: closing.readOn, isOpening: true, readById: closing.readById, note: `Mốc chuyển từ hợp đồng ${old.code}` } });
   }
   // CON-19: people still living there and active vehicles move to the new contract; history stays on the old one.
-  const staying = old.occupants.filter(o => o.moveOutDate === null);
+  const staying = old.occupants.filter(o => o.isSigner || o.moveOutDate === null || o.moveOutDate >= next.startDate);
   if (staying.length) {
     // occupants_one_signer: keep the renewal's own signer if signing already created one.
     const hasSigner = await tx.occupant.count({ where: { contractId: next.id, isSigner: true } }) > 0;
@@ -45,9 +46,11 @@ export async function switchRenewal(tx: Prisma.TransactionClient, renewalId: num
       ({ ...o, isSigner: o.isSigner && !hasSigner, contractId: next.id })) });
   }
   for (const v of old.vehicles) {
-    await tx.vehicle.update({ where: { id: v.id }, data: { isActive: false, removedAt: old.endDate } });
+    const removedAt = v.registeredAt > old.endDate ? v.registeredAt : old.endDate;
+    const registeredAt = v.registeredAt > next.startDate ? v.registeredAt : next.startDate;
+    await tx.vehicle.update({ where: { id: v.id }, data: { isActive: false, removedAt } });
     await tx.vehicle.create({ data: { contractId: next.id, buildingId: v.buildingId, serviceId: v.serviceId, plate: v.plate, type: v.type,
-      registeredAt: next.startDate } });
+      registeredAt } });
   }
   // AUD-01 contract renew; AUD-03 cron actions have no actor.
   await tx.auditLog.create({ data: { actorId: null, action: 'contract.renew', entity: 'contract', entityId: next.id,

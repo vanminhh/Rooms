@@ -55,7 +55,7 @@ describe('BE-P3-13..15: staff signing through HTTP', () => {
       findUnique: vi.fn(async ({ where, select }: any) => {
         const row = where.id === 42 ? state.contract : state.otherContract?.id === where.id ? state.otherContract : null;
         if (!row || (where.buildingId && !where.buildingId.in.includes(7))) return null;
-        return project({ ...row, tenant: state.tenant, room: { id: 30, code: 'P301' },
+        return project({ ...row, roomId: 30, previousContract: row.previousContractId ? state.otherContract : null, tenant: state.tenant, room: { id: 30, code: 'P301' },
           building: { id: 7, code: 'CG01', name: 'Tòa A', isActive: true, managerId: state.managerId, manager: { isActive: true } },
           occupants: [], vehicles: [], services: [], invoices: state.invoices, settlement: null, terms: null, movedInAt: null,
         }, select);
@@ -198,10 +198,20 @@ describe('BE-P3-13..15: staff signing through HTTP', () => {
 
   it.each([0, 'renewal'])('CON-08: %s creates no additional deposit invoice', async kind => {
     if (kind === 0) state.contract.deposit = 0;
-    else state.contract.previousContractId = 11;
+    else {
+      state.contract.previousContractId = 11;
+      state.otherContract = { ...state.contract, id: 11, status: 'ACTIVE' };
+      state.tenant.isActive = true;
+      state.tenant.passwordHash = 'existing-account-hash';
+    }
     const result = await sign();
     expect(result.status).toBe(201);
     expect(result.body.data.depositInvoice).toBeNull();
+    if (kind === 'renewal') {
+      expect(result.body.data.status).toBe('HOLD');
+      expect(result.body.data.temporaryPassword).toBeUndefined();
+      expect(db.user.update).not.toHaveBeenCalled();
+    }
     expect(db.invoice.create).not.toHaveBeenCalled();
   });
 

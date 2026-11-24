@@ -3,6 +3,7 @@ import type { MeterKind, MeterReading, PaymentMethod, Prisma } from '@prisma/cli
 import { contractPeriods } from '../../common/date/period.js';
 import { addDays, compareDates, formatDateOnly, formatDateVn, parseDateOnly, todayHanoi } from '../../common/date/today.js';
 import { ErrorCode } from '../../common/errors/error-code.js';
+import { SignedRenewalConflict } from '../../common/errors/signed-renewal-conflict.js';
 import type { AuthUser } from '../../common/guards/auth.decorators.js';
 import { consumption } from '../../common/money/consumption.js';
 import { formatMoney } from '../../common/money/format.js';
@@ -88,11 +89,13 @@ export class SettlementService {
   private async quote(tx: Tx, contractId: number, moveOutDate: Date, dto: SettlementDto): Promise<Quote> {
     const today = todayHanoi();
     const c = await tx.contract.findUniqueOrThrow({ where: { id: contractId }, include: {
+      nextContract: { select: { status: true, signedAt: true } },
       building: { select: { waterMode: true } }, room: { select: { code: true } }, settlement: { select: { id: true } },
       tenant: { select: { email: true, emailVerifiedAt: true } }, occupants: true,
       services: { include: { service: true } }, vehicles: { include: { service: true } } } });
     // BIL-13, Q-P4-42: only ACTIVE (HOLD goes through CON-12); a settlement exists only once.
     if (c.status !== 'ACTIVE' || c.settlement) throw new ConflictException(ErrorCode.CONFLICT_STATE);
+    if (c.nextContract?.status === 'HOLD' && c.nextContract.signedAt) throw new SignedRenewalConflict();
     // Q-P4-10: from the contract start to today, both included.
     if (compareDates(moveOutDate, c.startDate) < 0 || compareDates(moveOutDate, today) > 0) {
       throw invalid('moveOutDate', 'Ngày dọn đi phải từ ngày bắt đầu hợp đồng đến hôm nay');

@@ -19,7 +19,8 @@ function setup(data: { invoices?: any[]; contracts?: any[] } = {}) {
   const prisma: any = {
     invoice: { findMany: vi.fn(async ({ where }: any) => invoices.filter(i => i.status === where.status
       && (where.dueDate instanceof Date ? i.dueDate.getTime() === where.dueDate.getTime() : i.dueDate < where.dueDate.lt))) },
-    contract: { findMany: vi.fn(async ({ where }: any) => contracts.filter(c => c.status === where.status && c.nextContract === null
+    contract: { findMany: vi.fn(async ({ where }: any) => contracts.filter(c => c.status === where.status &&
+      (c.nextContract === null || where.OR?.some((clause: any) => clause.nextContract && clause.nextContract.status === c.nextContract.status))
       && c.settlement === null && where.endDate.in.some((e: Date) => e.getTime() === c.endDate.getTime()))) },
     building: { findMany: vi.fn(async () => [{ id: 1, managerId: 7, manager: { isActive: true } }, { id: 2, managerId: null, manager: null }]) },
     user: { findFirst: vi.fn(async () => ({ id: 1 })),
@@ -36,6 +37,11 @@ function setup(data: { invoices?: any[]; contracts?: any[] } = {}) {
 }
 
 describe('NOTI-05 invoice and contract reminders', () => {
+  it('CON-21: cancelling the renewal restores expiry reminders for the source', async () => {
+    const { job, rows } = setup({ contracts: [contract(1, '2026-12-22', { nextContract: { status: 'CANCELLED' } })] });
+    await job.run(d('2026-11-22'));
+    expect(rows().length).toBeGreaterThan(0);
+  });
   it('NOTI-05, Q-P4-17: an invoice due 31/10 is reminded on 30/10 by mail only, not on 29/10 or 31/10', async () => {
     for (const [today, count] of [['2026-10-30', 1], ['2026-10-29', 0], ['2026-10-31', 0]] as const) {
       const { job, sent, rows } = setup({ invoices: [invoice(9, '2026-10-31')] });

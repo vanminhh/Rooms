@@ -69,8 +69,8 @@ describe('NOTI-06 money groups', () => {
     expect(prisma.invoice.count).toHaveBeenCalledWith({ where: { type: { not: 'DEPOSIT' }, status: 'UNPAID', dueDate: { lt: d('2026-11-22') }, contract: scope } });
     const groupWheres = prisma.contract.count.mock.calls.map(([a]: any) => a.where.AND);
     expect(groupWheres).toEqual([
-      [scope, { status: 'ACTIVE', endDate: { gte: d('2026-11-22'), lte: d('2026-12-22') }, nextContract: null, settlement: null }],
-      [scope, { status: 'ACTIVE', endDate: { lt: d('2026-11-22') }, nextContract: null, settlement: null }],
+      [scope, { status: 'ACTIVE', endDate: { gte: d('2026-11-22'), lte: d('2026-12-22') }, OR: [{ nextContract: null }, { nextContract: { status: 'CANCELLED' } }], settlement: null }],
+      [scope, { status: 'ACTIVE', endDate: { lt: d('2026-11-22') }, OR: [{ nextContract: null }, { nextContract: { status: 'CANCELLED' } }], settlement: null }],
       [scope, { status: 'ACTIVE', nextContract: { status: 'HOLD', signedAt: { not: null }, startDate: { lte: d('2026-11-22') } } }],
     ]);
     expect(groups.expiringContracts.items).toEqual([{ ...ref(3), endDate: '2026-12-10' }]);
