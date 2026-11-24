@@ -78,6 +78,34 @@ describe('NOTI-11 · /me/notifications HTTP contract', () => {
     }
   });
 
+  it('NOTI-01, SCOPE-03: tenant sees an unread announcement and their own unreadCount with no-store', async () => {
+    rows.push({
+      id: 6, userId: 3, kind: 'ANNOUNCEMENT', title: 'Bảo trì', body: 'Bảo trì từ 9 giờ.',
+      link: '/thue/thong-bao', readAt: null, createdAt: at('2026-11-03T01:00:00Z'),
+    });
+    rows.find(row => row.id === 5).readAt = at('2026-11-02T02:00:00Z');
+    const res = await request(server()).get('/api/v1/me/notifications?unread=true').set('Authorization', await auth(3));
+    expect(res.status).toBe(200);
+    expect(res.headers['cache-control']).toBe('no-store');
+    expect(res.body.data).toMatchObject([
+      { id: 6, kind: 'ANNOUNCEMENT', title: 'Bảo trì', body: 'Bảo trì từ 9 giờ.', link: '/thue/thong-bao' },
+    ]);
+    expect(res.body.meta).toEqual({ page: 1, limit: 20, total: 1, unreadCount: 1 });
+  });
+
+  it('NOTI-01, SCOPE-03: tenant cannot read another user’s row and read-all marks only the tenant’s rows', async () => {
+    const authorization = await auth(3);
+    const outside = await request(server()).post('/api/v1/me/notifications/4/read').set('Authorization', authorization);
+    expect(outside.status).toBe(404);
+    expect(outside.body.error.code).toBe('NOT_FOUND');
+
+    const all = await request(server()).post('/api/v1/me/notifications/read-all').set('Authorization', authorization);
+    expect(all.status).toBe(201);
+    expect(all.headers['cache-control']).toBe('no-store');
+    expect(all.body.data).toEqual({ updated: 1 });
+    expect(rows.filter(row => row.readAt === null).map(row => row.id)).toEqual([1, 3, 4]);
+  });
+
   it('NOTI-11: unread=true lists only unread rows; page 2 keeps the total; limit is checked (API-02)', async () => {
     const unread = await request(server()).get('/api/v1/me/notifications?unread=true').set('Authorization', await auth(1));
     expect(unread.body.data.map((r: any) => r.id)).toEqual([3, 1]);
@@ -92,7 +120,16 @@ describe('NOTI-11 · /me/notifications HTTP contract', () => {
   });
 
   it('D-34, API-07: guests have no inbox (403); no token → 401', async () => {
-    expect((await request(server()).get('/api/v1/me/notifications').set('Authorization', await auth(4))).status).toBe(403);
+    const authorization = await auth(4);
+    const guestResponses = [
+      await request(server()).get('/api/v1/me/notifications').set('Authorization', authorization),
+      await request(server()).post('/api/v1/me/notifications/5/read').set('Authorization', authorization),
+      await request(server()).post('/api/v1/me/notifications/read-all').set('Authorization', authorization),
+    ];
+    for (const response of guestResponses) {
+      expect(response.status).toBe(403);
+      expect(response.body.error.code).toBe('FORBIDDEN');
+    }
     expect((await request(server()).get('/api/v1/me/notifications')).status).toBe(401);
   });
 

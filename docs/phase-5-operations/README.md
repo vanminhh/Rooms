@@ -10,7 +10,7 @@ Nguồn: dòng "5 · Operations" của roadmap (`docs/spec/01-architecture.md#ro
 5. Boss đọc báo cáo và nhật ký, sửa cài đặt.
 6. Thông báo chung tới hộp thư người thuê.
 
-**Trạng thái:** chưa bắt đầu code (24/11/2026). Tài liệu và câu trả lời đã có; phần tiếp theo là P5-1. Tiến trình: [PROGRESS.md](PROGRESS.md).
+**Trạng thái ngày 24/11/2026.** P5-1 đã triển khai và kiểm thử API thông báo chung, đang chờ chủ dự án kiểm và commit. Phần tiếp theo là P5-2 Gia hạn. Xem [PROGRESS.md](PROGRESS.md).
 
 **Schema: ba migration**, mỗi migration phải được duyệt hai lần (tạo file, rồi áp lên DB dev):
 - M1: nới index phòng (P5-2)

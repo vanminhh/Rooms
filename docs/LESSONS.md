@@ -99,6 +99,7 @@ Read this before the first task of any part. Each line is a mistake that really 
 - When moving UI copy into dictionaries, adapt source-layout checks to resolve dictionary calls while retaining the old literal expectations; otherwise static checks fail despite unchanged rendered Vietnamese [FE-EX-11, 14/11/2026].
 
 - In the managed Windows sandbox, Vitest module-cache rename in its default temporary folder can fail with EPERM; a process-local TEMP/TMP under ignored node_modules/.cache allows transformation, but HTTP loopback can still fail with EACCES. Report those separately from assertion failures [BE-EX-10/11, 14/11/2026].
+- Use the cached virtual HTTP runner if available when the Windows sandbox blocks TCP loopback. The native announcement tests stopped at EACCES before Nest handled the requests [BE-P5-01, 24/11/2026].
 - Preserve punctuation when moving mail templates: the verification subject used an en dash, not a hyphen; compare the original literal as well as the wording [BE-EX-11, 14/11/2026].
 
 - Media error events are non-bubbling: dispatch to the video node in the fake DOM; modal focus also requires querySelector in the separate auth-flow DOM harness [FE-EX-16, 14/11/2026].
@@ -133,5 +134,6 @@ Read this before the first task of any part. Each line is a mistake that really 
 - In edit scripts, `replace(a, b)` reads dollar-sign sequences in `b` as patterns (dollar-backtick inserts the text before the match), which mangled a whole file. Always use a function replacer: `replace(a, () => b)` [FE-P4/BE, 23/11/2026].
 - Frontend test files use CRLF: exact-text edits must normalise line endings first or they silently miss [FE-P4-01, 23/11/2026].
 - The kit `RoomsHeader` closes the mobile menu on any click in `action`; a control that opens a popup there must stop propagation. `RoomsButton` has no ref: focus it through a wrapper [FE-P4-08a, 23/11/2026].
+- Verify `Cache-Control: no-store` for new private staff handlers as well as tenant handlers. The announcement routes needed headers after the PUB-05 review [BE-P5-04, 24/11/2026].
 
 - 23/11/2026 (QA-P4-03/04): Bộ nhớ kết quả Vitest tích lũy theo file qua nhiều lượt. Khi chạy hồi quy nền, lưu tên từng file, mã thoát và tổng số file hoàn tất vào log theo lượt để có thể nghiệm thu sau khi đóng terminal.
