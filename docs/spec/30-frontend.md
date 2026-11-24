@@ -77,7 +77,7 @@ The public, guest and tenant layouts have the language switch "Tiếng Việt / 
 | `/ql/giao-dich` | Giao dịch ngân hàng: unmatched first; escalated payment issues; assign to invoice / mark refunded | BANK-05 |
 | `/ql/duyet-gia` | Duyệt giá: pending room prices and rate plans, old → new, % change, approve/reject with note; expired ones apart, reject only | PRC-03, PRC-07, PRC-12, RATE-01 |
 | `/ql/nhan-su` | Nhân sự: create (temporary password shown once), deactivate/reactivate managers, their buildings; buildings are assigned on `/ql/toa-nha/:id` (owner 01/11/2026) | AUTH-08, BLD-03 |
-| `/ql/cai-dat` | Cài đặt: bank account, webhook toggle, contract template, email templates, default contact | settings |
+| `/ql/cai-dat` | Cài đặt: bank account, webhook shown read-only with how to turn it off by changing the secret (Q-P4-11, D-45), contract template, email templates, default contact | settings |
 | `/ql/nhat-ky` | Nhật ký thao tác | AUD-04 |
 
 ## UI rules
