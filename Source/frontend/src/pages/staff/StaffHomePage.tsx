@@ -87,6 +87,15 @@ export function StaffHomePage() {
           </section>}
           {dashboard.data.pendingPrices !== null && <PendingPricesCard data={dashboard.data.pendingPrices} />}
           <ContractTasks data={dashboard.data} />
+          {([
+            ['Yêu cầu chờ xử lý', dashboard.data.pendingRequests, 'status=PENDING'],
+            ['Gia hạn đã duyệt', dashboard.data.approvedRenewals, 'status=APPROVED&type=RENEW'],
+            ['Báo lỗi thanh toán đã chuyển Boss', user?.role === 'BOSS' && dashboard.data.escalatedPaymentIssues, 'status=ESCALATED&type=PAYMENT_ISSUE'],
+          ] as const).map(([title, group, filters]) => group && <section key={title} className="dashboard-card">
+            <h3>{title}</h3><p>{group.count} yêu cầu</p>
+            <ul>{group.items.map(item => <li key={item.id}><Link to={`/ql/yeu-cau?${filters}&requestId=${item.id}`}>{item.title}</Link></li>)}</ul>
+            <Link to={`/ql/yeu-cau?${filters}`}>Xem danh sách</Link>
+          </section>)}
           <MoneyCards data={dashboard.data} />
         </div>}
   </>

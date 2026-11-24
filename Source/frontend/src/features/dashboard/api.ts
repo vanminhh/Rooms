@@ -5,6 +5,9 @@ import type { ViewingView } from '../viewings/api'
 
 // Mirrors dashboard.service.ts in the BE (NOTI-06). pendingPrices is null for a manager (PRC-11, Boss only).
 export interface DashboardView {
+  pendingRequests?: RequestGroup
+  approvedRenewals?: RequestGroup
+  escalatedPaymentIssues?: RequestGroup
   newViewings: { count: number; items: ViewingView[] }
   overlappingViewings: { count: number; items: ViewingView[] }
   depositCancelledViewings: { count: number; items: ViewingView[] }
@@ -22,6 +25,10 @@ export interface DashboardView {
 }
 
 type ContractRef = DashboardView['unpaidDeposits']['items'][number]['contract']
+export interface RequestGroup {
+  count: number
+  items: { id: number; type: string; title: string; contractId: number }[]
+}
 export interface ContractItem extends ContractRef { endDate: string }
 export interface PeriodItem {
   invoiceId: number | null; code: string | null; periodNo: number; periodStart: string; periodEnd: string

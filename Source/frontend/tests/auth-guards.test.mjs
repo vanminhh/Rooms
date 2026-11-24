@@ -342,7 +342,7 @@ test('A2: PublicLayout root onClick turns an in-app link click into navigate, le
   assert.equal(prevented, 1)
 })
 
-test('Q3-A, Q2-A, FE-P3-01: TenantLayout has the 5 menu items including contracts and invoices, the sign-out button and no footer', () => {
+test('Q3-A, Q2-A, FE-P3-01: TenantLayout has the tenant menu including announcements and requests, the sign-out button and no footer', () => {
   const calls = []
   const { exports, fakes } = loadLayout('../src/layouts/TenantLayout.tsx', { signOutState: { signOut: () => calls.push('out'), signingOut: false } })
   const root = exports.TenantLayout()
@@ -350,7 +350,7 @@ test('Q3-A, Q2-A, FE-P3-01: TenantLayout has the 5 menu items including contract
   const header = headerOf(root, fakes)
   assert.equal(header.props.homeHref, '/thue')
   assert.equal(header.props.logoSrc, '/images/rooms-logo.webp')
-  assert.deepEqual(header.props.links, [{ label: 'Tổng quan', href: '/thue' }, { label: 'Hợp đồng', href: '/thue/hop-dong' }, { label: 'Hóa đơn', href: '/thue/hoa-don' }, { label: 'Tài khoản', href: '/thue/tai-khoan' }, { label: 'Lịch hẹn xem phòng', href: '/toi' }])
+  assert.deepEqual(header.props.links, [{ label: 'Tổng quan', href: '/thue' }, { label: 'Hợp đồng', href: '/thue/hop-dong' }, { label: 'Hóa đơn', href: '/thue/hoa-don' }, { label: 'Thông báo', href: '/thue/thong-bao' }, { label: 'Yêu cầu', href: '/thue/yeu-cau' }, { label: 'Tài khoản', href: '/thue/tai-khoan' }, { label: 'Lịch hẹn xem phòng', href: '/toi' }])
   assert.equal(find(root, n => n.type === fakes.RoomsFooter), undefined)
   assert.equal(find(root, n => n.props?.className === 'layout-buildings'), undefined)
   const button = find(header.props.action, n => n.type === fakes.RoomsButton)
@@ -383,6 +383,9 @@ test('Q2-A, FE-P3-01: StaffLayout menu follows role (manager: 10 minus Nhân s�
     { label: 'Chốt chỉ số', href: '/ql/chi-so' },
     { label: 'Hóa đơn', href: '/ql/hoa-don' },
     { label: 'Tra cứu xe', href: '/ql/xe' },
+    { label: 'Yêu cầu', href: '/ql/yeu-cau' },
+    { label: 'Thông báo', href: '/ql/thong-bao' },
+    { label: 'Báo cáo', href: '/ql/bao-cao' },
     { label: 'Tài khoản', href: '/ql/tai-khoan' },
   ])
   assert.equal(find(root, n => n.type === fakes.RoomsFooter), undefined)
@@ -412,6 +415,11 @@ test('Q2-A, FE-P3-01, FE-P4-01: a Boss gets all 13 menu items, including Nhân s
     { label: 'Hóa đơn', href: '/ql/hoa-don' },
     { label: 'Giao dịch ngân hàng', href: '/ql/giao-dich' },
     { label: 'Tra cứu xe', href: '/ql/xe' },
+    { label: 'Yêu cầu', href: '/ql/yeu-cau' },
+    { label: 'Thông báo', href: '/ql/thong-bao' },
+    { label: 'Báo cáo', href: '/ql/bao-cao' },
+    { label: 'Nhật ký', href: '/ql/nhat-ky' },
+    { label: 'Cài đặt', href: '/ql/cai-dat' },
     { label: 'Tài khoản', href: '/ql/tai-khoan' },
   ])
 })
@@ -610,6 +618,9 @@ test('AUTH-06 / T3 / FE-P2-01: routes wire guards and layouts (tenant area TENAN
     '../pages/staff/MetersPage': stub('MetersPage'),
     '../pages/staff/InvoicesPage': stub('InvoicesPage'),
     '../pages/staff/InvoiceDetailPage': stub('InvoiceDetailPage'),
+    '../pages/OperationsPage': stub('OperationsPage'),
+    '../pages/staff/RequestsPage': stub('RequestsPage'),
+    '../pages/staff/RequestRenewalPage': stub('RequestRenewalPage'),
     '../pages/staff/BankTransactionsPage': stub('BankTransactionsPage'),
     '../pages/tenant/TenantContractsPage': stub('TenantContractsPage'),
     '../pages/tenant/TenantContractDetailPage': stub('TenantContractDetailPage'),

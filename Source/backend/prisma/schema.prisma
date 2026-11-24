@@ -207,9 +207,11 @@ model User {
   settlements         Settlement[]
   requestsCreated     Request[]            @relation("RequestCreator")
   requestsHandled     Request[]            @relation("RequestHandler")
+  reviewsHidden       Request[]            @relation("RequestReviewModerator")
   announcements       Announcement[]
   notifications       Notification[]
-  invoicesCreated     Invoice[]
+  invoicesCreated     Invoice[] @relation("InvoiceCreator")
+  invoicesArchived    Invoice[] @relation("InvoiceArchiver")
   settingsUpdated     Setting[]
   auditLogs           AuditLog[]
   pricingIdempotencyKeys PricingIdempotencyKey[]
@@ -628,7 +630,10 @@ model Invoice {
   replacedBy      Invoice?          @relation("Reissue")
   settlement      Settlement?       @relation("MergedInvoices", fields: [settlementId], references: [id], onDelete: Restrict)
   finalOf         Settlement?       @relation("FinalInvoice")
-  createdBy       User?             @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdBy       User?             @relation("InvoiceCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  archivedAt      DateTime?         @map("archived_at") @db.Timestamptz
+  archivedById    Int?              @map("archived_by_id")
+  archivedBy      User?             @relation("InvoiceArchiver", fields: [archivedById], references: [id], onDelete: SetNull)
   lines           InvoiceLine[]
   meterReadings   MeterReading[]
   payment         Payment?
@@ -749,6 +754,15 @@ model Request {
   contract  Contract @relation(fields: [contractId], references: [id], onDelete: Restrict)
   createdBy User     @relation("RequestCreator", fields: [createdById], references: [id], onDelete: Restrict)
   handledBy User?    @relation("RequestHandler", fields: [handledById], references: [id], onDelete: SetNull)
+
+  reviewRating       Int?      @map("review_rating") @db.SmallInt
+  reviewComment      String?   @map("review_comment")
+  reviewAt           DateTime? @map("review_at") @db.Timestamptz
+  reviewUpdatedAt    DateTime? @map("review_updated_at") @db.Timestamptz
+  reviewHiddenReason String?   @map("review_hidden_reason")
+  reviewHiddenAt     DateTime? @map("review_hidden_at") @db.Timestamptz
+  reviewHiddenById   Int?      @map("review_hidden_by_id")
+  reviewHiddenBy     User?     @relation("RequestReviewModerator", fields: [reviewHiddenById], references: [id], onDelete: SetNull)
 
   @@index([contractId])
   @@index([status, type])

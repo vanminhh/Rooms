@@ -3,7 +3,7 @@ import type { PrismaService } from '../../src/common/prisma/prisma.service.js';
 
 // BE-P3-19: route transactions use savepoints on one real outer transaction.
 // This deliberately cannot emulate transaction isolation or concurrent connections.
-export function rollbackPrismaFacade(tx: Prisma.TransactionClient): PrismaService {
+export function rollbackPrismaFacade(tx: Prisma.TransactionClient, isolationLevel?: Prisma.TransactionIsolationLevel): PrismaService {
   let active = false;
   let nextSavepoint = 0;
   const noOp = async () => {};
@@ -13,7 +13,10 @@ export function rollbackPrismaFacade(tx: Prisma.TransactionClient): PrismaServic
     if (typeof work !== 'function') {
       throw new TypeError('Rollback Prisma accepts only callback transactions');
     }
-    if (options.length !== 0) {
+    const opts = options[0];
+    const inheritsIsolation = isolationLevel && options.length === 1 && typeof opts === 'object' && opts !== null
+      && Object.keys(opts).length === 1 && 'isolationLevel' in opts && opts.isolationLevel === isolationLevel;
+    if (options.length !== 0 && !inheritsIsolation) {
       throw new TypeError('Rollback Prisma cannot emulate transaction options');
     }
     if (active) {

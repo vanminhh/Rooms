@@ -1,3 +1,4 @@
+import { issuedPeriod } from './billed-period.js';
 import { ConflictException } from '@nestjs/common';
 import type { MeterKind, MeterReading, Prisma } from '@prisma/client';
 import { contractPeriods, dueDateOfPeriod } from '../../common/date/period.js';
@@ -9,6 +10,8 @@ import { monthlyInvoiceLines } from '../../common/money/invoice-calc.js';
 import { ratesAt } from '../../common/rates/rates-at.js';
 import { depositInvoiceView } from '../contracts/deposit-invoice.js';
 import type { Mail } from '../mailer/mailer.service.js';
+import { emailTemplate } from '../mailer/email-templates.js';
+import { mailLocale } from '../../common/i18n/locale.js';
 
 function snapshot(r: MeterReading) {
   return { id: r.id, readOn: formatDateOnly(r.readOn), value: r.value, photoUrl: r.photoUrl };
@@ -37,13 +40,13 @@ type IssueOutcome =
 export async function issueMonthly(tx: Prisma.TransactionClient, invoiceId: number, manual = false): Promise<IssueOutcome> {
   const invoice = await tx.invoice.findUniqueOrThrow({ where: { id: invoiceId }, include: {
     meterReadings: true, contract: { include: { building: { select: { waterMode: true } },
-      tenant: { select: { email: true, emailVerifiedAt: true } }, occupants: true,
+    tenant: { select: { email: true, emailVerifiedAt: true, locale: true } }, occupants: true,
       services: { include: { service: true } }, vehicles: { include: { service: true } } } },
   } });
   if (invoice.type !== 'MONTHLY' || invoice.status !== 'DRAFT') throw new ConflictException(ErrorCode.CONFLICT_STATE);
   const c = invoice.contract;
   const history = await tx.invoice.findMany({ where: { contractId: c.id, type: 'MONTHLY',
-    status: { in: ['UNPAID', 'PAID', 'SETTLED'] }, periodNo: { gte: invoice.periodNo - 3, lt: invoice.periodNo } },
+    ...issuedPeriod, periodNo: { gte: invoice.periodNo - 3, lt: invoice.periodNo } },
     orderBy: { periodNo: 'asc' }, include: { meterReadings: true, lines: { where: { kind: { in: ['WATER','ELECTRIC'] } } } } });
   const previous = history.find(h => h.periodNo === invoice.periodNo - 1);
   const unlinked = await tx.meterReading.findMany({ where: { contractId: c.id, invoiceId: null },
@@ -89,5 +92,7 @@ export async function issueMonthly(tx: Prisma.TransactionClient, invoiceId: numb
   const body = `Số tiền ${formatMoney(total)}. Hạn thanh toán ${view.dueDate}.`;
   await tx.notification.create({ data: { kind: 'INVOICE_ISSUED', title, body, userId: c.tenantId, link: `/thue/hoa-don/${invoiceId}` } });
   return { status: 'UNPAID', mail: c.tenant.email && c.tenant.emailVerifiedAt
-    ? { to: c.tenant.email, subject: title, text: `${body}\nVietQR: ${view.qrImageUrl}` } : null };
+    ? { to: c.tenant.email, ...await emailTemplate(tx, 'invoiceIssued', mailLocale({ role: 'TENANT', locale: c.tenant.locale }), {
+      code: `TT${invoiceId}`, total: formatMoney(total), dueDate: formatDateOnly(dueDate), qr: view.qrImageUrl ?? '',
+    }) } : null };
 }

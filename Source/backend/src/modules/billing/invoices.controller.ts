@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Header, Headers, Ip, Param, Post, Query } from '@nestjs/common';
+import { IsString, Matches } from 'class-validator';
 import { CurrentUser, Roles, TenantMeRoles, type AuthUser } from '../../common/guards/auth.decorators.js';
 import { PaginationQuery } from '../../common/pagination.js';
 import { parseIdempotencyKey } from '../pricing/pricing-idempotency.js';
@@ -6,6 +7,10 @@ import { BillingService } from './billing.service.js';
 import { InvoicesQueryDto } from './dto/invoices-query.dto.js';
 import { InvoiceIdParamsDto, RecordPaymentDto, ReissueInvoiceDto } from './dto/record-payment.dto.js';
 import { InvoiceQueriesService } from './invoice-queries.service.js';
+
+class CancelOverdueDto {
+  @IsString() @Matches(/\S/) reason: string;
+}
 
 @Controller('invoices')
 @Roles('BOSS', 'MANAGER')
@@ -50,6 +55,18 @@ export class InvoicesController {
   @Post(':id/remind')
   remind(@CurrentUser() actor: AuthUser, @Param() params: InvoiceIdParamsDto, @Ip() ip: string) {
     return this.billing.remind(actor, params.id, ip);
+  }
+
+  @Post(':id/archive')
+  @Roles('BOSS')
+  archive(@CurrentUser() actor: AuthUser, @Param() params: InvoiceIdParamsDto, @Ip() ip: string) {
+    return this.billing.overdueAction(actor, params.id, 'archive', undefined, ip);
+  }
+
+  @Post(':id/cancel')
+  @Roles('BOSS')
+  cancel(@CurrentUser() actor: AuthUser, @Param() params: InvoiceIdParamsDto, @Body() dto: CancelOverdueDto, @Ip() ip: string) {
+    return this.billing.overdueAction(actor, params.id, 'cancel', dto.reason, ip);
   }
 }
 

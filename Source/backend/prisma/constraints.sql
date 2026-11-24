@@ -158,6 +158,16 @@ ALTER TABLE requests ADD CONSTRAINT requests_status_by_type CHECK (
   (type = 'PAYMENT_ISSUE' AND status IN ('PENDING', 'ESCALATED', 'RESOLVED', 'REJECTED', 'CANCELLED'))
 );
 ALTER TABLE requests ADD CONSTRAINT requests_cost CHECK (cost IS NULL OR (cost >= 0 AND type = 'INCIDENT'));
+ALTER TABLE requests
+  ADD CONSTRAINT requests_review_rating CHECK (
+    review_rating IS NULL OR (review_rating BETWEEN 1 AND 5 AND type = 'INCIDENT')
+  ),
+  ADD CONSTRAINT requests_review_hide_pair CHECK (
+    (review_hidden_reason IS NULL) = (review_hidden_at IS NULL)
+  ),
+  ADD CONSTRAINT requests_review_hide_requires_rating CHECK (
+    review_hidden_at IS NULL OR review_rating IS NOT NULL
+  );
 CREATE UNIQUE INDEX requests_one_pending_moveout_renew ON requests (contract_id) WHERE type IN ('MOVE_OUT', 'RENEW') AND status = 'PENDING';
 
 ALTER TABLE announcements ADD CONSTRAINT announcements_room_needs_building CHECK (room_id IS NULL OR building_id IS NOT NULL);
@@ -171,3 +181,4 @@ ALTER TABLE viewings ADD CONSTRAINT viewings_time_present
 -- VIEW-16 capacity and cross-building conflicts are checked under backend transaction locks.
 CREATE UNIQUE INDEX viewings_one_open_per_user_room ON viewings (user_id, room_id)
   WHERE user_id IS NOT NULL AND status IN ('NEW', 'CONFIRMED');
+ALTER TABLE invoices ADD CONSTRAINT invoices_archive_pair CHECK ((archived_at IS NULL) = (archived_by_id IS NULL));

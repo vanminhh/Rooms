@@ -1,3 +1,6 @@
+import { OperationsPage } from '../pages/OperationsPage'
+import { RequestsPage } from '../pages/staff/RequestsPage'
+import { RequestRenewalPage } from '../pages/staff/RequestRenewalPage'
 import { GuestViewingPage } from '../pages/guest/GuestViewingPage'
 import type { RouteObject } from 'react-router'
 import { PublicLayout } from '../layouts/PublicLayout'
@@ -72,6 +75,9 @@ export const routes: RouteObject[] = [
         { path: 'hop-dong', element: <TenantContractsPage /> },
         { path: 'hop-dong/:id', element: <TenantContractDetailPage /> },
         { path: 'hop-dong/:id/in', element: <TenantContractPrintPage /> },
+        { path: 'thong-bao', element: <OperationsPage title="nav.announcements" /> },
+        { path: 'yeu-cau', element: <OperationsPage title="nav.requests" /> },
+        { path: 'yeu-cau/:id', element: <OperationsPage title="nav.requestDetail" /> },
         { path: 'hoa-don', element: <TenantInvoicesPage /> },
         { path: 'hoa-don/:id', element: <TenantInvoiceDetailPage /> },
       ],
@@ -93,13 +99,19 @@ export const routes: RouteObject[] = [
         { path: 'hop-dong', element: <ContractsPage /> },
         { path: 'hop-dong/moi', element: <ContractCreatePage /> },
         { path: 'hop-dong/:id', element: <ContractDetailPage /> },
+        { path: 'hop-dong/:id/gia-han', element: <RequestRenewalPage /> },
         { path: 'hop-dong/:id/in', element: <ContractPrintPage /> },
         { path: 'xe', element: <VehiclesPage /> },
         { path: 'chi-so', element: <MetersPage /> },
         { path: 'hoa-don', element: <InvoicesPage /> },
         { path: 'hoa-don/:id', element: <InvoiceDetailPage /> },
+        { path: 'yeu-cau', element: <RequestsPage /> },
+        { path: 'thong-bao', element: <OperationsPage title="nav.announcements" /> },
+        { path: 'bao-cao', element: <OperationsPage title="nav.reports" /> },
         // Boss-only pages: the guard blocks a manager who types the URL, not only the menu (AUTH-06, UI-08).
         { element: <RequireAuth allow={['BOSS']} />, children: [
+          { path: 'nhat-ky', element: <OperationsPage title="nav.audit" /> },
+          { path: 'cai-dat', element: <OperationsPage title="nav.settings" /> },
           { path: 'nhan-su', element: <ManagersPage /> },
           { path: 'duyet-gia', element: <ApprovalsPage /> },
           { path: 'giao-dich', element: <BankTransactionsPage /> },

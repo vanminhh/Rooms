@@ -48,6 +48,8 @@ export class InvoiceQueriesService {
     const today = todayHanoi();
     const [y, m] = query.period?.split('-').map(Number) ?? [];
     const where: Prisma.InvoiceWhereInput = {
+      // The exact-amount lookup also serves bank reconciliation (Q-P4-59).
+      ...(actor.role === 'BOSS' && query.total === undefined ? { archivedAt: null } : {}),
       contract: { ...scopeWhere(actor), ...(buildingId === undefined ? {} : { buildingId }) },
       ...(query.status ? { status: query.status } : {}),
       ...(query.type ? { type: query.type } : {}),

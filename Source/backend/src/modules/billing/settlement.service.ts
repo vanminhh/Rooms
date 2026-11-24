@@ -1,3 +1,4 @@
+import { billedPeriod } from './billed-period.js';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { MeterKind, MeterReading, PaymentMethod, Prisma } from '@prisma/client';
 import { contractPeriods } from '../../common/date/period.js';
@@ -110,7 +111,7 @@ export class SettlementService {
       prev = (await tx.contract.findUniqueOrThrow({ where: { id: prev }, select: { previousContractId: true } })).previousContractId;
     }
     await tx.$queryRaw`SELECT id FROM invoices WHERE contract_id = ANY(${chain}::int[]) ORDER BY id FOR UPDATE`;
-    const invoices = await tx.invoice.findMany({ where: { contractId: { in: chain }, status: { not: 'CANCELLED' } },
+    const invoices = await tx.invoice.findMany({ where: { contractId: { in: chain }, AND: billedPeriod },
       select: { id: true, contractId: true, type: true, status: true, periodNo: true, total: true, payment: { select: { amount: true } } } });
     const monthly = new Map(invoices.filter(i => i.contractId === c.id && i.type === 'MONTHLY').map(i => [i.periodNo, i]));
     // A-10: every period ≤ j whose billing date has come needs an invoice first (BIL-21 creates it).
@@ -118,7 +119,7 @@ export class SettlementService {
       throw conflict('moveOutDate', 'Còn kỳ chưa có hóa đơn, hãy tạo hóa đơn kỳ đó trước');
     }
     // Q-P4-50: an invoice of a period after j would be charged twice (remaining rent).
-    if ([...monthly.keys()].some(no => no > j.periodNo)) {
+    if ([...monthly.values()].some(i => i.status !== 'CANCELLED' && i.periodNo > j.periodNo)) {
       throw conflict('moveOutDate', 'Còn hóa đơn của kỳ sau ngày dọn đi, hãy hủy hoặc lập lại hóa đơn đó trước');
     }
     const drafts = [...monthly.values()].filter(i => i.status === 'DRAFT');
@@ -132,7 +133,7 @@ export class SettlementService {
     if ((damages > 0 || depositForfeit > 0) && !dto.note?.trim()) throw invalid('note', 'Hãy ghi chú lý do hư hỏng hoặc giữ cọc');
 
     // BIL-14: utilities from the last issued closing reading (or the move-in reading) to the final reading.
-    const issued = [...monthly.values()].filter(i => i.status !== 'DRAFT').sort((a, b) => b.periodNo - a.periodNo)[0];
+    const issued = [...monthly.values()].filter(i => i.status !== 'DRAFT' && i.periodNo <= j.periodNo).sort((a, b) => b.periodNo - a.periodNo)[0];
     const readings = await tx.meterReading.findMany({ where: { contractId: c.id }, orderBy: [{ readOn: 'asc' }, { id: 'asc' }] });
     const span = (kind: MeterKind, value: number) => {
       const opening = issued ? readings.find(r => r.kind === kind && r.invoiceId === issued.id) : readings.find(r => r.kind === kind && r.isOpening);

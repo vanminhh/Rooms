@@ -1,3 +1,4 @@
+import { billedPeriod } from '../billing/billed-period.js';
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import type { MeterKind, Prisma } from '@prisma/client';
 import { addDays, formatDateOnly, todayHanoi } from '../../common/date/today.js';
@@ -37,7 +38,7 @@ export class MetersService {
     });
     const predecessors = drafts.filter(d => d.periodNo > 1).map(d => ({ contractId: d.contractId, periodNo: d.periodNo - 1 }));
     const previous = predecessors.length ? await this.prisma.invoice.findMany({
-      where: { type: 'MONTHLY', status: { not: 'CANCELLED' }, contract, OR: predecessors },
+      where: { type: 'MONTHLY', AND: billedPeriod, contract, OR: predecessors },
       select: { contractId: true, periodNo: true, meterReadings: { select: { id: true, kind: true, readOn: true, value: true } }, lines: { where: { kind: { in: ['ELECTRIC', 'WATER'] } }, select: { kind: true, meta: true } } },
     }) : [];
     const byPeriod = new Map(previous.map(p => [p.contractId + '/' + p.periodNo, p]));

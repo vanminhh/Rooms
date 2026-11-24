@@ -21,6 +21,8 @@ Boss actions on an overdue monthly invoice (owner decision, 22/11/2026):
 | Xóa | Cancel with a reason. Retain the cancelled invoice in history and remove its amount from outstanding debt. |
 | Cất | Hide the invoice from the Boss's main list. Include its amount in outstanding and overdue totals. The tenant and responsible manager continue to see the red overdue warning while the invoice is unpaid. |
 
+Boss uses `POST /invoices/:id/archive` or `POST /invoices/:id/cancel` with `{ reason }` for an overdue unpaid monthly invoice. Repeating an archive preserves the original audit entry. Exact-amount lookups for bank reconciliation include archived debt.
+
 Acceptance example: with 80 million VND collected and one overdue invoice of 5 million VND, archiving the invoice leaves the summary at 80 million collected and 5 million overdue. Cancelling it with a reason leaves 80 million collected and zero overdue.
 
 API: `GET /reports/revenue?buildingId&from&to` (monthly series) · `GET /reports/occupancy?buildingId`.
@@ -44,6 +46,10 @@ Key/value in `settings`, edited by Boss (`GET/PATCH /settings` **Boss**). No sec
 | `contract_template` | Plain template text (treated as draft while Q-15 is open), or `{ content: string, isDraft: boolean }` with an explicit draft flag; placeholders `{{tenant.fullName}}`, `{{room.code}}`, `{{contract.rent}}`… |
 | `email_templates` | `{ invoiceIssued, invoiceDue, invoiceOverdue, contractExpiring, passwordReset }` + `emailCode` (`vi`, `en`), `viewingNew` (to staff, `vi`), `readingsLate` (to Boss, `vi`, NOTI-10), `viewingConfirmed` (to the guest, `vi`, `en`) (AUTH-13, NOTI-08, LOC-06) |
 | `default_contact` | Boss contact shown when a building has no manager |
+
+The Boss editor replaces one setting per PATCH using `{ key, value }`. The bank account and public contact use the fields above. A contract edit accepts draft text or `{ content, isDraft: true }`. Email overrides use `{ subject, text }` per kind and locale; omitted translations use shipped defaults. Invalid legacy translation branches are omitted on read. Supported runtime kinds are `emailCode`, `passwordReset`, `viewingNew`, `viewingConfirmed`, `invoiceIssued`, `invoiceDueTomorrow`, `invoiceOverdue`, `contractExpiringTenant`, `contractExpiringStaff`, `lateReadings`, `invoiceReminder` and `paymentReceived`. The webhook status is read-only. Settings audit entries use entity `setting`, entity ID 0 and the setting key in the snapshot (settings have string primary keys).
+
+`GET /me/consumption?periods=6&contractId=...` returns up to six issued monthly periods in chronological order. The default is the tenant's latest ACTIVE contract. An explicit ID can select an earlier contract belonging to the caller. Each item contains `periodNo`, `periodStart`, `periodEnd`, `electricKwh` and `waterM3`. Missing measurements are null. A measured zero remains zero, and per-person water fees are never interpreted as cubic metres.
 
 CON-22 placeholders are limited to `contract.code`, `contract.startDate`, `contract.endDate`, `contract.termMonths`, `contract.rent`, `contract.deposit`, `contract.terms`, `building.name`, `building.code`, `building.address`, `building.ward`, `building.district`, `room.code`, `tenant.fullName`, `tenant.phone`, `tenant.dateOfBirth`, `tenant.idNumberLast4`. Tenant values come from the signer occupant snapshot, never a later profile name; CCCD is only its stored last four digits. Unknown/malformed placeholders or invalid settings fail with a controlled error. Rendering performs one plain-text substitution pass; inserted values are not interpreted as placeholders or HTML. Print-page consumers render content as text, not raw HTML.
 

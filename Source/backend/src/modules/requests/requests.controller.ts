@@ -1,7 +1,7 @@
-import { Body, Controller, ForbiddenException, Get, Header, Ip, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Header, Headers, Ip, Param, Patch, Post, Put, Query } from '@nestjs/common';
 import { RequestType, RequestStatus } from '@prisma/client';
 import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, IsString, Max, Min, ValidateIf } from 'class-validator';
+import { IsEnum, IsInt, IsOptional, IsString, Matches, Max, Min, ValidateIf } from 'class-validator';
 import { CurrentUser, Roles, TenantMeRoles, type AuthUser } from '../../common/guards/auth.decorators.js';
 import { ErrorCode } from '../../common/errors/error-code.js';
 import { PaginationQuery } from '../../common/pagination.js';
@@ -10,6 +10,13 @@ import { ContractIdParamsDto } from '../contracts/dto/contracts-query.dto.js';
 import { CreateRequestDto } from './request.dto.js';
 import { RequestsService } from './requests.service.js';
 
+class ReviewDto {
+  @IsInt() @Min(1) @Max(5) rating: number;
+  @ValidateIf((_o, value) => value !== undefined) @IsString() comment?: string;
+}
+class HideReviewDto {
+  @IsString() @Matches(/\S/) reason: string;
+}
 class StaffQuery extends PaginationQuery {
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(2147483647) buildingId?: number;
   @IsOptional() @IsEnum(RequestType) type?: RequestType;
@@ -41,6 +48,13 @@ export class TenantRequestsController {
   @Post(':id/cancel')
   cancel(@CurrentUser() actor: AuthUser, @Param() params: ContractIdParamsDto) { return this.requests.tenantChange(actor, params.id, 'cancel'); }
 
+  @Put(':id/review')
+  @Header('Cache-Control', 'no-store')
+  review(@CurrentUser() actor: AuthUser, @Param() p: ContractIdParamsDto, @Body() dto: ReviewDto,
+    @Headers('if-match') version?: string) {
+    return this.requests.review(actor, p.id, dto, version);
+  }
+
   @Post(':id/confirm')
   confirm(@CurrentUser() actor: AuthUser, @Param() params: ContractIdParamsDto) { return this.requests.tenantChange(actor, params.id, 'confirm'); }
 
@@ -56,6 +70,11 @@ export class StaffRequestsController {
   @Post(':id/approve')
   approve(@CurrentUser() actor: AuthUser, @Param() p: ContractIdParamsDto, @Ip() ip: string) {
     return this.requests.decide(actor, p.id, 'approve', {}, ip);
+  }
+
+  @Post(':id/review/hide')
+  hideReview(@CurrentUser() actor: AuthUser, @Param() p: ContractIdParamsDto, @Body() dto: HideReviewDto, @Ip() ip: string) {
+    return this.requests.hideReview(actor, p.id, dto.reason.trim(), ip);
   }
 
   @Post(':id/reject')

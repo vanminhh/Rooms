@@ -1,3 +1,4 @@
+import { billedPeriod } from './billed-period.js';
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { type ContractPeriod, contractPeriods } from '../../common/date/period.js';
 import { addDays, compareDates } from '../../common/date/today.js';
@@ -29,7 +30,7 @@ export interface MonthlyDraftSummary { contracts: number; created: number; alrea
 // index invoices_one_per_period, so a parallel run's row counts as "already created", not as an error.
 export async function createDueMonthlyDrafts(db: Pick<PrismaClient, 'contract' | 'invoice'>, today: Date): Promise<MonthlyDraftSummary> {
   const contracts = await db.contract.findMany({ where: { status: 'ACTIVE' }, select: { id: true, startDate: true, termMonths: true,
-    invoices: { where: { type: 'MONTHLY', status: { not: 'CANCELLED' } }, select: { periodNo: true } } } });
+    invoices: { where: { type: 'MONTHLY', AND: billedPeriod }, select: { periodNo: true } } } });
   const data: Prisma.InvoiceCreateManyInput[] = [];
   let missedOld = 0;
   for (const c of contracts) {

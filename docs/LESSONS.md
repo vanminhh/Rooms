@@ -137,3 +137,7 @@ Read this before the first task of any part. Each line is a mistake that really 
 - Verify `Cache-Control: no-store` for new private staff handlers as well as tenant handlers. The announcement routes needed headers after the PUB-05 review [BE-P5-04, 24/11/2026].
 
 - 23/11/2026 (QA-P4-03/04): Bộ nhớ kết quả Vitest tích lũy theo file qua nhiều lượt. Khi chạy hồi quy nền, lưu tên từng file, mã thoát và tổng số file hoàn tất vào log theo lượt để có thể nghiệm thu sau khi đóng terminal.
+
+- P5-5 (RPT-02): a cancelled, issued monthly bill without a replacement still covers the billed period and supplies meter baselines. Check missed-period creation, settlement and renewal when adding a cancellation path.
+
+- An e2e case wrapped in one rolled-back transaction has a hard 240 s limit; adding later parts' checks to the same case pushed it past the limit on the remote dev DB ("Transaction not found", 500). Give each part its own case and fixture instead of growing one [BE-P5-18/20/24, 24/11/2026].

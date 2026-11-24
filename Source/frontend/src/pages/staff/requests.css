@@ -1,0 +1,11 @@
+.requests-filters, .requests-page nav { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin: 1rem 0; }
+.requests-page label { display: grid; gap: .35rem; }
+.requests-board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.requests-board section { padding: 1rem; border: 1px solid #d4d4d4; border-radius: .75rem; overflow-wrap: anywhere; }
+.requests-board h2 { font-size: 1.15rem; margin-top: 0; }
+.requests-board details { border-top: 1px solid #d4d4d4; padding: .8rem 0; }
+.requests-board summary { cursor: pointer; font-weight: 600; }
+.requests-board summary small { display: block; margin-top: .3rem; font-weight: 400; }
+.requests-board form { margin: .75rem 0; }
+.requests-board input { max-width: 100%; box-sizing: border-box; }
+@media (max-width: 760px) { .requests-board { grid-template-columns: minmax(0, 1fr); } }

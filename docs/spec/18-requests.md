@@ -47,6 +47,8 @@ Owner decisions (24/11/2026). Under REQ-06, resolving a reopened incident record
 
 ## Acceptance
 
+For REQ-09, the first PUT creates the review. To edit it, send the same body with an `If-Match` header containing the quoted ISO timestamp from `reviewUpdatedAt ?? reviewAt`. Duplicate creation, stale revisions and edits from the eighth Hanoi calendar day return 409. A replacement without a comment clears the comment. Moderation keeps the original text in the hide audit entry.
+
 - [ ] Second MOVE_OUT while one is pending → `PENDING_REQUEST_EXISTS`.
 - [ ] Approving a VEHICLE_CHANGE adding a plate already active elsewhere fails and leaves the request PENDING.
 - [ ] Incident RESOLVED on day 1 is CLOSED by cron on day 4.

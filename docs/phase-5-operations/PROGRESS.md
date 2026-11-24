@@ -22,10 +22,10 @@ Trạng thái:
 | P5-0 Chủ dự án | đang làm | Q-P5-1..16 đã trả lời (D-45) | – | Duyệt M1/M2/M3 khi tới phần; duyệt gói biểu đồ | Không chặn M1 |
 | P5-1 Thông báo chung (BE) | xong | M1 · BE-P5-01..04 | `9b67fa3` | Kiểm tay cùng đợt sau | 2852/2852 test, lint và build đạt |
 | P5-2 Gia hạn (BE) | chờ kiểm đồng thời | BE-P5-05..08 xong, reviewer duyệt code | `0935309` (CP-1) | BE-P5-09: kiểm tranh chấp hai kết nối | Backend 2871/2871, DB nhúng 115/115, E2E nhúng 1/1 |
-| P5-3 Yêu cầu (BE) | implemented; dev verification pending | – | – | planner `plans/P5-3/PLAN.md` | |
-| P5-4 Đánh giá sửa chữa (BE) | chưa làm | – | – | – | migration M2 |
-| P5-5 Báo cáo, nhật ký, cài đặt (BE) | chưa làm | – | – | – | migration M3 |
-| P5-6 FE nhân sự: vận hành | chưa làm | – | – | planner `plans/P5-6/PLAN.md` | khung route của cả phase |
+| P5-3 Yêu cầu (BE) | committed c3ad1c1; host checks passed; concurrency check pending | – | – | planner `plans/P5-3/PLAN.md` | |
+| P5-4 Đánh giá sửa chữa (BE) | accepted on dev by owner | – | – | – | migration M2 |
+| P5-5 Báo cáo, nhật ký, cài đặt (BE) | BE-P5-22..27 accepted | – | – | – | migration M3 |
+| P5-6 FE nhân sự: vận hành | đang làm (FE-P5-01..02 xong) | – | – | planner `plans/P5-6/PLAN.md` | khung route của cả phase |
 | P5-7 FE nhân sự: quản trị | chưa làm | – | – | – | gói biểu đồ |
 | P5-8 FE người thuê | chưa làm | – | – | – | song ngữ |
 | P5-9 QA | chưa làm | – | – | – | |
@@ -88,3 +88,18 @@ Làm các mốc theo thứ tự từ trên xuống. Ký hiệu: ✅ xong (đã c
 
 - 24/11/2026 - P5-2 commit 30dd68b confirmed. P5-3 BE-P5-10..18 implemented and reviewed. Embedded PostgreSQL HTTP E2E passed, including webhook payment confirmation, latest repair cost, move-out, duplicate plate rollback and scheduled closure. Dev E2E, list-only cleanup and two independent database sessions remain unverified.
 - P5-3 verification: 2,882/2,882 tests (140 files), build passed, lint 0 errors and 4 existing warnings. Embedded E2E passed 1/1.
+- 24/11/2026 - Owner reports P5-3 dev E2E and list-only cleanup passed; verified commit c3ad1c1. The separate two-connection submission test remains unverified. P5-4 awaits approval to create migration M2 for repair reviews.
+- 24/11/2026 - BE-P5-19: M2 created with owner approval. Offline PostgreSQL checks 124/124, migration chain 14/14, request tests 10/10, lint 0 errors (4 existing warnings), schema review approved. Dev deployment pending.
+- 24/11/2026 - P5-4: owner approved dev M2. Dev status failed (P1001); deployment unconfirmed. Review and moderation endpoints passed rollback HTTP E2E on embedded PostgreSQL, including edit after hide, original moderated text retained in audit, and scope guards. TypeScript build passed. Lint: 0 errors, 4 existing warnings.
+- P5-4 final local regression: 140/140 suites, 2882/2882 tests passed. Host M2 deployment and dev E2E pending.
+
+- P5-4: owner reported the dev checkpoint passed and requested continuing into P5-5 without committing.
+- P5-5: BE-P5-22/23 implemented (revenue, current debt and deposits, occupancy, scoped Boss comparison). Local TypeScript build, targeted tests 13/13 and embedded report integration 1/1 passed. Awaiting M3 creation approval for BE-P5-24.
+- BE-P5-24: M3 and Boss archive/cancel implemented; 15 migrations replayed, 128/128 DB checks, PostgreSQL HTTP E2E 1/1, TypeScript build passed. Reviewer approved after verifying waived periods remain covered for billing and readings. Dev deployment pending approval.
+- M3 deployment to dev approved by owner. Two read-only Prisma status attempts returned P1001; DNS resolved. No deploy command issued. Dev schema and E2E await host verification.
+- 25/11/2026 - Owner reports the dev E2E passed after splitting the requests suite into three independent rollback fixtures. Reviewed the change; all three cases and the separate revenue report passed individually on embedded PostgreSQL. Combined embedded run hit a connection-emulation error. Direct dev migration status from this session still returns P1001.
+- 25/11/2026 - BE-P5-25 completed: Boss-only audit history, filtered Hanoi dates, stable pagination, nested snapshot field redaction, exact BigInt IDs. HTTP tests 2/2, build passed, audit lint clean.
+- 25/11/2026 - BE-P5-26/27: settings and consumption implemented and reviewed. Renewal-chain held deposits tested before and after switching; legacy email overrides validated per translation. Full local regression 2893/2893 (144 suites), Nest build passed, lint 0 errors / 4 existing warnings, DB checker 128/128, embedded report and renewal E2Es 2/2. Dev report and list-only cleanup could not connect; host verification pending.
+- 25/11/2026 — Owner confirmed the P5-5 dev checks passed. BE-P5-27 closed. P5-6 planning started.
+- 25/11/2026 - FE-P5-01: added eight staff/tenant routes, role-specific menus and tenant translations. Role checks passed for direct URLs, including Boss-only audit and settings. Frontend lint, build and the full component suite passed (0 failed, 0 skipped).
+- 25/11/2026 - FE-P5-02 completed: scoped request board, staff decisions, payment resolution, dashboard links and prefilled renewal form. Lint and build passed. Component tests: 1028/1028, including 10 request workflow tests with simulated API responses. Headless Chrome could not start for the viewport check; 360px and desktop browser verification remains for FE-P5-05.

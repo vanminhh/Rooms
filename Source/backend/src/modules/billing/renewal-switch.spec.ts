@@ -1,3 +1,4 @@
+import { billedPeriod } from './billed-period.js';
 import { describe, expect, it, vi } from 'vitest';
 import type { Prisma } from '@prisma/client';
 import { switchRenewal } from './renewal-switch.js';
@@ -56,7 +57,7 @@ describe('BIL-06 renewal switch', () => {
     const { tx, run } = fixture();
     expect(await run()).toBe('SWITCHED');
     expect(tx.invoice.findFirst).toHaveBeenCalledWith(expect.objectContaining({
-      where: { contractId: 10, type: 'MONTHLY', periodNo: 6, status: { not: 'CANCELLED' } } }));
+      where: { contractId: 10, type: 'MONTHLY', periodNo: 6, AND: billedPeriod } }));
     expect(tx.contract.updateMany).toHaveBeenNthCalledWith(1, { where: { id: 10, status: 'ACTIVE' }, data: { status: 'ENDED', endedAt: NOW } });
     expect(tx.contract.updateMany).toHaveBeenNthCalledWith(2, { where: { id: 20, status: 'HOLD' }, data: { status: 'ACTIVE', movedInAt: d('2027-03-01') } });
   });

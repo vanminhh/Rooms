@@ -3,13 +3,17 @@ import { MAILS } from '../../common/i18n/mails.js';
 import type { Mail } from './mailer.service.js';
 
 type Text = Pick<Mail, 'subject' | 'text'>;
-type Kind = 'emailCode' | 'passwordReset' | 'viewingNew' | 'viewingConfirmed'
+type Kind = 'emailCode' | 'passwordReset' | 'viewingNew' | 'viewingConfirmed' | 'invoiceIssued'
   | 'lateReadings' | 'invoiceDueTomorrow' | 'invoiceOverdue' | 'contractExpiringTenant' | 'contractExpiringStaff'
   | 'invoiceReminder' | 'paymentReceived';
 interface TemplateReader {
   setting: { findUnique(args: { where: { key: string }; select: { value: true } }): Promise<{ value: unknown } | null> };
 }
 const defaults: Record<Kind, Partial<Record<Lang, Text>>> = {
+  invoiceIssued: {
+    vi: { subject: 'Hóa đơn {code} đã phát hành', text: 'Số tiền {total}. Hạn thanh toán {dueDate}.\nVietQR: {qr}' },
+    en: { subject: 'Invoice {code} issued', text: 'Amount: {total}. Due date: {dueDate}.\nVietQR: {qr}' },
+  },
   emailCode: { vi: MAILS.verifyCode('vi', '{code}'), en: MAILS.verifyCode('en', '{code}') },
   passwordReset: { vi: MAILS.resetLink('vi', '{url}'), en: MAILS.resetLink('en', '{url}') },
   viewingNew: { vi: {
@@ -58,6 +62,7 @@ const object = (value: unknown): Record<string, unknown> =>
 const placeholders = /\{([a-zA-Z]+)\}/g;
 // AUTH-07/13, VIEW-15/19: custom wording must still carry every required value.
 const requiredPlaceholders: Record<Kind, readonly string[]> = {
+  invoiceIssued: ['code', 'total', 'dueDate', 'qr'],
   emailCode: ['code'],
   passwordReset: ['url'],
   viewingNew: ['guestName', 'guestPhone', 'guestEmail', 'room', 'building', 'time', 'note'],
@@ -70,6 +75,27 @@ const requiredPlaceholders: Record<Kind, readonly string[]> = {
   invoiceReminder: ['code', 'total', 'dueDate'],
   paymentReceived: ['code', 'total'],
 };
+
+export function validEmailTemplates(value: unknown): boolean {
+  const record = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
+  if (!record(value)) return false;
+  return Object.entries(value).every(([name, translations]) => {
+    if (!Object.hasOwn(defaults, name) || !record(translations)) return false;
+    const kind = name as Kind;
+    return Object.entries(translations).every(([lang, template]) => {
+      if ((lang !== 'vi' && lang !== 'en') || !Object.hasOwn(defaults[kind], lang) || !record(template)) return false;
+      if (Object.keys(template).some(k => k !== 'subject' && k !== 'text')) return false;
+      const { subject, text } = template;
+      if (typeof subject !== 'string' || !subject.trim() || typeof text !== 'string' || !text.trim()) return false;
+      const source = defaults[kind][lang]!;
+      const allowed = new Set([...(`${source.subject}\n${source.text}`).matchAll(placeholders)].map(m => m[1]));
+      const content = subject + '\n' + text;
+      const keys = [...content.matchAll(placeholders)].map(m => m[1]);
+      return !/[{}]/.test(content.replace(placeholders, '')) && keys.every(k => allowed.has(k))
+        && requiredPlaceholders[kind].every(k => keys.includes(k));
+    });
+  });
+}
 
 // NOTI-07/08: read only settings.email_templates; missing entries use the recipient's language defaults.
 export async function emailTemplate(db: TemplateReader, kind: Kind, lang: Lang, values: Record<string, string>): Promise<Text> {

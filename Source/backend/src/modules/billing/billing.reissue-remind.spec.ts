@@ -1,3 +1,4 @@
+import { issuedPeriod } from './billed-period.js';
 import { describe, expect, it, vi } from 'vitest';
 import type { AuthUser } from '../../common/guards/auth.decorators.js';
 import { BillingService } from './billing.service.js';
@@ -45,7 +46,7 @@ describe('BIL-12 reissue refusals', () => {
   it('[ASSUMPTION] BIL-12: once the next period is issued, its opening (this closing) reading cannot be corrected', async () => {
     const { service, tx } = setup({ type: 'MONTHLY', status: 'UNPAID' }, { nextIssued: true });
     await expect(reissue(service, [{ kind: 'ELECTRIC', value: 120 }])).rejects.toMatchObject({ status: 409 });
-    expect(tx.invoice.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ periodNo: 3, status: { in: ['UNPAID', 'PAID', 'SETTLED'] } }) }));
+    expect(tx.invoice.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ periodNo: 3, ...issuedPeriod }) }));
     expect(tx.invoice.updateMany).not.toHaveBeenCalled();
   });
 });

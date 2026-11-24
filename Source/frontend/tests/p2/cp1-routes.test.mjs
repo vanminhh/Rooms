@@ -84,6 +84,9 @@ function compileRoutes() {
     '../pages/staff/MetersPage': stub('MetersPage'),
     '../pages/staff/InvoicesPage': stub('InvoicesPage'),
     '../pages/staff/InvoiceDetailPage': stub('InvoiceDetailPage'),
+    '../pages/OperationsPage': stub('OperationsPage'),
+    '../pages/staff/RequestsPage': stub('RequestsPage'),
+    '../pages/staff/RequestRenewalPage': stub('RequestRenewalPage'),
     '../pages/staff/BankTransactionsPage': stub('BankTransactionsPage'),
     '../pages/tenant/TenantContractsPage': stub('TenantContractsPage'),
     '../pages/tenant/TenantContractDetailPage': stub('TenantContractDetailPage'),
@@ -179,4 +182,29 @@ test('FE-P4-01/AUTH-06/BANK-05: money pages sit in the staff area; /ql/giao-dich
   const bossGroup = staffChildren.find(r => r.element?.type === mods['./RequireAuth'].RequireAuth)
   assert.deepEqual(bossGroup.element.props.allow, ['BOSS'])
   assert.equal(Object.fromEntries(bossGroup.children.map(r => [r.path, r.element.type]))['giao-dich'], mods['../pages/staff/BankTransactionsPage'].BankTransactionsPage)
+})
+
+test('FE-P5-01: direct URLs are reachable only by the intended roles', () => {
+  const { routes } = compileRoutes()
+  const tenant = routes.find(r => r.path === '/thue')
+  const staff = routes.find(r => r.path === '/ql')
+  const boss = staff.children[0].children.find(r => r.element.props.allow)
+  const homes = { TENANT: '/thue', BOSS: '/ql', MANAGER: '/ql', GUEST: '/toi' }
+  for (const [area, group, paths, allowed] of [
+    [tenant, tenant.children[0], ['thong-bao', 'yeu-cau', 'yeu-cau/:id'], ['TENANT']],
+    [staff, staff.children[0], ['thong-bao', 'yeu-cau', 'bao-cao'], ['MANAGER', 'BOSS']],
+    [staff, boss, ['nhat-ky', 'cai-dat'], ['BOSS']],
+  ]) {
+    for (const path of paths) {
+      assert.ok(group.children.some(r => r.path === path), path)
+      if (group === boss) assert.ok(!staff.children[0].children.some(r => r.path === path))
+      const location = { pathname: area.path + '/' + path.replace(':id', '42'), search: '' }
+      for (const [role, home] of Object.entries(homes)) {
+        const user = { role, mustChangePassword: false }
+        const redirect = guards.guardRedirect(user, location, area.element.props.allow)
+          ?? (group === boss ? guards.guardRedirect(user, location, boss.element.props.allow) : null)
+        assert.equal(redirect, allowed.includes(role) ? null : home, role + ' ' + location.pathname)
+      }
+    }
+  }
 })

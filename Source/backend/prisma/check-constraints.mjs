@@ -64,7 +64,27 @@ const IDEM = `INSERT INTO pricing_idempotency_keys (actor_id, key, route, reques
 const VCALL = `INSERT INTO viewings (room_id,guest_name,guest_phone,visit_at,updated_at,status,deposit_cancelled_by_contract_id,called_by_id,called_at) VALUES`;
 
 // [nhóm, tình huống, SQL, kết quả mong đợi: 'ok' hoặc tên ràng buộc/mã lỗi phải xuất hiện]
+const reviewFixture = `INSERT INTO requests (id, contract_id, type, status, title, created_by_id, updated_at)
+  VALUES (710, 1, 'INCIDENT', 'CLOSED', 'Repair', 4, now());`;
+const reviewUpdate = values => reviewFixture + ' UPDATE requests SET ' + values + ' WHERE id=710';
 const cases = [
+  ['Archive', 'Reject timestamp without actor', 'UPDATE invoices SET archived_at=now() WHERE id=1', 'invoices_archive_pair'],
+  ['Archive', 'Reject actor without timestamp', 'UPDATE invoices SET archived_by_id=1 WHERE id=1', 'invoices_archive_pair'],
+  ['Archive', 'Reject missing actor', 'UPDATE invoices SET archived_at=now(), archived_by_id=-1 WHERE id=1', 'invoices_archived_by_id_fkey'],
+  ['Archive', 'Accept timestamp and actor together', 'UPDATE invoices SET archived_at=now(), archived_by_id=1 WHERE id=1', 'ok'],
+  ['REQ-09', 'Reject zero stars', reviewUpdate('review_rating=0'), 'requests_review_rating'],
+  ['REQ-09', 'Reject six stars', reviewUpdate('review_rating=6'), 'requests_review_rating'],
+  ['REQ-09', 'Reject rating on a renewal', reviewUpdate("type='RENEW', status='APPROVED', review_rating=3"), 'requests_review_rating'],
+  ['REQ-09', 'Accept one star', reviewUpdate('review_rating=1, review_at=now()'), 'ok'],
+  ['REQ-09', 'Reject hide reason without time', reviewUpdate("review_rating=4, review_hidden_reason='private'"), 'requests_review_hide_pair'],
+  ['REQ-09', 'Reject hide time without reason', reviewUpdate('review_rating=4, review_hidden_at=now()'), 'requests_review_hide_pair'],
+  ['REQ-09', 'Reject hiding an unrated repair', reviewUpdate("review_hidden_at=now(), review_hidden_reason='private'"), 'requests_review_hide_requires_rating'],
+  ['REQ-09', 'Reject unknown moderator', reviewUpdate("review_rating=5, review_hidden_at=now(), review_hidden_reason='private', review_hidden_by_id=-10"), 'requests_review_hidden_by_id_fkey'],
+  ['REQ-09', 'Keep hidden five-star review when moderator is deleted',
+    reviewUpdate("review_rating=5, review_hidden_at=now(), review_hidden_reason='private', review_hidden_by_id=6") +
+    `; DELETE FROM users WHERE id=6;
+     DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM requests WHERE id=710 AND review_rating=5 AND review_hidden_by_id IS NULL
+       AND review_hidden_reason='private' AND review_hidden_at IS NOT NULL) THEN RAISE EXCEPTION 'hidden review lost'; END IF; END $$`, 'ok'],
   ['BIL-08', 'Late September invoice keeps October month-end', "INSERT INTO invoices (contract_id,type,period_no,period_start,period_end,status,issue_date,due_date,updated_at) VALUES (1,'MONTHLY',1,'2026-09-15','2026-09-30','UNPAID','2026-11-02','2026-10-31',now())", 'ok'],
   ['BIL-08', 'Reject arbitrary backdated deadline', "INSERT INTO invoices (contract_id,type,period_no,period_start,period_end,status,issue_date,due_date,updated_at) VALUES (1,'MONTHLY',1,'2026-09-15','2026-09-30','UNPAID','2026-11-02','2026-10-30',now())", 'invoices_issued_dates'],
   ['BIL-08', 'Deposit still requires ordered dates', "UPDATE invoices SET due_date=issue_date-1 WHERE id=1", 'invoices_issued_dates'],

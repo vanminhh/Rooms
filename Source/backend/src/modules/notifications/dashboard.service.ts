@@ -1,3 +1,4 @@
+import { billedPeriod } from '../billing/billed-period.js';
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { addDays, formatDateOnly, todayHanoi } from '../../common/date/today.js';
@@ -146,7 +147,7 @@ export class DashboardService {
       // BIL-05/BIL-21: due periods the job no longer creates (over 7 days for ACTIVE; any for ENDED without settlement).
       const open = await tx.contract.findMany({ where: { AND: [contract, { OR: [{ status: 'ACTIVE' }, { status: 'ENDED', settlement: null }] }] },
         select: { ...CONTRACT_REF, status: true, startDate: true, termMonths: true,
-          invoices: { where: { type: 'MONTHLY', status: { not: 'CANCELLED' } }, select: { periodNo: true } } } });
+          invoices: { where: { type: 'MONTHLY', AND: billedPeriod }, select: { periodNo: true } } } });
       const missed = open.flatMap(({ status, startDate, termMonths, invoices, ...ref }) => {
         const plan = monthlyDraftPlan({ startDate, termMonths }, invoices.map(i => i.periodNo), today);
         return (status === 'ACTIVE' ? plan.missedOld : [...plan.missedOld, ...plan.create]).map((p): PeriodItem => ({

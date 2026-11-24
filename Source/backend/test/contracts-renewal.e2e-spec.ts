@@ -5,6 +5,8 @@ import { contractEndDate, contractPeriods } from '../src/common/date/period.js';
 import { PrismaService } from '../src/common/prisma/prisma.service.js';
 import { TokenService } from '../src/modules/auth/token.service.js';
 import { switchRenewal } from '../src/modules/billing/renewal-switch.js';
+import { ReportsService } from '../src/modules/reports/reports.service.js';
+import { reportRange } from '../src/modules/reports/report-math.js';
 import { uniqueBuildingCode, uniquePhone, e2eName, newRunId } from '../scripts/e2e/run.js';
 import { rollbackPrismaFacade } from './fixtures/rollback-prisma.js';
 
@@ -28,7 +30,7 @@ it('BE-P5-09 CON-17..19: create, print, sign and switch only the fixture renewal
       await db.$transaction(async tx => {
         const { AppModule } = await import('../src/app.module.js');
         const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
-          .overrideProvider(PrismaService).useValue(rollbackPrismaFacade(tx)).compile();
+          .overrideProvider(PrismaService).useValue(rollbackPrismaFacade(tx, 'RepeatableRead')).compile();
         const app = moduleRef.createNestApplication();
         configureApp(app);
         try {
@@ -74,6 +76,12 @@ it('BE-P5-09 CON-17..19: create, print, sign and switch only the fixture renewal
           expect(renewalSigned.body.data).toMatchObject({ status: 'HOLD', depositInvoice: null });
           expect(renewalSigned.body.data).not.toHaveProperty('temporaryPassword');
           const switchDate = new Date(renewal.body.data.startDate);
+          const deposit = await tx.invoice.create({ data: { contractId: start.id, type: 'DEPOSIT', status: 'UNPAID',
+            total: start.deposit, issueDate: handoverDay, dueDate: handoverDay } });
+          await tx.payment.create({ data: { invoiceId: deposit.id, amount: start.deposit, paidAt: handoverDay,
+            recordedById: manager.id, method: 'CASH', source: 'MANUAL' } });
+          const report = () => app.get(ReportsService).revenue([building.id], false, reportRange());
+          expect((await report()).depositsHeld).toBe(start.deposit);
           expect(await switchRenewal(tx, renewalId, switchDate)).toBe('WAITING_FINAL_INVOICE');
           const periods = contractPeriods(handoverDay, 3);
           const last = periods[periods.length - 1];
@@ -85,13 +93,14 @@ it('BE-P5-09 CON-17..19: create, print, sign and switch only the fixture renewal
               readOn: last.periodEnd, readById: manager.id } });
           }
           expect(await switchRenewal(tx, renewalId, switchDate)).toBe('SWITCHED');
+          expect((await report()).depositsHeld).toBe(start.deposit);
           expect(await switchRenewal(tx, renewalId, switchDate)).toBe('CHANGED');
           expect(await tx.occupant.count({ where: { contractId: renewalId, isSigner: true } })).toBe(1);
           expect(await tx.meterReading.count({ where: { contractId: renewalId, isOpening: true } })).toBe(2);
           expect(await tx.invoice.count({ where: { contractId: renewalId, type: 'DEPOSIT' } })).toBe(0);
           throw rollback;
         } finally { await app.close(); }
-      }, { timeout: 240000, maxWait: 10000 });
+      }, { isolationLevel: 'RepeatableRead', timeout: 240000, maxWait: 10000 });
     } catch (error) {
       if (error !== rollback) throw error;
     }

@@ -729,7 +729,7 @@ test('D-5: clicking "Tìm phòng" in the header changes the route to /phong with
 test('FE-LOGIN-10, FE-P3-01, Q2-A: TenantLayout menu includes "Hợp đồng" alongside overview, account and viewings; no building line; no footer; inside .rooms-theme with the kit logo', async () => {
   const app = await mount('/thue', { session: 'tenant' })
   await until(() => app.text().includes('Xin chào'), 'tenant home')
-  assert.deepEqual(navLinks(app), [['Tổng quan', '/thue'], ['Hợp đồng', '/thue/hop-dong'], ['Hóa đơn', '/thue/hoa-don'], ['Tài khoản', '/thue/tai-khoan'], ['Lịch hẹn xem phòng', '/toi']]) // FE-P3-01 adds contracts, FE-P4-10 invoices; EX-2 keeps the guest area link.
+  assert.deepEqual(navLinks(app), [['Tổng quan', '/thue'], ['Hợp đồng', '/thue/hop-dong'], ['Hóa đơn', '/thue/hoa-don'], ['Thông báo', '/thue/thong-bao'], ['Yêu cầu', '/thue/yeu-cau'], ['Tài khoản', '/thue/tai-khoan'], ['Lịch hẹn xem phòng', '/toi']]) // FE-P3-01 adds contracts, FE-P4-10 invoices; EX-2 keeps the guest area link.
   assert.ok(!app.text().includes('Tòa đang quản lý'))
   assert.ok(!app.text().includes('Chưa được giao tòa nào'))
   assert.equal(find(app.container, n => n.tagName === 'FOOTER').length, 0)
@@ -740,8 +740,8 @@ test('FE-LOGIN-10, FE-P3-01, Q2-A: TenantLayout menu includes "Hợp đồng" al
 })
 
 test('FE-LOGIN-10, FE-P3-01, Q2-A, Q5-A: StaffLayout menu follows role (manager 10 items, Boss 13), no read-only building line, no footer', async () => {
-  const common = [['Việc hôm nay', '/ql'], ['Tòa nhà', '/ql/toa-nha'], ['Phòng', '/ql/phong'], ['Đơn giá', '/ql/don-gia'], ['Lịch hẹn', '/ql/lich-hen'], ['Hợp đồng', '/ql/hop-dong'], ['Chốt chỉ số', '/ql/chi-so'], ['Hóa đơn', '/ql/hoa-don'], ['Tra cứu xe', '/ql/xe'], ['Tài khoản', '/ql/tai-khoan']]
-  const boss = [['Việc hôm nay', '/ql'], ['Tòa nhà', '/ql/toa-nha'], ['Nhân sự', '/ql/nhan-su'], ['Phòng', '/ql/phong'], ['Đơn giá', '/ql/don-gia'], ['Duyệt giá', '/ql/duyet-gia'], ['Lịch hẹn', '/ql/lich-hen'], ['Hợp đồng', '/ql/hop-dong'], ['Chốt chỉ số', '/ql/chi-so'], ['Hóa đơn', '/ql/hoa-don'], ['Giao dịch ngân hàng', '/ql/giao-dich'], ['Tra cứu xe', '/ql/xe'], ['Tài khoản', '/ql/tai-khoan']]
+  const common = [['Việc hôm nay', '/ql'], ['Tòa nhà', '/ql/toa-nha'], ['Phòng', '/ql/phong'], ['Đơn giá', '/ql/don-gia'], ['Lịch hẹn', '/ql/lich-hen'], ['Hợp đồng', '/ql/hop-dong'], ['Chốt chỉ số', '/ql/chi-so'], ['Hóa đơn', '/ql/hoa-don'], ['Tra cứu xe', '/ql/xe'], ['Yêu cầu', '/ql/yeu-cau'], ['Thông báo', '/ql/thong-bao'], ['Báo cáo', '/ql/bao-cao'], ['Tài khoản', '/ql/tai-khoan']]
+  const boss = [['Việc hôm nay', '/ql'], ['Tòa nhà', '/ql/toa-nha'], ['Nhân sự', '/ql/nhan-su'], ['Phòng', '/ql/phong'], ['Đơn giá', '/ql/don-gia'], ['Duyệt giá', '/ql/duyet-gia'], ['Lịch hẹn', '/ql/lich-hen'], ['Hợp đồng', '/ql/hop-dong'], ['Chốt chỉ số', '/ql/chi-so'], ['Hóa đơn', '/ql/hoa-don'], ['Giao dịch ngân hàng', '/ql/giao-dich'], ['Tra cứu xe', '/ql/xe'], ['Yêu cầu', '/ql/yeu-cau'], ['Thông báo', '/ql/thong-bao'], ['Báo cáo', '/ql/bao-cao'], ['Nhật ký', '/ql/nhat-ky'], ['Cài đặt', '/ql/cai-dat'], ['Tài khoản', '/ql/tai-khoan']]
   for (const [session, links] of [['manager', common], ['managerEmpty', common], ['bossThree', boss], ['boss', boss]]) {
     const app = await mount('/ql', { session })
     await until(() => app.text().includes('Xin chào'), `staff home ${session}`)

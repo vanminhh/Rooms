@@ -1,3 +1,4 @@
+import { issuedPeriod } from './billed-period.js';
 import { BadRequestException, ConflictException, ForbiddenException, HttpException, HttpStatus, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { MeterReading, Prisma } from '@prisma/client';
 import { formatDateOnly, formatDateVn, HANOI_OFFSET_MS, todayHanoi } from '../../common/date/today.js';
@@ -37,6 +38,30 @@ export class BillingService {
   private readonly logger = new Logger(BillingService.name);
 
   constructor(private readonly prisma: PrismaService, private readonly audit: AuditService, private readonly mailer: MailerService) {}
+
+  async overdueAction(actor: AuthUser, id: number, action: 'archive' | 'cancel', reason?: string, ip?: string) {
+    if (actor.role !== 'BOSS') throw new ForbiddenException(ErrorCode.FORBIDDEN);
+    if (action === 'cancel' && !reason?.trim()) throw new BadRequestException({
+      code: ErrorCode.VALIDATION_FAILED, fields: { reason: 'Cần nhập lý do hủy' },
+    });
+    return this.prisma.$transaction(async tx => {
+      await tx.$queryRaw`SELECT id FROM invoices WHERE id=${id} FOR UPDATE`;
+      const row = await tx.invoice.findUnique({ where: { id }, select: {
+        type: true, status: true, dueDate: true, archivedAt: true,
+      } });
+      if (!row) throw new NotFoundException(ErrorCode.NOT_FOUND);
+      if (row.type !== 'MONTHLY' || row.status !== 'UNPAID' || !row.dueDate || row.dueDate >= todayHanoi()) {
+        throw new ConflictException(ErrorCode.CONFLICT_STATE);
+      }
+      if (action === 'archive' && row.archivedAt) return { id, status: row.status, archivedAt: row.archivedAt };
+      const updated = await tx.invoice.update({ where: { id }, data: action === 'archive'
+        ? { archivedAt: new Date(), archivedById: actor.id } : { status: 'CANCELLED', cancelReason: reason!.trim() },
+        select: { id: true, status: true, archivedAt: true, cancelReason: true } });
+      await this.audit.log(actor.id, 'invoice.' + action, 'invoice', id, { status: row.status, archivedAt: row.archivedAt?.toISOString() ?? null },
+        { status: updated.status, archivedAt: updated.archivedAt?.toISOString() ?? null, cancelReason: updated.cancelReason }, ip, tx);
+      return updated;
+    });
+  }
 
   // SCOPE-02: token scope, then the building's current assignment. Assignment writers take the mapping lock.
   private async assertInvoiceScope(tx: Prisma.TransactionClient, actor: AuthUser, id: number) {
@@ -123,7 +148,7 @@ export class BillingService {
         // [ASSUMPTION] The closing reading is the next period's opening: once that period is issued, correcting it
         // would silently change an invoice the tenant already has, so reissue the later period first.
         if (changes.length && await tx.invoice.findFirst({ where: { contractId: old.contractId, type: 'MONTHLY',
-          periodNo: old.periodNo + 1, status: { in: ['UNPAID', 'PAID', 'SETTLED'] } }, select: { id: true } })) {
+          periodNo: old.periodNo + 1, ...issuedPeriod }, select: { id: true } })) {
           throw new ConflictException(ErrorCode.CONFLICT_STATE);
         }
         const cancelled = await tx.invoice.updateMany({ where: { id, status: old.status }, data: { status: 'CANCELLED', cancelReason: dto.reason.trim() } });

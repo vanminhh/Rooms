@@ -1,5 +1,6 @@
+import { issuedPeriod } from '../billing/billed-period.js';
 import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
-import type { InvoiceStatus, MeterKind, Prisma } from '@prisma/client';
+import type { MeterKind, Prisma } from '@prisma/client';
 import { addDays, parseDateOnly, todayHanoi } from '../../common/date/today.js';
 import { ErrorCode } from '../../common/errors/error-code.js';
 import type { AuthUser } from '../../common/guards/auth.decorators.js';
@@ -57,7 +58,7 @@ export async function saveReading(tx: Prisma.TransactionClient, actor: AuthUser,
     where: { id: invoiceId, type: 'MONTHLY', contract: { roomId }, periodEnd: { lte: addDays(readOn, 1) },
       meterReadings: { none: { kind } },
       OR: [{ status: 'DRAFT' }, ...(kind === 'WATER' ? [{
-        status: { in: ['UNPAID', 'PAID', 'SETTLED'] as InvoiceStatus[] }, contract: { building: { waterMode: 'PER_PERSON' as const } },
+        ...issuedPeriod, contract: { building: { waterMode: 'PER_PERSON' as const } },
       }] : [])] },
     take: 2, select: { id: true, contractId: true, status: true, periodNo: true },
   });
@@ -75,7 +76,7 @@ export async function saveReading(tx: Prisma.TransactionClient, actor: AuthUser,
     if (!contract) conflict();
     // Historical replacements within a closed reading interval require invoice reissue.
     const billed = await tx.meterReading.findFirst({ where: { contractId: contract.id, kind, readOn: { gte: readOn },
-      invoice: { status: { in: ['UNPAID', 'PAID', 'SETTLED'] } } }, select: { id: true } });
+      invoice: { ...issuedPeriod } }, select: { id: true } });
     if (billed) conflict();
     contractId = contract.id;
   }

@@ -1,3 +1,4 @@
+import { billedPeriod } from './billed-period.js';
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { contractPeriods } from '../../common/date/period.js';
 import { toDateOnly } from '../../common/date/today.js';
@@ -6,7 +7,7 @@ export type RenewalOutcome = 'SWITCHED' | 'WAITING_FINAL_INVOICE' | 'WAITING_HAN
 export interface RenewalSummary { candidates: number; switched: number; waiting: number }
 
 // BIL-06, CON-18, CON-19 (A-09, Q-P4-15). One renewal per transaction; both contracts are locked and re-read.
-// The old contract stays ACTIVE until its period-N MONTHLY invoice (any status but CANCELLED) and the handover
+// The old contract stays ACTIVE until its period-N MONTHLY invoice (including a waived issued period) and the handover
 // readings on it exist: ELECTRIC (kWh) and WATER (m³) in every building; PER_PERSON water is read but not billed (MTR-06).
 export async function switchRenewal(tx: Prisma.TransactionClient, renewalId: number, today: Date, now = new Date()): Promise<RenewalOutcome> {
   const renewal = await tx.contract.findUnique({ where: { id: renewalId }, select: { previousContractId: true, roomId: true } });
@@ -20,7 +21,7 @@ export async function switchRenewal(tx: Prisma.TransactionClient, renewalId: num
   if (next.status !== 'HOLD' || !next.signedAt || next.startDate > today || old.status !== 'ACTIVE') return 'CHANGED';
 
   const lastNo = contractPeriods(old.startDate, old.termMonths).length;
-  const final = await tx.invoice.findFirst({ where: { contractId: old.id, type: 'MONTHLY', periodNo: lastNo, status: { not: 'CANCELLED' } },
+  const final = await tx.invoice.findFirst({ where: { contractId: old.id, type: 'MONTHLY', periodNo: lastNo, AND: billedPeriod },
     include: { meterReadings: true } });
   if (!final) return 'WAITING_FINAL_INVOICE';
   const handover = final.meterReadings.filter(r => !r.isOpening);

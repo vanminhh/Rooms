@@ -1,3 +1,4 @@
+import { billedPeriod } from '../billing/billed-period.js';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { contractPeriods } from '../../common/date/period.js';
 import { compareDates, formatDateOnly, todayHanoi } from '../../common/date/today.js';
@@ -23,7 +24,7 @@ export class MissedInvoiceService {
       if (periodNo > periods.length) throw new BadRequestException({ code: ErrorCode.VALIDATION_FAILED, fields: { periodNo: 'Kỳ không hợp lệ' } });
       const period = periods[periodNo - 1];
       const open = c.status === 'ACTIVE' || (c.status === 'ENDED' && !c.settlement);
-      const exists = await tx.invoice.count({ where: { contractId, type: 'MONTHLY', periodNo, status: { not: 'CANCELLED' } } });
+      const exists = await tx.invoice.count({ where: { contractId, type: 'MONTHLY', periodNo, AND: billedPeriod } });
       if (!open || compareDates(period.billingDate, today) > 0 || exists > 0) throw new ConflictException(ErrorCode.CONFLICT_STATE);
       const invoice = await tx.invoice.create({ data: draftData(contractId, period, actor.id), select: { id: true } });
       const view = { invoiceId: invoice.id, contractId, periodNo, periodStart: formatDateOnly(period.periodStart),

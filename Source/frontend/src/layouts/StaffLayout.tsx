@@ -31,6 +31,13 @@ export function StaffLayout() {
     { label: 'Hóa đơn', href: '/ql/hoa-don' },
     ...(isBoss ? [{ label: 'Giao dịch ngân hàng', href: '/ql/giao-dich' }] : []),
     { label: 'Tra cứu xe', href: '/ql/xe' },
+    { label: 'Yêu cầu', href: '/ql/yeu-cau' },
+    { label: 'Thông báo', href: '/ql/thong-bao' },
+    { label: 'Báo cáo', href: '/ql/bao-cao' },
+    ...(isBoss ? [
+      { label: 'Nhật ký', href: '/ql/nhat-ky' },
+      { label: 'Cài đặt', href: '/ql/cai-dat' },
+    ] : []),
     { label: 'Tài khoản', href: '/ql/tai-khoan' },
   ]
 

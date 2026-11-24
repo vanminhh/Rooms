@@ -14,6 +14,7 @@ import { ContractsModule } from '../../modules/contracts/contracts.module.js';
 import { BillingModule } from '../../modules/billing/billing.module.js';
 import { MetersModule } from '../../modules/meters/meters.module.js';
 import { RequestsModule } from '../../modules/requests/requests.module.js';
+import { ReportsModule } from '../../modules/reports/reports.module.js';
 import { BankModule } from '../../modules/bank/bank.module.js';
 
 // The real PrismaService is built from the generated client (it does not connect
@@ -52,7 +53,7 @@ describe('BE-LOGIN-05: PrismaService', () => {
     // ScheduleModule (cron) is registered only outside tests.
     expect(Reflect.getMetadata('imports', AppModule)).toEqual([
       PrismaModule, AuthModule, SettingsModule, FilesModule, BuildingsModule,
-      RoomsModule, PricingModule, ViewingsModule, NotificationsModule, ContractsModule, BillingModule, MetersModule, BankModule, RequestsModule,
+      RoomsModule, PricingModule, ViewingsModule, NotificationsModule, ContractsModule, BillingModule, MetersModule, BankModule, RequestsModule, ReportsModule,
     ]);
     expect(Reflect.getMetadata('controllers', AppModule)).toBeUndefined();
     expect(Reflect.getMetadata('providers', AppModule)).toBeUndefined();

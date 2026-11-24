@@ -25,9 +25,9 @@ Out: reports, audit, settings pages (P5-7), tenant pages (P5-8).
 
 ## Tasks
 
-- [ ] **FE-P5-01** Route and menu frame of the phase: `/ql/yeu-cau`, `/ql/thong-bao`, `/ql/bao-cao`, `/ql/nhat-ky` (Boss), `/ql/cai-dat` (Boss), `/thue/thong-bao`, `/thue/yeu-cau`, `/thue/yeu-cau/:id`; stub pages; update every test reading `routes[0..2]` and every expected menu, incl. `auth-login-flow`.
+- [x] **FE-P5-01** Route and menu frame of the phase: `/ql/yeu-cau`, `/ql/thong-bao`, `/ql/bao-cao`, `/ql/nhat-ky` (Boss), `/ql/cai-dat` (Boss), `/thue/thong-bao`, `/thue/yeu-cau`, `/thue/yeu-cau/:id`; stub pages; update every test reading `routes[0..2]` and every expected menu, incl. `auth-login-flow`.
   Done when: `npm run test:components` and `npm run build` pass; a manager opening `/ql/cai-dat` is stopped by the guard, not just a hidden menu.
-- [ ] **FE-P5-02** `/ql/yeu-cau`: 3 columns "Chờ xử lý / Đang xử lý / Hoàn thành", shared status labels, filters, detail; approve/reject (confirm dialog, note required on reject), cost for incidents, escalate; D-14 warning shown as the BE sends it; approving RENEW opens the prefilled renewal form (D-45 (15)).
+- [x] **FE-P5-02** `/ql/yeu-cau`: 3 columns "Chờ xử lý / Đang xử lý / Hoàn thành", shared status labels, filters, detail; approve/reject (confirm dialog, note required on reject), cost for incidents, escalate; D-14 warning shown as the BE sends it; approving RENEW opens the prefilled renewal form (D-45 (15)).
   Done when: UI-03 states (loading/empty/error/data); `PENDING_REQUEST_EXISTS` and `CONFLICT_STATE` show `error.message`; no money math in the FE.
 - [ ] **FE-P5-03** `/ql/thong-bao`: send to a room / a building / all buildings (Boss only), confirm dialog, sent list with "đã đọc / tổng"; no edit or delete (D-45 (11)).
   Done when: a manager has no "mọi tòa" option; the list refreshes after sending.

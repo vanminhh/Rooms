@@ -11,7 +11,7 @@ import { AuditService } from '../audit/audit.service.js';
 import { BankTransactionsService } from '../bank/bank-transactions.service.js';
 import { BillingService } from '../billing/billing.service.js';
 import type { Mail } from '../mailer/mailer.service.js';
-import { formatDateOnly, parseDateOnly, todayHanoi } from '../../common/date/today.js';
+import { addDays, formatDateOnly, parseDateOnly, todayHanoi } from '../../common/date/today.js';
 import { contractPeriods, proratedAmount } from '../../common/date/period.js';
 import { ContractOccupantsService } from '../contracts/contract-occupants.service.js';
 import { ContractVehiclesService } from '../contracts/contract-vehicles.service.js';
@@ -41,14 +41,19 @@ function plannedMoveOut(payload: Prisma.JsonObject) {
 }
 
 function view(row: Request, tenantView = false) {
+  const { reviewHiddenReason, reviewHiddenById, ...visible } = row;
+  const result = {
+    ...visible, reviewComment: row.reviewHiddenAt ? null : row.reviewComment,
+    ...(tenantView ? {} : { reviewHiddenReason, reviewHiddenById }),
+  };
   const payload = row.payload;
-  if (row.type !== 'OCCUPANT_CHANGE' || !payload || Array.isArray(payload) || typeof payload !== 'object') return row;
+  if (row.type !== 'OCCUPANT_CHANGE' || !payload || Array.isArray(payload) || typeof payload !== 'object') return result;
   const add = Array.isArray(payload.add) ? payload.add.map(person => {
     if (!person || typeof person !== 'object' || Array.isArray(person)) return {};
     const { fullName, phone, dateOfBirth, moveInDate, idNumberLast4 } = person;
     return { fullName, phone, dateOfBirth, moveInDate, ...(tenantView ? {} : { idNumberLast4 }) };
   }) : [];
-  return { ...row, payload: { add, remove: payload.remove } };
+  return { ...result, payload: { add, remove: payload.remove } };
 }
 
 const statusText: Record<RequestStatus, [string, string]> = {
@@ -209,10 +214,43 @@ export class RequestsService {
     return paginated(rows.map(({ contract, ...row }) => {
       if (row.type === 'MOVE_OUT' && row.status === 'PENDING') {
         const payload = row.payload as Prisma.JsonObject;
-        return { ...row, payload: { ...payload, ...moveOutWarning(contract, plannedMoveOut(payload)) } };
+        return { ...view(row, tenantView), payload: { ...payload, ...moveOutWarning(contract, plannedMoveOut(payload)) } };
       }
       return view(row, tenantView);
     }), page, limit, total);
+  }
+
+  async review(actor: AuthUser, id: number, dto: { rating: number; comment?: string }, version?: string) {
+    return this.db.$transaction(async tx => {
+      await tx.$queryRaw`SELECT id FROM requests WHERE id = ${id} AND created_by_id = ${actor.id} FOR UPDATE`;
+      const row = await tx.request.findFirst({ where: { id, createdById: actor.id, contract: { tenantId: actor.id } } });
+      if (!row) throw missing();
+      if (row.type !== 'INCIDENT' || row.status !== 'CLOSED') throw conflict();
+      const now = new Date();
+      const previous = row.reviewUpdatedAt ?? row.reviewAt;
+      if (row.reviewAt && todayHanoi(now) >= addDays(todayHanoi(row.reviewAt), 7)) throw conflict();
+      if (version !== (previous ? '"' + previous.toISOString() + '"' : undefined)) throw conflict();
+      const updated = await tx.request.update({ where: { id }, data: {
+        reviewRating: dto.rating, reviewComment: dto.comment?.trim() || null,
+        ...(previous ? { reviewUpdatedAt: new Date(Math.max(now.getTime(), previous.getTime() + 1)) } : { reviewAt: now }),
+      } });
+      return view(updated, true);
+    });
+  }
+
+  async hideReview(actor: AuthUser, id: number, reason: string, ip?: string) {
+    return this.db.$transaction(async tx => {
+      const row = await this.staffRequest(tx, actor, id);
+      if (row.type !== 'INCIDENT' || row.status !== 'CLOSED' || !row.reviewComment || row.reviewHiddenAt) throw conflict();
+      const now = new Date();
+      const updated = await tx.request.update({ where: { id }, data: {
+        reviewHiddenReason: reason, reviewHiddenAt: now, reviewHiddenById: actor.id,
+      } });
+      await this.audit.log(actor.id, 'request.review_hide', 'request', id,
+        { hidden: false, rating: row.reviewRating, comment: row.reviewComment },
+        { hidden: true, reason, hiddenAt: now.toISOString() }, ip, tx);
+      return view(updated);
+    });
   }
 
   async tenantChange(actor: AuthUser, id: number, action: 'cancel' | 'confirm' | 'reopen') {
