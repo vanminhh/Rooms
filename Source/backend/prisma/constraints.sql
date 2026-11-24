@@ -66,8 +66,9 @@ ALTER TABLE contracts ADD CONSTRAINT contracts_active_ready CHECK (status <> 'AC
 ALTER TABLE contracts ADD CONSTRAINT contracts_not_self_renewal CHECK (previous_contract_id IS DISTINCT FROM id);
 ALTER TABLE contracts ADD CONSTRAINT contracts_signed_scan_asset_id_nonblank
   CHECK (signed_scan_asset_id IS NULL OR signed_scan_asset_id ~ '[^[:space:]]');
--- Mỗi phòng tối đa 1 hợp đồng đang giữ chỗ hoặc đang hiệu lực
-CREATE UNIQUE INDEX contracts_one_open_per_room ON contracts (room_id) WHERE status IN ('HOLD', 'ACTIVE');
+-- D-45 (1): Gia hạn HOLD có thể chờ cùng hợp đồng ACTIVE của phòng.
+CREATE UNIQUE INDEX contracts_one_open_per_room ON contracts (room_id)
+  WHERE status = 'ACTIVE' OR (status = 'HOLD' AND previous_contract_id IS NULL);
 
 -- Người ký hợp đồng phải là tài khoản TENANT
 CREATE FUNCTION check_contract_tenant() RETURNS trigger AS $$

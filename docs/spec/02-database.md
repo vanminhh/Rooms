@@ -27,7 +27,7 @@ Source files (verified): [schema.prisma](../../Source/backend/prisma/schema.pris
 | | `rate_plans` | Dated rate for ELECTRIC, WATER or a SERVICE | service_id iff kind = SERVICE; 1 PENDING per (building, kind, service); 1 APPROVED per day |
 | | `rate_tiers` | Tiers of a rate plan | UK (rate_plan_id, tier_no); `up_to` null = last tier |
 | Contracts | `viewings` | Viewing appointments | UK contract_id; phone CHECK |
-| | `contracts` | Central table | UK code; composite FK to room; trigger tenant is TENANT; 1 HOLD/ACTIVE per room; term ≥ 3; ACTIVE needs signed_at + moved_in_at; UK previous_contract_id |
+| | `contracts` | Central table | UK code; composite FK to room; trigger tenant is TENANT; term ≥ 3; ACTIVE needs signed_at + moved_in_at; UK previous_contract_id. M1 limits each room to one ACTIVE or initial HOLD contract and lets a renewal on HOLD coexist with its ACTIVE predecessor. |
 | | `contract_services` | Services chosen at signing | same building |
 | | `occupants` | People living in the room incl. signer | 1 signer per contract |
 | | `vehicles` | Registered vehicles | same building; plate unique while active |
@@ -45,7 +45,7 @@ Source files (verified): [schema.prisma](../../Source/backend/prisma/schema.pris
 
 ## Planned changes
 
-The EX-1, EX-5 and EX-6 changes below are implemented and included in the owner-accepted Phase Extra (16/11/2026); the table retains their planning history. Phase 3/5 entries remain future work. Applied migration evidence is in `docs/phase-extra-home101/PROGRESS.md`. Future schema changes still require approval before application, and every change adds scenarios to `check-constraints.mjs`.
+The EX-1, EX-5 and EX-6 changes below are included in the owner-accepted Phase Extra (16/11/2026). Applied migration evidence for Phase Extra is in `docs/phase-extra-home101/PROGRESS.md`. Later phases record migration and deployment evidence in their own progress files. Future schema changes still require approval before application, and every change adds scenarios to `check-constraints.mjs`.
 
 | Part | Table | Change | Rule |
 |---|---|---|---|
@@ -59,11 +59,14 @@ The EX-1, EX-5 and EX-6 changes below are implemented and included in the owner-
 | Phase 3 | `viewings` | who pressed "Đã gọi" and when, for the viewings cancelled by a deposit (D-39); ask the owner before the migration | VIEW-06 |
 | Phase 3 | `meter_readings` | Owner approved schema/migration creation and dev DB application 20/11, then accepted BE-P3-20 after checking without errors: `is_opening` default false; preserve existing rows; partial indexes for one opening per contract/kind and ordinary readings per contract/day (or per room/day when unassigned). Same-day old closing/new opening/new closing coexist. Migration `20261120000000_contract_meter_openings` validated on full offline schema; acceptance and evidence in [checkpoint](../phase-3-contracts/plans/P3-4/CHECKPOINT-BE-P3-20.md). No independent deploy/status output was supplied to Codex | CON-10, MTR-02, BIL-07 |
 | Phase 3 | `contracts` | `billing_day` is no longer used: every period is a calendar month (D-40). Whether to drop the column or fix it to 1 is decided in P3-1's PLAN.md; dropping needs the owner's OK before the migration | CON-03 |
+| Phase 5 · P5-2 | `contracts` | M1 `20261124000000_renewal_open_room` changes `contracts_one_open_per_room` to `WHERE status = 'ACTIVE' OR (status = 'HOLD' AND previous_contract_id IS NULL)`. A remaining renewal on HOLD reserves the room through the BE guard in BE-P5-06. The status of deployment to dev is recorded in [Phase 5 progress](../phase-5-operations/PROGRESS.md). | D-45 (1), DB-07, CON-17 |
 | Phase 5 | `requests` | repair review: rating 1–5, comment, time, hidden reason; only on `INCIDENT` in `CLOSED` | REQ-09 |
 
 ## Enforced by DB (the BE still validates first and returns a friendly code)
 
-Latest offline `check-constraints.mjs` result: **107/107** on 20/11/2026, from the local BE-P3-20 schema plus constraints (dev DB migration pending). This adds 10 meter-opening scenarios to the previous 97. Original coverage includes: second Boss; bad/duplicate phone; 3rd building for a manager; tenant as manager; delete building with rooms; duplicate room code; 2 pending price proposals; service rate without service; cross-building service rate; contract < 3 months; 2 open contracts per room; room/building mismatch; manager as signer; ACTIVE without move-in; re-rent after end (allowed); tenant with 2 rooms (allowed); 2 renewals from 1 contract; cross-building contract service; 2 signers; cross-building vehicle; duplicate active plate; re-register removed plate (allowed); duplicate unassigned readings same day; meter replacement without old value; 2 invoices same period; cancel + reissue (allowed); cancel without reason; issue without due date; wrong line amount; negative unit price; underpayment; exact payment sets PAID; second payment; webhook payment without transaction; valid webhook (allowed); duplicate webhook; matched transaction without invoice; wrong settlement math; negative net without final invoice; positive net (allowed); 2 pending move-out/renew; incident APPROVED; cost on non-incident; announcement to other building's room; duplicate notification.
+Latest offline `check-constraints.mjs` result is **115/115** on 24/11/2026 for BE-P5-05 with M1. The 110-case baseline gained five renewal scenarios. The migration chain was also replayed in embedded PostgreSQL with a contract already in the database.
+
+Original coverage includes: second Boss; bad/duplicate phone; 3rd building for a manager; tenant as manager; delete building with rooms; duplicate room code; 2 pending price proposals; service rate without service; cross-building service rate; contract < 3 months; 2 open contracts per room; room/building mismatch; manager as signer; ACTIVE without move-in; re-rent after end (allowed); tenant with 2 rooms (allowed); 2 renewals from 1 contract; cross-building contract service; 2 signers; cross-building vehicle; duplicate active plate; re-register removed plate (allowed); duplicate unassigned readings same day; meter replacement without old value; 2 invoices same period; cancel + reissue (allowed); cancel without reason; issue without due date; wrong line amount; negative unit price; underpayment; exact payment sets PAID; second payment; webhook payment without transaction; valid webhook (allowed); duplicate webhook; matched transaction without invoice; wrong settlement math; negative net without final invoice; positive net (allowed); 2 pending move-out/renew; incident APPROVED; cost on non-incident; announcement to other building's room; duplicate notification.
 
 ## Enforced only by BE (each MUST have a unit test)
 

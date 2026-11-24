@@ -54,6 +54,11 @@ SELECT setval(pg_get_serial_sequence(t, 'id'), 100)
 `);
 
 const C = `INSERT INTO contracts (code, building_id, room_id, tenant_id, start_date, term_months, end_date, rent, deposit, status, created_by_id, updated_at) VALUES`;
+const RENEWAL = C.replace('code,', 'code, previous_contract_id,');
+const ACTIVATE_SOURCE = "UPDATE contracts SET status = 'ACTIVE', signed_at = now(), moved_in_at = now() WHERE id = 1;";
+const HOLD_RENEWAL = `${RENEWAL} ('HD8',1,1,1,4,'2027-03-15',3,'2027-06-14',2500000,2500000,'HOLD',2,now());`;
+const NEXT_RENEWAL = `${RENEWAL} ('HD9',1,1,1,4,'2027-03-15',3,'2027-06-14',2500000,2500000,'HOLD',2,now());`;
+const ACTIVATE_RENEWAL = "UPDATE contracts SET status = 'ACTIVE', signed_at = now(), moved_in_at = now() WHERE code = 'HD8';";
 const OTP = `INSERT INTO email_otps (email, code_hash, expires_at)`;
 const IDEM = `INSERT INTO pricing_idempotency_keys (actor_id, key, route, request_hash, status_code, response_json, expires_at)`;
 const VCALL = `INSERT INTO viewings (room_id,guest_name,guest_phone,visit_at,updated_at,status,deposit_cancelled_by_contract_id,called_by_id,called_at) VALUES`;
@@ -116,15 +121,23 @@ const cases = [
   ['Giá', 'Bảng giá dịch vụ dùng dịch vụ của tòa khác', `INSERT INTO rate_plans (building_id, kind, service_id, effective_from, proposed_by_id) VALUES (1,'SERVICE',3,'2026-11-01',2)`, 'rate_plans_service_id_building_id_fkey'],
   ['Hợp đồng', 'Hợp đồng 2 tháng', `${C} ('HD9',1,2,5,'2026-11-01',2,'2026-12-31',2400000,0,'HOLD',2,now())`, 'contracts_term_min_3'],
   ['Hợp đồng', 'Hợp đồng thứ hai cho phòng đang giữ chỗ', `${C} ('HD9',1,1,5,'2026-11-01',3,'2027-01-31',2500000,0,'HOLD',2,now())`, 'contracts_one_open_per_room'],
+  ['Hợp đồng', 'D-45 (1): Gia hạn HOLD đứng cạnh hợp đồng ACTIVE cùng phòng',
+    `${ACTIVATE_SOURCE} ${HOLD_RENEWAL}`, 'ok'],
+  ['Hợp đồng', 'D-45 (1): Hợp đồng mới HOLD cho phòng đã có hợp đồng ACTIVE',
+    `${ACTIVATE_SOURCE} ${C} ('HD9',1,1,5,'2027-03-15',3,'2027-06-14',2500000,0,'HOLD',2,now())`, 'contracts_one_open_per_room'],
+  ['Hợp đồng', 'D-45 (1): Không chuyển gia hạn sang ACTIVE khi nguồn vẫn ACTIVE',
+    `${ACTIVATE_SOURCE} ${HOLD_RENEWAL} ${ACTIVATE_RENEWAL}`, 'contracts_one_open_per_room'],
+  ['Hợp đồng', 'CON-18: Chuyển gia hạn sang ACTIVE khi hợp đồng nguồn đã kết thúc',
+    `${ACTIVATE_SOURCE} ${HOLD_RENEWAL} UPDATE contracts SET status = 'ENDED', ended_at = now() WHERE id = 1; ${ACTIVATE_RENEWAL}`, 'ok'],
   ['Hợp đồng', 'Phòng của tòa 1 nhưng ghi tòa 2', `${C} ('HD9',2,2,5,'2026-11-01',3,'2027-01-31',2400000,0,'HOLD',2,now())`, 'contracts_room_id_building_id_fkey'],
   ['Hợp đồng', 'Người ký là tài khoản quản lý', `${C} ('HD9',1,2,3,'2026-11-01',3,'2027-01-31',2400000,0,'HOLD',2,now())`, 'CONTRACT_TENANT_ROLE'],
   ['Hợp đồng', 'Chuyển Hiệu lực khi chưa ghi ngày vào ở', `UPDATE contracts SET status='ACTIVE', signed_at=now() WHERE id=1`, 'contracts_active_ready'],
   ['Hợp đồng', 'Hợp đồng cũ kết thúc rồi cho thuê lại phòng', `UPDATE contracts SET status='ENDED' WHERE id=1; ${C} ('HD9',1,1,5,'2027-03-15',6,'2027-09-14',2500000,0,'HOLD',2,now())`, 'ok'],
   ['Hợp đồng', 'Một người thuê thêm phòng thứ hai', `${C} ('HD9',1,2,4,'2026-11-01',3,'2027-01-31',2400000,0,'HOLD',2,now())`, 'ok'],
-  ['Hợp đồng', 'Hai hợp đồng cùng gia hạn từ một hợp đồng cũ',
-    `UPDATE contracts SET status='ENDED' WHERE id=1;
-     ${C.replace('code,', 'code, previous_contract_id,')} ('HD8',1,1,1,4,'2027-03-15',3,'2027-06-14',2500000,0,'HOLD',2,now());
-     ${C.replace('code,', 'code, previous_contract_id,')} ('HD9',1,1,2,4,'2026-11-01',3,'2027-01-31',2400000,0,'HOLD',2,now())`, 'contracts_previous_contract_id_key'],
+  ['Hợp đồng', 'CON-17: Hai hợp đồng cùng gia hạn từ một hợp đồng cũ',
+    `${ACTIVATE_SOURCE} ${HOLD_RENEWAL} ${NEXT_RENEWAL}`, 'contracts_previous_contract_id_key'],
+  ['Hợp đồng', 'CON-17: Lần gia hạn thứ hai vẫn bị chặn khi bản đầu đã hủy',
+    `${ACTIVATE_SOURCE} ${HOLD_RENEWAL} UPDATE contracts SET status = 'CANCELLED', cancel_reason = 'Thay đổi kế hoạch' WHERE code = 'HD8'; ${NEXT_RENEWAL}`, 'contracts_previous_contract_id_key'],
   ['Hợp đồng', 'Chọn dịch vụ của tòa khác', `INSERT INTO contract_services VALUES (1,3,1)`, 'contract_services_service_id_building_id_fkey'],
   ['Hợp đồng', 'Chọn dịch vụ cùng tòa', `INSERT INTO contract_services VALUES (1,1,1)`, 'ok'],
   ['Hợp đồng', 'Hai người ký trên một hợp đồng', `INSERT INTO occupants (contract_id, full_name, is_signer, move_in_date) VALUES (1,'A',true,'2026-09-15'),(1,'B',true,'2026-09-15')`, 'occupants_one_signer'],

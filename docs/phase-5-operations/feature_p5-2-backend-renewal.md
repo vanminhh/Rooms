@@ -25,9 +25,9 @@ Out: the renewal request (P5-3), FE.
 
 ## Tasks
 
-- [ ] **BE-P5-05** Migration M1 (D-45 (1)), only after the owner approves creating it: `contracts_one_open_per_room` becomes `WHERE status = 'ACTIVE' OR (status = 'HOLD' AND previous_contract_id IS NULL)`; update `constraints.sql`; add/adjust `check-constraints.mjs` scenarios (renewal HOLD beside ACTIVE allowed; a second new contract for an ACTIVE/HOLD room blocked). Check offline (PGlite + `migrate diff`); apply to dev only after the second approval.
+- [~] **BE-P5-05** Migration M1 (D-45 (1)), only after the owner approves creating it: `contracts_one_open_per_room` becomes `WHERE status = 'ACTIVE' OR (status = 'HOLD' AND previous_contract_id IS NULL)`; update `constraints.sql`; add/adjust `check-constraints.mjs` scenarios (renewal HOLD beside ACTIVE allowed; a second new contract for an ACTIVE/HOLD room blocked). Check offline (PGlite + `migrate diff`); apply to dev only after the second approval. Owner approved file creation and offline checks on 24/11/2026.
   Done when: the DB checker prints its real count and every scenario passes; the report says whether M1 is applied on dev.
-- [ ] **BE-P5-06** `POST /contracts/:id/renewal` (CON-17): from an ACTIVE contract in scope create a HOLD contract with `previousContractId`, same room and tenant, same rent (DB-B1) and deposit, `startDate` = old `endDate` + 1 (DB-B7), `termMonths ≥ 3`, services copied and editable, **no** deposit invoice; lock old contract + room in one transaction; audit `contract.create`. Also block a brand-new contract for a room whose old contract has ended while its renewal is still HOLD (D-45 (1)).
+- [ ] **BE-P5-06** `POST /contracts/:id/renew` (CON-17): from an ACTIVE contract in scope create a HOLD contract with `previousContractId`, same room and tenant, same rent (DB-B1) and deposit, `startDate` = old `endDate` + 1 (DB-B7), `termMonths ≥ 3`, services copied and editable, **no** deposit invoice; lock old contract + room in one transaction; audit `contract.create`. Omitted `terms` copies the old clauses, a string replaces them and explicit `null` clears them (D-46). Also block a brand-new contract for a room whose old contract has ended while its renewal is still HOLD (D-45 (1)).
   Done when: second renewal of the same contract → `CONFLICT_STATE`; HOLD/ENDED source → `CONFLICT_STATE`; `termMonths = 2` → `CONTRACT_TERM_TOO_SHORT`; other building → `OUT_OF_SCOPE`; no `DEPOSIT` invoice; `startDate` right across a leap February.
 - [ ] **BE-P5-07** Sign a renewal (CON-18) through the existing CON-06 path (print page CON-22, private scan, no new account, no deposit, no move-in step).
   Done when: after signing `signedAt` is set and status stays HOLD; `switchDueRenewals` with `today ≥ startDate`, the final invoice of period N and handover readings → `SWITCHED`, occupants and vehicles copied (CON-19); without the final invoice → `WAITING_FINAL_INVOICE`, no throw.
@@ -36,9 +36,32 @@ Out: the renewal request (P5-3), FE.
 - [ ] **BE-P5-09** ⏸ lint + test + build + check-constraints + e2e (create renewal → sign → run the switch job); reviewer.
   Done when: real output; `scripts/e2e/cleanup.mjs` list clean for the run.
 
+## CP-1 kiểm migration offline (24/11/2026)
+
+- Owner approved creating `20261124000000_renewal_open_room` and checking it offline. The checkpoint is ready for separate approval to apply it to dev.
+- `node prisma/check-constraints.mjs . prisma` exited 0 with `115/115 tình huống đúng như mong đợi`, up from the 110/110 baseline. Prisma generated the schema offline from the current model.
+- The replay applied all 12 earlier migrations in embedded PostgreSQL, created a source contract fixture, confirmed that the old index blocked the renewal and applied the new migration. The source record and other index definitions survived. The renewal could wait and switch, and conflicting occupancy was rejected.
+- Baseline tests for signing, cancelling, switching and reminders were 123/123. The final `npm run lint` exited 0 with `Found 4 warnings and 0 errors.` `npm run build` exited 0.
+
+### Review độc lập
+
+**Kết luận DUYỆT** checkpoint tạo migration M1 và kiểm tra offline. Phạm vi gồm thay đổi chưa commit của BE-P5-05 và quyết định D-46, tổng cộng 9 file, +47/−18 dòng tại lúc rà. Hai file kế hoạch nằm ngoài phạm vi review độc lập.
+
+**Lỗi chặn.** Không có.
+
+**Nên sửa ở BE-P5-06.** `Source/backend/src/modules/contracts/contracts.service.ts:195–217` hiện loại điều kiện hợp đồng mở khỏi truy vấn rồi dựa vào index. Đặt kiểm tra mới trong giao dịch sau khi khóa phòng, và kiểm qua `POST /contracts` với hợp đồng nguồn `ENDED` cùng gia hạn `HOLD` (D-45 (1)).
+
+**Ghi chú**
+
+- `Source/backend/prisma/migrations/20261124000000_renewal_open_room/migration.sql:1–8` thay index trong cùng một giao dịch. Nếu tạo index thất bại, giao dịch hoàn tác cả lệnh xóa index cũ. Predicate mới thu hẹp tập dòng tham gia nên dữ liệu hợp lệ theo index cũ thỏa index mới. Migration giữ dữ liệu và khóa duy nhất `previous_contract_id` tại `Source/backend/prisma/migrations/20261029000000_init/migration.sql:561`.
+- `Source/backend/prisma/check-constraints.mjs:123–140` kiểm gia hạn HOLD cạnh ACTIVE, hợp đồng mới khi phòng có HOLD hoặc ACTIVE, hai ACTIVE cùng phòng, chuyển sau khi nguồn kết thúc và duy nhất lần gia hạn kể cả sau hủy. Các ca lỗi kiểm đúng tên index.
+- `docs/spec/14-contracts.md:70–71,94` nhất quán với quyết định tại `docs/phase-5-operations/README.md:53`. Bỏ `terms` thì sao chép, chuỗi thì thay thế và `null` thì xóa. Trang in lấy điều khoản đã lưu của bản gia hạn.
+
+**Đã kiểm** migration, `constraints.sql`, các ca DB-07, schema và index gốc, luồng tạo hợp đồng cùng D-45 (1), D-46, CON-17, CON-18 và CON-22. `git diff --check` trả mã 0. Reviewer rà chỉ đọc, không chạy migration hoặc kết nối DB dev.
+
 ## Questions for the owner
 
-<!-- Q-P5-1..16 were answered on 24/11/2026 (README.md, D-45). New questions go here and in the README table. -->
+<!-- Q-P5-1..17 were answered on 24/11/2026 (README.md, D-45 and D-46). New questions go here and in the README table. -->
 
 ## Issues log
 

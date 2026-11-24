@@ -20,8 +20,8 @@ Trạng thái:
 | Phần | Trạng thái | Điểm dừng gần nhất đã xong | Commit | Việc tiếp theo | Ghi chú |
 |---|---|---|---|---|---|
 | P5-0 Chủ dự án | đang làm | Q-P5-1..16 đã trả lời (D-45) | – | Duyệt M1/M2/M3 khi tới phần; duyệt gói biểu đồ | Không chặn M1 |
-| P5-1 Thông báo chung (BE) | chờ commit | M1 · BE-P5-01..04 | – | Chủ dự án kiểm và commit | 2852/2852 test, lint và build đạt |
-| P5-2 Gia hạn (BE) | chưa làm | – | – | planner `plans/P5-2/PLAN.md` | migration M1 |
+| P5-1 Thông báo chung (BE) | xong | M1 · BE-P5-01..04 | `9b67fa3` | Kiểm tay cùng đợt sau | 2852/2852 test, lint và build đạt |
+| P5-2 Gia hạn (BE) | đang làm | M2 · CP-1 kiểm M1 offline | – | Chờ duyệt áp migration M1 lên DB dev | 115/115 ca, replay migration và review đạt |
 | P5-3 Yêu cầu (BE) | chưa làm | – | – | planner `plans/P5-3/PLAN.md` | |
 | P5-4 Đánh giá sửa chữa (BE) | chưa làm | – | – | – | migration M2 |
 | P5-5 Báo cáo, nhật ký, cài đặt (BE) | chưa làm | – | – | – | migration M3 |
@@ -43,8 +43,8 @@ Làm các mốc theo thứ tự từ trên xuống. Ký hiệu: ✅ xong (đã c
 | | Mốc | Task | Cần trước | Trước khi code phải hỏi chủ dự án | Kiểm ở ⏸ | Commit |
 |---|---|---|---|---|---|---|
 | ✅ | M0 Soạn Phase 5 | README, PLAN, PROGRESS, 9 file task, D-45 | Phase 4 xong | Q-P5-1..16 (đã trả lời 24/11/2026) | link, ma trận luật → phần | `94133ae` |
-| ▶ | M1 Thông báo chung (P5-1) | BE-P5-01..04 | M0 | – | unit, lint, build, reviewer | |
-| ⬜ | M2 Gia hạn (P5-2) | BE-P5-05..09 | M1 | planner `plans/P5-2/PLAN.md`; **duyệt tạo và áp migration M1** | + check-constraints (số thật), e2e tạo → ký → chuyển ca, cleanup list, reviewer | |
+| ✅ | M1 Thông báo chung (P5-1) | BE-P5-01..04 | M0 | – | unit, lint, build, reviewer | `9b67fa3` |
+| ▶ | M2 Gia hạn (P5-2) | BE-P5-05..09 | M1 | planner `plans/P5-2/PLAN.md`; **duyệt tạo và áp migration M1** | + check-constraints (số thật), e2e tạo → ký → chuyển ca, cleanup list, reviewer | |
 | ⬜ | M3 Yêu cầu (P5-3) | BE-P5-10..18 | M1, M2 | planner `plans/P5-3/PLAN.md` | + e2e sự cố → RESOLVED → cron đóng; MOVE_OUT → duyệt, reviewer | |
 | ⬜ | M4 Đánh giá sửa chữa (P5-4) | BE-P5-19..21 | M3 | **duyệt tạo và áp migration M2** | + check-constraints, reviewer | |
 | ⬜ | M5 Báo cáo, nhật ký, cài đặt (P5-5) | BE-P5-22..27 | M3 | **duyệt tạo và áp migration M3** | + check-constraints, e2e báo cáo một tháng, reviewer | |
@@ -74,3 +74,5 @@ Làm các mốc theo thứ tự từ trên xuống. Ký hiệu: ✅ xong (đã c
 
 - 24/11/2026 · M0 · Planner viết `plans/PHASE/PLAN.md`. Chủ dự án trả lời Q-P5-1..16: mọi câu theo đề xuất, trừ Q-P5-8 chọn thư viện biểu đồ; Q-P5-7 chọn cột mới (migration M3). Ghi vào spec thành D-45; Q-13 và A-17 đã chốt; `30-frontend.md` bỏ công tắc webhook. Đã tạo README, PROGRESS và 9 file task. Chưa có code.
 - 24/11/2026 · M1 · Xong BE-P5-01..04. Gửi theo phòng, tòa hoặc toàn chuỗi. Danh sách có số đã đọc và tổng người nhận. Kiểm tra quyền hộp thư người thuê đạt. Đã sửa điểm chặn PUB-05 của reviewer. Backend đạt 2852/2852 ca trên HTTP trong bộ nhớ, lint 4 cảnh báo cũ và 0 lỗi, build đạt. Chờ chủ dự án kiểm và commit.
+- 24/11/2026 · M1 · Xác nhận commit `9b67fa3`. Chủ dự án sẽ kiểm tay cùng đợt sau.
+- 24/11/2026 · M2 CP-1 · Đã ghi kế hoạch P5-2 và quyết định Q-P5-17 (D-46). Chủ dự án duyệt tạo M1. Bộ kiểm ràng buộc tăng từ 110/110 lên 115/115, replay 12 migration trước rồi áp M1 trên PostgreSQL nhúng đạt, lint 4 cảnh báo cũ và 0 lỗi. Reviewer DUYỆT CP-1. Chờ duyệt riêng để áp M1 lên DB dev.

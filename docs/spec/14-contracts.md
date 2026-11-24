@@ -68,6 +68,7 @@ stateDiagram-v2
 ## Renewal
 
 - **CON-17** From an ACTIVE contract (usually after an approved `RENEW` request): create a new contract with `previous_contract_id`, same room, same tenant, `rent` = old rent, `start_date` = old `end_date` + 1, `termMonths` ≥ 3, `deposit` = old deposit (no new deposit invoice), services copied (editable).
+  - **D-46 / Q-P5-17** The renewal form starts with the previous contract's supplementary clauses. At creation, omitting `terms` copies them, a string replaces them and explicit `null` clears them. The renewal's saved `terms` are used for its print page (CON-22).
 - **CON-18** The renewal is signed like CON-06 (no new account, no deposit invoice). No move-in step: the first billing cron run on or after its `start_date` (00:05 or app start, BIL-06) sets the old contract ENDED and the new one ACTIVE (`moved_in_at` = start), using the period-end reading of the old contract as the new start reading.
 - **CON-19** Occupants and active vehicles are copied to the new contract at switch time.
 
@@ -89,7 +90,8 @@ stateDiagram-v2
 | POST | `/contracts` | CON-01..05 |
 | GET | `/contracts/:id` | includes occupants, vehicles, services, deposit invoice summary and read-only `progress:{elapsedDays,totalDays,percent}`; complete elapsed calendar days from start, inclusive end, clamped 0..100; same display field on own tenant detail, never used for billing |
 | GET | `/contracts/:id/print` · `/me/contracts/:id/print` | filled template for the print page (CON-22, D-36; replaces `/pdf`) |
-| POST | `/contracts/:id/sign` · `/move-in` · `/cancel` · `/renew` · `/reset-password` | |
+| POST | `/contracts/:id/sign` · `/move-in` · `/cancel` · `/reset-password` | |
+| POST | `/contracts/:id/renew` | Staff in scope. `{ termMonths, terms? }` creates a HOLD renewal; `terms` accepts a string or explicit `null` (CON-17, D-46). |
 | POST | `/contracts/:id/cancel-preview` | staff read-only confirmation using the same CON-12 payment validation/math as cancel; `{reason,depositKept?}` → `{depositReceived,depositKept,refund,createsSettlement}`, no-store; no mutation/audit/idempotency record. Cancel may include `expectedDepositReceived` from preview; a changed received amount returns CONFLICT_STATE before writes, and belongs to the idempotent request hash |
 | GET/POST | `/contracts/:id/occupants` · `/contracts/:id/vehicles` | staff |
 | PATCH | `/contracts/:id/occupants/:oid` · `/contracts/:id/vehicles/:vid` | staff |

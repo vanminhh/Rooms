@@ -10,7 +10,7 @@ Nguồn: dòng "5 · Operations" của roadmap (`docs/spec/01-architecture.md#ro
 5. Boss đọc báo cáo và nhật ký, sửa cài đặt.
 6. Thông báo chung tới hộp thư người thuê.
 
-**Trạng thái ngày 24/11/2026.** P5-1 đã triển khai và kiểm thử API thông báo chung, đang chờ chủ dự án kiểm và commit. Phần tiếp theo là P5-2 Gia hạn. Xem [PROGRESS.md](PROGRESS.md).
+**Trạng thái ngày 24/11/2026.** P5-1 đã commit ở `9b67fa3`. Chủ dự án sẽ kiểm tay cùng đợt sau. P5-2 Gia hạn đã kiểm migration M1 offline và đang chờ duyệt áp lên DB dev. Xem [PROGRESS.md](PROGRESS.md).
 
 **Schema: ba migration**, mỗi migration phải được duyệt hai lần (tạo file, rồi áp lên DB dev):
 - M1: nới index phòng (P5-2)
@@ -50,6 +50,7 @@ Chủ dự án trả lời ngày 24/11/2026 và đã ghi vào spec thành **D-45
 | Q-P5-14 | Khóa nào sửa được ở Cài đặt | Đủ 5 khóa của 20-reports. Mẫu hợp đồng giữ cờ nháp cho tới khi có bản chính thức (Q-15) | D-45 (14) | P5-5, P5-7 |
 | Q-P5-15 | Duyệt RENEW (REQ-04) | Duyệt chỉ đặt APPROVED và mở form gia hạn điền sẵn. Khi tạo gia hạn thì ghi `payload.contractId`. Yêu cầu APPROVED chưa có hợp đồng hiện ở "Việc hôm nay" | D-45 (15) | P5-3, P5-6 |
 | Q-P5-16 | Trước/sau ở `/ql/nhat-ky` | Hiện đủ cho Boss. BE lọc bỏ hash, mật khẩu tạm và số CCCD đầy đủ | D-45 (16) | P5-5, P5-7 |
+| Q-P5-17 | Điều khoản bổ sung khi gia hạn | Mặc định sao chép điều khoản cũ và cho nhân sự sửa hoặc xóa khi tạo bản gia hạn | D-46 | P5-2, P5-6 |
 
 `[ASSUMPTION]` dùng trong phase, phải nêu lại ở mỗi ⏸ có liên quan:
 - **A-P5-1:** job đóng sự cố chạy 08:00, như hai job sẵn có.

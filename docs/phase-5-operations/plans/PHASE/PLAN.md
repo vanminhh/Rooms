@@ -118,7 +118,7 @@ Quy tắc khi làm migration (bài học BE-EX-01, BE-EX-33, QA-P3-02/DB-07):
  /ql/yeu-cau      ──► GET /requests?buildingId&type&status                        settings
                   ──► PATCH /requests/:id · POST /:id/approve · /reject
                   ──► POST /requests/:id/escalate · /review/hide
- /ql/hop-dong/:id ──► POST /contracts/:id/renewal (CON-17) · ký như CON-06
+ /ql/hop-dong/:id ──► POST /contracts/:id/renew (CON-17) · ký như CON-06
  /ql/thong-bao    ──► GET/POST /announcements ─ notifications
  /ql              ──► GET /dashboard (thêm nhóm yêu cầu) + GET /reports/occupancy
  /ql/bao-cao      ──► GET /reports/revenue?buildingId&from&to · /reports/occupancy ─ reports
@@ -154,7 +154,7 @@ Mỗi ⏸ là điểm dừng: báo cáo, chủ dự án kiểm và commit, rồi
 |---|---|---|---|---|---|
 | P5-0 | Chủ dự án: trả lời Q-P5-1..16, duyệt ba migration M1/M2/M3 (tạo và áp), duyệt gói biểu đồ | – | – | – | – |
 | P5-1 | BE thông báo chung: `GET/POST /announcements`, kiểm hộp thư người thuê đã đủ | BE-P5-01..04 | Q-P5-4, Q-P5-11 | không | **có** |
-| P5-2 | BE gia hạn: migration M1, `POST /contracts/:id/renewal`, ký, hủy gia hạn; kiểm lại BIL-06/CON-20/CON-21 và nêu khoảng trống | BE-P5-05..09 | P5-0 duyệt M1; Q-P5-1, Q-P5-9, Q-P5-10 | **có** | **có** |
+| P5-2 | BE gia hạn: migration M1, `POST /contracts/:id/renew`, ký, hủy gia hạn; kiểm lại BIL-06/CON-20/CON-21 và nêu khoảng trống | BE-P5-05..09 | P5-0 duyệt M1; Q-P5-1, Q-P5-9, Q-P5-10 | **có** | **có** |
 | P5-3 | BE yêu cầu: 6 loại, bảng nhân sự, duyệt/từ chối/leo thang, chi phí, ảnh, cron 3 ngày, nhóm việc hôm nay | BE-P5-10..18 | P5-1 (thông báo), P5-2 (REQ-04 → CON-17); Q-P5-3, Q-P5-6, Q-P5-12, Q-P5-15 | **có** | **có** |
 | P5-4 | BE đánh giá sửa chữa REQ-09: migration M2, đánh giá của người thuê, ẩn nhận xét của nhân sự | BE-P5-19..21 | P5-3; P5-0 duyệt M2; Q-P5-2 | không | **có** |
 | P5-5 | BE báo cáo + nhật ký + cài đặt + `GET /me/consumption` | BE-P5-22..27 | P5-3 (RPT-03 đọc `requests.cost`); Q-P5-5, Q-P5-7, Q-P5-13, Q-P5-14, Q-P5-16 | không | **có** |
@@ -188,7 +188,7 @@ Quy tắc chạy: backend nối tiếp P5-1 → P5-2 → P5-3 → P5-4 → P5-5 
 
 - **BE-P5-05** Migration M1 sau khi chủ dự án duyệt: nới `contracts_one_open_per_room` theo Q-P5-1; cập nhật `prisma/constraints.sql`, thêm/sửa kịch bản trong `prisma/check-constraints.mjs` (gia hạn HOLD cạnh ACTIVE: **cho phép**; hợp đồng mới thứ hai cho phòng đang ACTIVE/HOLD: **chặn**).
   Done when: `node prisma/check-constraints.mjs . prisma` in ra số thật và mọi kịch bản đạt; migration được kiểm offline (PGlite + `migrate diff`) trước khi áp lên DB dev; báo cáo nêu rõ đã áp hay chưa.
-- **BE-P5-06** `POST /contracts/:id/renewal` (CON-17): từ hợp đồng ACTIVE trong phạm vi, tạo hợp đồng mới `status = HOLD`, `previousContractId`, cùng phòng, cùng người thuê, `rent` = rent cũ (DB-B1), `startDate` = `endDate` cũ + 1 (DB-B7), `termMonths ≥ 3`, `deposit` = cọc cũ và **không** tạo hóa đơn cọc, dịch vụ copy được sửa; khóa hàng hợp đồng cũ + phòng trong một transaction; một hợp đồng chỉ có một gia hạn (`contracts_one_renewal`); audit `contract.create`.
+- **BE-P5-06** `POST /contracts/:id/renew` (CON-17): từ hợp đồng ACTIVE trong phạm vi, tạo hợp đồng mới `status = HOLD`, `previousContractId`, cùng phòng, cùng người thuê, `rent` = rent cũ (DB-B1), `startDate` = `endDate` cũ + 1 (DB-B7), `termMonths ≥ 3`, `deposit` = cọc cũ và **không** tạo hóa đơn cọc, dịch vụ copy được sửa; khóa hàng hợp đồng cũ + phòng trong một transaction; một hợp đồng chỉ có một gia hạn (`contracts_previous_contract_id_key`); audit `contract.create`. Bản gia hạn sao điều khoản bổ sung của hợp đồng trước theo mặc định. Nhân sự có thể sửa hoặc xóa phần đó (D-46).
   Done when: tạo lần hai từ cùng hợp đồng → `CONFLICT_STATE`; hợp đồng HOLD/ENDED → `CONFLICT_STATE`; `termMonths = 2` → `CONTRACT_TERM_TOO_SHORT`; manager tòa khác → `OUT_OF_SCOPE`; **không** có hóa đơn `DEPOSIT` nào được tạo; `startDate` = `endDate` cũ + 1 đúng cả khi tháng 2 nhuận.
 - **BE-P5-07** Ký hợp đồng gia hạn (CON-18): dùng lại đúng đường ký của CON-06 (bản in CON-22, tải bản scan riêng tư, không tài khoản mới, không hóa đơn cọc, không bước vào ở); sau khi ký, `renewalsWaiting` của dashboard và `switchDueRenewals` tự lo phần chuyển ca.
   Done when: ký xong `signedAt` khác null, `status` vẫn HOLD, không có `DEPOSIT` và không có mật khẩu tạm; chạy `switchDueRenewals` với `today ≥ startDate` và hợp đồng cũ đã có hóa đơn kỳ N + mốc giao nhận → `SWITCHED`, người ở và xe đã copy (CON-19); thiếu hóa đơn kỳ N → `WAITING_FINAL_INVOICE` (không ném lỗi).
