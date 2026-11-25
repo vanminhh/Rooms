@@ -1,5 +1,7 @@
 # Phase 5 · Vận hành
 
+**Đã nghiệm thu và chốt ngày 26/11/2026.** [Biên bản P5-9 và tồn đọng dữ liệu thử](p5-9-qa-checklist.md).
+
 Nguồn: dòng "5 · Operations" của roadmap (`docs/spec/01-architecture.md#roadmap`), `docs/spec/18-requests.md`, `19-notifications.md` (NOTI-01..03, NOTI-06), `20-reports-audit-settings.md`, `14-contracts.md` (CON-17..21), `16-billing.md` (BIL-06), `17-bank.md` (BANK-05/06), các trang Phase 5 của `30-frontend.md`, và các quyết định D-13, D-14, D-15, D-33, D-34, D-44, **D-45** trong `docs/spec/00-overview.md`. Kế hoạch chi tiết: [plans/PHASE/PLAN.md](plans/PHASE/PLAN.md).
 
 **Mục tiêu (roadmap):** Boss so sánh được các tòa trong báo cáo. Vòng vận hành đầy đủ gồm:

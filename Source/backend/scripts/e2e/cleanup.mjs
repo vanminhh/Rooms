@@ -99,6 +99,7 @@ async function run(db) {
     return;
   }
   const ids = await factsFor(db, pending);
+  if (process.argv.includes('--check')) process.exitCode = 1;
   // Unlogged rows are printed once, under the first log.
   const shown = pending.length > 0 ? pending : [{
     runId: '(không có nhật ký)', startedAt: '-', endedAt: null, status: 'CLEANED', buildingCodes: [],

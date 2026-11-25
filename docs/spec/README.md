@@ -44,10 +44,12 @@ Schema files: [Source/backend/prisma/schema.prisma](../../Source/backend/prisma/
 
 ## Status
 
+P5-7 and P5-8 accepted on 25/11/2026. The owner closed P5-9 and Phase 5 on 26/11/2026 and accepted the 141 legacy dev test rows as a separate follow-up. [Acceptance checklist](../phase-5-operations/p5-9-qa-checklist.md).
+
 Phase 1 (Foundation), Phase 2 (Rooms) and **Phase Extra (Home101) are complete**. On 16/11/2026 the owner accepted EX-6, EX-7, EX-8 and EX-9, including the phone-whitespace fix, booking-success popup and acknowledged cross-building overlap warning. The final record is [ex-9-qa-checklist.md](../phase-extra-home101/ex-9-qa-checklist.md); [PROGRESS.md](../phase-extra-home101/PROGRESS.md) keeps the dated history.
 
 **Phase 3 (Contracts) is complete**: the owner accepted the manual walk on 22/11/2026. Record: [p3-8-qa-checklist.md](../phase-3-contracts/p3-8-qa-checklist.md); history: [PROGRESS.md](../phase-3-contracts/PROGRESS.md). **Phase 4 (Money) is complete.** Final regression passed (75/75 across 16 E2E files). The owner confirmed the dev database cleanup listing showed CLEANED on 24/11/2026 ([checklist](../phase-4-money/p4-9-qa-checklist.md)).
 
 Recorded verification: frontend **864/864**, lint/build pass; backend after option B **169/169 offline**, lint/build pass; host baseline before B **1806/1806** and dev e2e **54/54**; DB checker **82/82** on 15/11/2026. The owner's acceptance is recorded separately from test output, without inventing a new HTTP/e2e run.
 
-Next: **Phase 5 · Operations** (owner decisions D-45, 24/11/2026: requests with the repair review, notifications inbox and announcements, renewal, reports, audit log, settings); parts and progress in `docs/phase-5-operations/`. Phase 3/4 history stays in `docs/phase-3-contracts/` and `docs/phase-4-money/`. Phase 1/2 history stays in `docs/phase-1-foundation/` and `docs/phase-2-rooms/`. Roadmap: [01-architecture.md#roadmap](01-architecture.md#roadmap).
+Completed: **Phase 5 · Operations** (owner decisions D-45, 24/11/2026: requests with the repair review, notifications inbox and announcements, renewal, reports, audit log, settings); parts and progress in `docs/phase-5-operations/`. Phase 3/4 history stays in `docs/phase-3-contracts/` and `docs/phase-4-money/`. Phase 1/2 history stays in `docs/phase-1-foundation/` and `docs/phase-2-rooms/`. Roadmap: [01-architecture.md#roadmap](01-architecture.md#roadmap).

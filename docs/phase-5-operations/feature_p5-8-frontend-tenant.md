@@ -35,7 +35,7 @@ Out: staff pages.
   Done when: a PENDING request of the same type disables the button with the reason; `PENDING_REQUEST_EXISTS` still shown if clicked in time.
 - [x] **FE-P5-15** `/thue` additions: unread count, open requests, 6-period electric/water chart from `GET /me/consumption` with the FE-P5-07 component; every new text in vi and en; money and dates as LOC-05.
   Done when: a contract with only 2 periods still draws; every new key exists in both dictionaries; no FE math.
-- [~] **FE-P5-16** ⏸ lint + build + test:components; manual check at 360 px in both languages.
+- [x] **FE-P5-16** ⏸ lint + build + test:components; manual check at 360 px in both languages.
   Done when: real output; owner manual check result.
 
 ## Questions for the owner

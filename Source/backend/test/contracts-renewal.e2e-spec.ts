@@ -98,6 +98,12 @@ it('BE-P5-09 CON-17..19: create, print, sign and switch only the fixture renewal
           expect(await tx.occupant.count({ where: { contractId: renewalId, isSigner: true } })).toBe(1);
           expect(await tx.meterReading.count({ where: { contractId: renewalId, isOpening: true } })).toBe(2);
           expect(await tx.invoice.count({ where: { contractId: renewalId, type: 'DEPOSIT' } })).toBe(0);
+          const tenantToken = await app.get(TokenService).signAccessToken(tenant);
+          const history = await api('get', '/me/contracts', tenantToken).expect(200);
+          expect(history.body.data).toEqual(expect.arrayContaining([
+            expect.objectContaining({ id: start.id, status: 'ENDED' }),
+            expect.objectContaining({ id: renewalId, status: 'ACTIVE' }),
+          ]));
           throw rollback;
         } finally { await app.close(); }
       }, { isolationLevel: 'RepeatableRead', timeout: 240000, maxWait: 10000 });

@@ -96,6 +96,7 @@ it('BE-P5-18 REQ-01..08: incident reopen and close, move-out approval and paymen
     expect(await job.run(new Date('2090-03-04T01:00:00Z'), contractId)).toBe(1);
     expect(await job.run(new Date('2090-03-04T02:00:00Z'), contractId)).toBe(0);
     const move = (await submit('MOVE_OUT', { plannedMoveOutDate: '2028-02-01' }).expect(201)).body.data.id;
+    expect((await submit('MOVE_OUT', { plannedMoveOutDate: '2028-02-02' }).expect(409)).body.error.code).toBe('PENDING_REQUEST_EXISTS');
     expect((await submit('RENEW', { termMonths: 3 }).expect(409)).body.error.code).toBe('PENDING_REQUEST_EXISTS');
     const approval = await api('post', '/requests/' + move + '/approve', managerToken).expect(201);
     expect(approval.body.data.status).toBe('APPROVED');
@@ -127,13 +128,22 @@ it('BE-P5-18 REQ-01..08: incident reopen and close, move-out approval and paymen
     expect(resolved.body.data.status).toBe('RESOLVED');
     expect(await tx.payment.count({ where: { invoiceId: invoice.id } })).toBe(1);
     const garage = await tx.service.create({ data: { buildingId: building.id, name: 'Parking', unit: 'VEHICLE' } });
-    const parked = (plate: string) => tx.vehicle.create({ data: { plate, type: 'CAR', buildingId: building.id,
-      contractId, serviceId: garage.id, registeredAt: new Date('2025-01-01') } });
-    const removable = await parked('R' + room.id + 'A');
-    const duplicate = await parked('R' + room.id + 'B');
+    const parked = (plate: string, ownerContractId: number) => tx.vehicle.create({ data: { plate, type: 'CAR', buildingId: building.id,
+      contractId: ownerContractId, serviceId: garage.id, registeredAt: new Date('2025-01-01') } });
+    const removable = await parked('R' + room.id + 'A', contractId);
+    const otherRoom = await tx.room.create({ data: { buildingId: building.id, code: 'R2', floor: 1, areaM2: 25, price: 3500000 } });
+    const source = await tx.contract.findUniqueOrThrow({ where: { id: contractId } });
+    const otherContract = await tx.contract.create({ data: {
+      code: 'QA' + otherRoom.id, roomId: otherRoom.id, buildingId: building.id, tenantId: source.tenantId,
+      status: 'ACTIVE', startDate: handoverDay, endDate: source.endDate, termMonths: source.termMonths,
+      rent: source.rent, deposit: source.deposit, signedAt: handoverDay, movedInAt: handoverDay, createdById: manager.id,
+    } });
+    const duplicate = await parked('R' + room.id + 'B', otherContract.id);
     const vehicle = (await submit('VEHICLE_CHANGE', { remove: [{ vehicleId: removable.id, removedAt: '2025-02-01' }],
       add: [{ plate: duplicate.plate, type: 'CAR', serviceId: garage.id }] }).expect(201)).body.data.id;
-    await api('post', '/requests/' + vehicle + '/approve', managerToken).expect(400);
+    const refused = await api('post', '/requests/' + vehicle + '/approve', managerToken).expect(400);
+    expect(refused.body.error).toMatchObject({ code: 'VALIDATION_FAILED', fields: { plate: expect.any(String) } });
+    expect((await tx.vehicle.findUniqueOrThrow({ where: { id: duplicate.id } })).isActive).toBe(true);
     expect((await tx.request.findUniqueOrThrow({ where: { id: vehicle } })).status).toBe('PENDING');
     expect((await tx.vehicle.findUniqueOrThrow({ where: { id: removable.id } })).isActive).toBe(true);
   });

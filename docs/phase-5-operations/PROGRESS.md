@@ -19,16 +19,16 @@ Trạng thái:
 
 | Phần | Trạng thái | Điểm dừng gần nhất đã xong | Commit | Việc tiếp theo | Ghi chú |
 |---|---|---|---|---|---|
-| P5-0 Chủ dự án | đang làm | Q-P5-1..16 đã trả lời (D-45) | – | Duyệt M1/M2/M3 khi tới phần; duyệt gói biểu đồ | Không chặn M1 |
+| P5-0 Chủ dự án | xong | D-45, M9 | - | - | Chủ dự án chốt Phase 5 |
 | P5-1 Thông báo chung (BE) | xong | M1 · BE-P5-01..04 | `9b67fa3` | Kiểm tay cùng đợt sau | 2852/2852 test, lint và build đạt |
-| P5-2 Gia hạn (BE) | chờ kiểm đồng thời | BE-P5-05..08 xong, reviewer duyệt code | `0935309` (CP-1) | BE-P5-09: kiểm tranh chấp hai kết nối | Backend 2871/2871, DB nhúng 115/115, E2E nhúng 1/1 |
-| P5-3 Yêu cầu (BE) | committed c3ad1c1; host checks passed; concurrency check pending | – | – | planner `plans/P5-3/PLAN.md` | |
+| P5-2 Gia hạn (BE) | xong | QA-P5-04 đạt trên dev | `0935309` (CP-1) | - | Hai giao dịch chuyển gia hạn chỉ sao chép một lần |
+| P5-3 Yêu cầu (BE) | xong | QA-P5-04 đạt trên dev | `c3ad1c1` | - | Hai giao dịch duyệt chỉ áp dụng một lần |
 | P5-4 Đánh giá sửa chữa (BE) | accepted on dev by owner | – | – | – | migration M2 |
 | P5-5 Báo cáo, nhật ký, cài đặt (BE) | BE-P5-22..27 accepted | – | – | – | migration M3 |
 | P5-6 FE nhân sự: vận hành | owner accepted P5-6 | – | – | planner `plans/P5-6/PLAN.md` | khung route của cả phase |
 | P5-7 FE nhân sự: quản trị | xong | M7 | `9400ca6` | - | Chủ dự án đã nghiệm thu |
-| P5-8 FE người thuê | đang làm | FE-P5-11..15 | - | M8: kiểm giao diện 360 px vi/en | Hộp thư, yêu cầu, điện nước |
-| P5-9 QA | chưa làm | – | – | – | |
+| P5-8 FE người thuê | xong | M8 | `84b9691` | - | Chủ dự án đã nghiệm thu |
+| P5-9 QA | xong | M9, chủ dự án chốt ngày 26/11/2026 | - | Theo dõi riêng 141 bản ghi thử cũ | [Checklist](p5-9-qa-checklist.md) |
 
 ## Lộ trình mốc
 
@@ -110,3 +110,9 @@ Làm các mốc theo thứ tự từ trên xuống. Ký hiệu: ✅ xong (đã c
 - 25/11/2026 - P5-7 automated checkpoint: frontend lint and production build passed; full component regression 1041/1041, 0 skipped. Backend build and audit HTTP 3/3 passed. Reviewer approved after allowing entityId=0 for settings while actorId remains positive. Owner manual review at 360 px still pending.
 - 25/11/2026 - Owner accepted P5-7 and committed 9400ca6. P5-8 tenant inbox, requests, reviews, contract and invoice actions and consumption charts implemented. Review approved after correcting parking choices, moderated comments, invoice eligibility and the early move-out warning.
 - 25/11/2026 - M8 automated checks passed. Frontend lint, production build and all 1052 component tests passed (0 skipped). The legacy public filter case timed out in two earlier runs and passed individually and in the final full run. Backend build and 89 targeted tests passed; backend lint had 0 errors and 4 existing warnings. Manual tenant browser acceptance at 360 px in Vietnamese and English is pending.
+- 25/11/2026 - Chủ dự án xác nhận đã nghiệm thu P5-7 và P5-8. Git xác nhận lần lượt 9400ca6 và 84b9691. P5-9 bắt đầu, bộ kiểm ràng buộc PostgreSQL nhúng đạt 128/128.
+- 25/11/2026 - P5-9: toàn bộ 2.895 test backend đạt (144 bộ). Đã bổ sung E2E cho yêu cầu trả phòng trùng, biển số đang dùng ở hợp đồng khác và so tiền thuê lúc duyệt với lúc quyết toán trên cùng hợp đồng. Các ca cập nhật chờ chạy trên Supabase dev; chưa xác nhận hai tranh chấp hay cleanup.
+- 25/11/2026 - QA-P5-03..06: bộ test hai kết nối và runner tuần tự đã sẵn sàng; bổ sung kiểm lịch sử hai hợp đồng bằng tài khoản người thuê. Frontend kiểm lại 172/172. Đang chờ mã thoát E2E và trạng thái cleanup trên dev để chốt M9.
+- 25/11/2026 - Đối chiếu log dev 17:19 và 22:58. QA-P5-04 đạt; requests exit=1 chưa có output chi tiết; cleanup exit=1 do 141 bản ghi ngoài nhật ký. P5-9 vẫn mở.
+- 25/11/2026 - Lượt dev riêng lúc 23:10:02: requests đạt 3/3. Đã đối chiếu rooms-p5-requests.txt. QA-P5-01..04 đạt. Toàn bộ 141 bản ghi ngoài nhật ký trong báo cáo cleanup mang mã lượt chạy từ 03–06/11; chờ quyết định của chủ dự án.
+- 26/11/2026 - Chủ dự án chốt Phase 5. QA-P5-05 được chấp nhận với ngoại lệ 141 bản ghi thử cũ. Cleanup toàn DB vẫn ghi exit 1; theo dõi riêng sau M9.

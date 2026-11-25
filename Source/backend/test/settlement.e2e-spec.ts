@@ -65,6 +65,10 @@ describe('BE-P4-29..32 settlement on real PostgreSQL with outer rollback', () =>
             { roomId: a.roomId, kind: 'ELECTRIC', value: 1_368, readOn }, { roomId: a.roomId, kind: 'WATER', value: 106, readOn },
             { roomId: b.roomId, kind: 'ELECTRIC', value: 1_368, readOn }, { roomId: b.roomId, kind: 'WATER', value: 106, readOn }]).expect(201);
           const today = formatDateOnly(todayHanoi());
+          const notice = await api('post', '/me/requests', tenantA.token)
+            .send({ type: 'MOVE_OUT', contractId: a.contractId, title: 'Fixture move-out', payload: { plannedMoveOutDate: today } }).expect(201);
+          const approval = await api('post', '/requests/' + notice.body.data.id + '/approve', manager.token).expect(201);
+          expect(approval.body.data).toMatchObject({ status: 'APPROVED', contractId: a.contractId, payload: { plannedMoveOutDate: today } });
           const body = { moveOutDate: today, finalReadings: { electric: 1_400, water: 110 } };
           const settle = (id: number, token: string, dryRun: boolean, payload: object = body) =>
             api('post', `/contracts/${id}/settlement?dryRun=${dryRun}`, token).send(payload);
@@ -90,6 +94,7 @@ describe('BE-P4-29..32 settlement on real PostgreSQL with outer rollback', () =>
             tx.invoice.count({ where: { contractId: a.contractId } }), tx.meterReading.count({ where: { contractId: a.contractId } })]);
           const before = await count();
           const dry = await settle(a.contractId, manager.token, true).expect(201);
+          expect(dry.body.data.remainingRent).toBe(approval.body.data.payload.remainingRent);
           expect(dry.headers['cache-control']).toBe('no-store');
           const fixedPeriod = 2_500_000 + 100_000 + 2 * 30_000 + 100_000;
           expect(dry.body.data).toMatchObject({ dryRun: true, periodNo: 3, lastPeriodAmount: 2 * fixedPeriod + 96_000 + 60_000,

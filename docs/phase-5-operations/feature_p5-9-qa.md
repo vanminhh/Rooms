@@ -25,17 +25,17 @@ Out: new features.
 
 ## Tasks
 
-- [ ] **QA-P5-01** Run every Acceptance line of 18, NOTI-01..03 of 19, Reports/Audit/Settings of 20 (incl. 80 / 5 million) and CON-17..21 of 14; mark each with its test name.
+- [x] **QA-P5-01** Run every Acceptance line of 18, NOTI-01..03 of 19, Reports/Audit/Settings of 20 (incl. 80 / 5 million) and CON-17..21 of 14; mark each with its test name.
   Done when: every line marked in `p5-9-qa-checklist.md`.
-- [ ] **QA-P5-02** `node prisma/check-constraints.mjs . prisma` with the M1, M2, M3 scenarios.
+- [x] **QA-P5-02** `node prisma/check-constraints.mjs . prisma` with the M1, M2, M3 scenarios.
   Done when: the real count printed is recorded.
-- [ ] **QA-P5-03** e2e on dev, one file at a time (LESSONS commands): incident → review; MOVE_OUT → approve → settlement; renewal → sign → switch; one month report. Re-run a suspicious case alone before calling it a logic bug; keep file names + exit codes per run.
+- [x] **QA-P5-03** e2e on dev, one file at a time (LESSONS commands): incident → review; MOVE_OUT → approve → settlement; renewal → sign → switch; one month report. Re-run a suspicious case alone before calling it a logic bug; keep file names + exit codes per run.
   Done when: all files pass; run log saved.
-- [ ] **QA-P5-04** Two races on two connections: approving the same request twice (one `CONFLICT_STATE`, payload applied once); two switch-job runs (one `SWITCHED`, occupants/vehicles copied once). Committed fixtures, soft cleanup.
+- [x] **QA-P5-04** Two races on two connections: approving the same request twice (one `CONFLICT_STATE`, payload applied once); two switch-job runs (one `SWITCHED`, occupants/vehicles copied once). Committed fixtures, soft cleanup.
   Done when: both races have exactly one winner; cleanup CLEANED.
-- [ ] **QA-P5-05** Regression: login for 4 roles + entry (D-43), Phase 4 money loop, Phase 3 deposit loop, public pages and viewings; `scripts/e2e/cleanup.mjs` list.
-  Done when: all green; cleanup list clean.
-- [ ] **QA-P5-06** ⏸ Update `PROGRESS.md`, Status in `docs/spec/README.md` and root `CLAUDE.md`, `02-database.md` (M1, M2, M3), `LESSONS.md`; write `p5-9-qa-checklist.md`; suggest the commit message with task and spec IDs.
+- [x] **QA-P5-05** Regression: login for 4 roles + entry (D-43), Phase 4 money loop, Phase 3 deposit loop, public pages and viewings; `scripts/e2e/cleanup.mjs` list.
+  Owner accepted the regression results and a cleanup exception on 26/11/2026. The global check returned exit 1 for 141 legacy fixture rows from 03–06/11. See [M9 checklist](p5-9-qa-checklist.md).
+- [x] **QA-P5-06** ⏸ Update `PROGRESS.md`, Status in `docs/spec/README.md` and root `CLAUDE.md`, `02-database.md` (M1, M2, M3), `LESSONS.md`; write `p5-9-qa-checklist.md`; suggest the commit message with task and spec IDs.
   Done when: docs updated; owner walk recorded.
 
 ## Questions for the owner

@@ -63,6 +63,8 @@ The EX-1, EX-5 and EX-6 changes below are included in the owner-accepted Phase E
 | Phase 5 M2 | `requests` | `review_rating` (1–5, INCIDENT), `review_comment`, `review_at`, `review_updated_at`, `review_hidden_reason`, `review_hidden_at`, `review_hidden_by_id` (users FK, SET NULL). Hide requires a rating and paired reason/time. The review API requires CLOSED. | REQ-09 |
 | Phase 5 M3 | `invoices` | `archived_at` and `archived_by_id` (users FK) must both be present or both be null. An archived invoice retains its financial status. The pair check prevents physical deletion of a referenced archiver; staff deactivation preserves the link. | D-45 (7), RPT-02 |
 
+QA-P5-02 (25/11/2026): 128/128 constraint scenarios passed on embedded PostgreSQL, including M1, M2 and M3. Dev concurrency results are tracked in the [M9 checklist](../phase-5-operations/p5-9-qa-checklist.md).
+
 ## Enforced by DB (the BE still validates first and returns a friendly code)
 
 Latest offline `check-constraints.mjs` result is **115/115** on 24/11/2026 for BE-P5-05 with M1. The 110-case baseline gained five renewal scenarios. The migration chain was also replayed in embedded PostgreSQL with a contract already in the database.
