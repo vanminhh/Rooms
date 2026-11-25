@@ -13,6 +13,8 @@
 .rooms-theme .contracts-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .rooms-theme .contracts-private-document { max-width: 100%; overflow-wrap: anywhere; }
 .rooms-theme .contracts-fieldset { border: 1px solid var(--rooms-line); border-radius: var(--rooms-radius-input); padding: 16px; min-width: 0; display: grid; gap: 12px; }
+.rooms-theme .tenant-request-fields label { display: grid; gap: 4px; min-width: 0; }
+.rooms-theme .tenant-request-fields :is(input, select, textarea) { box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; font: inherit; }
 .rooms-theme .contracts-fieldset legend { font-weight: 600; padding-inline: 6px; }
 .rooms-theme .contracts-check { display: flex; align-items: center; gap: 10px; }
 .rooms-theme .contracts-qr { width: 260px; max-width: 100%; height: auto; display: block; margin-block: 16px; }

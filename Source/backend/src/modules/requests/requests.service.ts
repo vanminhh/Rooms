@@ -231,7 +231,7 @@ export class RequestsService {
       if (row.reviewAt && todayHanoi(now) >= addDays(todayHanoi(row.reviewAt), 7)) throw conflict();
       if (version !== (previous ? '"' + previous.toISOString() + '"' : undefined)) throw conflict();
       const updated = await tx.request.update({ where: { id }, data: {
-        reviewRating: dto.rating, reviewComment: dto.comment?.trim() || null,
+        reviewRating: dto.rating, ...(row.reviewHiddenAt ? {} : { reviewComment: dto.comment?.trim() || null }),
         ...(previous ? { reviewUpdatedAt: new Date(Math.max(now.getTime(), previous.getTime() + 1)) } : { reviewAt: now }),
       } });
       return view(updated, true);

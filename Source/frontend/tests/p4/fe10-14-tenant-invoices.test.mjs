@@ -5,7 +5,7 @@ const { TenantInvoicesPage } = source('pages/tenant/TenantInvoicesPage.tsx')
 const { TenantInvoiceDetailPage } = source('pages/tenant/TenantInvoiceDetailPage.tsx')
 const { TenantMoneyBlock } = source('features/invoices/TenantMoneyBlock.tsx')
 
-const contract = { id: 31, code: 'HD31', room: { id: 8, code: 'P101' }, building: { id: 2, code: 'B2', name: 'Tòa A' } }
+const contract = { id: 31, status: 'ACTIVE', code: 'HD31', room: { id: 8, code: 'P101' }, building: { id: 2, code: 'B2', name: 'Tòa A' } }
 const row = (id, extra = {}) => ({ id, code: `TT${id}`, type: 'MONTHLY', status: 'PAID', overdue: false, periodNo: 1, periodStart: '2026-09-01', periodEnd: '2026-09-30',
   issueDate: '2026-10-01', dueDate: '2026-10-31', total: 3_119_000, contract, ...extra })
 const tenant = { role: 'TENANT', user: { id: 15, role: 'TENANT', fullName: 'Người thuê', buildings: [] } }
@@ -39,7 +39,7 @@ const detail = (extra = {}) => ({ ...row(9, { status: 'UNPAID' }), cancelReason:
 
 test('FE-P4-11/BIL-10/D-38/LOC-01: detail in English keeps service names as typed, translates fixed lines, shows VietQR and the meter photo', async () => {
   const app = await mountContractPage(TenantInvoiceDetailPage, { path: '/thue/hoa-don/9', routePath: '/thue/hoa-don/:id', language: 'en', ...tenant,
-    rules: [{ prefix: '/me/invoices/9', handler: () => ok(detail()) }] })
+    rules: [{ prefix: '/me/invoices/9', handler: () => ok(detail()) }, { prefix: '/me/requests?', handler: () => ok([], { page: 1, limit: 100, total: 0 }) }] })
   try {
     await until(() => app.container.textContent.includes('Pay with VietQR'), 'detail')
     assert.match(app.container.textContent, /Rent/)
@@ -50,7 +50,16 @@ test('FE-P4-11/BIL-10/D-38/LOC-01: detail in English keeps service names as type
     assert.match(app.container.textContent, /TT9/)
     assert.ok(find(app.container, n => n.tagName === 'IMG' && n.getAttribute('alt') === 'VietQR code to pay TT9').length)
     assert.ok(find(app.container, n => n.tagName === 'IMG' && n.getAttribute('alt') === 'Electricity meter photo on 30/09/2026').length)
-    assert.equal(/Báo lỗi thanh toán|Report a payment/.test(app.container.textContent), false, 'FE-P4-13: Phase 5')
+    assert.equal(/Báo lỗi thanh toán|Report a payment/.test(app.container.textContent), true, 'FE-P5-14: payment issue entry')
+  } finally { await app.stop() }
+})
+
+test('ended contract with an unpaid final invoice has no payment issue form', async () => {
+  const app = await mountContractPage(TenantInvoiceDetailPage, { path: '/thue/hoa-don/9', routePath: '/thue/hoa-don/:id', language: 'en', ...tenant,
+    rules: [{ prefix: '/me/invoices/9', handler: () => ok(detail({ type: 'FINAL', contract: { ...contract, status: 'ENDED' } })) }] })
+  try {
+    await until(() => app.container.textContent.includes('TT9'), 'final invoice')
+    assert.equal(app.container.textContent.includes('Report a payment issue'), false)
   } finally { await app.stop() }
 })
 

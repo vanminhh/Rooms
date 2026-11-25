@@ -13,7 +13,7 @@ const { I18nProvider } = source('shared/i18n/index.ts')
 
 export async function mountContractPage(Page, { path = '/ql/hop-dong', routePath = path, state, props = {}, rules = [], role = 'MANAGER', language = 'vi', selection = 2, user, seed } = {}) {
   const calls = fakeFetch(rules)
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } } })
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false, gcTime: 0 } } })
   seed?.(client)
   const router = createMemoryRouter([{ path: routePath, element: React.createElement(Page, props) }, { path: '*', element: React.createElement('p', null, 'Navigation target') }], { initialEntries: [{ pathname: path, state }] })
   let selected = selection

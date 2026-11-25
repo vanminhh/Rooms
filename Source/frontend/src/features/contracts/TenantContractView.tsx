@@ -1,3 +1,4 @@
+import { RequestActions } from '../requests/TenantRequestForm'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router'
 import { ElevatedCard, FormError, RoomsButton, Spinner } from '../../components'
@@ -28,8 +29,9 @@ export function TenantContractView({ id, scope, overview = false }: { id: number
       <div className="contracts-actions"><Link to={`/thue/hop-dong/${id}/in`}>{t('contracts.print')}</Link>
         {contract.signedAt && <DocumentAccess label={t('contracts.scan')} load={async () => [{ label: contract.code, document: await getMyContractScan(id) }]} />}
       </div>
+      {contract.status === 'ACTIVE' && <RequestActions contractId={id} />}
       <ContractInformation contract={contract} tenant />
-      {open && <ElevatedCard className="contracts-card"><h2>{t('contracts.addOccupant')}</h2><OccupantForm contractId={id} tenant /></ElevatedCard>}
+      {open && <ElevatedCard className="contracts-card"><h2 id="them-nguoi-o">{t('contracts.addOccupant')}</h2><OccupantForm contractId={id} tenant /></ElevatedCard>}
     </>}
   </div>
 }

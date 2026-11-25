@@ -86,6 +86,8 @@ function compileRoutes() {
     '../pages/staff/InvoiceDetailPage': stub('InvoiceDetailPage'),
     '../pages/OperationsPage': stub('OperationsPage'),
     '../pages/staff/RequestsPage': stub('RequestsPage'),
+    '../pages/tenant/TenantInboxPage': stub('TenantInboxPage'),
+    '../pages/tenant/TenantRequestsPage': stub('TenantRequestsPage'),
     '../pages/staff/ReportsPage': stub('ReportsPage'),
     '../pages/staff/AuditPage': stub('AuditPage'),
     '../pages/staff/SettingsPage': stub('SettingsPage'),

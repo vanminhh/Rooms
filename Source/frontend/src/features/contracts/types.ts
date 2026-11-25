@@ -96,6 +96,7 @@ export interface SettlementView {
 }
 
 export interface ContractDetail extends ContractSummary {
+  parkingServices?: { id: number; name: string }[]
   previousContractId?: number | null
   nextContractId?: number | null
   renewalStartDate?: string | null

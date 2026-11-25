@@ -13,7 +13,7 @@ import type { InvoicesQueryDto } from './dto/invoices-query.dto.js';
 const SUMMARY = {
   id: true, type: true, status: true, periodNo: true, periodStart: true, periodEnd: true,
   issueDate: true, dueDate: true, total: true, createdAt: true,
-  contract: { select: { id: true, code: true, room: { select: { id: true, code: true } },
+  contract: { select: { id: true, code: true, status: true, room: { select: { id: true, code: true } },
     building: { select: { id: true, code: true, name: true } }, tenant: { select: { id: true, fullName: true, phone: true } } } },
 } satisfies Prisma.InvoiceSelect;
 const DETAIL = {

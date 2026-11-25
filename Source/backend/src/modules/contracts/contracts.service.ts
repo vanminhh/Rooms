@@ -161,10 +161,14 @@ export class ContractsService {
 
   async getMine(actor: AuthUser, id: number) {
     if (actor.role !== 'TENANT') throw new ForbiddenException(ErrorCode.FORBIDDEN);
-    const contract = await this.prisma.contract.findFirst({ where: { id, tenantId: actor.id }, select: CONTRACT_DETAIL });
+    const contract = await this.prisma.contract.findFirst({ where: { id, tenantId: actor.id }, select: {
+      ...CONTRACT_DETAIL, building: { select: { ...CONTRACT_SUMMARY.building.select,
+        services: { where: { unit: 'VEHICLE', isActive: true }, select: { id: true, name: true }, orderBy: { id: 'asc' } },
+      } },
+    } });
     if (!contract) throw new NotFoundException(ErrorCode.NOT_FOUND);
     const detail = await this.contractDetail(contract);
-    return { ...detail, occupants: detail.occupants.map(occupant => ({
+    return { ...detail, building: { id: contract.building.id, code: contract.building.code, name: contract.building.name }, parkingServices: contract.building.services ?? [], occupants: detail.occupants.map(occupant => ({
       ...occupant, idNumberLast4: occupant.isSigner ? occupant.idNumberLast4 : null,
     })) };
   }

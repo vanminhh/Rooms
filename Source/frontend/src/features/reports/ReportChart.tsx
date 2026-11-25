@@ -6,7 +6,7 @@ const colors = ['var(--rooms-ink)', 'var(--rooms-gold)', 'var(--rooms-error)']
 type Series = { key: string; label: string; kind: 'bar' | 'line' }
 type ChartProps = { title: string } & (
   | { kind: 'ring'; slices: { label: string; value: number }[] }
-  | { kind: 'series'; rows: Record<string, string | number>[]; category: string; series: Series[]; format: (value: number) => string }
+  | { kind: 'series'; rows: Record<string, string | number | null>[]; category: string; series: Series[]; format: (value: number) => string }
 )
 const compact = new Intl.NumberFormat('vi-VN', { notation: 'compact', maximumFractionDigits: 1 })
 

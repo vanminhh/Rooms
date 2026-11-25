@@ -2,7 +2,19 @@ import type { Prisma } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
 import { CreateRequestDto, requestPayload } from './request.dto.js';
-import { notifyRequestChange } from './requests.service.js';
+import { RequestsService, notifyRequestChange } from './requests.service.js';
+
+it('preserves the moderated comment when its author edits the rating', async () => {
+  const stamp = new Date();
+  const row = { id: 2, type: 'INCIDENT', status: 'CLOSED', reviewHiddenAt: stamp, reviewAt: stamp, reviewComment: 'moderated' };
+  const update = vi.fn(async ({ data }) => ({ ...row, ...data }));
+  const tx = { $queryRaw: vi.fn(), request: { findFirst: vi.fn(async () => row), update } };
+  const db = { $transaction: (run: (client: typeof tx) => unknown) => run(tx) };
+  const service = new RequestsService(db as never, {} as never, {} as never, {} as never, {} as never, {} as never);
+  const result = await service.review({ id: 1 } as never, 2, { rating: 4, comment: '' }, '"' + stamp.toISOString() + '"');
+  expect(update.mock.calls[0][0].data).not.toHaveProperty('reviewComment');
+  expect(result.reviewComment).toBeNull();
+});
 
 describe('REQ-01/02 submission validation', () => {
   it.each([

@@ -8,6 +8,7 @@ import { SelectField } from '../../features/buildings/fields'
 import { listMyContracts } from '../../features/contracts/api'
 import { allPages } from '../../features/contracts/forms'
 import { TenantContractView } from '../../features/contracts/TenantContractView'
+import { TenantOperationsOverview } from '../../features/requests/TenantOperationsOverview'
 import { TenantMoneyBlock } from '../../features/invoices/TenantMoneyBlock'
 import '../../features/contracts/contracts.css'
 
@@ -24,6 +25,7 @@ function TenantOverview({ scope, name, enabled }: { scope: string; name?: string
   const id = query.data?.some(contract => contract.id === selected) ? selected : current[0]?.id ?? query.data?.[0]?.id
   return <>
     <SectionHeading>{t('tenant.overview')}</SectionHeading>
+    {enabled && <TenantOperationsOverview scope={scope} contractId={id} />}
     {name && <p>{t('tenant.greeting', { name })}</p>}
     {query.isPending && enabled && <Spinner block label={t('contracts.loading')} />}
     {query.isError && <><FormError>{query.error.message}</FormError><RoomsButton onClick={() => void query.refetch()}>{t('contracts.retry')}</RoomsButton></>}

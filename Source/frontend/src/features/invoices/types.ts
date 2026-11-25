@@ -9,7 +9,7 @@ export type MeterKind = 'ELECTRIC' | 'WATER'
 export interface InvoiceSummary {
   id: number; code: string; type: InvoiceType; status: InvoiceStatus; overdue: boolean
   periodNo: number; periodStart: string | null; periodEnd: string | null; issueDate: string | null; dueDate: string | null; total: number
-  contract: { id: number; code: string; room: { id: number; code: string }; building: { id: number; code: string; name: string }; tenant?: { id: number; fullName: string; phone: string } }
+  contract: { id: number; code: string; status?: 'ACTIVE' | 'HOLD' | 'ENDED' | 'CANCELLED'; room: { id: number; code: string }; building: { id: number; code: string; name: string }; tenant?: { id: number; fullName: string; phone: string } }
 }
 
 export interface InvoiceLine { kind: LineKind; label: string; quantity: number; unitPrice: number; amount: number; meta?: Record<string, unknown> }

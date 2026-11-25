@@ -1,3 +1,4 @@
+import { RequestActions } from '../../features/requests/TenantRequestForm'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router'
 import { authScopeKey, useAuth } from '../../app/auth-context'
@@ -13,7 +14,8 @@ function Detail({ id, scope }: { id: number; scope: string }) {
   const query = useQuery({ queryKey: ['my-invoices', 'detail', scope, id], queryFn: () => getMyInvoice(id), refetchOnWindowFocus: 'always' })
   if (query.isPending) return <Spinner block label={t('tenantInvoices.loading')} />
   if (query.isError) return <div className="invoices-state"><FormError>{query.error.message}</FormError><RoomsButton type="button" onClick={() => void query.refetch()}>{t('contracts.retry')}</RoomsButton></div>
-  return <TenantInvoiceDetail invoice={query.data} />
+  return <><TenantInvoiceDetail invoice={query.data} />
+    {query.data.status === 'UNPAID' && (query.data.contract.status === 'ACTIVE' || query.data.contract.status === 'HOLD' && query.data.type === 'DEPOSIT') && <RequestActions contractId={query.data.contract.id} invoiceId={id} />}</>
 }
 
 // FE-P4-11 · BIL-10, D-38, UI-07. "Báo lỗi thanh toán" comes with requests in Phase 5 (FE-P4-13).

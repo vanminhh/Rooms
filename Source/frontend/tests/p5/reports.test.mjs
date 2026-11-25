@@ -18,6 +18,24 @@ function mockChartDimensions(t, width) {
   t.after(() => { delete proto.getBoundingClientRect; delete proto.getElementsByClassName; delete globalThis.ResizeObserver })
 }
 
+test('tenant consumption draws two periods with different units and a missing water reading', async t => {
+  mockChartDimensions(t, 360)
+  const { TenantOperationsOverview } = source('features/requests/TenantOperationsOverview.tsx')
+  const usage = [{ periodNo: 1, periodStart: '2026-09-01', electricKwh: 17, waterM3: null },
+    { periodNo: 2, periodStart: '2026-10-01', electricKwh: 10, waterM3: 3 }]
+  const app = await mountContractPage(TenantOperationsOverview, { role: 'TENANT', language: 'en', props: { scope: 'tenant', contractId: 31 }, rules: [
+    { prefix: '/me/consumption?contractId=31&periods=6', handler: () => ok(usage) },
+    { prefix: '/me/notifications?', handler: () => ok([], { page: 1, limit: 10, total: 0, unreadCount: 0 }) },
+    { prefix: '/me/requests?', handler: () => ok([], { page: 1, limit: 100, total: 0 }) },
+  ] })
+  try {
+    await until(() => find(app.container, n => n.tagName === 'SVG').length >= 2, 'two consumption charts', 15000)
+    assert.ok(app.container.textContent.includes('Electricity used (kWh)'))
+    assert.ok(app.container.textContent.includes('Water used (m³)'))
+    assert.ok(app.container.textContent.includes('Open requests: 0'))
+  } finally { await app.stop() }
+})
+
 test('staff dashboard charts load both reports for the selected building', async t => {
   mockChartDimensions(t, 360)
   const { DashboardCharts } = source('features/reports/DashboardCharts.tsx')

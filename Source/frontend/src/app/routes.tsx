@@ -1,5 +1,6 @@
-import { OperationsPage } from '../pages/OperationsPage'
+import { TenantRequestsPage } from '../pages/tenant/TenantRequestsPage'
 import { RequestsPage } from '../pages/staff/RequestsPage'
+import { TenantInboxPage } from '../pages/tenant/TenantInboxPage'
 import { ReportsPage } from '../pages/staff/ReportsPage'
 import { AuditPage } from '../pages/staff/AuditPage'
 import { SettingsPage } from '../pages/staff/SettingsPage'
@@ -79,9 +80,9 @@ export const routes: RouteObject[] = [
         { path: 'hop-dong', element: <TenantContractsPage /> },
         { path: 'hop-dong/:id', element: <TenantContractDetailPage /> },
         { path: 'hop-dong/:id/in', element: <TenantContractPrintPage /> },
-        { path: 'thong-bao', element: <OperationsPage title="nav.announcements" /> },
-        { path: 'yeu-cau', element: <OperationsPage title="nav.requests" /> },
-        { path: 'yeu-cau/:id', element: <OperationsPage title="nav.requestDetail" /> },
+        { path: 'thong-bao', element: <TenantInboxPage /> },
+        { path: 'yeu-cau', element: <TenantRequestsPage /> },
+        { path: 'yeu-cau/:id', element: <TenantRequestsPage /> },
         { path: 'hoa-don', element: <TenantInvoicesPage /> },
         { path: 'hoa-don/:id', element: <TenantInvoiceDetailPage /> },
       ],

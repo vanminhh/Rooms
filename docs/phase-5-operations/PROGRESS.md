@@ -26,8 +26,8 @@ Trạng thái:
 | P5-4 Đánh giá sửa chữa (BE) | accepted on dev by owner | – | – | – | migration M2 |
 | P5-5 Báo cáo, nhật ký, cài đặt (BE) | BE-P5-22..27 accepted | – | – | – | migration M3 |
 | P5-6 FE nhân sự: vận hành | owner accepted P5-6 | – | – | planner `plans/P5-6/PLAN.md` | khung route của cả phase |
-| P5-7 FE nhân sự: quản trị | M7 implementation; manual acceptance pending | – | – | – | gói biểu đồ |
-| P5-8 FE người thuê | chưa làm | – | – | – | song ngữ |
+| P5-7 FE nhân sự: quản trị | xong | M7 | `9400ca6` | - | Chủ dự án đã nghiệm thu |
+| P5-8 FE người thuê | đang làm | FE-P5-11..15 | - | M8: kiểm giao diện 360 px vi/en | Hộp thư, yêu cầu, điện nước |
 | P5-9 QA | chưa làm | – | – | – | |
 
 ## Lộ trình mốc
@@ -108,3 +108,5 @@ Làm các mốc theo thứ tự từ trên xuống. Ký hiệu: ✅ xong (đã c
 - 25/11/2026 - Owner accepted P5-6. P5-7 report data, monthly balances, occupancy, Boss comparison and overdue actions wired. Frontend lint, production build and 43 focused tests passed. Chart package approval pending.
 - 25/11/2026 - Owner approved recharts@3.3.0. Installed and pinned with its lockfile. Report and dashboard charts, Boss audit filters and settings forms are implemented. Chart component tests use simulated narrow and desktop containers. Actual 360 px browser acceptance is pending.
 - 25/11/2026 - P5-7 automated checkpoint: frontend lint and production build passed; full component regression 1041/1041, 0 skipped. Backend build and audit HTTP 3/3 passed. Reviewer approved after allowing entityId=0 for settings while actorId remains positive. Owner manual review at 360 px still pending.
+- 25/11/2026 - Owner accepted P5-7 and committed 9400ca6. P5-8 tenant inbox, requests, reviews, contract and invoice actions and consumption charts implemented. Review approved after correcting parking choices, moderated comments, invoice eligibility and the early move-out warning.
+- 25/11/2026 - M8 automated checks passed. Frontend lint, production build and all 1052 component tests passed (0 skipped). The legacy public filter case timed out in two earlier runs and passed individually and in the final full run. Backend build and 89 targeted tests passed; backend lint had 0 errors and 4 existing warnings. Manual tenant browser acceptance at 360 px in Vietnamese and English is pending.

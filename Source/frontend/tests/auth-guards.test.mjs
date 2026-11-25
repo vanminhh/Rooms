@@ -620,6 +620,8 @@ test('AUTH-06 / T3 / FE-P2-01: routes wire guards and layouts (tenant area TENAN
     '../pages/staff/InvoiceDetailPage': stub('InvoiceDetailPage'),
     '../pages/OperationsPage': stub('OperationsPage'),
     '../pages/staff/RequestsPage': stub('RequestsPage'),
+    '../pages/tenant/TenantInboxPage': stub('TenantInboxPage'),
+    '../pages/tenant/TenantRequestsPage': stub('TenantRequestsPage'),
     '../pages/staff/ReportsPage': stub('ReportsPage'),
     '../pages/staff/AuditPage': stub('AuditPage'),
     '../pages/staff/SettingsPage': stub('SettingsPage'),
