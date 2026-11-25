@@ -455,7 +455,7 @@ test('SVC-04: a locked service (isActive:false) still shows its section and pric
   const plan = baseRatePlan({ id: 50, kind: 'SERVICE', serviceId: 9, effectiveFrom: plusDays(todayHanoi(), -30), status: 'APPROVED' })
   fakeFetchRatePlans({ services, service: [plan] })
   const app = await mount(withAuthedQuery(React.createElement(RatePlanList, { buildingId: 5 })))
-  await wait(30)
+  for (let tries = 0; tries < 300 && !sectionByLabel(app.container, 'Dịch vụ · Giặt ủi')?.textContent.includes('Đang áp dụng'); tries++) await wait(10)
   const section = sectionByLabel(app.container, 'Dịch vụ · Giặt ủi')
   assert.ok(section, 'the locked service\'s section must still render')
   assert.ok(section.textContent.includes('Đang áp dụng'), 'its price history must still render')

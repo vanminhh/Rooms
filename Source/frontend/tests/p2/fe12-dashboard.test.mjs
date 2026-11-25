@@ -212,6 +212,11 @@ const fail = (status, code, message, fields) => json(status, { error: { code, me
 function fakeFetch(rules) {
   const calls = []
   globalThis.fetch = async (url, init = {}) => {
+    if (url.startsWith('/api/v1/reports/')) {
+      const data = url.includes('/occupancy') ? { rooms: 0, occupied: 0, percent: 0 } :
+        { months: [], outstanding: 0, overdue: 0, depositsHeld: 0 }
+      return new Response(JSON.stringify({ data }), { headers: { 'Content-Type': 'application/json' } })
+    }
     const call = { url, method: init.method ?? 'GET', headers: init.headers ?? {}, body: init.body }
     calls.push(call)
     const rule = rules.find(r => call.url.startsWith(`/api/v1${r.prefix}`) && (!r.method || r.method === call.method))

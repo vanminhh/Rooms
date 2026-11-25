@@ -33,6 +33,12 @@ describe('AUD-04 Boss audit history', () => {
     await get('?from=2026-03-02&to=2026-03-01').expect(400);
     expect(count).not.toHaveBeenCalled();
   });
+  it('allows entityId zero for settings and requires a positive actor ID', async () => {
+    count.mockResolvedValue(0);
+    await get('?entity=setting&entityId=0').expect(200);
+    expect(count).toHaveBeenCalledWith({ where: expect.objectContaining({ entity: 'setting', entityId: 0 }) });
+    await get('?actorId=0').expect(400);
+  });
   it('filters by Hanoi days, keeps exact IDs and strips nested sensitive fields', async () => {
     count.mockResolvedValue(2);
     findMany.mockResolvedValue([{ id: 9007199254740993n, actor: null, before: null,

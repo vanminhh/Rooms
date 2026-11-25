@@ -10,6 +10,7 @@ import { markViewingCalled, type ViewingView } from '../../features/viewings/api
 import { useContractAction } from '../../features/contracts/actions'
 import { formatDate, formatMoney } from '../../shared/formatters'
 import { MoneyCards } from '../../features/dashboard/MoneyCards'
+import { DashboardCharts } from '../../features/reports/DashboardCharts'
 import '../../features/dashboard/dashboard.css'
 
 // NOTI-06 / VIEW-07: every NEW viewing counts (Q-P6-2); the list shows at most 5 of them.
@@ -97,6 +98,7 @@ export function StaffHomePage() {
             <Link to={`/ql/yeu-cau?${filters}`}>Xem danh sách</Link>
           </section>)}
           <MoneyCards data={dashboard.data} />
+          <DashboardCharts scope={authScopeKey(user)} buildingId={typeof selectedBuildingId === 'number' ? selectedBuildingId : undefined} />
         </div>}
   </>
 }

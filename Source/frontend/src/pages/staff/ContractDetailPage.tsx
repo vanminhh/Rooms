@@ -32,6 +32,11 @@ function ContractDetail({ id, scope }: { id: number; scope: string }) {
     {query.isError && <><FormError>{query.error.message}</FormError><RoomsButton onClick={() => void query.refetch()}>Thử lại</RoomsButton></>}
     {contract && query.isSuccess && <div className="contracts-list">
       <ContractSummaryCard contract={contract} />
+      {contract.status === 'ACTIVE' && !contract.nextContractId
+        ? <Link to={`/ql/hop-dong/${id}/gia-han`}>Gia hạn</Link>
+        : <div><RoomsButton disabled>Gia hạn</RoomsButton> {contract.nextContractId
+          ? <Link to={`/ql/hop-dong/${contract.nextContractId}`}>Đã có hợp đồng gia hạn</Link>
+          : 'Chỉ có thể gia hạn hợp đồng đang thuê.'}</div>}
       <div className="contracts-actions"><Link to={`/ql/hop-dong/${id}/in`}>In / Lưu PDF</Link>
         {contract.signedAt && <DocumentAccess label="Xem bản hợp đồng đã ký" load={async () => [{ label: contract.code, document: await getContractScan(id) }]} />}
         {contract.signedAt && <ResetPasswordAction contractId={id} onPassword={setPassword} />}
@@ -39,9 +44,11 @@ function ContractDetail({ id, scope }: { id: number; scope: string }) {
       {password && <TemporaryPassword password={password} />}
       <ContractInformation contract={contract} />
       {contract.status === 'HOLD' && !contract.signedAt && <SignContractForm contract={contract} onPassword={setPassword} />}
-      <DepositCard invoice={contract.depositInvoice} />
-      {contract.status === 'HOLD' && contract.signedAt && contract.depositInvoice?.status === 'UNPAID' && <DepositPaymentForm contract={contract} />}
-      {contract.status === 'HOLD' && contract.signedAt && <MoveInForm contract={contract} />}
+      {contract.previousContractId
+        ? <p>Tiền cọc chuyển tiếp từ <Link to={`/ql/hop-dong/${contract.previousContractId}`}>hợp đồng trước</Link>. Không thu cọc mới.</p>
+        : <DepositCard invoice={contract.depositInvoice} />}
+      {contract.status === 'HOLD' && !contract.previousContractId && contract.signedAt && contract.depositInvoice?.status === 'UNPAID' && <DepositPaymentForm contract={contract} />}
+      {contract.status === 'HOLD' && !contract.previousContractId && contract.signedAt && <MoveInForm contract={contract} />}
       {contract.status === 'HOLD' && <CancelContractForm contract={contract} />}
       <StaffOccupants contract={contract} scope={scope} />
       <StaffVehicles contract={contract} scope={scope} />

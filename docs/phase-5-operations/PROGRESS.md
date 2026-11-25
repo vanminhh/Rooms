@@ -25,8 +25,8 @@ Trạng thái:
 | P5-3 Yêu cầu (BE) | committed c3ad1c1; host checks passed; concurrency check pending | – | – | planner `plans/P5-3/PLAN.md` | |
 | P5-4 Đánh giá sửa chữa (BE) | accepted on dev by owner | – | – | – | migration M2 |
 | P5-5 Báo cáo, nhật ký, cài đặt (BE) | BE-P5-22..27 accepted | – | – | – | migration M3 |
-| P5-6 FE nhân sự: vận hành | đang làm (FE-P5-01..02 xong) | – | – | planner `plans/P5-6/PLAN.md` | khung route của cả phase |
-| P5-7 FE nhân sự: quản trị | chưa làm | – | – | – | gói biểu đồ |
+| P5-6 FE nhân sự: vận hành | owner accepted P5-6 | – | – | planner `plans/P5-6/PLAN.md` | khung route của cả phase |
+| P5-7 FE nhân sự: quản trị | M7 implementation; manual acceptance pending | – | – | – | gói biểu đồ |
 | P5-8 FE người thuê | chưa làm | – | – | – | song ngữ |
 | P5-9 QA | chưa làm | – | – | – | |
 
@@ -103,3 +103,8 @@ Làm các mốc theo thứ tự từ trên xuống. Ký hiệu: ✅ xong (đã c
 - 25/11/2026 — Owner confirmed the P5-5 dev checks passed. BE-P5-27 closed. P5-6 planning started.
 - 25/11/2026 - FE-P5-01: added eight staff/tenant routes, role-specific menus and tenant translations. Role checks passed for direct URLs, including Boss-only audit and settings. Frontend lint, build and the full component suite passed (0 failed, 0 skipped).
 - 25/11/2026 - FE-P5-02 completed: scoped request board, staff decisions, payment resolution, dashboard links and prefilled renewal form. Lint and build passed. Component tests: 1028/1028, including 10 request workflow tests with simulated API responses. Headless Chrome could not start for the viewport check; 360px and desktop browser verification remains for FE-P5-05.
+- 25/11/2026 - FE-P5-03/04: added confirmed room/building/chain announcements, read counts, direct renewal and HOLD cancellation entry. Staff detail now returns predecessor/successor IDs and the backend-calculated renewal start date. Targeted frontend 17/17; backend contract tests 61/61 with a longer test startup timeout.
+- 25/11/2026 - M6 automatic checkpoint: frontend lint and production build passed, full component suite 1035/1035 passed, 0 skipped. Backend build passed, lint 0 errors / 4 existing warnings. Two legacy UI tests were updated to wait for displayed data. Reviewer approved FE-P5-03/04. Browser viewport checks (360 px / desktop) and live staff acceptance remain open; neither Chrome nor Edge returned a usable headless page here.
+- 25/11/2026 - Owner accepted P5-6. P5-7 report data, monthly balances, occupancy, Boss comparison and overdue actions wired. Frontend lint, production build and 43 focused tests passed. Chart package approval pending.
+- 25/11/2026 - Owner approved recharts@3.3.0. Installed and pinned with its lockfile. Report and dashboard charts, Boss audit filters and settings forms are implemented. Chart component tests use simulated narrow and desktop containers. Actual 360 px browser acceptance is pending.
+- 25/11/2026 - P5-7 automated checkpoint: frontend lint and production build passed; full component regression 1041/1041, 0 skipped. Backend build and audit HTTP 3/3 passed. Reviewer approved after allowing entityId=0 for settings while actorId remains positive. Owner manual review at 360 px still pending.

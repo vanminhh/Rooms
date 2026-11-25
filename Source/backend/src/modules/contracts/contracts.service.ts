@@ -144,7 +144,7 @@ export class ContractsService {
     assertStaff(actor);
     const contract = await this.prisma.contract.findUnique({
       where: { id, ...scopeWhere(actor) },
-      select: CONTRACT_DETAIL,
+      select: { ...CONTRACT_DETAIL, previousContractId: true, nextContract: { select: { id: true } } },
     });
     if (!contract) {
       const exists = actor.buildingIds !== null &&
@@ -152,7 +152,11 @@ export class ContractsService {
       if (exists) throw new ForbiddenException(ErrorCode.OUT_OF_SCOPE);
       throw new NotFoundException(ErrorCode.NOT_FOUND);
     }
-    return this.contractDetail(contract);
+    const { previousContractId, nextContract, ...detail } = contract;
+    return {
+      ...await this.contractDetail(detail), previousContractId, nextContractId: nextContract?.id ?? null,
+      renewalStartDate: detail.status === 'ACTIVE' && !nextContract ? formatDateOnly(addDays(detail.endDate, 1)) : null,
+    };
   }
 
   async getMine(actor: AuthUser, id: number) {

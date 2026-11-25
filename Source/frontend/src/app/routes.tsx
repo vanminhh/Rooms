@@ -1,5 +1,9 @@
 import { OperationsPage } from '../pages/OperationsPage'
 import { RequestsPage } from '../pages/staff/RequestsPage'
+import { ReportsPage } from '../pages/staff/ReportsPage'
+import { AuditPage } from '../pages/staff/AuditPage'
+import { SettingsPage } from '../pages/staff/SettingsPage'
+import { AnnouncementsPage } from '../pages/staff/AnnouncementsPage'
 import { RequestRenewalPage } from '../pages/staff/RequestRenewalPage'
 import { GuestViewingPage } from '../pages/guest/GuestViewingPage'
 import type { RouteObject } from 'react-router'
@@ -106,12 +110,12 @@ export const routes: RouteObject[] = [
         { path: 'hoa-don', element: <InvoicesPage /> },
         { path: 'hoa-don/:id', element: <InvoiceDetailPage /> },
         { path: 'yeu-cau', element: <RequestsPage /> },
-        { path: 'thong-bao', element: <OperationsPage title="nav.announcements" /> },
-        { path: 'bao-cao', element: <OperationsPage title="nav.reports" /> },
+        { path: 'thong-bao', element: <AnnouncementsPage /> },
+        { path: 'bao-cao', element: <ReportsPage /> },
         // Boss-only pages: the guard blocks a manager who types the URL, not only the menu (AUTH-06, UI-08).
         { element: <RequireAuth allow={['BOSS']} />, children: [
-          { path: 'nhat-ky', element: <OperationsPage title="nav.audit" /> },
-          { path: 'cai-dat', element: <OperationsPage title="nav.settings" /> },
+          { path: 'nhat-ky', element: <AuditPage /> },
+          { path: 'cai-dat', element: <SettingsPage /> },
           { path: 'nhan-su', element: <ManagersPage /> },
           { path: 'duyet-gia', element: <ApprovalsPage /> },
           { path: 'giao-dich', element: <BankTransactionsPage /> },

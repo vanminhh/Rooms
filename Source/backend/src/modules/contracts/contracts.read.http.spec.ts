@@ -235,6 +235,7 @@ describe('BE-P3-10: staff contract reads', () => {
     expect(response.status).toBe(200);
     expect(response.body.data).toMatchObject({
       id: 123, signedAt: '2026-11-17T04:00:00.000Z', movedInAt: null,
+      nextContractId: null, renewalStartDate: '2027-02-28',
       occupants: [{
         id: 50, isSigner: true, idNumberLast4: '6789', dateOfBirth: '1993-01-02',
         moveInDate: '2026-11-30', moveOutDate: null,

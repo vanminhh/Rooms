@@ -10,7 +10,7 @@ import { PrismaService } from '../../common/prisma/prisma.service.js';
 
 class AuditQuery extends PaginationQuery {
   @IsOptional() @IsString() @MaxLength(50) entity?: string;
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(2147483647) entityId?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(2147483647) entityId?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(2147483647) actorId?: number;
   @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/) from?: string;
   @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/) to?: string;

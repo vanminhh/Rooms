@@ -29,11 +29,11 @@ Out: reports, audit, settings pages (P5-7), tenant pages (P5-8).
   Done when: `npm run test:components` and `npm run build` pass; a manager opening `/ql/cai-dat` is stopped by the guard, not just a hidden menu.
 - [x] **FE-P5-02** `/ql/yeu-cau`: 3 columns "Chờ xử lý / Đang xử lý / Hoàn thành", shared status labels, filters, detail; approve/reject (confirm dialog, note required on reject), cost for incidents, escalate; D-14 warning shown as the BE sends it; approving RENEW opens the prefilled renewal form (D-45 (15)).
   Done when: UI-03 states (loading/empty/error/data); `PENDING_REQUEST_EXISTS` and `CONFLICT_STATE` show `error.message`; no money math in the FE.
-- [ ] **FE-P5-03** `/ql/thong-bao`: send to a room / a building / all buildings (Boss only), confirm dialog, sent list with "đã đọc / tổng"; no edit or delete (D-45 (11)).
+- [x] **FE-P5-03** `/ql/thong-bao`: send to a room / a building / all buildings (Boss only), confirm dialog, sent list with "đã đọc / tổng"; no edit or delete (D-45 (11)).
   Done when: a manager has no "mọi tòa" option; the list refreshes after sending.
-- [ ] **FE-P5-04** "Gia hạn" in `/ql/hop-dong/:id`: term (≥ 3 months), copied services and supplementary clauses, start date and deposit from the BE. Staff can edit or clear the copied clauses when creating the renewal (D-46). Confirm, then use the CON-06 signing path. "Hủy gia hạn" uses the existing cancel (D-45 (10)).
+- [x] **FE-P5-04** "Gia hạn" in `/ql/hop-dong/:id`: term (≥ 3 months), copied services and supplementary clauses, start date and deposit from the BE. Staff can edit or clear the copied clauses when creating the renewal (D-46). Confirm, then use the CON-06 signing path. "Hủy gia hạn" uses the existing cancel (D-45 (10)).
   Done when: non-ACTIVE or already-renewed contract → button disabled with the reason; the screen says no new deposit.
-- [ ] **FE-P5-05** ⏸ `npm run lint`, `npm run build`, `npm run test:components` (re-run once if a timing-sensitive case fails).
+- [x] **FE-P5-05** ⏸ `npm run lint`, `npm run build`, `npm run test:components` (re-run once if a timing-sensitive case fails).
   Done when: real output.
 
 ## Questions for the owner

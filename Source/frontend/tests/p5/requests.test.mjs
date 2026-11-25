@@ -4,6 +4,52 @@ import { source, mountContractPage, ok, fail, until, find, buttonByText, dispatc
 
 const { RequestsPage } = source('pages/staff/RequestsPage.tsx')
 const { RequestRenewalPage } = source('pages/staff/RequestRenewalPage.tsx')
+const { ContractDetailPage } = source('pages/staff/ContractDetailPage.tsx')
+
+test('signed HOLD renewal offers cancellation and carries the deposit without a move-in action', async () => {
+  const contract = detailFixture({ previousContractId: 17, depositInvoice: null })
+  const app = await mountContractPage(ContractDetailPage, { path: '/ql/hop-dong/31', routePath: '/ql/hop-dong/:id', rules: [
+    ...['occupants', 'vehicles', 'services'].map(key => ({ prefix: '/contracts/31/' + key, handler: () => ok([]) })),
+    { prefix: '/contracts/31', handler: () => ok(contract) },
+    { prefix: '/services?', handler: () => ok([], { page: 1, limit: 20, total: 0 }) },
+  ] })
+  try {
+    await until(() => app.container.textContent.includes('Hủy gia hạn'), 'cancel renewal')
+    assert.ok(app.container.textContent.includes('Không thu cọc mới'))
+    assert.equal(app.container.textContent.includes('Nhận phòng và ghi chỉ số đầu'), false)
+    assert.equal(find(app.container, n => n.name === 'depositKept').length, 0)
+  } finally { await app.stop() }
+})
+
+test('staff can initiate renewal directly; dates, services and deposit come from the contract', async () => {
+  const contract = detailFixture({ status: 'ACTIVE', renewalStartDate: '2028-02-29', terms: 'Giữ nguyên', services: [{ id: 3, name: 'Internet' }] })
+  const app = await mountContractPage(RequestRenewalPage, { path: '/ql/hop-dong/31/gia-han', routePath: '/ql/hop-dong/:id/gia-han', rules: [
+    { prefix: '/contracts/31', method: 'GET', handler: () => ok(contract) },
+    { prefix: '/contracts/31/renew', method: 'POST', handler: () => ok({ id: 48 }) },
+  ] })
+  try {
+    await until(() => app.container.textContent.includes('29/02/2028'), 'server date')
+    assert.ok(app.container.textContent.includes('Internet'))
+    assert.ok(app.container.textContent.includes('Không thu cọc mới'))
+    dispatch(app.container, find(app.container, n => n.tagName === 'FORM')[0], 'submit')
+    await until(() => buttonByText(app.container, 'Tạo gia hạn'), 'confirmation')
+    dispatch(app.container, buttonByText(app.container, 'Tạo gia hạn'), 'click')
+    await until(() => app.router.state.location.pathname.endsWith('/48'), 'HOLD successor')
+    assert.deepEqual(JSON.parse(app.calls.find(c => c.method === 'POST').body), { termMonths: contract.termMonths })
+  } finally { await app.stop() }
+})
+
+for (const [state, reason] of [
+  [{ status: 'ACTIVE', nextContractId: 48 }, 'đã có bản gia hạn'],
+  [{ status: 'ENDED' }, 'chưa ở trạng thái đang thuê'],
+]) test('direct renewal is blocked: ' + reason, async () => {
+  const app = await mountContractPage(RequestRenewalPage, { path: '/ql/hop-dong/31/gia-han', routePath: '/ql/hop-dong/:id/gia-han',
+    rules: [{ prefix: '/contracts/31', handler: () => ok(detailFixture(state)) }] })
+  try {
+    await until(() => app.container.textContent.includes(reason), 'reason')
+    assert.equal(find(app.container, n => n.tagName === 'FORM').length, 0)
+  } finally { await app.stop() }
+})
 const { StaffHomePage } = source('pages/staff/StaffHomePage.tsx')
 const { availableActions } = source('features/requests/api.ts')
 const base = { id: 12, contractId: 31, title: 'Kiểm tra', description: null, decisionNote: null, photos: [], cost: null, payload: {} }
@@ -106,7 +152,7 @@ test('approved renewal opens with proposed term and copied clauses; clearing cre
   ] })
   try {
     await app.router.navigate('/ql/hop-dong/31/gia-han?requestId=12&termMonths=8')
-    await until(() => find(app.container, n => n.tagName === 'TEXTAREA').length, 'renewal form')
+    await until(() => app.container.textContent.includes('Yêu cầu #12') && find(app.container, n => n.tagName === 'TEXTAREA').length, 'request-specific renewal form')
     assert.equal(find(app.container, n => n.tagName === 'INPUT')[0].value, '8')
     const terms = find(app.container, n => n.tagName === 'TEXTAREA')[0]
     assert.equal(terms.defaultValue, 'Điều khoản cũ')

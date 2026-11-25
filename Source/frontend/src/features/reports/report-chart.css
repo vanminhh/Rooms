@@ -1,0 +1,5 @@
+.report-chart { min-width: 0; margin: 1rem 0; color: var(--rooms-text); }
+.report-chart figcaption { font-weight: 600; margin-bottom: .5rem; }
+.report-chart ul { display: flex; flex-wrap: wrap; gap: .5rem 1rem; padding: 0; list-style: none; }
+.report-chart li { display: inline-flex; align-items: center; gap: .4rem; }
+.report-chart li span { width: .8rem; height: .65rem; border-radius: 2px; }

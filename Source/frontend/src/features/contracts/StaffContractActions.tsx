@@ -35,13 +35,13 @@ export function SignContractForm({ contract, onPassword }: { contract: ContractD
     })
   }
   return <ElevatedCard className="contracts-card"><h2>Ký hợp đồng</h2>
-    <p>In và ký bản giấy, sau đó tải bản đã ký lên để mở tài khoản người thuê và hóa đơn cọc.</p>
+    <p>{contract.previousContractId ? 'Tải bản gia hạn đã ký lên để chờ chuyển tiếp hợp đồng. Không thu cọc mới.' : 'In và ký bản giấy, sau đó tải bản đã ký lên để mở tài khoản người thuê và hóa đơn cọc.'}</p>
     <fieldset className="contracts-fieldset" disabled={action.pending}>
       <PrivateUploadField contractId={contract.id} purpose="CONTRACT_SCAN" label="Bản hợp đồng đã ký (JPG, PNG, WebP hoặc PDF)" value={asset} onChange={setAsset} onBusy={setUploading} />
       <RoomsButton type="button" disabled={!asset || uploading || action.pending} onClick={() => setConfirm(true)}>Ký hợp đồng</RoomsButton>
     </fieldset>
     {action.error && <FormError>{action.error}</FormError>}
-    <ConfirmDialog open={confirm} title="Xác nhận đã ký hợp đồng" description="Bản tải lên là hợp đồng đã được hai bên ký. Hệ thống sẽ mở tài khoản người thuê và lập hóa đơn tiền cọc nếu có."
+    <ConfirmDialog open={confirm} title="Xác nhận đã ký hợp đồng" description={contract.previousContractId ? 'Hai bên đã ký bản gia hạn. Tiền cọc được chuyển tiếp từ hợp đồng trước.' : 'Bản tải lên là hợp đồng đã được hai bên ký. Hệ thống sẽ mở tài khoản người thuê và lập hóa đơn tiền cọc nếu có.'}
       confirmLabel="Xác nhận đã ký" pending={action.pending} onClose={() => { if (!action.pending) setConfirm(false) }} onConfirm={() => void sign()} />
   </ElevatedCard>
 }
@@ -138,11 +138,12 @@ export function CancelContractForm({ contract }: { contract: ContractDetail }) {
     setConfirmation(null)
     if (!success) await invalidateContracts(client)
   }
-  return <ElevatedCard className="contracts-card"><h2>Hủy hợp đồng giữ chỗ</h2>
+  const cancelLabel = contract.previousContractId ? 'Hủy gia hạn' : 'Hủy hợp đồng'
+  return <ElevatedCard className="contracts-card"><h2>{contract.previousContractId ? cancelLabel : 'Hủy hợp đồng giữ chỗ'}</h2>
     <form className="contracts-form" noValidate onSubmit={handleSubmit(input => void action.run(async () => setConfirmation({ input, amounts: await previewContractCancellation(contract.id, input) }), describe))}>
       <fieldset className="contracts-fieldset" disabled={action.pending || !!confirmation}>
         <TextAreaField label="Lý do hủy hợp đồng" {...register('reason')} error={errors.reason?.message} />
-        <TextField label="Tiền cọc giữ lại (đồng)" type="number" min="0" step="1" {...register('depositKept', { valueAsNumber: true })} error={errors.depositKept?.message} />
+        {!contract.previousContractId && <TextField label="Tiền cọc giữ lại (đồng)" type="number" min="0" step="1" {...register('depositKept', { valueAsNumber: true })} error={errors.depositKept?.message} />}
         <RoomsButton type="submit" variant="outline" disabled={action.pending}>Xem số tiền trước khi hủy</RoomsButton>
       </fieldset>
       {action.error && <FormError>{action.error}</FormError>}
@@ -150,7 +151,7 @@ export function CancelContractForm({ contract }: { contract: ContractDetail }) {
     <ConfirmDialog open={!!confirmation} title="Xác nhận hủy hợp đồng" description={confirmation && <>
       <p>Cọc đã nhận: {formatMoney(confirmation.amounts.depositReceived)}</p><p>Giữ lại: {formatMoney(confirmation.amounts.depositKept)}</p>
       <p>Hoàn khách: <strong>{formatMoney(confirmation.amounts.refund)}</strong></p><p>{confirmation.input.reason}</p>
-    </>} confirmLabel="Hủy hợp đồng" pending={action.pending} onClose={() => { if (!action.pending) setConfirmation(null) }} onConfirm={() => void cancel()} />
+    </>} confirmLabel={cancelLabel} pending={action.pending} onClose={() => { if (!action.pending) setConfirmation(null) }} onConfirm={() => void cancel()} />
   </ElevatedCard>
 }
 

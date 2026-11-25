@@ -141,3 +141,6 @@ Read this before the first task of any part. Each line is a mistake that really 
 - P5-5 (RPT-02): a cancelled, issued monthly bill without a replacement still covers the billed period and supplies meter baselines. Check missed-period creation, settlement and renewal when adding a cancellation path.
 
 - An e2e case wrapped in one rolled-back transaction has a hard 240 s limit; adding later parts' checks to the same case pushed it past the limit on the remote dev DB ("Transaction not found", 500). Give each part its own case and fixture instead of growing one [BE-P5-18/20/24, 24/11/2026].
+
+- FE-P5-04: direct and request-linked renewal share a route. After changing the query string in a component test, wait for the requested ID to render before checking the prefilled term.
+- FE-P5-07/08: in the simulated DOM, provide chart container measurements and load the chart module before timing UI updates. Audit entity IDs include 0 for settings changes; actor IDs start at 1.
