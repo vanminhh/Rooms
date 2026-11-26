@@ -17,6 +17,7 @@ export class HealthController {
       response.status(503).json({ status: 'unavailable' });
       return;
     }
-    response.status(200).json({ status: 'ok' });
+    // A readiness probe must return its current status even for a conditional GET.
+    response.status(200).type('application/json').end(JSON.stringify({ status: 'ok' }));
   }
 }

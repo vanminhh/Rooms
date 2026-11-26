@@ -25,10 +25,9 @@ export function PublicRoomsPage() {
   const [params, setParams] = useSearchParams()
   const catalog = useQuery({ queryKey: [...publicQueryKeys.filters, lang], queryFn: getPublicFilters })
   // PUB-06: a code in the URL that the list does not know is dropped before the request; until the list loads, a URL that needs it waits.
-  const values = useMemo(() => {
-    const parsed = parseFilters(params)
-    return catalog.data ? withCatalog(parsed, catalog.data) : parsed
-  }, [params, catalog.data])
+  const parsed = useMemo(() => parseFilters(params), [params])
+  const filterCatalog = needsCatalog(parsed) ? catalog.data : undefined
+  const values = useMemo(() => filterCatalog ? withCatalog(parsed, filterCatalog) : parsed, [parsed, filterCatalog])
   const page = pageOf(params)
   const valid = validFilters(values)
   const ready = valid && (catalog.data !== undefined || catalog.isError || !needsCatalog(values))

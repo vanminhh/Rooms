@@ -11,7 +11,7 @@ import { createRequire } from 'node:module'
 import test, { after } from 'node:test'
 import {
   draftFirst, loadModule, mount, find, byName, buttonByText, alerts, isDisabled, dispatch, fill, until, wait,
-  fakeFetch, ok, fail, pageMeta, queryOf,
+  fakeFetch, ok, fail, pageMeta, queryOf, FILTERS_FIXTURE,
 } from './public-dom.mjs'
 
 const nodeRequire = createRequire(import.meta.url)
@@ -126,10 +126,15 @@ test('FE-P2-15 #1: opening /phong with a full query fills the form and requests 
 // ======================================================================================
 test('FE-P2-15 #2: changing a field and clicking "Áp dụng bộ lọc" updates the URL (only non-empty params) and the request; page is dropped back to 1', async () => {
   const initial = `/phong?${new URLSearchParams({ district: 'Cầu Giấy', page: '3' })}`
-  const app = await mountRooms(initial, [roomsRule([]), locationsRule()])
+  const catalog = Promise.withResolvers()
+  const app = await mountRooms(initial, [
+    roomsRule([]), locationsRule(), { prefix: '/public/filters', handler: () => catalog.promise },
+  ])
   await until(() => roomsCall(app.calls).some(c => queryOf(c.url).get('district') === 'Cầu Giấy'), 'loaded')
   await until(() => app.container.textContent.includes('Không có phòng phù hợp'), 'initial results rendered')
   flushSync(() => fill(app.container, byName(app.container, 'minPrice'), '3500000'))
+  catalog.resolve(ok(FILTERS_FIXTURE))
+  await until(() => !isDisabled(byName(app.container, 'roomType')), 'catalog loaded after editing')
   flushSync(() => submit(app))
   await until(() => app.path().includes('minPrice=3500000'), `applied (got ${app.path()})`)
   assert.ok(!app.path().includes('page='), `page must be dropped, got ${app.path()}`)

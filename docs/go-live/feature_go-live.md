@@ -48,11 +48,12 @@ Rules: mark `[~]` when you start a task, `[x]` only after its "Done when" is ver
   Verified on the dev host (owner screenshot, 26/11/2026): 145/145 test files and 2911/2911 tests passed.
 - [x] **GL-03** `.env.example`: add `BANK_WEBHOOK_SECRET`, `CLOUDINARY_URL`, `TRUST_PROXY_HOPS`, `PORT`, `PRISMA_TX_TIMEOUT_MS` with a one-line comment each (what it is, format, default). Add a comment on `CCCD_KEY`: 32 bytes base64, losing it makes stored ID numbers unreadable. No values.
   Done when: every `env.X` / `process.env.X` read in `src/` (grep) appears in `.env.example`.
-- [!] **GL-04** Only if Q-GL-6 = yes: `GET /api/v1/health`, public, `no-store`, answers 200 `{ status: "ok" }` after `SELECT 1`, 503 when the DB does not answer; no version or env in the body. Lessons: a new module breaks the module-list test in `prisma.service.spec.ts`; a new error code breaks the count in `app.setup.spec.ts`.
+- [x] **GL-04** Only if Q-GL-6 = yes: `GET /api/v1/health`, public, `no-store`, answers 200 `{ status: "ok" }` after `SELECT 1`, 503 when the DB does not answer; no version or env in the body. Lessons: a new module breaks the module-list test in `prisma.service.spec.ts`; a new error code breaks the count in `app.setup.spec.ts`.
   Done when: HTTP tests for 200 and 503; no auth needed; lint + test + build pass.
-  Verification pending: both routed responses passed in-process. Supertest TCP connections returned EACCES before routing. Run the full backend suite on the dev host.
-- [ ] **GL-05** ⏸ Production build check: `npm run build` in both apps; start `node dist/main` with `NODE_ENV=production` and a missing `JWT_SECRET` → refuses to start; with all variables → starts, cron jobs register, refresh cookie has `Secure` (AUTH-T2). Frontend `npm run lint`, `npm run test:components`. Reviewer once on GL-02..04.
+  Verified on the dev host after the assertion fix: 146/146 files, 2913/2913 tests passed in 123.79 s (26/11/2026).
+- [x] **GL-05** ⏸ Production build check: `npm run build` in both apps; start `node dist/main` with `NODE_ENV=production` and a missing `JWT_SECRET` → refuses to start; with all variables → starts, cron jobs register, refresh cookie has `Secure` (AUTH-T2). Frontend `npm run lint`, `npm run test:components`. Reviewer once on GL-02..04.
   Done when: real outputs in the report; reviewer report included.
+  Verified after the conditional GET fix on the dev host: 146/146 files, 2914/2914 tests passed in 133.72 s. Frontend 1052/1052. Full substitute reviewer report and smoke results are in PROGRESS.md.
 
 ### GL-C · Real bank webhook adapter (Who: agent; needs Q-GL-3)
 
@@ -119,3 +120,6 @@ Write results in `docs/go-live/gl-rehearsal-checklist.md` (same style as `docs/p
 - 26/11/2026 - GL-02 / DEP-04: two login HTTP tests blocked before reaching the handler. Resolved by the subsequent full dev-host run (2911/2911 passed).
 - 26/11/2026 - GL-04 (DEP-10): waiting for the dev-host backend test result after adding the health route.
 - 26/11/2026 - GL-04: dev-host suite 2912/2913. Updated stale AppModule controller assertion for DEP-10. Affected file passed 7/7 on rerun, full post-fix run pending.
+- 26/11/2026 - GL-04 verification resolved by the full post-fix dev-host run above.
+- 26/11/2026 - GL-05: Supertest loopback connect returns EACCES in the workspace. Owner to run npm test in Source/backend on the post-review fix. Pinned reviewer unavailable (DNS), independent substitute report recorded for owner acceptance.
+- 26/11/2026 - GL-05: dev-host verification resolved. The owner supplied the passing post-fix result. Checkpoint awaits owner commit.

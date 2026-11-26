@@ -505,7 +505,8 @@ test('UI-03: pagination nav appears only when total exceeds 20, shows "Trang 1/2
   assert.ok(isDisabled(prev), '"Trang trước" must be disabled on page 1')
   assert.ok(next && !isDisabled(next), '"Trang sau" must be enabled on page 1 of 2')
   dispatch(app.container, next, 'click')
-  await wait(30)
+  const deadline = Date.now() + 3000
+  while (!app.container.textContent.includes('Quản lý 21') && Date.now() < deadline) await wait(10)
   const secondCall = calls.filter(c => c.url.startsWith('/api/v1/managers?')).at(-1)
   assert.equal(queryOf(secondCall.url).get('page'), '2', 'clicking "Trang sau" must request page=2')
   assert.ok(app.container.textContent.includes('Quản lý 21'))

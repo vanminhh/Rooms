@@ -148,3 +148,5 @@ Read this before the first task of any part. Each line is a mistake that really 
 - FE-P5-14: contract services and available parking services are separate collections. Load active vehicle services from the tenant-owned contract's building for a vehicle-change request. A moderated review returns a redacted comment, so a rating edit must preserve the stored comment at the API boundary.
 - QA-P5-04: verify two distinct PostgreSQL backend PIDs inside the transactions before releasing concurrent workers. When a worker fails before approval, retire the fixture's pending request as well as its contracts and accounts before recording CLEANED.
 - GL-04 (DEP-10): when registering a root controller, update the exact AppModule controller metadata assertion in prisma.service.spec.ts alongside the HTTP tests.
+- GL-05 (DEP-10): cover conditional GET on a readiness endpoint with an exact status contract. Express JSON delivery can turn a healthy response into 304 even with Cache-Control: no-store.
+- GL-05 (FE-P2-15, UI-03): exercise filter edits while the catalog is pending. In pagination tests wait for the requested row to render before checking its content.

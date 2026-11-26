@@ -33,3 +33,11 @@ it('DEP-10: a failed database probe returns an uncached 503 without database det
   await request(app.getHttpServer()).get('/api/v1/health')
     .expect('Cache-Control', 'no-store').expect(503, { status: 'unavailable' });
 });
+
+it('DEP-10: a conditional GET still probes the database and returns the current status', async () => {
+  query.mockClear().mockResolvedValueOnce([{ value: 1 }]);
+  await request(app.getHttpServer()).get('/api/v1/health')
+    .set('If-None-Match', '*')
+    .expect('Cache-Control', 'no-store').expect(200, { status: 'ok' });
+  expect(query).toHaveBeenCalledTimes(1);
+});
