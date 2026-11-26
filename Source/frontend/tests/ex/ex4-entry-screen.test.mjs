@@ -78,7 +78,7 @@ test('UI-11, KIT-05: initial focus and Tab stay inside the choices; still image 
     assert.equal(document.activeElement, buttons.at(-1))
     dispatch(app.container, buttons.at(-1), 'keydown', { key: 'Tab' })
     assert.equal(document.activeElement, buttons[0])
-    assert.equal(find(app.container, n => n.tagName === 'IMG').length, 1)
+    assert.equal(find(app.container, n => n.tagName === 'IMG' && n.getAttribute('src') === '/videos/rooms-entry.webp').length, 1)
     assert.equal(find(app.container, n => n.tagName === 'VIDEO').length, 0)
   } finally { await app.stop() }
 })
@@ -91,7 +91,7 @@ test('UI-11, KIT-05: a failed optional video leaves the still image', async () =
     // Media errors do not bubble; React attaches this listener to the video itself.
     dispatch(video, video, 'error')
     await until(() => find(app.container, n => n.tagName === 'VIDEO').length === 0, 'failed video removed')
-    assert.equal(find(app.container, n => n.tagName === 'IMG').length, 1)
+    assert.equal(find(app.container, n => n.tagName === 'IMG' && n.getAttribute('src') === '/videos/rooms-entry.webp').length, 1)
   } finally { await app.stop() }
 })
 
@@ -101,6 +101,6 @@ test('UI-11, KIT-05: reduced motion does not load even an available video', asyn
   const app = await boot(null, 'vi', '/test-entry.webm')
   try {
     assert.equal(find(app.container, n => n.tagName === 'VIDEO').length, 0)
-    assert.equal(find(app.container, n => n.tagName === 'IMG').length, 1)
+    assert.equal(find(app.container, n => n.tagName === 'IMG' && n.getAttribute('src') === '/videos/rooms-entry.webp').length, 1)
   } finally { await app.stop(); window.matchMedia = previous }
 })

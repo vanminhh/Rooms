@@ -57,7 +57,7 @@ export function PublicLayout() {
       areaTitle={t('footer.areaTitle')} areaDescription={t('footer.areaDescription')}
       contactTitle={t('footer.contactTitle')} contactEmpty={t('footer.contactEmpty')} bottomLocation={t('footer.location')} />
     </div>
-    {showEntry && <EntryScreen onChoose={picked => {
+    {showEntry && <EntryScreen videoSrc="/videos/rooms-entry.mp4" onChoose={picked => {
       saveEntryChoice(picked)
       setChoice(picked)
       setEntryOpen(false)

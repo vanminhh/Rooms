@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import { useNavigate } from 'react-router'
-import { ElevatedCard, IllustrationLabel, LanguageSwitch, RoomsButton } from '../../components'
+import { ElevatedCard, LanguageSwitch, RoomsButton } from '../../components'
 import { useReducedMotion } from '../../components/useReducedMotion'
 import { useI18n } from '../../shared/i18n'
 import './entry-screen.css'
@@ -48,11 +48,17 @@ export function EntryScreen({ onChoose, videoSrc }: { onChoose(choice: EntryChoi
   }
 
   return <div ref={root} className="rooms-dialog-backdrop public-entry" onKeyDown={trapFocus}>
-    <img className="public-entry-background" src="/images/hero-building.webp" alt="" />
+    <img className="public-entry-background" src="/videos/rooms-entry.webp" alt="" />
     {videoSrc && !reducedMotion && !videoFailed && <video className="public-entry-background" src={videoSrc}
       autoPlay muted playsInline loop preload="none" aria-hidden="true" tabIndex={-1}
       style={{ visibility: videoReady ? 'visible' : 'hidden' }}
       onPlaying={() => setVideoReady(true)} onError={() => setVideoFailed(true)} />}
+    <div className="public-entry-welcome">
+      <span className="rooms-brand-mark" aria-hidden="true"><img src="/images/rooms-logo.webp" alt="" /></span>
+      <strong>ROOMS</strong>
+      <small>APARTMENTS HANOI</small>
+      <p>{lang === 'vi' ? 'Chào mừng đến với' : 'Welcome to'} <em>ROOMS</em></p>
+    </div>
     <ElevatedCard className="public-entry-card" role="dialog" aria-modal="true" aria-labelledby="entry-title">
       <h2 id="entry-title">{t('entry.title')}</h2>
       <div className="public-entry-choices">
@@ -63,7 +69,6 @@ export function EntryScreen({ onChoose, videoSrc }: { onChoose(choice: EntryChoi
       {/* D-43: a guest with an account logs in on the plain page; this keeps the choice "Tìm phòng" (a guest is a visitor of the rooms). */}
       <button type="button" className="public-entry-guest" onClick={() => { onChoose('/'); navigate('/dang-nhap') }}>{t('entry.guestLogin')}</button>
       <LanguageSwitch value={lang} onChange={setLang} viLabel={t('nav.vietnamese')} enLabel={t('nav.english')} groupLabel={t('nav.language')} />
-      <IllustrationLabel>{t('home.illustration')}</IllustrationLabel>
     </ElevatedCard>
   </div>
 }
