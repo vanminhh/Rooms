@@ -71,3 +71,65 @@ Nếu frontend lỗi build, mở **Vercel → Deployments → Build Logs**. Nế
    | GET health và GET me/viewings khi chưa đăng nhập | Lần lượt HTTP 200 và 401, cả hai trả `no-store`. Gọi lại vẫn không có HIT. |
 
    Nếu public luôn MISS, đối chiếu header trực tiếp trên Render trước. Sau đó kiểm tra cấu hình cache cho external rewrites của project Vercel và các rule tùy chỉnh đang ghi đè header. Khi thử endpoint có phân trang, bộ lọc hoặc ngôn ngữ, giữ nguyên query string và `Accept-Language` giữa hai lần thử HIT. Các phương thức ghi và các API ngoài nhóm public dùng `no-store`.
+
+## 6. Sao lưu Supabase hằng ngày và thử khôi phục (GL-11, Q-GL-7B)
+
+Rooms dùng PostgreSQL của Supabase. Script `deploy/backup-rooms.ps1` xuất schema `public` (cấu trúc, dữ liệu, sequence, ràng buộc, trigger và lịch sử migration của ứng dụng) thành một file custom-format. File ảnh và bản quét trên Cloudinary, cấu hình nền tảng Supabase và biến môi trường trên Render nằm ngoài bản dump. Lưu riêng khóa `CCCD_KEY` tương ứng trong kho mật khẩu để đọc lại trường CCCD sau khi khôi phục.
+
+### Chuẩn bị trên Windows
+
+1. Chọn một máy Windows có thể chạy hằng ngày. Chuẩn bị một thư mục riêng ngoài repo và ngoài Supabase, ví dụ thư mục đồng bộ riêng tư trên ổ đã mã hóa. Chỉ cấp quyền cho tài khoản làm backup và người phụ trách phục hồi. File dump có dữ liệu cá nhân. Kiểm tra dung lượng và trạng thái đồng bộ tới nơi lưu thứ hai.
+2. Mở Supabase SQL Editor, chạy `SHOW server_version;`. Chuẩn bị bộ công cụ PostgreSQL cùng phiên bản chính, đưa thư mục `bin` vào PATH của tài khoản sẽ chạy lịch. Kiểm tra bằng `pg_dump --version`, `pg_restore --version`, `psql --version`. Khi diễn tập trên máy riêng, cần thêm PostgreSQL server local và `createdb`.
+3. Trong Supabase **Connect**, lấy host, username, database và port của **Session pooler** (thường là 5432). Tạo file riêng ngoài repo, ví dụ `%APPDATA%\postgresql\rooms-service.conf`. Điền thông tin thực tế:
+
+   ```ini
+   [rooms_backup]
+   host=HOST_SESSION_POOLER
+   port=5432
+   dbname=postgres
+   user=USER_SESSION_POOLER
+   sslmode=require
+   ```
+
+4. Trong PowerShell, đăng ký đường dẫn cho tài khoản chạy lịch và cho cửa sổ hiện tại:
+
+   ```powershell
+   $env:PGSERVICEFILE = Join-Path $env:APPDATA 'postgresql\rooms-service.conf'
+   [Environment]::SetEnvironmentVariable('PGSERVICEFILE', $env:PGSERVICEFILE, 'User')
+   ```
+
+   Trong `%APPDATA%\postgresql\pgpass.conf` của cùng tài khoản, thêm một dòng theo thứ tự `host:port:database:user:password`. Bốn trường đầu phải khớp file service. Dùng mật khẩu DB gốc; trong định dạng này dấu hai chấm và gạch ngược trong mật khẩu được viết thành `\:` và `\\`. Giới hạn quyền đọc file qua **Properties → Security**. [Kết nối Supabase](https://supabase.com/docs/guides/database/connecting-to-postgres) · [Định dạng pgpass](https://www.postgresql.org/docs/current/libpq-pgpass.html)
+
+### Chạy thử rồi đặt lịch mỗi ngày
+
+1. Tạo thư mục đích đã chọn, thay đường dẫn ví dụ bên dưới rồi chạy:
+
+   ```powershell
+   psql --dbname=service=rooms_backup --no-password -X -v ON_ERROR_STOP=1 -c 'SELECT count(*) FROM public.rooms'
+   & 'D:\Rooms\deploy\backup-rooms.ps1' -BackupDirectory 'E:\RoomsBackups'
+   ```
+
+   Khi thấy `Backup ready`, kiểm tra file `.dump` đã đến nơi lưu riêng. Script ghi file tạm `.partial`, đọc thử mục lục và toàn bộ archive rồi mới đổi sang `.dump`. Nếu lỗi, giữ bản thành công trước đó, sửa lỗi và chạy lại. Việc đọc được archive chỉ là kiểm tra ban đầu.
+2. Trong **Task Scheduler → Create Task**, chọn đúng tài khoản đã cấu hình ở trên. Thêm trigger **Daily**, ví dụ 02:30 giờ Việt Nam. Chọn **Run task as soon as possible after a scheduled start is missed** và **Do not start a new instance**. Nếu dùng ổ mạng, dùng đường dẫn UNC mà tài khoản chạy lịch truy cập được.
+3. Action **Start a program**: Program `powershell.exe`, Arguments `-NoProfile -NonInteractive -File "D:\Rooms\deploy\backup-rooms.ps1" -BackupDirectory "E:\RoomsBackups"`. Thay bằng đường dẫn thật. Bấm **Run**, kiểm tra **Last Run Result = 0x0**, ngày giờ của file mới và bản đã đồng bộ. Nếu máy thường xuyên tắt, đặt lịch trên máy có thể hoạt động mỗi ngày. Kiểm tra lại khi quá một ngày chưa có bản mới.
+
+### Diễn tập khôi phục vào database riêng (GL-24)
+
+Chọn một bản dump đã đồng bộ ở nơi lưu riêng. Để có số liệu đối chiếu chính xác, chọn lúc ít sử dụng, ghi số lượng phòng, hợp đồng và hóa đơn trên nguồn ngay khi tạo bản diễn tập và tránh thay đổi các bảng đó trong lúc dump. Dùng cùng câu SELECT bên dưới với `psql --dbname=service=rooms_backup`. Nếu dữ liệu nguồn đã thay đổi sau backup, so với số đã ghi tại thời điểm backup.
+
+Mở PowerShell trên máy có PostgreSQL local riêng tư cùng phiên bản chính. Điền đường dẫn archive. Khối lệnh chỉ kết nối tới `127.0.0.1` và tạo database mới cho mỗi lần thử. Nếu bước tạo thất bại, dừng ngay để tránh ghi vào database đã có.
+
+```powershell
+$archive = (Get-Item -LiteralPath 'E:\RoomsBackups\TEN_BAN_SAO.dump' -ErrorAction Stop).FullName
+$restoreDb = 'rooms_restore_' + (Get-Date -Format 'yyyyMMdd_HHmmss')
+$localPg = @('--host=127.0.0.1', '--port=5432', '--username=postgres')
+createdb @localPg --maintenance-db=postgres --template=template0 $restoreDb
+if ($LASTEXITCODE -ne 0) { throw 'Chưa tạo được database thử mới.' }
+pg_restore @localPg --dbname=$restoreDb --single-transaction --exit-on-error --no-owner --no-privileges --clean --if-exists $archive
+if ($LASTEXITCODE -ne 0) { throw 'Restore thất bại. Xem lỗi PostgreSQL trước khi nghiệm thu.' }
+$sql = 'SELECT (SELECT count(*) FROM public.rooms) AS rooms, (SELECT count(*) FROM public.contracts) AS contracts, (SELECT count(*) FROM public.invoices) AS invoices;'
+psql @localPg --dbname=$restoreDb -X -v ON_ERROR_STOP=1 -c $sql
+if ($LASTEXITCODE -ne 0) { throw 'Không đọc được các bảng vừa khôi phục.' }
+```
+
+Đạt khi restore hoàn tất và ba số đếm khớp mốc đã ghi, kể cả bảng có 0 dòng. Ghi thời điểm, tên archive, tên database thử và kết quả vào nhật ký GL-24. Giữ backend và các tác vụ gửi mail, lập hóa đơn trỏ về môi trường của chúng trong suốt buổi thử. [pg_dump](https://www.postgresql.org/docs/current/app-pgdump.html) · [pg_restore](https://www.postgresql.org/docs/current/app-pgrestore.html)

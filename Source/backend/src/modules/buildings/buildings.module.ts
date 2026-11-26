@@ -15,6 +15,6 @@ import { ServicesService } from './services.service.js';
   imports: [PrismaModule, AuditModule, SettingsModule],
   controllers: [BuildingsController, ServicesController, PublicBuildingsController],
   providers: [BuildingsService, BuildingWriteGuard, BuildingContactService, ServicesService, PublicBuildingsService],
-  exports: [BuildingContactService],
+  exports: [BuildingContactService, PublicBuildingsService],
 })
 export class BuildingsModule {}

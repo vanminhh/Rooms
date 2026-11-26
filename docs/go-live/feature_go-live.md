@@ -71,7 +71,7 @@ Rules: mark `[~]` when you start a task, `[x]` only after its "Done when" is ver
   Done when: the owner reads it and confirms every step is something they can do.
 - [x] **GL-10** CDN rule (DEP-06): only `GET /api/v1/public/*` cached 60 s; everything else bypass. Write it as steps in `deploy/README.md`.
   Done when: listed with how to check (`cf-cache-status` or the CDN's header).
-- [ ] **GL-11** Backup and restore steps for Q-GL-7, in `deploy/README.md`, including one restore test into a separate database.
+- [x] **GL-11** Backup and restore steps for Q-GL-7, in `deploy/README.md`, including one restore test into a separate database.
   Done when: steps written; restore test is GL-24.
 - [ ] **GL-12** ⏸ Report.
 

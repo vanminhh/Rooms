@@ -38,7 +38,7 @@ describe('LOC-02/04/06: language boundaries', () => {
   });
   it('LOC-02: field catalog covers auth, public rooms, account viewings and tenant occupant inputs', () => {
     const found = new Set<string>();
-    for (const path of ['common/errors/validation.ts', 'common/pagination.ts', 'modules/auth/dto/auth.dto.ts', 'modules/auth/auth.service.ts', 'modules/rooms/dto/public-rooms.dto.ts', 'modules/viewings/dto/viewings.dto.ts', 'modules/viewings/viewing-time.ts', 'modules/viewings/viewing-validation.ts', 'modules/contracts/dto/occupants.dto.ts', 'modules/contracts/contract-occupants.service.ts', 'common/rooms/occupant-capacity.ts']) {
+    for (const path of ['common/errors/validation.ts', 'common/pagination.ts', 'modules/auth/dto/auth.dto.ts', 'modules/auth/auth.service.ts', 'modules/rooms/dto/public-rooms.dto.ts', 'modules/viewings/dto/viewings.dto.ts', 'modules/viewings/viewing-time.ts', 'modules/viewings/viewing-validation.ts', 'modules/contracts/dto/occupants.dto.ts', 'modules/contracts/contract-occupants.service.ts', 'common/rooms/occupant-capacity.ts', 'modules/chatbot/dto/chat.dto.ts']) {
       const source = ts.createSourceFile(path, readFileSync(`src/${path}`, 'utf8'), ts.ScriptTarget.Latest, true);
       const visit = (node: ts.Node) => {
         if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || ts.isTemplateExpression(node)) {

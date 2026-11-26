@@ -17,7 +17,7 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 | GL-A Quyết định | chủ dự án | chưa làm | - | - | Trả lời Q-GL-1..10 | README.md §3 |
 | GL-B Vá code | agent | xong | GL-05 | ae84fa6 | GL-06 chờ Q-GL-3 | Backend 2914/2914, frontend 1052/1052. |
 | GL-C Webhook thật | agent | xong | GL-08 | c3c6fde | GL-09 dùng Vercel và Render | Backend và hai file bank e2e pass trên máy dev. |
-| GL-D File deploy | agent | đang làm | GL-10 | - | Kiểm tra HIT sau deploy, tiếp theo GL-11 | Đã đăng nhập trên bản demo Vercel + Render. Quy tắc cache và cách kiểm tra ở mục 5 của deploy/README.md. |
+| GL-D File deploy | agent | đang làm | GL-11 | - | GL-12 tổng kết | GL-10 đã thấy HIT trên Vercel. GL-11 có hướng dẫn backup và restore ở mục 6. Chạy restore thật tại GL-24. |
 | GL-E Hạ tầng | chủ dự án | chưa làm | - | - | Sau GL-A, GL-D | Tạo tài khoản, điền env |
 | GL-F DB production | chủ dự án + agent | chưa làm | - | - | Sau GL-E | Hỏi trước mỗi thao tác trên DB |
 | GL-G Chạy thử | agent + chủ dự án | chưa làm | - | - | Sau GL-C, GL-F | Có 1 lần chuyển khoản thật |
@@ -97,3 +97,5 @@ Build pass. Lint 0 lỗi, 4 cảnh báo cũ. Bộ bank 19/20, test HTTP dừng t
 
 **GL-10 · 26/11/2026** — Đã bổ sung quy tắc cache API tại backend và hướng dẫn kiểm tra qua Vercel ở mục 5 của deploy/README.md. Kiểm tra HIT của bản GL-10 trên domain thật sau khi triển khai. GL-11 tiếp theo.
 Kiểm tra backend: 148/148 file, 2925/2925 test pass (2 workers, timeout 20 giây), build pass, lint 0 lỗi và 4 cảnh báo. Trước deploy, hai GET filters qua Vercel đều trả MISS.
+
+**26/11/2026 · GL-11** — Chủ dự án chọn Q-GL-7B. Bổ sung script pg_dump và hướng dẫn đặt lịch Windows, lưu bản riêng và thử khôi phục vào PostgreSQL local mới. Đã kiểm tra cú pháp và ba tình huống mô phỏng (thành công, lỗi dump, lỗi đọc archive). Chưa đặt lịch hay sao lưu dữ liệu thật. Kiểm tra GL-10 sau deploy: public/filters trả MISS rồi HIT; me/viewings trả 401, no-store, MISS.

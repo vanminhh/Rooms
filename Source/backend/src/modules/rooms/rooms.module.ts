@@ -11,6 +11,6 @@ import { RoomsService } from './rooms.service.js';
   imports: [PrismaModule, BuildingsModule, SettingsModule],
   controllers: [RoomsController, PublicRoomsController],
   providers: [RoomsService, PublicRoomsService],
-  exports: [RoomsService],
+  exports: [RoomsService, PublicRoomsService],
 })
 export class RoomsModule {}

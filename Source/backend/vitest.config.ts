@@ -11,6 +11,7 @@ export default defineConfig({
     // Applied drafts keep their old copies here; the code they tested is already in src/.
     exclude: [...configDefaults.exclude, 'artifact_BE/approved/**'],
     // Vitest reads the developer's .env; without this a test that builds AppModule would mail through the real provider (Q-14).
-    env: { MAIL_PROVIDER: '' },
+    // Same for the Claude key: no test may call the real chat provider (CHAT-02).
+    env: { MAIL_PROVIDER: '', ANTHROPIC_API_KEY: '' },
   },
 });

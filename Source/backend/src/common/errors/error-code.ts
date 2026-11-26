@@ -33,6 +33,7 @@ export enum ErrorCode {
   ACCOUNT_LOCKED = 'ACCOUNT_LOCKED',
   UPLOAD_NOT_CONFIGURED = 'UPLOAD_NOT_CONFIGURED',
   WEBHOOK_NOT_CONFIGURED = 'WEBHOOK_NOT_CONFIGURED', // Q-P4-35
+  CHAT_UNAVAILABLE = 'CHAT_UNAVAILABLE', // CHAT-06
   INTERNAL_ERROR = 'INTERNAL_ERROR',
 }
 
@@ -110,6 +111,7 @@ export const ERRORS: Record<ErrorCode, { status: number; message: string }> = {
   [ErrorCode.ACCOUNT_LOCKED]: { status: 403, message: 'Tài khoản đã bị khóa. Liên hệ quản lý.' },
   [ErrorCode.UPLOAD_NOT_CONFIGURED]: { status: 503, message: 'Chưa cấu hình tải ảnh' },
   [ErrorCode.WEBHOOK_NOT_CONFIGURED]: { status: 503, message: 'Chưa cấu hình nhận tiền qua ngân hàng' },
+  [ErrorCode.CHAT_UNAVAILABLE]: { status: 503, message: 'Trợ lý đang bận, vui lòng thử lại sau' },
   [ErrorCode.INTERNAL_ERROR]: {
     status: 500,
     message: 'Có lỗi xảy ra, vui lòng thử lại sau',

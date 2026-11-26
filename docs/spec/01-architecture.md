@@ -78,6 +78,7 @@ BE maps DB constraint/trigger errors to these codes. Module specs add their own.
 | `EMAIL_NOT_VERIFIED` | 403 | login of a self-registered account whose email has not passed the code (AUTH-12) |
 | `OTP_INVALID` | 400 | email code wrong, expired, used, or out of tries (AUTH-13) |
 | `MAIL_UNAVAILABLE` | 503 | no mail provider configured or the provider failed while sending a sign-up code (AUTH-13); the app still starts without one |
+| `CHAT_UNAVAILABLE` | 503 | chatbot key missing, provider failed or refused (CHAT-06); the app still starts without a key |
 | `VIEWING_TIME_TAKEN` | 409 | a fourth distinct guest in a building/hour, or the responsible person has an open viewing in another building at that hour (VIEW-16) |
 | `VIEWING_OVERLAP_WARNING` | 409 | same phone in another building at that hour; nothing saved until explicit acceptOverlap acknowledgement; fields.visitAt contains generic or different-district warning only (VIEW-16a) |
 | `MANAGER_MAX_2_BUILDINGS` | 409 | trigger |

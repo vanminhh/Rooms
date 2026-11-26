@@ -27,6 +27,7 @@ This folder is the **single source of truth** for what the system must do. Code,
 | [18-requests.md](18-requests.md) | Incidents and tenant requests |
 | [19-notifications.md](19-notifications.md) | Announcements, in-app inbox, email reminders |
 | [20-reports-audit-settings.md](20-reports-audit-settings.md) | Reports, audit log, settings |
+| [21-chatbot.md](21-chatbot.md) | Public room-advice chatbot (Claude Haiku 5.5, read-only public data, D-49) |
 | [30-frontend.md](30-frontend.md) | 4 areas, 36 pages with routes, UI rules, labels, entry screen, languages |
 | [31-ui-kit.md](31-ui-kit.md) | Official UI kit in `Source/frontend/src/components/` (An Lâm style), usage rules, preview, tests |
 

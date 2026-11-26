@@ -93,7 +93,7 @@ Boss → Manager (≤ 2 buildings) → Building (address, district, ward in Hà 
 | D-17 | The contract keeps its signer's CCCD information for residence registration; roommates' CCCD numbers/photos are optional (owner 20/11/2026). When supplied, numbers remain encrypted and photos private. This does not make the optional signer idNumber at initial contract creation newly mandatory (CON-01), expose anyone's full number or delete existing records |
 | D-18 | Each building has at most 1 manager; each manager at most 2 buildings |
 | D-19 | Database: PostgreSQL on Neon or Supabase, Prisma 6, integer auto-increment ids |
-| D-20 | Deferred: AI chatbot, Zalo reminders, e-signature |
+| D-20 | Deferred: Zalo reminders, e-signature. The AI chatbot was deferred until D-49 (26/11/2026) |
 | D-21 | The monthly invoice cron also runs at app start and catches up missed days: it creates DRAFTs for billing dates in the last 7 days that have none, so a server restart at 00:05 never loses an invoice. Periods missed for more than 7 days show red in "Việc hôm nay", and staff create them with the button "Tạo hóa đơn kỳ này" (owner 04/11/2026, [16-billing.md](16-billing.md) BIL-05, BIL-21) |
 | D-22 | Deployment: FE and API on one origin, one always-on BE instance, BE and DB in the same region, `trust proxy` set to the exact proxy count, `NODE_ENV` required, public GETs cached 60 s at the CDN (owner 04/11/2026, [01-architecture.md](01-architecture.md#deployment) DEP-01..06, PUB-05) |
 
@@ -132,10 +132,12 @@ Decisions D-35..D-37: owner 16/11/2026, before Phase 3 (`docs/phase-3-contracts/
 | D-46 | Renewal clauses (owner 24/11/2026, Q-P5-17). The renewal form starts with the previous contract's supplementary clauses. When staff create the renewal, omitting `terms` copies those clauses, a string replaces them and explicit `null` clears them (CON-17, CON-22). |
 | D-47 | Go-live (26/11/2026, Q-GL-6): add a public database readiness check (DEP-10). |
 | D-48 | Go-live (26/11/2026, Q-03 / Q-GL-3): use SePay webhooks for the MB Bank receiving account. |
+| D-49 | AI chatbot (owner 26/11/2026): Claude API with Claude Haiku 5.5, for public visitors only (rooms, prices, estimates, areas, how to book); handoff = the room's booking page and the building's phone; no chat history stored. Rules in [21-chatbot.md](21-chatbot.md) (CHAT-01..07) |
 
 ## Assumptions (not yet confirmed — implement, keep easy to change)
 
 - **A-28** [ASSUMPTION, BE-P3-26 API collection behavior] PATCH contract services supplies the full desired serviceIds set (empty clears current membership); already selected archived services may be retained; unchanged/order-only sets do not create a change audit; GET reads historical ENDED/CANCELLED selections in scope while writes remain HOLD/ACTIVE. Before/after membership is kept in audit history. Q-P3-22 separately confirms approved-rate eligibility for newly added services; no monthly billing effective-date rule is inferred from this API behavior.
+- **A-28** [ASSUMPTION, D-49 default proposed 26/11/2026, not yet confirmed] Chatbot limits: 20 requests per IP per hour, at most 20 messages per conversation, at most 500 characters per message; the bubble shows on every public page and passes the room id on a room page ([21-chatbot.md](21-chatbot.md) CHAT-01, CHAT-03).
 - **A-27** [ASSUMPTION, BE-P3-25 technical date-entry default] Vehicle registeredAt/removedAt default to today's Hanoi date; staff may supply an actual date no later than today, with removal on/after registration. Removed registrations remain immutable and a new POST preserves their old interval. Q-P3-19/20/21 separately confirm writable contract statuses, monthly parking departure and automatic vehicle removal on HOLD cancellation.
 - **A-01** [ASSUMPTION] On early move-out, services (wifi, rác, parking) are charged in full for the current period; remaining periods charge rent only.
 - **A-02** [ASSUMPTION] Deposit invoice due date = contract `start_date` (or issue date if later). Move-in is blocked until it is paid.

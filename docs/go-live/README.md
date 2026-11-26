@@ -84,7 +84,7 @@ On the real host, before the domain points at it:
 | Q-GL-4 | How real data gets in | (a) start from an empty DB; Boss creates buildings, rooms, managers in the app; (b) copy the dev DB and clean it with DEP-09 (then the 141 legacy test rows must be removed first); (c) an import script from a spreadsheet (new work) |
 | Q-GL-5 | Domain and CDN | GL-09 demo assumption: use the assigned HTTPS vercel.app and onrender.com domains. Custom domain and production CDN decision remain open. |
 | Q-GL-6 | Add `GET /api/v1/health` (not in the spec today)? | (a) yes, DB check included; (b) no. **Decision (26/11/2026): A, include the DB check (D-47, DEP-10).** |
-| Q-GL-7 | Backups | (a) rely on the DB provider's built-in backups/point-in-time restore; (b) also a daily `pg_dump` to separate storage |
+| Q-GL-7 | Backups | Owner chose B on 26/11/2026: daily `pg_dump` to separate storage. See section 6 of [the deployment guide](../../deploy/README.md) for Windows scheduling and the GL-24 restore rehearsal. |
 | Q-GL-8 | Contract text (Q-15) and real electric tiers (Q-02) | Send them before go-live, or go live with draft contract printing disabled for real signing? |
 | Q-GL-9 | Q-01: early-leaving tenant still paying — may the room be rented again? | (a) no until the end date; (b) yes, old tenant's overlapping rent unchanged; (c) yes, reduced |
 | Q-GL-10 | Go-live scope and date | (a) all buildings at once; (b) one building first for a month, then the rest |

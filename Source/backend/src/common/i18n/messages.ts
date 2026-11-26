@@ -34,11 +34,17 @@ export const ERRORS_EN: Record<ErrorCode, string> = {
   ACCOUNT_LOCKED: 'Your account is locked. Please contact the manager.',
   UPLOAD_NOT_CONFIGURED: 'Image uploads have not been configured',
   WEBHOOK_NOT_CONFIGURED: 'Bank payments have not been configured',
+  CHAT_UNAVAILABLE: 'The assistant is busy. Please try again later',
   INTERNAL_ERROR: 'Something went wrong. Please try again later',
 };
 
 export const FIELDS_EN: Record<string, string> = {
   'Lối vào không hợp lệ': 'Invalid entry',
+  // CHAT-01
+  'Vai trò tin nhắn không hợp lệ': 'Invalid message role',
+  'Tin nhắn phải có từ 1 đến 500 ký tự': 'A message must have 1 to 500 characters',
+  'Hội thoại phải có từ 1 đến 20 tin nhắn': 'A conversation must have 1 to 20 messages',
+  'Hội thoại phải xen kẽ khách và trợ lý, bắt đầu và kết thúc bằng tin của khách': 'A conversation must alternate visitor and assistant, starting and ending with a visitor message',
   'Mã người ở không hợp lệ': 'Invalid occupant ID',
   'Giá trị đồng ý trùng lịch không hợp lệ': 'Invalid viewing overlap acknowledgement',
   'Khách đã có lịch xem ở tòa khác vào cùng giờ. Bạn có muốn tiếp tục?': 'The guest already has a viewing at another building at this time. Do you want to continue?',
