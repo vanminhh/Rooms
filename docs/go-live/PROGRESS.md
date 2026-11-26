@@ -15,8 +15,8 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 | Phần | Ai làm | Trạng thái | Điểm dừng gần nhất | Commit | Việc tiếp theo | Ghi chú |
 |---|---|---|---|---|---|---|
 | GL-A Quyết định | chủ dự án | chưa làm | - | - | Trả lời Q-GL-1..10 | README.md §3 |
-| GL-B Vá code | agent | chờ commit | GL-05 | - | Chủ dự án commit GL-05 | Backend 2914/2914, frontend 1052/1052. |
-| GL-C Webhook thật | agent | chờ quyết định | - | - | Cần Q-GL-3 | |
+| GL-B Vá code | agent | xong | GL-05 | ae84fa6 | GL-06 chờ Q-GL-3 | Backend 2914/2914, frontend 1052/1052. |
+| GL-C Webhook thật | agent | chờ commit | GL-08 | - | Chủ dự án commit GL-06..08 | Backend và hai file bank e2e pass trên máy dev. |
 | GL-D File deploy | agent | chờ quyết định | - | - | Cần Q-GL-1, Q-GL-5 | |
 | GL-E Hạ tầng | chủ dự án | chưa làm | - | - | Sau GL-A, GL-D | Tạo tài khoản, điền env |
 | GL-F DB production | chủ dự án + agent | chưa làm | - | - | Sau GL-E | Hỏi trước mỗi thao tác trên DB |
@@ -37,6 +37,9 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 
 
 | 26/11/2026 | GL-B | GL-05 đạt kiểm thử sau sửa | Ảnh máy dev: 146/146 file, 2914/2914 test backend pass trong 133,72 giây. Frontend 1052/1052. Chờ commit. |
+| 26/11/2026 | GL-C | GL-06 | Đã ghi nhận SePay và MB Bank, xác minh Q-04, cập nhật BANK-08. Chờ duyệt đặc tả và HMAC-SHA256. |
+| 26/11/2026 | GL-C | Duyệt GL-06, triển khai GL-07 | Chủ dự án duyệt SePay HMAC-SHA256 cho MB Bank. Đã thêm adapter, lưu raw body để xác thực và dùng chung xử lý hóa đơn. |
+| 26/11/2026 | GL-C | Nghiệm thu GL-07/08 | Chủ dự án xác nhận bộ backend và hai file bank e2e đã pass trên máy dev. Chờ commit. |
 
 ### GL-05 · Báo cáo reviewer độc lập, 26/11/2026
 
@@ -71,3 +74,21 @@ Source/backend/src/modules/auth/auth.service.ts:120 — Khi tra cứu người d
 **Frontend.** Hai lượt toàn bộ đầu đạt 1050/1052 rồi 1051/1052. Khi danh mục bộ lọc đến muộn, giá đang nhập có thể bị reset. Đã giữ dữ liệu form khi URL không sử dụng danh mục, thêm tình huống danh mục tải muộn vào test FE-P2-15 và cho test UI-03 chờ render trang 2.
 
 Lượt frontend cuối sau sửa đạt 1052/1052 trong 291,40 giây, không skip, lint và build exit 0. Vite báo có chunk trên 500 kB.
+
+### GL-07 và GL-08 · SePay MB Bank
+
+Giữ adapter giả cho NODE_ENV=test, dùng SePay trong development và production. Không thay schema, cài dependency hoặc cấu hình tài khoản thật. Dùng giao dịch DB và khóa chống trùng hiện có, trả JSON cấp cao nhất sau khi ghi nhận. Chưa kích hoạt đối soát qua API v2.
+
+Build pass. Lint 0 lỗi, 4 cảnh báo cũ. Bộ bank 19/20, test HTTP dừng trước handler do EACCES. Kiểm tra qua Nest trong tiến trình với body thật đọc từ stream cho 200 đúng JSON và 401 khi sai chữ ký. Bộ backend toàn phần trong workspace đạt 1530/2924 (1394 fail, 9 lỗi runtime). Hai file bank e2e chưa pass; truy vấn kiểm tra DB gặp lỗi kết nối. Chờ chạy trên máy dev.
+
+**Báo cáo reviewer GL-06/07.** Reviewer Sonnet theo cấu hình gặp ENOTFOUND. Reviewer độc lập thay thế đưa ra báo cáo sau khi kiểm tra bản sửa.
+
+**KẾT LUẬN: DUYỆT** bản sửa GL-06/07. Phạm vi rà soát gồm 15 tệp chưa commit, +285/−32 dòng tại thời điểm kiểm tra.
+
+**Lỗi chặn:** Đã khắc phục phát hiện duy nhất. docs/spec/17-bank.md:35 ghi đúng điều kiện SePay gửi lại sau HTTP 500/503. docs/go-live/feature_go-live.md:81 yêu cầu bật tùy chọn và thử gửi lại sau 503 trong môi trường test của SePay.
+
+**Nên sửa:** Không có đề xuất bổ sung.
+
+**Đã kiểm:** Đối chiếu BANK-01..04, BANK-07/07a/08 với cấu hình Nest, controller, hai adapter, xử lý giao dịch và ba tệp kiểm thử mới. Đã rà soát xác thực chữ ký trên byte gốc, cửa sổ năm phút, điều kiện khớp hóa đơn, khóa chống ghi tiền hai lần và phản hồi khi ghi DB thất bại.
+
+**Ghi chú:** Đây là kết quả rà soát mã nguồn. GL-08 còn chờ kết quả toàn bộ test backend và hai tệp e2e ngân hàng trên máy dev.

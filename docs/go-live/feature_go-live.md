@@ -27,7 +27,7 @@ Rules: mark `[~]` when you start a task, `[x]` only after its "Done when" is ver
 |---|---|---|
 | GL-A Owner decisions | – | yes (owner) |
 | GL-B Code gaps without outside accounts | nothing for GL-01..03; Q-GL-6 for GL-04 | **yes** |
-| GL-C Real bank webhook adapter | Q-GL-3 answered | no |
+| GL-C Real bank webhook adapter | Q-GL-3 answered | yes, SePay / MB Bank |
 | GL-D Deploy files | Q-GL-1, Q-GL-5 answered | no |
 | GL-E Infrastructure | GL-A, GL-D | no (owner) |
 | GL-F Production database | GL-E | no |
@@ -57,12 +57,13 @@ Rules: mark `[~]` when you start a task, `[x]` only after its "Done when" is ver
 
 ### GL-C · Real bank webhook adapter (Who: agent; needs Q-GL-3)
 
-- [ ] **GL-06** Read the chosen provider's official webhook docs (SePay or Casso): auth method, payload fields, retries, transaction-list API. Write the findings and the answer to **Q-04** into `docs/spec/17-bank.md` with the doc URL. Expected values in tests come only from these docs (LESSONS: never invent expected values).
+- [x] **GL-06** Read the chosen provider's official webhook docs (SePay or Casso): auth method, payload fields, retries, transaction-list API. Write the findings and the answer to **Q-04** into `docs/spec/17-bank.md` with the doc URL. Expected values in tests come only from these docs (LESSONS: never invent expected values).
   Done when: the owner confirms the spec text.
-- [ ] **GL-07** Adapter for the provider beside `fakeAdapter` in `src/modules/bank/webhook-adapter.ts`, same `BankWebhookAdapter` interface; selected by configuration; `fakeAdapter` stays for tests only and must not be selectable when `NODE_ENV=production`. Ask first if the provider needs a new dependency.
+- [x] **GL-07** Adapter for the provider beside `fakeAdapter` in `src/modules/bank/webhook-adapter.ts`, same `BankWebhookAdapter` interface; selected by configuration; `fakeAdapter` stays for tests only and must not be selectable when `NODE_ENV=production`. Ask first if the provider needs a new dependency.
   Done when: tests named `BANK-xx` from the provider's sample payloads: matched, unmatched (wrong amount, unknown code, other account), duplicate delivery, wrong secret → 401 and nothing stored, debit skipped.
-- [ ] **GL-08** ⏸ Backend lint + test + build + e2e of the bank files; reviewer (money, security).
+- [x] **GL-08** ⏸ Backend lint + test + build + e2e of the bank files; reviewer (money, security).
   Done when: real outputs and reviewer report.
+  Owner confirmed the full backend suite and both bank e2e files passed on the dev host on 26/11/2026.
 
 ### GL-D · Deploy files (Who: agent; needs Q-GL-1, Q-GL-5)
 
@@ -77,6 +78,7 @@ Rules: mark `[~]` when you start a task, `[x]` only after its "Done when" is ver
 ### GL-E · Infrastructure (Who: owner; agent writes the checklist and checks)
 
 - [ ] **GL-13** Owner creates: production DB (Singapore), BE host, domain/DNS, CDN, Resend sending domain (Q-14), production Cloudinary, bank webhook account (Q-GL-3).
+  During SePay webhook setup, enable **Tự động gửi lại khi server trả lỗi**. Verify in SePay test mode that a simulated 503 is redelivered and acknowledged after recovery.
 - [ ] **GL-14** Owner fills the production env on the host: new `JWT_SECRET`, new `CCCD_KEY` (stored safely outside the host too), new `BANK_WEBHOOK_SECRET`, `APP_URL` = real domain, `NODE_ENV=production`, `TRUST_PROXY_HOPS`, `MAIL_*`, `CLOUDINARY_URL`, `DATABASE_URL` (pooled) and `DIRECT_URL`. Never reuse dev values.
   Done when: the agent has checked (without reading secret values) that the app starts and `validateEnv` passes.
 - [ ] **GL-15** ⏸ Report: what exists, what is missing.
@@ -123,3 +125,5 @@ Write results in `docs/go-live/gl-rehearsal-checklist.md` (same style as `docs/p
 - 26/11/2026 - GL-04 verification resolved by the full post-fix dev-host run above.
 - 26/11/2026 - GL-05: Supertest loopback connect returns EACCES in the workspace. Owner to run npm test in Source/backend on the post-review fix. Pinned reviewer unavailable (DNS), independent substitute report recorded for owner acceptance.
 - 26/11/2026 - GL-05: dev-host verification resolved. The owner supplied the passing post-fix result. Checkpoint awaits owner commit.
+- 26/11/2026 - GL-08: dev-host backend and bank e2e results required. Use backend/.env for this checkout.
+- 26/11/2026 - GL-08 dev-host verification resolved by owner confirmation. Awaiting commit.

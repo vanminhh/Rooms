@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ErrorCode } from '../../common/errors/error-code.js';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
 import { AuditService } from '../audit/audit.service.js';
@@ -7,7 +7,7 @@ import type { Mail } from '../mailer/mailer.service.js';
 import { MailerService } from '../mailer/mailer.service.js';
 import { sendWithRetry } from '../mailer/send-mail.js';
 import { invoiceCodeFrom, matchOutcome } from './match-invoice.js';
-import { fakeAdapter, type BankWebhookAdapter, type IncomingTx, type WebhookRequest } from './webhook-adapter.js';
+import { BANK_ADAPTER, fakeAdapter, type BankWebhookAdapter, type IncomingTx, type WebhookRequest } from './webhook-adapter.js';
 
 export interface WebhookSummary { received: number; matched: number; duplicates: number; skipped: number }
 type Outcome = 'DUPLICATE' | 'MATCHED' | 'UNMATCHED';
@@ -16,10 +16,8 @@ type Outcome = 'DUPLICATE' | 'MATCHED' | 'UNMATCHED';
 @Injectable()
 export class BankService {
   private readonly logger = new Logger(BankService.name);
-  // shortcut: only the test adapter exists (D-44, Q-P4-2); pick the real one by provider once Q-03 is answered.
-  private readonly adapter: BankWebhookAdapter = fakeAdapter;
-
-  constructor(private readonly prisma: PrismaService, private readonly audit: AuditService, private readonly mailer: MailerService) {}
+  constructor(private readonly prisma: PrismaService, private readonly audit: AuditService, private readonly mailer: MailerService,
+    @Inject(BANK_ADAPTER) private readonly adapter: BankWebhookAdapter) {}
 
   async processWebhook(req: WebhookRequest): Promise<WebhookSummary> {
     const secret = process.env.BANK_WEBHOOK_SECRET?.trim();
@@ -42,12 +40,13 @@ export class BankService {
     return summary;
   }
 
-  // BANK-02: one failing transaction never takes the others down; a failed match is stored UNMATCHED for Boss (BANK-05).
+  // BANK-02: confirm a duplicate from durable storage before acknowledging a failed insert.
   private async processSafely(tx: IncomingTx, accountNo: string): Promise<Outcome | null> {
     try {
       return await this.processOne(tx, accountNo);
     } catch (error) {
       if (await this.exists(tx)) return 'DUPLICATE';
+      if (this.adapter !== fakeAdapter) throw error; // SePay must retry a payment whose transaction rolled back.
       this.logger.warn(`bank tx ${tx.providerTxId}: matching failed, storing it unmatched (${error instanceof Error ? error.message : String(error)})`);
       try {
         await this.prisma.bankTransaction.create({ data: { ...this.row(tx), note: 'Lỗi khi khớp tự động, cần gán tay' } });

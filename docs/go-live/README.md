@@ -80,7 +80,7 @@ On the real host, before the domain points at it:
 |---|---|---|
 | Q-GL-1 | Hosting for the BE | (a) VPS in Singapore (e.g. DigitalOcean/Vultr ~6 USD/month), we also run the proxy on it; (b) Render/Railway paid always-on plan + a separate static host; (c) other |
 | Q-GL-2 | Database | (a) Neon, (b) Supabase — both named in the spec; Singapore region either way |
-| Q-GL-3 | Bank webhook provider (Q-03) and bank | (a) SePay, (b) Casso; plus which bank and account receives rent |
+| Q-GL-3 | Bank webhook provider and receiving bank | Owner decision 26/11/2026: SePay, MB Bank (D-48). Enter account details in Settings at GL-19. |
 | Q-GL-4 | How real data gets in | (a) start from an empty DB; Boss creates buildings, rooms, managers in the app; (b) copy the dev DB and clean it with DEP-09 (then the 141 legacy test rows must be removed first); (c) an import script from a spreadsheet (new work) |
 | Q-GL-5 | Domain and CDN | Domain name? Use Cloudflare in front (DEP-06)? |
 | Q-GL-6 | Add `GET /api/v1/health` (not in the spec today)? | (a) yes, DB check included; (b) no. **Decision (26/11/2026): A, include the DB check (D-47, DEP-10).** |

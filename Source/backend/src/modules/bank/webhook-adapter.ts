@@ -2,14 +2,15 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import type { BankProvider, Prisma } from '@prisma/client';
 import { HANOI_OFFSET_MS, parseDateOnly } from '../../common/date/today.js';
 
-export interface WebhookRequest { headers: Record<string, string | string[] | undefined>; body: unknown }
+export interface WebhookRequest { headers: Record<string, string | string[] | undefined>; body: unknown; rawBody?: Buffer }
+export const BANK_ADAPTER = Symbol('BANK_ADAPTER');
 export interface IncomingTx { providerTxId: string; amount: number; content: string; accountNumber: string; receivedAt: Date; raw: Prisma.InputJsonValue }
 
 // 17-bank "Adapter": the real provider (Q-03) plugs in as another implementation; the service only sees IncomingTx.
 export interface BankWebhookAdapter {
   provider: BankProvider;
   verify(req: WebhookRequest, secret: string): boolean;
-  // Never throws: malformed or debit items are counted in `skipped`.
+  // Debits are skipped. A production adapter rejects malformed credit payloads.
   parse(body: unknown): { txs: IncomingTx[]; skipped: number };
 }
 
@@ -32,9 +33,7 @@ export function parseProviderTime(value: unknown): Date | null {
 
 const object = (v: unknown): Record<string, unknown> | null => (v && typeof v === 'object' && !Array.isArray(v) ? v as Record<string, unknown> : null);
 
-// Q-P4-28 (D-44): the test adapter. Header X-Webhook-Secret = BANK_WEBHOOK_SECRET; rows are stored as SEPAY, which
-// also authenticates with a static header token. Payload: { transactions: [{ id, amount, content, accountNumber, receivedAt }] },
-// a credit has amount > 0 (17-bank: only credits are processed).
+// Q-P4-28: test fixtures use a shared header and a batch of credits; rows use the SEPAY provider.
 export const fakeAdapter: BankWebhookAdapter = {
   provider: 'SEPAY',
   verify(req, secret) {

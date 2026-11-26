@@ -150,3 +150,5 @@ Read this before the first task of any part. Each line is a mistake that really 
 - GL-04 (DEP-10): when registering a root controller, update the exact AppModule controller metadata assertion in prisma.service.spec.ts alongside the HTTP tests.
 - GL-05 (DEP-10): cover conditional GET on a readiness endpoint with an exact status contract. Express JSON delivery can turn a healthy response into 304 even with Cache-Control: no-store.
 - GL-05 (FE-P2-15, UI-03): exercise filter edits while the catalog is pending. In pagination tests wait for the requested row to render before checking its content.
+
+- GL-06/08 (BANK-08): check the provider's detailed retry settings. SePay retries non-2xx server errors only with the webhook retry-on-error option enabled.

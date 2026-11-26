@@ -1,21 +1,23 @@
-import { Body, Controller, Get, Header, Headers, HttpCode, Ip, Param, Post, Query, Req } from '@nestjs/common';
-import type { Request } from 'express';
+import { Body, Controller, Get, Header, Headers, HttpCode, Inject, Ip, Param, Post, Query, Req, Res, type RawBodyRequest } from '@nestjs/common';
+import type { Request, Response } from 'express';
 import { CurrentUser, Public, Roles, type AuthUser } from '../../common/guards/auth.decorators.js';
 import { parseIdempotencyKey } from '../pricing/pricing-idempotency.js';
 import { BankTransactionsService } from './bank-transactions.service.js';
 import { BankService } from './bank.service.js';
+import { BANK_ADAPTER, fakeAdapter, type BankWebhookAdapter } from './webhook-adapter.js';
 import { AssignTransactionDto, BankTransactionsQueryDto, BankTxIdParamsDto, MarkRefundedDto } from './dto/bank-transactions.dto.js';
 
-// BANK-01, API-07: provider signature only; 200 on every verified call so the provider does not retry.
+// BANK-01: acknowledge the provider after processing has completed.
 @Controller('webhooks/bank')
 export class WebhookController {
-  constructor(private readonly bank: BankService) {}
+  constructor(private readonly bank: BankService, @Inject(BANK_ADAPTER) private readonly adapter: BankWebhookAdapter) {}
 
   @Public()
   @Post()
   @HttpCode(200)
-  receive(@Req() req: Request) {
-    return this.bank.processWebhook({ headers: req.headers, body: req.body });
+  async receive(@Req() req: RawBodyRequest<Request>, @Res() res: Response) {
+    const summary = await this.bank.processWebhook({ headers: req.headers, body: req.body, rawBody: req.rawBody });
+    res.status(200).json(this.adapter === fakeAdapter ? { data: summary } : { success: true });
   }
 }
 
