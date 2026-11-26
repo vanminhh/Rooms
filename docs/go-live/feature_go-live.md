@@ -67,7 +67,7 @@ Rules: mark `[~]` when you start a task, `[x]` only after its "Done when" is ver
 
 ### GL-D · Deploy files (Who: agent; needs Q-GL-1, Q-GL-5)
 
-- [ ] **GL-09** Write `deploy/README.md` for the chosen host: how the SPA `dist/` is served and `/api/*` forwarded on one origin (DEP-01), HTTPS, `TRUST_PROXY_HOPS` value for this setup (count the proxies, Cloudflare included), one always-on instance ≥ 1 GB (DEP-02), Singapore region (DEP-03), process restart on crash and on reboot, log location. Plus only the config files that host needs (for a VPS: proxy config and a service file; for a PaaS: its config file). No Docker unless the host requires it.
+- [~] **GL-09** Write `deploy/README.md` for the chosen host: how the SPA `dist/` is served and `/api/*` forwarded on one origin (DEP-01), HTTPS, `TRUST_PROXY_HOPS` value for this setup (count the proxies, Cloudflare included), one always-on instance ≥ 1 GB (DEP-02), Singapore region (DEP-03), process restart on crash and on reboot, log location. Plus only the config files that host needs (for a VPS: proxy config and a service file; for a PaaS: its config file). No Docker unless the host requires it.
   Done when: the owner reads it and confirms every step is something they can do.
 - [ ] **GL-10** CDN rule (DEP-06): only `GET /api/v1/public/*` cached 60 s; everything else bypass. Write it as steps in `deploy/README.md`.
   Done when: listed with how to check (`cf-cache-status` or the CDN's header).

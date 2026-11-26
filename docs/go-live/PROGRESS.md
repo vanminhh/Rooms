@@ -16,8 +16,8 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 |---|---|---|---|---|---|---|
 | GL-A Quyết định | chủ dự án | chưa làm | - | - | Trả lời Q-GL-1..10 | README.md §3 |
 | GL-B Vá code | agent | xong | GL-05 | ae84fa6 | GL-06 chờ Q-GL-3 | Backend 2914/2914, frontend 1052/1052. |
-| GL-C Webhook thật | agent | chờ commit | GL-08 | - | Chủ dự án commit GL-06..08 | Backend và hai file bank e2e pass trên máy dev. |
-| GL-D File deploy | agent | chờ quyết định | - | - | Cần Q-GL-1, Q-GL-5 | |
+| GL-C Webhook thật | agent | xong | GL-08 | c3c6fde | GL-09 dùng Vercel và Render | Backend và hai file bank e2e pass trên máy dev. |
+| GL-D File deploy | agent | chờ nghiệm thu GL-09 | GL-09 | - | Chủ dự án đọc deploy/README.md | Demo dùng Vercel + Render Free Singapore. GL-10/11 còn mở. |
 | GL-E Hạ tầng | chủ dự án | chưa làm | - | - | Sau GL-A, GL-D | Tạo tài khoản, điền env |
 | GL-F DB production | chủ dự án + agent | chưa làm | - | - | Sau GL-E | Hỏi trước mỗi thao tác trên DB |
 | GL-G Chạy thử | agent + chủ dự án | chưa làm | - | - | Sau GL-C, GL-F | Có 1 lần chuyển khoản thật |
@@ -92,3 +92,5 @@ Build pass. Lint 0 lỗi, 4 cảnh báo cũ. Bộ bank 19/20, test HTTP dừng t
 **Đã kiểm:** Đối chiếu BANK-01..04, BANK-07/07a/08 với cấu hình Nest, controller, hai adapter, xử lý giao dịch và ba tệp kiểm thử mới. Đã rà soát xác thực chữ ký trên byte gốc, cửa sổ năm phút, điều kiện khớp hóa đơn, khóa chống ghi tiền hai lần và phản hồi khi ghi DB thất bại.
 
 **Ghi chú:** Đây là kết quả rà soát mã nguồn. GL-08 còn chờ kết quả toàn bộ test backend và hai tệp e2e ngân hàng trên máy dev.
+
+**26/11/2026 · GL-09** — Đã viết hướng dẫn demo, cấu hình Render và đường chuyển tiếp API trên Vercel. Chờ chủ dự án xác nhận có thể làm theo từng bước. Kiểm tra HTTPS, cookie và webhook trên host thật thuộc bước triển khai.

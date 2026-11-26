@@ -78,11 +78,11 @@ On the real host, before the domain points at it:
 
 | ID | Question | Options |
 |---|---|---|
-| Q-GL-1 | Hosting for the BE | (a) VPS in Singapore (e.g. DigitalOcean/Vultr ~6 USD/month), we also run the proxy on it; (b) Render/Railway paid always-on plan + a separate static host; (c) other |
+| Q-GL-1 | Hosting for the BE | Owner decision 26/11/2026: Vercel frontend and Render backend. GL-09 documents the free student demo in Singapore. Production still requires an always-on backend with at least 1 GB RAM (DEP-02). |
 | Q-GL-2 | Database | (a) Neon, (b) Supabase — both named in the spec; Singapore region either way |
 | Q-GL-3 | Bank webhook provider and receiving bank | Owner decision 26/11/2026: SePay, MB Bank (D-48). Enter account details in Settings at GL-19. |
 | Q-GL-4 | How real data gets in | (a) start from an empty DB; Boss creates buildings, rooms, managers in the app; (b) copy the dev DB and clean it with DEP-09 (then the 141 legacy test rows must be removed first); (c) an import script from a spreadsheet (new work) |
-| Q-GL-5 | Domain and CDN | Domain name? Use Cloudflare in front (DEP-06)? |
+| Q-GL-5 | Domain and CDN | GL-09 demo assumption: use the assigned HTTPS vercel.app and onrender.com domains. Custom domain and production CDN decision remain open. |
 | Q-GL-6 | Add `GET /api/v1/health` (not in the spec today)? | (a) yes, DB check included; (b) no. **Decision (26/11/2026): A, include the DB check (D-47, DEP-10).** |
 | Q-GL-7 | Backups | (a) rely on the DB provider's built-in backups/point-in-time restore; (b) also a daily `pg_dump` to separate storage |
 | Q-GL-8 | Contract text (Q-15) and real electric tiers (Q-02) | Send them before go-live, or go live with draft contract printing disabled for real signing? |
