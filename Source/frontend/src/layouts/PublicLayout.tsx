@@ -58,7 +58,7 @@ export function PublicLayout() {
       findTitle={t('footer.findTitle')} findDescription={t('footer.findDescription')}
       areaTitle={t('footer.areaTitle')} areaDescription={t('footer.areaDescription')}
       contactTitle={t('footer.contactTitle')} contactEmpty={t('footer.contactEmpty')} bottomLocation={t('footer.location')} />
-    {/* CHAT-01, A-28: on every public page except while the entry screen is open; the chat survives moving between public pages. */}
+    {/* CHAT-01, A-29: on every public page except while the entry screen is open; the chat survives moving between public pages. */}
     {!showEntry && <ChatWidget roomId={roomIdOfPath(pathname)} fallbackPhone={contact.data?.phone} />}
     </div>
     {showEntry && <EntryScreen videoSrc="/videos/rooms-entry.mp4" onChoose={picked => {

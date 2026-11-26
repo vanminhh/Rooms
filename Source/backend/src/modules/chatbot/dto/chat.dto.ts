@@ -4,7 +4,7 @@ import {
   Validate, ValidateNested, ValidatorConstraint, type ValidatorConstraintInterface,
 } from 'class-validator';
 
-// A-28: at most 20 messages per conversation, at most 500 characters per message (after trim).
+// A-29: at most 20 messages per conversation, at most 500 characters per message (after trim).
 export const CHAT_MAX_MESSAGES = 20;
 export const CHAT_MAX_CHARS = 500;
 

@@ -116,7 +116,7 @@ describe('ChatbotService (CHAT-01..07)', () => {
     await expectError(new ChatbotService(client, r, b).reply(ask(), '2.2.2.4', 'vi'), 503, ErrorCode.CHAT_UNAVAILABLE);
   });
 
-  it('CHAT-03, A-28: 20 requests per IP per hour pass, the 21st is 429; another IP is not blocked; after one hour it resets', async () => {
+  it('CHAT-03, A-29: 20 requests per IP per hour pass, the 21st is 429; another IP is not blocked; after one hour it resets', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-11-26T03:00:00Z'));
     const { r, b } = stubs();

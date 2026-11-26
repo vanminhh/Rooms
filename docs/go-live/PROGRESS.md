@@ -18,7 +18,7 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 | GL-B Vá code | agent | xong | GL-05 | ae84fa6 | GL-06 chờ Q-GL-3 | Backend 2914/2914, frontend 1052/1052. |
 | GL-C Webhook thật | agent | xong | GL-08 | c3c6fde | GL-09 dùng Vercel và Render | Backend và hai file bank e2e pass trên máy dev. |
 | GL-D File deploy | agent | chờ commit | GL-12 | GL-11: 2fcd723 | GL-13: kiểm kê hạ tầng | Đã tổng kết bản demo. DEP-02 và diễn tập khôi phục còn mở. |
-| GL-E Hạ tầng | chủ dự án | chưa làm | - | - | Sau GL-A, GL-D | Tạo tài khoản, điền env |
+| GL-E Hạ tầng | chủ dự án + agent | đang làm | GL-13 | - | Kiểm tra gửi lại webhook trong Test mode | Đã đối soát TT11 trên bản demo. |
 | GL-F DB production | chủ dự án + agent | chưa làm | - | - | Sau GL-E | Hỏi trước mỗi thao tác trên DB |
 | GL-G Chạy thử | agent + chủ dự án | chưa làm | - | - | Sau GL-C, GL-F | Có 1 lần chuyển khoản thật |
 | GL-H Go-live, tháng đầu | chủ dự án + agent | chưa làm | - | - | Sau GL-G | |
@@ -101,3 +101,15 @@ Kiểm tra backend: 148/148 file, 2925/2925 test pass (2 workers, timeout 20 gi�
 **26/11/2026 · GL-11** — Chủ dự án chọn Q-GL-7B. Bổ sung script pg_dump và hướng dẫn đặt lịch Windows, lưu bản riêng và thử khôi phục vào PostgreSQL local mới. Đã kiểm tra cú pháp và ba tình huống mô phỏng (thành công, lỗi dump, lỗi đọc archive). Chưa đặt lịch hay sao lưu dữ liệu thật. Kiểm tra GL-10 sau deploy: public/filters trả MISS rồi HIT; me/viewings trả 401, no-store, MISS.
 
 **26/11/2026 · GL-12 — Tổng kết triển khai demo.** Giao diện Vercel gọi backend Render cùng origin qua rewrite; health trả HTTP 200 và chủ dự án đã đăng nhập thành công. GL-10 đã kiểm tra trên domain Vercel: public/filters trả MISS rồi HIT, me/viewings khi chưa đăng nhập trả 401 và no-store. GL-11 có script pg_dump và hướng dẫn Windows trong commit 2fcd723; ba tình huống mô phỏng đã qua. Lịch backup và bản sao dữ liệu thật chưa được xác nhận; diễn tập restore vào DB riêng ở GL-24. Render Free còn giới hạn ngủ, nên DEP-02 cho production vẫn mở. Tiếp theo GL-13 kiểm kê hạ tầng và các dịch vụ tích hợp.
+### Kiểm kê GL-13
+
+Ngày 27/11/2026. Phạm vi hiện tại là bản demo đồ án.
+
+| Hạng mục | Đã xác nhận | Còn cần kiểm tra |
+|---|---|---|
+| Frontend, tên miền và CDN | Rooms dùng HTTPS trên `rooms-sigma-ten.vercel.app`. GL-10 đã ghi nhận CDN trả HIT cho bộ lọc công khai. | Bản demo dùng tên miền Vercel. Tên miền và DNS riêng cho production chưa được xác nhận. |
+| Backend | Người dùng đã đăng nhập qua Vercel vào API trên Render. | DEP-02 còn mở vì Render Free có thể ngủ. |
+| PostgreSQL | Health, đăng nhập và đối soát hóa đơn đã chạy trên DB demo. | Đối chiếu vùng Singapore trên dashboard của nhà cung cấp và xác nhận DB dành cho production. |
+| Email | Backend có cấu hình cho Resend. | Xác nhận domain gửi đã Verified và email thử đến hộp thư. |
+| Ảnh | Backend dùng Cloudinary qua `CLOUDINARY_URL`. | Tải một ảnh phòng mẫu trên bản triển khai và mở lại. Tài khoản Cloudinary production chưa được xác nhận. |
+| Ngân hàng | Chủ dự án xác nhận đã cấu hình HMAC và Rooms ghi nhận giao dịch SePay Test mode 5.000 đ cho hóa đơn TT11 qua MB Bank. | Kiểm tra tùy chọn tự gửi lại và lịch sử một lần nhận 503 rồi nhận 2xx trên môi trường thử riêng. Tích hợp Live chưa được kiểm chứng. |

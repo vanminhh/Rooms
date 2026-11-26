@@ -152,3 +152,4 @@ Read this before the first task of any part. Each line is a mistake that really 
 - GL-05 (FE-P2-15, UI-03): exercise filter edits while the catalog is pending. In pagination tests wait for the requested row to render before checking its content.
 
 - GL-06/08 (BANK-08): check the provider's detailed retry settings. SePay retries non-2xx server errors only with the webhook retry-on-error option enabled.
+- Before adding a decision/assumption ID (D-/A-), grep `docs/spec` for the highest number: chatbot limits were first written as A-28, which already existed (renumbered to A-29 on 27/11/2026).

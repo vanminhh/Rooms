@@ -1,6 +1,6 @@
 import { ApiError, apiRequest } from '../../shared/api'
 
-// CHAT-01, A-28: the BE takes 1–20 alternating messages of at most 500 characters.
+// CHAT-01, A-29: the BE takes 1–20 alternating messages of at most 500 characters.
 export const CHAT_MAX_MESSAGES = 20
 export const CHAT_MAX_CHARS = 500
 

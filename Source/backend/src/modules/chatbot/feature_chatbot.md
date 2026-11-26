@@ -1,6 +1,6 @@
 # Feature · Chatbot tư vấn công khai (backend)
 
-Before you start: root `CLAUDE.md`, `Source/backend/CLAUDE.md`, `docs/LESSONS.md`, `docs/spec/21-chatbot.md`, D-49 + A-28 in `docs/spec/00-overview.md`, plan `docs/phase-6-chatbot/plans/CHAT/PLAN.md`.
+Before you start: root `CLAUDE.md`, `Source/backend/CLAUDE.md`, `docs/LESSONS.md`, `docs/spec/21-chatbot.md`, D-49 + A-29 in `docs/spec/00-overview.md`, plan `docs/phase-6-chatbot/plans/CHAT/PLAN.md`.
 
 Owner decisions (26/11/2026): Claude Haiku 5.5, public visitors only, handoff = room page + building phone, nothing stored, 4 model calls / 15 s per answer, dependency `@anthropic-ai/sdk@1.14.0` approved.
 
@@ -14,7 +14,7 @@ Owner decisions (26/11/2026): Claude Haiku 5.5, public visitors only, handoff = 
 | [x] | BE-CHAT-06 | `chatbot.service.ts`: rate limit 20/IP/h, toolRunner (4 calls, 15 s, effort low), errors → `CHAT_UNAVAILABLE`, no message text in logs | service cases green |
 | [x] | BE-CHAT-07 | controller + module, registered in `AppModule`, public services exported, `prisma.service.spec.ts` updated | full suite green |
 | [x] | BE-CHAT-08 | `chatbot.service.spec.ts` + `chatbot.http.spec.ts` | `npm run test` green |
-| [ ] | BE-CHAT-09 | Manual: real key in `.env`, ask about rooms, off-topic, 21st request, no key | owner walk |
+| [x] | BE-CHAT-09 | Manual: real key in `.env`, ask about rooms, off-topic, 21st request, no key | owner walk |
 
 ## Issues log
 
@@ -22,4 +22,4 @@ Owner decisions (26/11/2026): Claude Haiku 5.5, public visitors only, handoff = 
 
 ## Questions for the owner
 
-- A-28 limits are still an assumption (20/IP/h, 20 messages, 500 chars).
+- A-29 limits are still an assumption (20/IP/h, 20 messages, 500 chars).

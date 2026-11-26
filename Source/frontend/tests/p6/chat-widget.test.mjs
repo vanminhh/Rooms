@@ -4,7 +4,7 @@ import test, { after } from 'node:test'
 import { byName, dispatch, draftFirst, fail, fakeFetch, fill, find, isDisabled, loadModule, mount, ok, until } from '../p2/public-dom.mjs'
 
 // CHAT-01..07 (FE-CHAT-01..05): the public chat bubble mounted through the real PublicLayout.
-// Only fetch (the API edge) and localStorage are faked; expected texts come from docs/spec/21-chatbot.md and A-28.
+// Only fetch (the API edge) and localStorage are faked; expected texts come from docs/spec/21-chatbot.md and A-29.
 after(() => { setTimeout(() => process.exit(process.exitCode ?? 0), 200).unref() })
 const require = createRequire(import.meta.url)
 const React = require('react')
@@ -119,7 +119,7 @@ test('CHAT-01: outside a room page no roomId is sent; the second question carrie
   } finally { await app.stop() }
 })
 
-test('CHAT-01, A-28: an empty or spaces-only question cannot be sent; the box allows at most 500 characters', async () => {
+test('CHAT-01, A-29: an empty or spaces-only question cannot be sent; the box allows at most 500 characters', async () => {
   storage()
   const app = await boot('/phong')
   try {
@@ -175,7 +175,7 @@ test('UI-05: a network failure shows the generic message without a phone line', 
   } finally { await app.stop() }
 })
 
-test('A-28: after 20 messages (10 questions) the form is replaced by the end-of-conversation note', async () => {
+test('A-29: after 20 messages (10 questions) the form is replaced by the end-of-conversation note', async () => {
   storage()
   const app = await boot('/phong', () => ok({ reply: 'ok' }))
   try {

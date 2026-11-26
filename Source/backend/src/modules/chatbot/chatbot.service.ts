@@ -13,7 +13,7 @@ import { chatTools } from './chat-tools.js';
 import type { ChatRequestDto } from './dto/chat.dto.js';
 
 export const CHAT_MODEL = 'claude-haiku-5-5'; // D-49, CHAT-02
-export const CHAT_RATE_MAX = 20; // A-28, CHAT-03
+export const CHAT_RATE_MAX = 20; // A-29, CHAT-03
 export const CHAT_RATE_WINDOW_MS = 60 * 60 * 1000;
 // Owner 26/11/2026: at most 4 model calls and 15 s per answer, then CHAT_UNAVAILABLE.
 export const CHAT_MAX_ITERATIONS = 4;

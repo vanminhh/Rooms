@@ -65,7 +65,7 @@ describe('POST /api/v1/public/chat (CHAT-01..07)', () => {
     expect(res.headers['cache-control']).toBe('no-store');
   });
 
-  it('CHAT-01, A-28: 19 alternating messages ending with the visitor, and a 500-character message after trim, pass', async () => {
+  it('CHAT-01, A-29: 19 alternating messages ending with the visitor, and a 500-character message after trim, pass', async () => {
     const turns = Array.from({ length: 19 }, (_, i) => (i % 2 === 0 ? user(`hỏi ${i}`) : assistant(`đáp ${i}`)));
     await post({ messages: turns }).expect(200);
     await post({ messages: [user(`  ${'a'.repeat(500)}  `)], roomId: 101 }).expect(200);

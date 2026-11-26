@@ -1,13 +1,13 @@
-# PLAN · CHAT · Chatbot tư vấn công khai (CHAT-01..07, D-49, A-28)
+# PLAN · CHAT · Chatbot tư vấn công khai (CHAT-01..07, D-49, A-29)
 
-Spec: `docs/spec/21-chatbot.md`, D-49 + A-28 (`docs/spec/00-overview.md`), `CHAT_UNAVAILABLE` (`docs/spec/01-architecture.md#error-codes`).
+Spec: `docs/spec/21-chatbot.md`, D-49 + A-29 (`docs/spec/00-overview.md`), `CHAT_UNAVAILABLE` (`docs/spec/01-architecture.md#error-codes`).
 Cách tiếp cận đã được chủ sở hữu chốt; plan này chỉ chỉ ra **điểm chạm chính xác** và thứ tự build.
 
 ## 1. Mục tiêu và phạm vi
 
 **Trong phạm vi**
 - BE: module mới `chatbot` với một route `POST /api/v1/public/chat` (`@Public()`), gọi Claude Haiku 5.5 qua `@anthropic-ai/sdk`, 4 tool chỉ đọc bọc các service public đang có (CHAT-01, CHAT-02, CHAT-04, CHAT-05).
-- BE: rate limit 20 request/IP/giờ (CHAT-03, A-28), `CHAT_UNAVAILABLE` 503 khi thiếu key / provider lỗi / model từ chối (CHAT-06), không lưu gì (CHAT-07).
+- BE: rate limit 20 request/IP/giờ (CHAT-03, A-29), `CHAT_UNAVAILABLE` 503 khi thiếu key / provider lỗi / model từ chối (CHAT-06), không lưu gì (CHAT-07).
 - FE: bong bóng chat nổi trên mọi trang public, dựng từ kit, vi+en qua dictionary, lịch sử chỉ trong state component (CHAT-07).
 
 **Ngoài phạm vi**
@@ -89,7 +89,7 @@ Mọi literal tiếng Việt mới trong DTO phải có bản dịch trong `FIEL
 
 ```ts
 // chatbot.service.ts
-export const CHAT_RATE_MAX = 20;            // A-28
+export const CHAT_RATE_MAX = 20;            // A-29
 export const CHAT_RATE_WINDOW_MS = 3_600_000;
 export class ChatbotService {
   constructor(client: Anthropic | null, rooms: PublicRoomsService, buildings: PublicBuildingsService);
@@ -165,9 +165,9 @@ Kiểm tra tay: bỏ `ANTHROPIC_API_KEY` → `npm run start:dev` lên được; 
 | # | Kịch bản | Mong đợi | ID |
 |---|---|---|---|
 | 1 | 1 tin `user`, model trả text | 200 `{ data: { reply } }`, header `Cache-Control: no-store` | CHAT-01 |
-| 2 | 20 tin luân phiên, đầu/cuối là `user` | 200 | CHAT-01, A-28 |
+| 2 | 20 tin luân phiên, đầu/cuối là `user` | 200 | CHAT-01, A-29 |
 | 3 | 0 tin / 21 tin / 2 tin `user` liền nhau / tin cuối là `assistant` / `role` lạ | 400 `VALIDATION_FAILED` | CHAT-01 |
-| 4 | `content` rỗng, chỉ khoảng trắng, 501 ký tự; 500 ký tự sau trim | 3 ca đầu 400; ca 500 ký tự 200 | CHAT-01, A-28 |
+| 4 | `content` rỗng, chỉ khoảng trắng, 501 ký tự; 500 ký tự sau trim | 3 ca đầu 400; ca 500 ký tự 200 | CHAT-01, A-29 |
 | 5 | `roomId` = 0, -1, `'x'`, 2147483648; trường lạ trong body | 400 `VALIDATION_FAILED` | CHAT-01 |
 | 6 | `roomId` hợp lệ | system prompt chứa room id đó | CHAT-01, CHAT-05 |
 | 7 | model gọi `search_rooms` với filter giá/quận | tool gọi đúng `PublicRoomsService.list`, reply chứa số tiền nguyên | CHAT-02, CHAT-04 |
@@ -179,7 +179,7 @@ Kiểm tra tay: bỏ `ANTHROPIC_API_KEY` → `npm run start:dev` lên được; 
 | 13 | không có `ANTHROPIC_API_KEY` | 503 `CHAT_UNAVAILABLE`, app vẫn init được | CHAT-06 |
 | 14 | SDK throw (401/429/500/timeout) | 503 `CHAT_UNAVAILABLE`, body **không** chứa text lỗi provider | CHAT-06 |
 | 15 | model trả rỗng / `stop_reason` từ chối | 503 `CHAT_UNAVAILABLE` | CHAT-06 |
-| 16 | request thứ 21 cùng IP trong 1 giờ | 429 `TOO_MANY_REQUESTS`; đúng tới 20 thì vẫn 200 | CHAT-03, A-28 |
+| 16 | request thứ 21 cùng IP trong 1 giờ | 429 `TOO_MANY_REQUESTS`; đúng tới 20 thì vẫn 200 | CHAT-03, A-29 |
 | 17 | IP khác | không bị chặn; qua mốc 1 giờ thì reset | CHAT-03 |
 | 18 | `Accept-Language: en` khi lỗi | message tiếng Anh của `CHAT_UNAVAILABLE`; `fr` quay về tiếng Việt | LOC-02, LOC-04 |
 | 19 | request thành công | không có row DB mới, không `audit_logs`, không log nội dung tin nhắn | CHAT-07 |
@@ -201,11 +201,11 @@ Kiểm tra tay: `npm run dev` → trang `/`, `/phong`, `/phong/:id` đều có b
 | # | Kịch bản | Mong đợi | ID |
 |---|---|---|---|
 | 1 | mount trang public, chưa mở bong bóng | **0** request API; có nút mở với nhãn từ dictionary | CHAT-01, UI-12 |
-| 2 | mở, gửi 1 câu | gửi đúng `POST /public/chat` với toàn bộ `messages` + `roomId` khi ở `/phong/:id` | CHAT-01, A-28 |
+| 2 | mở, gửi 1 câu | gửi đúng `POST /public/chat` với toàn bộ `messages` + `roomId` khi ở `/phong/:id` | CHAT-01, A-29 |
 | 3 | trang không phải phòng | body không có `roomId` | CHAT-01 |
 | 4 | trả lời 200 | reply hiện trong khung, input xoá, nhiều lượt giữ đúng thứ tự luân phiên | CHAT-01 |
-| 5 | input rỗng / chỉ khoảng trắng / > 500 ký tự | không gửi request, hiện lỗi/giới hạn ký tự | CHAT-01, A-28 |
-| 6 | đã có 20 tin nhắn | không cho gửi thêm, hiện thông báo kết thúc hội thoại | A-28 |
+| 5 | input rỗng / chỉ khoảng trắng / > 500 ký tự | không gửi request, hiện lỗi/giới hạn ký tự | CHAT-01, A-29 |
+| 6 | đã có 20 tin nhắn | không cho gửi thêm, hiện thông báo kết thúc hội thoại | A-29 |
 | 7 | API trả 503 `CHAT_UNAVAILABLE` | hiện đúng "Trợ lý đang bận. Vui lòng gọi số điện thoại của tòa nhà hoặc đặt lịch xem phòng." | CHAT-06 |
 | 8 | API trả 429 `TOO_MANY_REQUESTS` | ở trang phòng: hiện số điện thoại của tòa (từ dữ liệu phòng đã tải); ngoài trang phòng: câu chung | CHAT-03 |
 | 9 | lỗi mạng | thông báo lỗi chung, có nút thử lại, không mất hội thoại | UI-05 |
@@ -241,7 +241,7 @@ Kiểm tra tay: `npm run dev` → trang `/`, `/phong`, `/phong/:id` đều có b
 
 ## 7. `[ASSUMPTION]` dùng trong plan
 
-- A-28 (20 request/IP/giờ, 20 tin, 500 ký tự, bong bóng ở mọi trang public, truyền `roomId` ở trang phòng) — đã ghi là assumption trong spec, cứ triển khai.
+- A-29 (20 request/IP/giờ, 20 tin, 500 ký tự, bong bóng ở mọi trang public, truyền `roomId` ở trang phòng) — đã ghi là assumption trong spec, cứ triển khai.
 - Chỉ request **vượt** giới hạn mới bị 429 và bản thân 429 không tính thêm lượt; request bị 400 (validate trượt trước rate limit) không tính lượt.
 - "Model từ chối" (CHAT-06) nhận biết bằng: không có text trong câu trả lời cuối, hoặc `stop_reason` báo từ chối.
 - Câu tiếng Việt của `CHAT_UNAVAILABLE` trong `ERRORS` ngắn gọn ("Trợ lý đang bận, vui lòng thử lại sau"); câu đầy đủ theo CHAT-06 do FE hiển thị, nằm trong dictionary.
