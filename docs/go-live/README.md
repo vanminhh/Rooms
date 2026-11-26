@@ -2,6 +2,8 @@
 
 Draft 26/11/2026, after Phase 5 closed. Status: **waiting for the owner's answers to Q-GL-1..10**. Nothing below is built yet.
 
+Agents work from the task file [feature_go-live.md](feature_go-live.md) (GL-01..GL-30); progress per checkpoint in [PROGRESS.md](PROGRESS.md). The steps GL-1..GL-8 below map to parts GL-A..GL-H there.
+
 Rules this plan follows: [01-architecture.md#deployment](../spec/01-architecture.md#deployment) (DEP-01..09) and the open questions in [00-overview.md](../spec/00-overview.md) (Q-01, Q-02, Q-03, Q-04, Q-08, Q-15).
 
 ## 1. Where the repo stands (checked 26/11/2026)
