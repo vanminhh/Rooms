@@ -1,0 +1,83 @@
+/* CHAT-01: floating room-advice bubble on public pages; kit tokens only. */
+.chat-widget {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  max-width: calc(100vw - 32px);
+}
+
+.chat-widget-panel {
+  width: min(380px, calc(100vw - 32px));
+  max-height: min(70vh, 560px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--rooms-paper);
+  color: var(--rooms-text);
+  border: 1px solid var(--rooms-line);
+  border-radius: var(--rooms-radius-card);
+  box-shadow: 0 12px 32px rgb(21 61 54 / 18%);
+}
+
+.chat-widget-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.chat-widget-head h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.chat-widget-log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-widget-msg {
+  max-width: 85%;
+  padding: 8px 12px;
+  border-radius: var(--rooms-radius-input);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.chat-widget-msg--assistant {
+  align-self: flex-start;
+  background: var(--rooms-sand);
+}
+
+.chat-widget-msg--user {
+  align-self: flex-end;
+  background: var(--rooms-ink);
+  color: var(--rooms-paper);
+}
+
+.chat-widget-msg a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.chat-widget-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-widget-note {
+  margin: 0;
+  color: var(--rooms-muted);
+}

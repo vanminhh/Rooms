@@ -255,6 +255,8 @@ function loadLayout(file, { auth = { status: 'ready', user: null }, contact = {}
     'react-router': { Outlet: fakes.Outlet, useLocation: () => ({ pathname: '/' }), useNavigate: () => to => navigations.push(to) },
     '../features/public/EntryScreen': { EntryScreen: () => null },
     '../features/public/entry-choice': { readEntryChoice: () => null, saveEntryChoice() {} },
+    '../features/public/ChatWidget': { ChatWidget: () => null }, // CHAT-01, tested in tests/p6
+    '../features/public/chat': { roomIdOfPath: () => undefined },
     '../components': fakes,
     '../app/auth-context': { useAuth: () => auth },
     '../shared/i18n': { I18nProvider: () => null, useI18n: () => ({ lang: 'vi', setLang() {}, t: key => loadModule(draftFirst('src/shared/i18n/index.ts')).t(key, undefined, 'vi') }) },

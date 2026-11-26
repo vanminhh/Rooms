@@ -3,6 +3,8 @@ import { Outlet, useLocation, useNavigate } from 'react-router'
 import '../components'
 import { LanguageSwitch, RoomsButton, RoomsFooter, RoomsHeader } from '../components'
 import { EntryScreen } from '../features/public/EntryScreen'
+import { ChatWidget } from '../features/public/ChatWidget'
+import { roomIdOfPath } from '../features/public/chat'
 import { readEntryChoice, saveEntryChoice } from '../features/public/entry-choice'
 import { useAuth } from '../app/auth-context'
 import { homeOf } from '../app/guards'
@@ -56,6 +58,8 @@ export function PublicLayout() {
       findTitle={t('footer.findTitle')} findDescription={t('footer.findDescription')}
       areaTitle={t('footer.areaTitle')} areaDescription={t('footer.areaDescription')}
       contactTitle={t('footer.contactTitle')} contactEmpty={t('footer.contactEmpty')} bottomLocation={t('footer.location')} />
+    {/* CHAT-01, A-28: on every public page except while the entry screen is open; the chat survives moving between public pages. */}
+    {!showEntry && <ChatWidget roomId={roomIdOfPath(pathname)} fallbackPhone={contact.data?.phone} />}
     </div>
     {showEntry && <EntryScreen videoSrc="/videos/rooms-entry.mp4" onChoose={picked => {
       saveEntryChoice(picked)

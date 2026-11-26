@@ -181,6 +181,7 @@ test('UI-12, FE-EX-10, FE-EX-11: public and auth pages and features keep display
     'features/public/ListState.tsx', 'features/public/RateTable.tsx',
     'features/public/room-filters.ts', 'features/public/RoomCard.tsx',
     'features/public/RoomFilters.tsx', 'layouts/PublicLayout.tsx',
+    'features/public/ChatWidget.tsx', 'features/public/chat.ts',
     'components/Navigation.tsx', 'components/RoomSearch.tsx', 'components/CostBreakdown.tsx',
     'features/auth/ContactInfo.tsx',
     'pages/public/LoginPage.tsx', 'pages/public/RegisterPage.tsx',
