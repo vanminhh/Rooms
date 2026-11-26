@@ -73,7 +73,7 @@ Rules: mark `[~]` when you start a task, `[x]` only after its "Done when" is ver
   Done when: listed with how to check (`cf-cache-status` or the CDN's header).
 - [x] **GL-11** Backup and restore steps for Q-GL-7, in `deploy/README.md`, including one restore test into a separate database.
   Done when: steps written; restore test is GL-24.
-- [ ] **GL-12** ⏸ Report.
+- [x] **GL-12** ⏸ Demo deployment report recorded in [PROGRESS.md](PROGRESS.md).
 
 ### GL-E · Infrastructure (Who: owner; agent writes the checklist and checks)
 

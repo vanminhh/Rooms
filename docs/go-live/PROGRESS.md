@@ -17,7 +17,7 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 | GL-A Quyết định | chủ dự án | chưa làm | - | - | Trả lời Q-GL-1..10 | README.md §3 |
 | GL-B Vá code | agent | xong | GL-05 | ae84fa6 | GL-06 chờ Q-GL-3 | Backend 2914/2914, frontend 1052/1052. |
 | GL-C Webhook thật | agent | xong | GL-08 | c3c6fde | GL-09 dùng Vercel và Render | Backend và hai file bank e2e pass trên máy dev. |
-| GL-D File deploy | agent | đang làm | GL-11 | - | GL-12 tổng kết | GL-10 đã thấy HIT trên Vercel. GL-11 có hướng dẫn backup và restore ở mục 6. Chạy restore thật tại GL-24. |
+| GL-D File deploy | agent | chờ commit | GL-12 | GL-11: 2fcd723 | GL-13: kiểm kê hạ tầng | Đã tổng kết bản demo. DEP-02 và diễn tập khôi phục còn mở. |
 | GL-E Hạ tầng | chủ dự án | chưa làm | - | - | Sau GL-A, GL-D | Tạo tài khoản, điền env |
 | GL-F DB production | chủ dự án + agent | chưa làm | - | - | Sau GL-E | Hỏi trước mỗi thao tác trên DB |
 | GL-G Chạy thử | agent + chủ dự án | chưa làm | - | - | Sau GL-C, GL-F | Có 1 lần chuyển khoản thật |
@@ -99,3 +99,5 @@ Build pass. Lint 0 lỗi, 4 cảnh báo cũ. Bộ bank 19/20, test HTTP dừng t
 Kiểm tra backend: 148/148 file, 2925/2925 test pass (2 workers, timeout 20 giây), build pass, lint 0 lỗi và 4 cảnh báo. Trước deploy, hai GET filters qua Vercel đều trả MISS.
 
 **26/11/2026 · GL-11** — Chủ dự án chọn Q-GL-7B. Bổ sung script pg_dump và hướng dẫn đặt lịch Windows, lưu bản riêng và thử khôi phục vào PostgreSQL local mới. Đã kiểm tra cú pháp và ba tình huống mô phỏng (thành công, lỗi dump, lỗi đọc archive). Chưa đặt lịch hay sao lưu dữ liệu thật. Kiểm tra GL-10 sau deploy: public/filters trả MISS rồi HIT; me/viewings trả 401, no-store, MISS.
+
+**26/11/2026 · GL-12 — Tổng kết triển khai demo.** Giao diện Vercel gọi backend Render cùng origin qua rewrite; health trả HTTP 200 và chủ dự án đã đăng nhập thành công. GL-10 đã kiểm tra trên domain Vercel: public/filters trả MISS rồi HIT, me/viewings khi chưa đăng nhập trả 401 và no-store. GL-11 có script pg_dump và hướng dẫn Windows trong commit 2fcd723; ba tình huống mô phỏng đã qua. Lịch backup và bản sao dữ liệu thật chưa được xác nhận; diễn tập restore vào DB riêng ở GL-24. Render Free còn giới hạn ngủ, nên DEP-02 cho production vẫn mở. Tiếp theo GL-13 kiểm kê hạ tầng và các dịch vụ tích hợp.
