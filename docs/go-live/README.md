@@ -1,12 +1,12 @@
 # Go-live plan
 
-Draft 26/11/2026, after Phase 5 closed. Status: **waiting for the owner's answers to Q-GL-1..10**. Nothing below is built yet.
+Started 26/11/2026 after Phase 5 closed. See [PROGRESS.md](PROGRESS.md) for the current checkpoint and §3 for the owner decisions.
 
 Agents work from the task file [feature_go-live.md](feature_go-live.md) (GL-01..GL-30); progress per checkpoint in [PROGRESS.md](PROGRESS.md). The steps GL-1..GL-8 below map to parts GL-A..GL-H there.
 
 Rules this plan follows: [01-architecture.md#deployment](../spec/01-architecture.md#deployment) (DEP-01..09) and the open questions in [00-overview.md](../spec/00-overview.md) (Q-01, Q-02, Q-03, Q-04, Q-08, Q-15).
 
-## 1. Where the repo stands (checked 26/11/2026)
+## 1. Where the repo stood at planning (26/11/2026)
 
 | Item | State |
 |---|---|
@@ -83,7 +83,7 @@ On the real host, before the domain points at it:
 | Q-GL-3 | Bank webhook provider (Q-03) and bank | (a) SePay, (b) Casso; plus which bank and account receives rent |
 | Q-GL-4 | How real data gets in | (a) start from an empty DB; Boss creates buildings, rooms, managers in the app; (b) copy the dev DB and clean it with DEP-09 (then the 141 legacy test rows must be removed first); (c) an import script from a spreadsheet (new work) |
 | Q-GL-5 | Domain and CDN | Domain name? Use Cloudflare in front (DEP-06)? |
-| Q-GL-6 | Add `GET /api/v1/health` (not in the spec today)? | (a) yes, DB check included; (b) no |
+| Q-GL-6 | Add `GET /api/v1/health` (not in the spec today)? | (a) yes, DB check included; (b) no. **Decision (26/11/2026): A, include the DB check (D-47, DEP-10).** |
 | Q-GL-7 | Backups | (a) rely on the DB provider's built-in backups/point-in-time restore; (b) also a daily `pg_dump` to separate storage |
 | Q-GL-8 | Contract text (Q-15) and real electric tiers (Q-02) | Send them before go-live, or go live with draft contract printing disabled for real signing? |
 | Q-GL-9 | Q-01: early-leaving tenant still paying — may the room be rented again? | (a) no until the end date; (b) yes, old tenant's overlapping rent unchanged; (c) yes, reduced |

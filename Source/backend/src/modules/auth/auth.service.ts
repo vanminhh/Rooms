@@ -75,6 +75,7 @@ export interface IssuedSession {
 export class AuthService {
   // AUTH-04, keyed by phone. State lives in this instance, so a fresh app has fresh counters.
   private readonly loginLimiter = new RateLimiter();
+  private readonly loginIpLimiter = new RateLimiter(20); // AUTH-04 / A-08
   // AUTH-07 (Q4e): separate counter, same threshold; a forgot-password flood must not lock login.
   private readonly forgotLimiter = new RateLimiter();
   private readonly logger = new Logger(AuthService.name);
@@ -92,20 +93,32 @@ export class AuthService {
   async login(
     dto: LoginDto,
     userAgent?: string,
+    ip?: string,
   ): Promise<{ accessToken: string; user: Me; session: IssuedSession }> {
     const { phone, password } = dto;
-    // A blocked phone gets 429 even with the right password, and a 429 is not counted again.
-    if (this.loginLimiter.isBlocked(phone)) {
+    const attemptAt = Date.now();
+    const ipBlocked = ip !== undefined && this.loginIpLimiter.isBlocked(ip, attemptAt);
+    if (this.loginLimiter.isBlocked(phone, attemptAt) || ipBlocked) {
       throw new HttpException(ErrorCode.TOO_MANY_REQUESTS, HttpStatus.TOO_MANY_REQUESTS);
     }
-    // Counted before the first await: the check and the record run in one sync step, so parallel wrong logins cannot all pass.
-    const attemptAt = Date.now();
+    // Reserve both counters before the first await so parallel attempts respect the limits.
     this.loginLimiter.record(phone, attemptAt);
-    const user = await this.prisma.user.findUnique({ where: { phone } });
-    // Unknown phones and pending tenants pay for one Argon2 verify (AUTH-01, CON-07).
-    const pending = user?.passwordHash === PENDING_TENANT_PASSWORD_HASH;
-    const matches = await verifyPassword(user && !pending ? user.passwordHash : await this.getDummyHash(), password);
-    if (!user || pending || !matches) throw new UnauthorizedException(ErrorCode.INVALID_CREDENTIALS);
+    if (ip !== undefined) this.loginIpLimiter.record(ip, attemptAt);
+    let user: User | null;
+    let invalidCredentials = false;
+    try {
+      user = await this.prisma.user.findUnique({ where: { phone } });
+      // Unknown phones and pending tenants pay for one Argon2 verify (AUTH-01, CON-07).
+      const pending = user?.passwordHash === PENDING_TENANT_PASSWORD_HASH;
+      const matches = await verifyPassword(user && !pending ? user.passwordHash : await this.getDummyHash(), password);
+      if (!user || pending || !matches) {
+        invalidCredentials = true;
+        throw new UnauthorizedException(ErrorCode.INVALID_CREDENTIALS);
+      }
+    } finally {
+      // Only bad credentials count against the shared IP. Other logins keep its earlier failures.
+      if (ip !== undefined && !invalidCredentials) this.loginIpLimiter.remove(ip, attemptAt);
+    }
     // Right password on a locked account: not counted, so take back this attempt only (Q2d).
     if (!user.isActive) {
       this.loginLimiter.remove(phone, attemptAt);

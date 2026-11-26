@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 import { PrismaService } from './prisma.service.js';
 import { PrismaModule } from './prisma.module.js';
 import { AppModule } from '../../app.module.js';
+import { HealthController } from '../../health.controller.js';
 import { AuthModule } from '../../modules/auth/auth.module.js';
 import { SettingsModule } from '../../modules/settings/settings.module.js';
 import { FilesModule } from '../../modules/files/files.module.js';
@@ -49,13 +50,13 @@ describe('BE-LOGIN-05: PrismaService', () => {
     expect(Reflect.getMetadata('exports', PrismaModule)).toEqual([PrismaService]);
     expect(Reflect.getMetadata('providers', PrismaModule)).toEqual([PrismaService]);
   });
-  it('BE-P3-05/16, BE-P4-06, BE-P4-25: AppModule registers ContractsModule, BillingModule, MetersModule and BankModule alongside existing modules', () => {
+  it('BE-P3-05/16, BE-P4-06, BE-P4-25, DEP-10: AppModule registers the feature modules and the public health controller', () => {
     // ScheduleModule (cron) is registered only outside tests.
     expect(Reflect.getMetadata('imports', AppModule)).toEqual([
       PrismaModule, AuthModule, SettingsModule, FilesModule, BuildingsModule,
       RoomsModule, PricingModule, ViewingsModule, NotificationsModule, ContractsModule, BillingModule, MetersModule, BankModule, RequestsModule, ReportsModule,
     ]);
-    expect(Reflect.getMetadata('controllers', AppModule)).toBeUndefined();
+    expect(Reflect.getMetadata('controllers', AppModule)).toEqual([HealthController]);
     expect(Reflect.getMetadata('providers', AppModule)).toBeUndefined();
   });
   it('BE-LOGIN-05: AppModule compiles and closes without a DB; shutdown disconnects once', async () => {

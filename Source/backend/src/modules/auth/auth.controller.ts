@@ -51,9 +51,10 @@ export class AuthController {
   async login(
     @Body() dto: LoginDto,
     @Headers('user-agent') userAgent: string | undefined,
+    @Ip() ip: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ accessToken: string; user: Me }> {
-    const { accessToken, user, session } = await this.auth.login(dto, userAgent);
+    const { accessToken, user, session } = await this.auth.login(dto, userAgent, ip);
     setRefreshCookie(res, session);
     return { accessToken, user };
   }

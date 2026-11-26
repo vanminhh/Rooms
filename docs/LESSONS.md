@@ -6,6 +6,7 @@ Read this before the first task of any part. Each line is a mistake that really 
 
 ## Tests and expected values
 
+- Use a numeric comparator when sorting HTTP status codes in test assertions. Bare `.sort()` triggered the type-aware lint warning [GL-02, 26/11/2026].
 - Search every exact-menu assertion when extending navigation, including mounted auth-login-flow tests; updating only the guard/layout fixtures left two stale expected arrays and failed the owner's full suite [FE-P3-01, 20/11/2026].
 - Use typed vi.spyOn(...).mockResolvedValue/mockRejectedValue on Prisma delegates in fixtures; replacing a generic PrismaPromise method with an async vi.fn caused scoped noEmit failures even though the tests passed [BE-P3-27, 20/11/2026].
 - Test both hostname and literal-IP connections before trusting a Node loopback guard: createConnection passes a normalized argument array into Socket.connect, so normalizing it twice missed the direct-IP check [BE-P3-27, 20/11/2026].
@@ -146,3 +147,4 @@ Read this before the first task of any part. Each line is a mistake that really 
 - FE-P5-07/08: in the simulated DOM, provide chart container measurements and load the chart module before timing UI updates. Audit entity IDs include 0 for settings changes; actor IDs start at 1.
 - FE-P5-14: contract services and available parking services are separate collections. Load active vehicle services from the tenant-owned contract's building for a vehicle-change request. A moderated review returns a redacted comment, so a rating edit must preserve the stored comment at the API boundary.
 - QA-P5-04: verify two distinct PostgreSQL backend PIDs inside the transactions before releasing concurrent workers. When a worker fails before approval, retire the fixture's pending request as well as its contracts and accounts before recording CLEANED.
+- GL-04 (DEP-10): when registering a root controller, update the exact AppModule controller metadata assertion in prisma.service.spec.ts alongside the HTTP tests.

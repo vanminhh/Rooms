@@ -141,6 +141,7 @@ The dev seed (`prisma/seed.ts`) creates 6 accounts with fixed, public passwords 
   4. Remove the sample buildings, rooms and contract, or lock the buildings so they do not appear in public lists (BLD-06, ROOM-05).
   5. Set `NODE_ENV=production` (DEP-05) and check that no dev password logs in.
 - **DEP-09** The same steps apply when the production database is created from a copy of the dev database.
+- **DEP-10** The public GET /api/v1/health runs SELECT 1 on each request. Return HTTP 200 with { "status": "ok" } on success, or 503 with { "status": "unavailable" } on a failed query. Both responses use Cache-Control: no-store and contain only the status field.
 
 ## Roadmap
 

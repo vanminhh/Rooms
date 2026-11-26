@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
+import { HealthController } from './health.controller.js';
 import { PrismaModule } from './common/prisma/prisma.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { FilesModule } from './modules/files/files.module.js';
@@ -20,6 +21,7 @@ import { BankModule } from './modules/bank/bank.module.js';
 const scheduleImports = process.env.NODE_ENV === 'test' ? [] : [ScheduleModule.forRoot()];
 
 @Module({
+  controllers: [HealthController],
   imports: [PrismaModule, AuthModule, SettingsModule, FilesModule, BuildingsModule, RoomsModule, PricingModule, ViewingsModule, NotificationsModule, ContractsModule, BillingModule, MetersModule, BankModule, RequestsModule, ReportsModule, ...scheduleImports],
 })
 export class AppModule {}

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { JWT_SECRET_MIN_LENGTH, REQUIRED_ENV, validateEnv } from './env.js';
+import { JWT_SECRET_MIN_LENGTH, REQUIRED_ENV, trustProxyHops, validateEnv } from './env.js';
 
 // validateEnv takes the env object as a parameter, so no mocking is needed:
 // every test passes a plain object (nothing reads the real process.env).
@@ -141,6 +141,25 @@ describe('BE-LOGIN-03: validateEnv', () => {
       process.env = saved;
     }
   });
+});
+
+describe('DEP-04: trust proxy configuration', () => {
+  it('DEP-04: a missing TRUST_PROXY_HOPS defaults to numeric 0', () => {
+    expect(trustProxyHops(full)).toBe(0);
+  });
+
+  it.each([0, 1, 10])('DEP-04: accepts %i hops as a number', (hops) => {
+    const env = { ...full, TRUST_PROXY_HOPS: String(hops) };
+    expect(() => validateEnv(env)).not.toThrow();
+    expect(trustProxyHops(env)).toBe(hops);
+  });
+
+  it.each(['true', 'false', '-1', '11', '0.5', '1e0', '0x1', '', ' ', '1\n'])(
+    'DEP-04: invalid TRUST_PROXY_HOPS %j prevents startup',
+    (value) => {
+      expect(() => validateEnv({ ...full, TRUST_PROXY_HOPS: value })).toThrow(/TRUST_PROXY_HOPS/);
+    },
+  );
 });
 
 describe('BE-LOGIN-03 (P10): JWT_SECRET length', () => {

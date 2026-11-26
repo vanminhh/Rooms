@@ -6,6 +6,15 @@ export const REQUIRED_ENV: readonly string[] = ['DATABASE_URL', 'DIRECT_URL', 'J
 // A weak secret lets anyone forge a token for any role.
 export const JWT_SECRET_MIN_LENGTH = 32;
 
+export function trustProxyHops(env: NodeJS.ProcessEnv = process.env): number {
+  const raw = env.TRUST_PROXY_HOPS ?? '0';
+  const hops = Number(raw);
+  if (!Number.isInteger(hops) || hops < 0 || hops > 10 || String(hops) !== raw) {
+    throw new Error('TRUST_PROXY_HOPS phải là số nguyên từ 0 đến 10');
+  }
+  return hops;
+}
+
 export function validateEnv(env: NodeJS.ProcessEnv = process.env): void {
   const missing = REQUIRED_ENV.filter((name) => !env[name]?.trim());
   if (missing.length > 0) {
@@ -21,4 +30,5 @@ export function validateEnv(env: NodeJS.ProcessEnv = process.env): void {
     throw new Error('NODE_ENV phải là development, test hoặc production');
   }
   decodeCccdKey(env.CCCD_KEY);
+  trustProxyHops(env);
 }
