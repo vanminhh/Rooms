@@ -16,7 +16,7 @@ Rules this plan follows: [01-architecture.md#deployment](../spec/01-architecture
 | DEP-03 BE + DB in Singapore | No production DB yet |
 | **DEP-04 `TRUST_PROXY_HOPS`** | **In the spec but not in the code.** `src/main.ts` / `src/app.setup.ts` never set `trust proxy`. Behind any proxy, every visitor gets the proxy's IP, so the whole site would share one login and viewing rate limit |
 | DEP-05 `NODE_ENV` required | Done (`src/common/env.ts`) |
-| DEP-06 CDN caching for `GET /api/v1/public/*` | Not set up |
+| DEP-06 CDN caching for `GET /api/v1/public/*` | GL-10 sets the origin headers for the Vercel CDN. Verify a live HIT after deployment using [the deployment guide](../../deploy/README.md). |
 | DEP-07..09 production DB checklist | Written in the spec, not done yet |
 | `.env.example` | Missing `BANK_WEBHOOK_SECRET`, `CLOUDINARY_URL`, `TRUST_PROXY_HOPS`, `PORT` |
 | Bank webhook | Only the test adapter (`fakeAdapter`) exists. Q-03 is still open |

@@ -328,7 +328,7 @@ describe('API-01: prefix /api/v1, no CORS, cookie parser', () => {
     );
     const order = [
       'validateEnv()',
-      'NestFactory.create(AppModule)',
+      'NestFactory.create(AppModule',
       'configureApp(app)',
       'app.enableShutdownHooks()',
       'app.listen(',

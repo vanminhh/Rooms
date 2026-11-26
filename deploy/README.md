@@ -43,3 +43,31 @@ Giảng viên dùng một link HTTPS dạng `https://<ten-du-an>.vercel.app`. Ve
 **IP người dùng (DEP-04).** Blueprint bắt đầu với `TRUST_PROXY_HOPS=0`: backend dùng IP kết nối trực tiếp, do đó nhiều người có thể dùng chung hạn mức đăng nhập. Đường đi qua Vercel rồi Render có thêm một proxy so với truy cập thẳng URL Render. Với origin Render còn mở công khai, chưa có một số hop đã xác minh dùng an toàn cho cả hai đường đi. Giữ 0 cho demo; trước production, thống nhất đường truy cập tin cậy, đo chuỗi proxy thực tế, kiểm tra từ hai mạng và kiểm tra đường trực tiếp rồi mới tăng giá trị. Kiểm tra CDN và sao lưu nằm ở GL-10 và GL-11.
 
 Nếu frontend lỗi build, mở **Vercel → Deployments → Build Logs**. Nếu frontend tải được nhưng API lỗi, thử URL health trên Render trước, sau đó thử cùng đường dẫn trên Vercel để phân biệt lỗi backend/DB với lỗi chuyển tiếp.
+
+## 5. Kiểm tra bộ nhớ đệm API trên Vercel (GL-10, DEP-06, PUB-05)
+
+1. Triển khai bản backend có GL-10 lên Render và chờ trạng thái **Live**. Trong Vercel, dùng project Rooms đang chuyển tiếp `/api/*` đến Render. Project demo tạo tháng 11/2026 dùng cơ chế mặc định của Vercel cho project mới: CDN đọc chỉ thị cache từ backend. [Tài liệu Vercel về cache của external rewrites](https://vercel.com/changelog/vercels-cdn-now-respects-cache-control-headers-from-external-origins-by-default)
+2. Mở PowerShell và chạy các lệnh dưới đây. Dùng GET để kiểm tra đúng phương thức. Lệnh chỉ in header và mã HTTP.
+
+   ```powershell
+   $site = 'https://rooms-sigma-ten.vercel.app'
+   function Show-RoomsHeaders($url) {
+     curl.exe -sS -D - -o NUL $url | Select-String '^(HTTP/|cache-control:|x-vercel-cache:|age:|vary:)'
+   }
+   Show-RoomsHeaders 'https://rooms-demo-api.onrender.com/api/v1/public/filters'
+   1..3 | ForEach-Object { Show-RoomsHeaders "$site/api/v1/public/filters" }
+   Show-RoomsHeaders "$site/api/v1/public/unknown-route"
+   1..2 | ForEach-Object { Show-RoomsHeaders "$site/api/v1/health" }
+   1..2 | ForEach-Object { Show-RoomsHeaders "$site/api/v1/me/viewings" }
+   ```
+
+3. Đối chiếu kết quả:
+
+   | Yêu cầu | Kết quả đạt |
+   |---|---|
+   | GET filters trực tiếp trên Render | HTTP 200 và `Cache-Control: public, max-age=0, s-maxage=60`. Trình duyệt hỏi lại mỗi lần. CDN được giữ kết quả 60 giây. |
+   | GET filters qua Vercel | HTTP 200. Gọi lặp cùng URL từ cùng máy trong 60 giây phải thấy `x-vercel-cache: HIT` khi cache đã có dữ liệu. Lần đầu có thể là MISS hoặc HIT. Vercel có thể bỏ `s-maxage` khỏi header trả về trình duyệt. |
+   | GET public trả lỗi | HTTP 404 và `no-store`. |
+   | GET health và GET me/viewings khi chưa đăng nhập | Lần lượt HTTP 200 và 401, cả hai trả `no-store`. Gọi lại vẫn không có HIT. |
+
+   Nếu public luôn MISS, đối chiếu header trực tiếp trên Render trước. Sau đó kiểm tra cấu hình cache cho external rewrites của project Vercel và các rule tùy chỉnh đang ghi đè header. Khi thử endpoint có phân trang, bộ lọc hoặc ngôn ngữ, giữ nguyên query string và `Accept-Language` giữa hai lần thử HIT. Các phương thức ghi và các API ngoài nhóm public dùng `no-store`.
