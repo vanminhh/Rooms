@@ -74,7 +74,7 @@
 .rooms-brand:has(.rooms-brand-mark) { display: inline-flex; align-items: center; gap: 14px; }
 /* Shows only the arched window and key of the square logo (source crop x 336–950, y 214–716 of 1275 × 1233). */
 .rooms-brand-mark { position: relative; flex-shrink: 0; width: 58px; aspect-ratio: 614 / 502; overflow: hidden; }
-.rooms-brand-mark img { position: absolute; left: -54.72%; top: -42.63%; width: 207.65%; max-width: none; height: auto; mix-blend-mode: multiply; }
+.rooms-brand-mark img { position: absolute; left: -54.72%; top: -42.63%; width: 207.65%; max-width: none; height: auto; }
 .rooms-nav { display: flex; gap: 27px; font-size: 13px; }
 .rooms-nav a { padding: 10px 0; border-bottom: 1px solid transparent; }
 .rooms-header-action { flex-shrink: 0; }
@@ -200,7 +200,7 @@
 .rooms-preloader-sun { width: 70px; height: 70px; fill: none; stroke: #bba478; stroke-width: 1; margin-bottom: 30px; }
 /* Logo on the dark screen: invert lightness but keep hue, so gold stays gold and the dark green lines turn light */
 .rooms-preloader .rooms-brand-mark { width: 96px; margin-bottom: 30px; }
-.rooms-preloader .rooms-brand-mark img { filter: invert(1) hue-rotate(180deg); mix-blend-mode: lighten; }
+.rooms-preloader .rooms-brand-mark img { filter: brightness(0) invert(1); }
 .rooms-preloader p { font: 300 60px/1 'Taviraj', Georgia, serif; letter-spacing: .2em; padding-left: .2em; }
 .rooms-preloader > span { margin-top: 15px; font-size: 10px; letter-spacing: .15em; }
 .rooms-preloader-track { width: 170px; height: 1px; background: #ffffff30; margin-top: 45px; }
