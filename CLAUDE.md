@@ -14,7 +14,7 @@ Since 11/11/2026 there are no draft folders. Edit the main files directly; git i
 6. If the owner finds an error: fix it, or, only when the owner says so, go back to the last commit. Going back discards work, so never do it on your own.
 7. Ask first, every time, because git cannot undo these: a schema change or a migration applied to a database; deleting files; installing a new dependency. `.env*` is filled by the owner only.
 
-`Artifacts/`, `Source/frontend/artifact_FE/` and `Source/backend/artifact_BE/` are the old staging areas. They are history (`approved/`, `REVIEW.md`); do not create new drafts there.
+The old staging areas `Artifacts/`, `Source/frontend/artifact_FE/` and `Source/backend/artifact_BE/` were moved out of the repo on 26/11/2026 to `D:/Rooms-archive/` (same layout), so agents and tools no longer read stale drafts as live code. A path to them in older docs resolves there, or in git: `git show f064156:<path>`. Do not recreate them or add drafts.
 
 Lessons: read `docs/LESSONS.md` (mistakes already made here, one line each) before the first task. At a checkpoint, add one line for any mistake that cost a retry. Phase progress is kept per checkpoint in the phase folder's `PROGRESS.md` (e.g. `docs/phase-extra-home101/PROGRESS.md`); update it before each checkpoint report.
 
@@ -28,16 +28,13 @@ Lessons: read `docs/LESSONS.md` (mistakes already made here, one line each) befo
 ## Repo map
 
 ```
-Artifacts/         old shared staging area, history only (approved/); reviews/ = UI kit reviews
 assets/            raw source assets (logos, fonts, mockup PDFs, design images) – not served
 docs/spec/         specification (English, Vietnamese domain terms and UI text)
 Source/backend/    NestJS 12 + Prisma 6 API – see Source/backend/CLAUDE.md
   prisma/                                    schema.prisma, constraints.sql, check-constraints.mjs, migrations, seed
   src/modules/<module>/feature_<name>.md     backend task list of a feature
-  artifact_BE/                               old backend staging area, history only
 Source/frontend/   React 19 + Vite SPA – see Source/frontend/CLAUDE.md
   src/features/<module>/feature_<name>.md    frontend task list of a feature
-  artifact_FE/                               old frontend staging area, history only
   src/components/                            official UI kit (An Lâm style) – rules in docs/spec/31-ui-kit.md
 ```
 
