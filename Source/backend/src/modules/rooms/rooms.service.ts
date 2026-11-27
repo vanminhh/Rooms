@@ -32,7 +32,14 @@ const ROOM_INCLUDE = {
 } satisfies PrismaTypes.RoomInclude;
 type RoomRecord = PrismaTypes.RoomGetPayload<{ include: typeof ROOM_INCLUDE }>;
 const ROOM_GRID_INCLUDE = {
-  contracts: { select: { status: true } },
+  // Only HOLD/ACTIVE decide the status (deriveRoomStatus) and carry the current renter shown on the card.
+  contracts: {
+    where: { status: { in: ['HOLD', 'ACTIVE'] } },
+    select: {
+      status: true,
+      occupants: { select: { fullName: true, phone: true, isSigner: true, moveOutDate: true } },
+    },
+  },
   prices: {
     where: { status: 'PENDING' },
     select: { id: true, price: true, effectiveFrom: true },
@@ -384,6 +391,22 @@ export class RoomsService {
         expired: formatDateOnly(pending.effectiveFrom) < formatDateOnly(today),
       } : null,
       imageCount: row._count.images,
+      occupancy: this.toOccupancy(contracts, today),
+    };
+  }
+
+  // Signer name/phone and the people on the contract not yet moved out (departure today still counts). Never CCCD.
+  private toOccupancy(contracts: RoomGridRecord['contracts'], today: Date): RoomGridItem['occupancy'] {
+    const contract = contracts.find((c) => c.status === 'ACTIVE') ?? contracts.find((c) => c.status === 'HOLD');
+    if (!contract) return null;
+    const todayText = formatDateOnly(today);
+    const occupants = contract.occupants ?? [];
+    const signer = occupants.find((o) => o.isSigner);
+    return {
+      contractStatus: contract.status === 'ACTIVE' ? 'ACTIVE' : 'HOLD',
+      signerName: signer?.fullName ?? null,
+      signerPhone: signer?.phone ?? null,
+      occupantCount: occupants.filter((o) => o.moveOutDate === null || formatDateOnly(o.moveOutDate) >= todayText).length,
     };
   }
 

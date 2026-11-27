@@ -272,7 +272,7 @@ const queryOf = url => new URL(url, 'http://x').searchParams
 function baseRoomGridItem(overrides = {}) {
   return {
     id: 10, buildingId: 5, code: 'A101', floor: 1, areaM2: 20, price: 3_000_000, maxOccupants: 2,
-    underMaintenance: false, isActive: true, status: 'Trống', pendingProposal: null, imageCount: 0,
+    underMaintenance: false, isActive: true, status: 'Trống', pendingProposal: null, imageCount: 0, occupancy: null,
     ...overrides,
   }
 }
@@ -448,6 +448,22 @@ test('ROOM-05/KIT-06: the 4 room statuses show their roomStatusLabels text', asy
   for (const label of ['Trống', 'Đã cọc', 'Đang thuê', 'Bảo trì']) {
     assert.ok(app.container.textContent.includes(label), `status label "${label}" must render`)
   }
+  await app.stop()
+})
+
+test('ROOM-11: "Đang thuê" and "Đã cọc" cards show the signer name, phone and "N/max người"; an empty room shows none', async () => {
+  fakeFetch([{ prefix: '/rooms', method: 'GET', handler: () => ok([
+    baseRoomGridItem({ id: 1, code: 'A1', status: 'Đang thuê', maxOccupants: 3, occupancy: { contractStatus: 'ACTIVE', signerName: 'Nguyễn Văn A', signerPhone: '0912345678', occupantCount: 2 } }),
+    baseRoomGridItem({ id: 2, code: 'A2', status: 'Đã cọc', maxOccupants: 2, occupancy: { contractStatus: 'HOLD', signerName: 'Phạm Thị D', signerPhone: null, occupantCount: 1 } }),
+    baseRoomGridItem({ id: 3, code: 'A3', status: 'Trống' }),
+  ], pageMeta([1, 2, 3])) }])
+  const app = await mount(withRouter(React.createElement(RoomGrid, { selection: 5 })))
+  await wait(30)
+  const cards = find(app.container, n => n.tagName === 'BUTTON' && String(n.getAttribute('class') ?? '').includes('staff-room-card'))
+  const card = code => cards.find(c => c.textContent.includes(code)).textContent
+  assert.ok(card('A1').includes('Nguyễn Văn A') && card('A1').includes('0912345678') && card('A1').includes('2/3 người'))
+  assert.ok(card('A2').includes('Phạm Thị D') && card('A2').includes('1/2 người'))
+  assert.ok(!card('A3').includes('người'), 'an empty room must not show a renter block')
   await app.stop()
 })
 

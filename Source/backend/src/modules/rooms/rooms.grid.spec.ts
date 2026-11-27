@@ -152,3 +152,66 @@ describe('BE-P2-20 · rooms floor grid', () => {
     expect(prisma.room.count).toHaveBeenCalledOnce();
   });
 });
+
+describe('ROOM-11 · current renter on the staff grid', () => {
+  const day = (text: string) => new Date(`${text}T00:00:00.000Z`);
+  const person = (fullName: string, extra: Record<string, unknown> = {}) =>
+    ({ fullName, phone: null, isSigner: false, moveOutDate: null, ...extra });
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-27T03:00:00.000Z')); // 27/11/2026 in Hanoi
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it('ROOM-11: an ACTIVE room shows the signer name and phone and counts people not yet moved out, departure today included', async () => {
+    const { service } = harness([room({
+      contracts: [{ status: 'ACTIVE', occupants: [
+        person('Nguyễn Văn A', { isSigner: true, phone: '0912345678' }),
+        person('Trần Thị B', { moveOutDate: day('2026-11-27') }),
+        person('Lê Văn C', { moveOutDate: day('2026-11-26') }),
+      ] }],
+    })]);
+    const [item] = (await service.list(boss, { page: 1, limit: 20 })).data;
+
+    expect(item.status).toBe('Đang thuê');
+    expect(item.occupancy).toEqual({ contractStatus: 'ACTIVE', signerName: 'Nguyễn Văn A', signerPhone: '0912345678', occupantCount: 2 });
+  });
+
+  it('ROOM-11: a HOLD room counts the people who will move in later', async () => {
+    const { service } = harness([room({
+      contracts: [{ status: 'HOLD', occupants: [
+        person('Phạm Thị D', { isSigner: true, phone: '0987654321' }),
+        person('Phạm Văn E'),
+      ] }],
+    })]);
+    const [item] = (await service.list(boss, { page: 1, limit: 20 })).data;
+
+    expect(item.status).toBe('Đã cọc');
+    expect(item.occupancy).toEqual({ contractStatus: 'HOLD', signerName: 'Phạm Thị D', signerPhone: '0987654321', occupantCount: 2 });
+  });
+
+  it('ROOM-11: the ACTIVE contract wins over a HOLD renewal, and an empty room has no occupancy', async () => {
+    const { service } = harness([
+      room({ contracts: [
+        { status: 'HOLD', occupants: [person('Người mới', { isSigner: true })] },
+        { status: 'ACTIVE', occupants: [person('Người cũ', { isSigner: true })] },
+      ] }),
+      room({ id: 102 }),
+    ]);
+    const [held, empty] = (await service.list(boss, { page: 1, limit: 20 })).data;
+
+    expect(held.occupancy).toMatchObject({ contractStatus: 'ACTIVE', signerName: 'Người cũ', occupantCount: 1 });
+    expect(empty.occupancy).toBeNull();
+  });
+
+  it('ROOM-11, SCOPE-02: the manager query loads only HOLD/ACTIVE contracts, selects no CCCD field and keeps the building scope', async () => {
+    const { service, prisma } = harness([]);
+    await service.list(manager, { page: 1, limit: 20 });
+
+    const args = (prisma.room.findMany.mock.calls[0] as unknown as [any])[0];
+    expect(args.where.buildingId).toEqual({ in: [10, 12] });
+    expect(args.include.contracts.where).toEqual({ status: { in: ['HOLD', 'ACTIVE'] } });
+    expect(Object.keys(args.include.contracts.select.occupants.select).sort()).toEqual(['fullName', 'isSigner', 'moveOutDate', 'phone']);
+  });
+});

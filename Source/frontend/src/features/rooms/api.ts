@@ -52,6 +52,8 @@ export interface RoomPendingProposal {
 export type RoomGridItem = Omit<RoomView, 'furniture' | 'description' | 'images' | 'pendingViewingCount' | 'roomType' | 'hasBalcony' | 'hasWindow' | 'petsAllowed'> & {
   pendingProposal: RoomPendingProposal | null
   imageCount: number
+  // ROOM-11: signer and people not yet moved out of the HOLD/ACTIVE contract; null for other rooms.
+  occupancy: null | { contractStatus: 'HOLD' | 'ACTIVE'; signerName: string | null; signerPhone: string | null; occupantCount: number }
 }
 
 // price is absent on purpose: the room form never writes it (ROOM-02, PRC).

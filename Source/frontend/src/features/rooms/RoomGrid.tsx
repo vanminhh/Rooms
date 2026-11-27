@@ -49,9 +49,16 @@ export function RoomGrid({ selection, includeInactive }: { selection: BuildingSe
                   className={`staff-room-card staff-room-card--${status.tone}${room.id === selectedId ? ' is-selected' : ''}${room.isActive ? '' : ' is-locked'}`}
                   aria-pressed={room.id === selectedId}
                   onClick={() => setSelectedId(room.id)}>
-                  <span className="staff-room-code">{room.code}</span>
-                  <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
-                  <strong>{room.price === null ? 'Chưa có giá' : formatMoney(room.price)}</strong>
+                  <span className="staff-room-card-head">
+                    <span className="staff-room-code">{room.code}</span>
+                    <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
+                  </span>
+                  {room.occupancy && <span className="staff-room-renter">
+                    <span className="staff-room-renter-name">{room.occupancy.signerName ?? 'Chưa có người đứng hợp đồng'}</span>
+                    {room.occupancy.signerPhone && <span>{room.occupancy.signerPhone}</span>}
+                    <span>{room.occupancy.occupantCount}/{room.maxOccupants} người</span>
+                  </span>}
+                  <strong className="staff-room-price">{room.price === null ? 'Chưa có giá' : formatMoney(room.price)}</strong>
                   {!room.isActive && <span className="staff-room-extra">Đã khóa</span>}
                   {room.pendingProposal?.expired && <span className="staff-room-extra">Đề xuất giá: {derivedApprovalLabels.expired}</span>}
                 </button>

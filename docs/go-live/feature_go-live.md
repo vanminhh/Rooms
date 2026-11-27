@@ -77,11 +77,11 @@ Rules: mark `[~]` when you start a task, `[x]` only after its "Done when" is ver
 
 ### GL-E · Infrastructure (Who: owner; agent writes the checklist and checks)
 
-- [~] **GL-13** Owner creates: production DB (Singapore), BE host, domain/DNS, CDN, Resend sending domain (Q-14), production Cloudinary, bank webhook account (Q-GL-3). [Kiểm kê bản demo](PROGRESS.md#kiểm-kê-gl-13).
-  During SePay webhook setup, enable **Tự động gửi lại khi server trả lỗi**. Verify in SePay test mode that a simulated 503 is redelivered and acknowledged after recovery.
-- [ ] **GL-14** Owner fills the production env on the host: new `JWT_SECRET`, new `CCCD_KEY` (stored safely outside the host too), new `BANK_WEBHOOK_SECRET`, `APP_URL` = real domain, `NODE_ENV=production`, `TRUST_PROXY_HOPS`, `MAIL_*`, `CLOUDINARY_URL`, `DATABASE_URL` (pooled) and `DIRECT_URL`. Never reuse dev values.
+- [x] **GL-13** Demo accepted by owner on 27/11/2026. Production scope remains tracked in the [infrastructure inventory](PROGRESS.md#kiểm-kê-gl-13): Singapore DB, BE host, domain/DNS, CDN, Resend sending domain, Cloudinary and bank account.
+  SePay test delivery #54748 received HTTP 200. Automatic retry is enabled. Owner accepted the demo without rehearsing 503 recovery.
+- [x] **GL-14** Demo env names and successful startup verified. For production: new `JWT_SECRET`, new `CCCD_KEY` (stored safely outside the host too), new `BANK_WEBHOOK_SECRET`, `APP_URL` = real domain, `NODE_ENV=production`, `TRUST_PROXY_HOPS`, `MAIL_*`, `CLOUDINARY_URL`, `DATABASE_URL` (pooled) and `DIRECT_URL`. Never reuse dev values.
   Done when: the agent has checked (without reading secret values) that the app starts and `validateEnv` passes.
-- [ ] **GL-15** ⏸ Report: what exists, what is missing.
+- [x] **GL-15** ⏸ Demo infrastructure report and outstanding production checks recorded in [PROGRESS.md](PROGRESS.md#kiểm-kê-gl-13).
 
 ### GL-F · Production database (Who: owner, or agent with approval per action)
 

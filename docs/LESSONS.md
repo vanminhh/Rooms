@@ -59,6 +59,8 @@ Read this before the first task of any part. Each line is a mistake that really 
 
 ## Commands and environment
 
+- Python is not installed on this machine (`python` opens the Microsoft Store stub and changes nothing); script file edits with `node` or use the Edit tool [ROOM-11, 27/11/2026].
+
 - When generating Prisma from an isolated temp schema to avoid loading the real .env, use the installed generator's absolute path and client output; the default provider could not resolve @prisma/client from the temp directory [BE-P3-20, 20/11/2026].
 - PowerShell reads POWERSHELL_TELEMETRY_OPTOUT during startup; setting it inside exec did not stop telemetry-related auto-review rejection, so do not present that setting as a verified host-egress control [BE-P3-17, 19/11/2026].
 - When a backend test stops in `beforeAll` while builds run concurrently, rerun that file alone with a process-local `--hookTimeout` before diagnosing assertion failures. The isolated HTTP test reached the expected loopback restriction, and the same file passed with in-memory HTTP [BE-P3-11, 18/11/2026].

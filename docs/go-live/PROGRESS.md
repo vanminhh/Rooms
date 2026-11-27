@@ -18,7 +18,7 @@ Trạng thái: `chưa làm` · `đang làm` · `chờ commit` (đã dừng ở �
 | GL-B Vá code | agent | xong | GL-05 | ae84fa6 | GL-06 chờ Q-GL-3 | Backend 2914/2914, frontend 1052/1052. |
 | GL-C Webhook thật | agent | xong | GL-08 | c3c6fde | GL-09 dùng Vercel và Render | Backend và hai file bank e2e pass trên máy dev. |
 | GL-D File deploy | agent | chờ commit | GL-12 | GL-11: 2fcd723 | GL-13: kiểm kê hạ tầng | Đã tổng kết bản demo. DEP-02 và diễn tập khôi phục còn mở. |
-| GL-E Hạ tầng | chủ dự án + agent | đang làm | GL-13 | - | Kiểm tra gửi lại webhook trong Test mode | Đã đối soát TT11 trên bản demo. |
+| GL-E Hạ tầng | chủ dự án + agent | chờ commit | GL-15 báo cáo demo | - | GL-16 nếu triển khai DB production | GL-14 đã đối chiếu tên biến trên Render và kết quả khởi động bản demo. |
 | GL-F DB production | chủ dự án + agent | chưa làm | - | - | Sau GL-E | Hỏi trước mỗi thao tác trên DB |
 | GL-G Chạy thử | agent + chủ dự án | chưa làm | - | - | Sau GL-C, GL-F | Có 1 lần chuyển khoản thật |
 | GL-H Go-live, tháng đầu | chủ dự án + agent | chưa làm | - | - | Sau GL-G | |
@@ -105,6 +105,8 @@ Kiểm tra backend: 148/148 file, 2925/2925 test pass (2 workers, timeout 20 gi�
 
 Ngày 27/11/2026. Phạm vi hiện tại là bản demo đồ án.
 
+**GL-14 và GL-15 (27/11/2026).** Ảnh Environment của Render có đủ tên biến GL-14, gồm cả ba biến mail. Bản demo đã nhận đăng nhập và trả HTTP 200 cho webhook. Backend gọi `validateEnv()` trước khi mở cổng. Ảnh chỉ hiển thị tên biến. Việc dùng khóa production riêng và lưu bản sao CCCD_KEY ngoài Render còn chờ xác nhận. Bảng dưới tổng kết các dịch vụ đã chạy và các mục còn mở.
+
 | Hạng mục | Đã xác nhận | Còn cần kiểm tra |
 |---|---|---|
 | Frontend, tên miền và CDN | Rooms dùng HTTPS trên `rooms-sigma-ten.vercel.app`. GL-10 đã ghi nhận CDN trả HIT cho bộ lọc công khai. | Bản demo dùng tên miền Vercel. Tên miền và DNS riêng cho production chưa được xác nhận. |
@@ -112,4 +114,4 @@ Ngày 27/11/2026. Phạm vi hiện tại là bản demo đồ án.
 | PostgreSQL | Health, đăng nhập và đối soát hóa đơn đã chạy trên DB demo. | Đối chiếu vùng Singapore trên dashboard của nhà cung cấp và xác nhận DB dành cho production. |
 | Email | Backend có cấu hình cho Resend. | Xác nhận domain gửi đã Verified và email thử đến hộp thư. |
 | Ảnh | Backend dùng Cloudinary qua `CLOUDINARY_URL`. | Tải một ảnh phòng mẫu trên bản triển khai và mở lại. Tài khoản Cloudinary production chưa được xác nhận. |
-| Ngân hàng | Chủ dự án xác nhận đã cấu hình HMAC và Rooms ghi nhận giao dịch SePay Test mode 5.000 đ cho hóa đơn TT11 qua MB Bank. | Kiểm tra tùy chọn tự gửi lại và lịch sử một lần nhận 503 rồi nhận 2xx trên môi trường thử riêng. Tích hợp Live chưa được kiểm chứng. |
+| Ngân hàng | Chủ dự án nghiệm thu demo ngày 27/11/2026. SePay Test mode ghi nhận giao dịch #54748 trả 200 ngay lần đầu. Rooms đã đối soát TT11 (5.000 đ). Đã bật HMAC và tự gửi lại. | Bỏ qua diễn tập 503 theo quyết định nghiệm thu demo. Tích hợp Live chưa được kiểm chứng. |

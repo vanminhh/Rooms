@@ -36,6 +36,7 @@ test('audit filters apply on submit, reset paging and preserve snapshot values a
     const root = app.container
     await until(() => root.textContent.includes(row.id), 'exact id')
     assert.ok(root.textContent.includes('225000'))
+    assert.ok(find(root, n => n.tagName === 'SUMMARY')[0].textContent.includes('Phát hành lại hóa đơn'), 'AUD-02 Vietnamese label')
     dispatch(root, buttonByText(root, 'Trang sau'), 'click')
     await until(() => app.calls.some(c => queryOf(c.url).get('page') === '2'), 'page two')
     fill(root, byName(root, 'entity'), 'invoice')

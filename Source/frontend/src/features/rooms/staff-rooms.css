@@ -6,8 +6,12 @@
 .rooms-theme .staff-room-floors { display: grid; gap: 28px; min-width: 0; }
 .rooms-theme .staff-room-floor { padding-bottom: 28px; border-bottom: 1px solid var(--rooms-line); }
 .rooms-theme .staff-room-floor h3 { margin-bottom: 14px; font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 600; }
-.rooms-theme .staff-room-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr)); gap: 14px; }
-.rooms-theme .staff-room-card { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; min-width: 0; min-height: 160px; padding: 20px; text-align: left; border: 1px solid var(--rooms-line); border-top-width: 4px; border-radius: 2px; background: var(--rooms-paper); color: var(--rooms-text); }
+.rooms-theme .staff-room-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: 16px; }
+.rooms-theme .staff-room-card { display: flex; flex-direction: column; align-items: stretch; gap: 14px; min-width: 0; min-height: 168px; padding: 18px 20px; text-align: left; border: 1px solid var(--rooms-line); border-top-width: 4px; border-radius: 2px; background: var(--rooms-paper); color: var(--rooms-text); }
+.rooms-theme .staff-room-card-head { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; }
+.rooms-theme .staff-room-renter { display: grid; gap: 4px; padding-top: 12px; border-top: 1px solid var(--rooms-line); font-size: 12px; font-weight: 500; color: var(--rooms-muted); overflow-wrap: anywhere; }
+.rooms-theme .staff-room-renter-name { font-size: 14px; font-weight: 600; color: var(--rooms-text); }
+.rooms-theme .staff-room-card .staff-room-price { margin-top: auto; font-size: 14px; }
 .rooms-theme .staff-room-card--available { border-top-color: var(--rooms-ink); }
 .rooms-theme .staff-room-card--occupied { border-top-color: var(--rooms-muted); }
 .rooms-theme .staff-room-card--reserved { border-top-color: var(--rooms-gold); }

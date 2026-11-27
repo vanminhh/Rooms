@@ -32,4 +32,6 @@ export interface RoomView {
 export interface RoomGridItem extends Omit<RoomView, 'furniture' | 'description' | 'images' | 'roomType' | 'hasBalcony' | 'hasWindow' | 'petsAllowed'> {
   pendingProposal: null | { id: number; price: number; effectiveFrom: string; expired: boolean };
   imageCount: number;
+  // Current HOLD/ACTIVE contract's signer and people not yet moved out; null when the room has none.
+  occupancy: null | { contractStatus: 'HOLD' | 'ACTIVE'; signerName: string | null; signerPhone: string | null; occupantCount: number };
 }
