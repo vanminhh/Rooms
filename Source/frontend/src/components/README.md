@@ -95,7 +95,7 @@ Import từ `index.ts` tự tải `rooms.css`. CSS được giới hạn trong v
 | `FormError` | `children?` | Bổ sung cho Rooms: khối báo lỗi chung của biểu mẫu (`role="alert"`), không có nội dung thì không hiển thị |
 | `Spinner` | `label` (bắt buộc), `block` | Bổ sung cho Rooms: vòng xoay, `label` chỉ đọc cho trình đọc màn hình; dùng được trong `RoomsButton`. Có `block`: trạng thái đang tải đứng riêng (danh sách, trang, khung), căn giữa và hiện `label` thành chữ |
 
-Biểu tượng thư mục dùng hai lớp SVG trong public/images. CSS mở bìa khi rê chuột hoặc khi liên kết logo nhận focus bàn phím.
+`logoSrc` chỉ dùng với `/images/rooms-logo.webp`: CSS cắt phần cửa vòm + chìa khóa theo đúng bố cục file này (1275 × 1233). Đổi file logo thì phải sửa lại phần cắt trong `rooms.css`.
 
 `RoomSearch` gửi hai chuỗi `district`, `maxPrice`; trang cha xử lý tìm kiếm. `CostBreakdown` nhận tổng tiền đã có, không tính điện/nước, thuế hay hóa đơn. Dùng chung `src/shared/formatters.ts` để hiển thị tiền VND: chỉ nhận số nguyên an toàn, dữ liệu không hợp lệ hiển thị `—`, không tự đổi thành 0 hoặc làm tròn. Kiểm tra lỗi dữ liệu tại lớp gọi API; dấu `—` chỉ bảo vệ phần hiển thị.
 

@@ -45,7 +45,7 @@ export function PublicLayout() {
         <LanguageSwitch value={lang} onChange={setLang} viLabel={t('nav.vietnamese')} enLabel={t('nav.english')} groupLabel={t('nav.language')} />
         <a className="rooms-header-cta" href="/phong">{t('nav.bookViewing')}</a>
       </div>}
-      logoSrc="/images/rooms-folder-back.svg"
+      logoSrc="/images/rooms-logo.webp"
       homeLabel={t('nav.homeLabel')}
       closeLabel={t('nav.close')}
       menuLabel={t('nav.menu')}

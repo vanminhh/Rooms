@@ -157,3 +157,4 @@ Read this before the first task of any part. Each line is a mistake that really 
 - GL-06/08 (BANK-08): check the provider's detailed retry settings. SePay retries non-2xx server errors only with the webhook retry-on-error option enabled.
 - Before adding a decision/assumption ID (D-/A-), grep `docs/spec` for the highest number: chatbot limits were first written as A-28, which already existed (renumbered to A-29 on 27/11/2026).
 - Nest skips its own global JSON parser when any mounted middleware function is named `jsonParser`; wrap a route-only `express.json()` in a differently named function (CHAT-11, 27/11/2026).
+- FE-P2-15/UI-23: pass test concurrency directly to node --test for a bounded full-suite rerun. NODE_OPTIONS rejects --test-concurrency.

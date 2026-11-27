@@ -14,7 +14,7 @@ export function TenantLayout() {
   return <div className="rooms-theme" onClick={event => handleInternalLinkClick(event, navigate)}>
     <RoomsHeader
       homeHref="/thue"
-      logoSrc="/images/rooms-folder-back.svg"
+      logoSrc="/images/rooms-logo.webp"
       links={[
         { label: t('nav.overview'), href: '/thue' },
         { label: t('nav.contracts'), href: '/thue/hop-dong' },

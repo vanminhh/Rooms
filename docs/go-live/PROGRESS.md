@@ -115,3 +115,8 @@ Ngày 27/11/2026. Phạm vi hiện tại là bản demo đồ án.
 | Email | Backend có cấu hình cho Resend. | Xác nhận domain gửi đã Verified và email thử đến hộp thư. |
 | Ảnh | Backend dùng Cloudinary qua `CLOUDINARY_URL`. | Tải một ảnh phòng mẫu trên bản triển khai và mở lại. Tài khoản Cloudinary production chưa được xác nhận. |
 | Ngân hàng | Chủ dự án nghiệm thu demo ngày 27/11/2026. SePay Test mode ghi nhận giao dịch #54748 trả 200 ngay lần đầu. Rooms đã đối soát TT11 (5.000 đ). Đã bật HMAC và tự gửi lại. | Bỏ qua diễn tập 503 theo quyết định nghiệm thu demo. Tích hợp Live chưa được kiểm chứng. |
+
+### 27/11/2026 — Desktop public room layout (FE-P2-15, UI-23, ROOM-08)
+
+The listing gives the two checkbox groups a wider grid area and top-aligns adjacent selects. On the detail page the cost panels use the available width and keep the desktop monthly total on one line. Frontend lint and production build passed. Desktop visual acceptance is pending.
+The first full frontend test run reported a failure in the contract ID photo expiry test. The listing, detail and contract test files passed on focused reruns (21/21). The full frontend suite then exited 0 with test concurrency limited to four.
