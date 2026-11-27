@@ -32,3 +32,16 @@
 ## 27/11/2026 · Chatbot limits confirmed
 
 - Owner kept the chatbot limits (20/IP/h, 20 messages, 500 chars, bubble on all public pages). The ID was renumbered A-28 → **A-29**: A-28 already belonged to the contract-services assumption (BE-P3-26). Only the chatbot files were renamed; code behavior unchanged.
+
+## 27/11/2026 · Suggested questions (CHAT-08, FE-CHAT-07)
+
+- Owner: show only before the first question; tap sends at once; room-page set vs general set (texts in `docs/spec/21-chatbot.md` CHAT-08), English translated.
+- Checks (`Source/frontend`): `npm run lint` pass; `npm run build` pass; `tests/p6/chat-widget.test.mjs` 14/14; `npm run test:components` 1066/1066.
+- Browser on `/phong/2`: the 3 room suggestions show under the greeting; with the backend stopped a tap shows the generic error and the suggestions stay for a retry; no horizontal overflow. A real answer from a tapped suggestion was not walked (backend was off).
+
+## 27/11/2026 · Chat look: visitor-side suggestions, expand, room cards (CHAT-08..10, FE-CHAT-07..09)
+
+- Owner: suggestions belong to the visitor (right side); an expand button (640 px × 85% height, still floating); room cards with photo under replies (first 3 distinct rooms, from `GET /public/rooms/:id`, no extra model call).
+- Greeting, history, suggestions and cards now scroll together, so the greeting is no longer cut off by the suggestions.
+- Checks (`Source/frontend`): `npm run lint` pass; `npm run build` pass; `tests/p6/chat-widget.test.mjs` 16/16; `npm run test:components` 1068/1068.
+- Browser with the real key, `/phong`, 1280 px: tapped "Phòng cho nuôi thú cưng?" → real answer with rooms 101 and 204, two cards (dev rooms have no photos, so "Chưa có ảnh"); expanded panel stays below the site header; 375 px: panel 16 px gutters, no horizontal overflow, cards readable.

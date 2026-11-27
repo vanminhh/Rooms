@@ -31,3 +31,9 @@ export function chatErrorKey(error: unknown): 'chat.busy' | 'chat.limit' | 'chat
 export function splitRoomLinks(text: string): { text: string; href?: string }[] {
   return text.split(/(\/phong\/\d+)/).filter(Boolean).map(part => (/^\/phong\/\d+$/.test(part) ? { text: part, href: part } : { text: part }))
 }
+
+// CHAT-10: the distinct rooms a reply links to, in order, at most 3 (one card each).
+export function roomIdsOfReply(text: string): number[] {
+  const ids = splitRoomLinks(text).flatMap(part => (part.href ? [roomIdOfPath(part.href)] : [])).filter((id): id is number => id !== undefined)
+  return [...new Set(ids)].slice(0, 3)
+}

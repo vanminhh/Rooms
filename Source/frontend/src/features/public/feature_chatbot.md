@@ -10,6 +10,9 @@ Before you start: root `CLAUDE.md`, `Source/frontend/CLAUDE.md`, `docs/LESSONS.m
 | [x] | FE-CHAT-04 | mounted in `PublicLayout` (hidden while the entry screen is open, `roomId` on `/phong/:id`, general phone as fallback); `auth-guards` loader and `ex3-i18n` scan updated | full `npm run test:components` green |
 | [x] | FE-CHAT-05 | `tests/p6/chat-widget.test.mjs`, `tests/p6` added to `test:components` | 12/12 |
 | [x] | FE-CHAT-06 | Manual with a real key: real answers, room links, English | owner walk |
+| [x] | FE-CHAT-07 | CHAT-08 suggested questions (general / room page) on the visitor side (right), tap sends, hidden after the first question | 2 cases in `tests/p6/chat-widget.test.mjs`; full `test:components` green |
+| [x] | FE-CHAT-08 | CHAT-09 expand / shrink (640 px, 85% height, floating) | case in `tests/p6`; browser check 1280 and 375 px |
+| [x] | FE-CHAT-09 | CHAT-10 room cards (first photo, code, building, rent; first 3 distinct rooms; none on load failure) | case in `tests/p6`; browser check with the real bot |
 
 ## Issues log
 

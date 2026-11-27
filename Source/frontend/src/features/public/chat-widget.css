@@ -37,11 +37,18 @@
   font-size: 1.1rem;
 }
 
+.chat-widget-body {
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .chat-widget-log {
   list-style: none;
   margin: 0;
   padding: 0;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -80,4 +87,86 @@
 .chat-widget-note {
   margin: 0;
   color: var(--rooms-muted);
+}
+
+
+/* CHAT-09: expanded, still floating; narrow screens keep the 16 px gutters. */
+.chat-widget-panel--wide {
+  width: min(640px, calc(100vw - 32px));
+  /* 85% of the screen, but the head stays below the sticky site header and above the bubble. */
+  height: min(85vh, calc(100vh - 170px));
+  max-height: none;
+}
+
+.chat-widget-panel--wide .chat-widget-body {
+  flex: 1;
+}
+
+.chat-widget-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* CHAT-08: suggestions sit on the visitor's side, like the visitor's own messages. */
+.chat-widget-suggest {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.chat-widget-suggest .chat-widget-chip {
+  min-height: 0;
+  padding: 6px 12px;
+  white-space: normal;
+  text-align: right;
+}
+
+/* CHAT-10: room card under a reply. */
+.chat-widget-msg .chat-widget-room {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 8px;
+  padding: 6px;
+  border-radius: var(--rooms-radius-input);
+  background: var(--rooms-paper);
+  color: var(--rooms-text);
+  text-decoration: none;
+  white-space: normal;
+}
+
+.chat-widget-room img,
+.chat-widget-room-nophoto {
+  flex: none;
+  width: 96px;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--rooms-radius-input);
+  background: var(--rooms-line);
+  display: grid;
+  place-items: center;
+  font-size: 0.75rem;
+  color: var(--rooms-muted);
+  text-align: center;
+}
+
+.chat-widget-panel--wide .chat-widget-room img,
+.chat-widget-panel--wide .chat-widget-room-nophoto {
+  width: clamp(96px, 35%, 200px);
+}
+
+.chat-widget-room-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.chat-widget-head .rooms-button {
+  min-height: 0;
+  padding: 8px 14px;
+  white-space: nowrap;
 }

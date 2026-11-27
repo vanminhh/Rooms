@@ -33,10 +33,11 @@ const alertText = app => find(app.container, n => n.attributes.role === 'alert')
 const chatCalls = calls => calls.filter(c => String(c.url).startsWith('/api/v1/public/chat'))
 function formOf(el) { let node = el; while (node && node.tagName !== 'FORM') node = node.parentNode; return node }
 
-async function boot(path, chatHandler = () => ok({ reply: 'Có phòng A101 giá 3.000.000 đ, xem /phong/101' }), seed) {
+async function boot(path, chatHandler = () => ok({ reply: 'Có phòng A101 giá 3.000.000 đ, xem /phong/101' }), seed, rules = []) {
   const calls = fakeFetch([
     { prefix: '/public/contact', handler: () => ok({ phone: '0900000000', zaloUrl: null, facebookUrl: null }) },
     { prefix: '/public/chat', method: 'POST', handler: chatHandler },
+    ...rules,
   ])
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
   seed?.(client)
@@ -199,5 +200,84 @@ test('KIT-05, CHAT-07: Escape closes the panel; the conversation is never writte
     await until(() => panel(app) === undefined, 'closed')
     assert.equal(toggle(app).attributes['aria-expanded'], 'false')
     assert.deepEqual([...store.keys()], ['rooms.entryChoice'])
+  } finally { await app.stop() }
+})
+
+const suggestionButtons = app => find(app.container, n => n.tagName === 'UL' && n.attributes['aria-label'] === 'Câu hỏi gợi ý')
+  .flatMap(ul => find(ul, n => n.tagName === 'BUTTON')).map(b => b.textContent)
+
+test('CHAT-08: outside a room page the four general suggestions show; tapping one sends it and they disappear', async () => {
+  storage()
+  const app = await boot('/phong')
+  try {
+    dispatch(app.container, toggle(app), 'click')
+    await until(() => input(app), 'open')
+    assert.deepEqual(suggestionButtons(app), ['Phòng dưới 3 triệu?', 'Khu vực nào còn phòng?', 'Phòng cho nuôi thú cưng?', 'Đặt lịch xem phòng thế nào?'])
+    const pets = find(app.container, n => n.tagName === 'BUTTON' && n.textContent === 'Phòng cho nuôi thú cưng?')[0]
+    dispatch(app.container, pets, 'click')
+    await until(() => logText(app).includes('3.000.000 đ'), 'reply shown')
+    assert.deepEqual(JSON.parse(chatCalls(app.calls)[0].body), { messages: [{ role: 'user', content: 'Phòng cho nuôi thú cưng?' }] })
+    assert.deepEqual(suggestionButtons(app), [])
+  } finally { await app.stop() }
+})
+
+test('CHAT-08: on a room page the room suggestions show and are sent with roomId; after a failure they stay for a retry', async () => {
+  storage()
+  let first = true
+  const app = await boot('/phong/12', () => {
+    if (first) { first = false; return fail(503, 'CHAT_UNAVAILABLE', 'x') }
+    return ok({ reply: 'Đã trả lời' })
+  })
+  try {
+    dispatch(app.container, toggle(app), 'click')
+    await until(() => input(app), 'open')
+    assert.deepEqual(suggestionButtons(app), ['Phòng này mỗi tháng hết bao nhiêu?', 'Tiền điện nước tính thế nào?', 'Đặt lịch xem phòng này thế nào?'])
+    const cost = () => find(app.container, n => n.tagName === 'BUTTON' && n.textContent === 'Phòng này mỗi tháng hết bao nhiêu?')[0]
+    dispatch(app.container, cost(), 'click')
+    await until(() => alertText(app).includes(BUSY), 'busy message')
+    assert.equal(suggestionButtons(app).length, 3)
+    dispatch(app.container, cost(), 'click')
+    await until(() => logText(app).includes('Đã trả lời'), 'retry answered')
+    assert.deepEqual(JSON.parse(chatCalls(app.calls)[1].body), { messages: [{ role: 'user', content: 'Phòng này mỗi tháng hết bao nhiêu?' }], roomId: 12 })
+  } finally { await app.stop() }
+})
+
+const roomDetail = (id, code, images) => ({ id, code, price: 2400000, images, building: { id: 1, name: 'Tòa Cầu Giấy' }, contact: null })
+
+test('CHAT-10: each distinct linked room (first 3) gets a card with its first photo, code, building and rent; a room that fails has no card', async () => {
+  storage()
+  const reply = 'Có /phong/1, /phong/2, lại /phong/1, /phong/3, /phong/4 và /phong/9'
+  const app = await boot('/phong', () => ok({ reply }), undefined, [
+    { prefix: '/public/rooms/1', handler: () => ok(roomDetail(1, '101', [{ id: 7, url: 'https://img/1a.jpg', sortOrder: 0 }, { id: 8, url: 'https://img/1b.jpg', sortOrder: 1 }])) },
+    { prefix: '/public/rooms/2', handler: () => ok(roomDetail(2, '204', [])) },
+    { prefix: '/public/rooms/3', handler: () => fail(404, 'NOT_FOUND', 'x') },
+    { prefix: '/public/rooms/4', handler: () => ok(roomDetail(4, '401', [])) },
+  ])
+  try {
+    await openAndAsk(app, 'Có phòng nào?')
+    const cards = () => find(app.container, n => n.tagName === 'A' && n.attributes.class === 'chat-widget-room')
+    await until(() => cards().length === 2, 'two cards')
+    assert.deepEqual(cards().map(c => c.attributes.href), ['/phong/1', '/phong/2'])
+    assert.equal(find(cards()[0], n => n.tagName === 'IMG')[0].attributes.src, 'https://img/1a.jpg')
+    assert.ok(cards()[0].textContent.includes('Tòa Cầu Giấy') && cards()[0].textContent.includes('2.400.000 đ'))
+    assert.ok(cards()[1].textContent.includes('Chưa có ảnh'))
+    assert.equal(find(cards()[1], n => n.tagName === 'IMG').length, 0)
+    const roomCalls = app.calls.filter(c => /\/public\/rooms\/\d/.test(String(c.url))).map(c => String(c.url))
+    assert.ok(!roomCalls.some(u => u.endsWith('/rooms/4') || u.endsWith('/rooms/9')), 'only the first 3 distinct rooms are loaded')
+  } finally { await app.stop() }
+})
+
+test('CHAT-09: the expand button widens the floating panel and keeps the conversation; shrink restores it', async () => {
+  storage()
+  const app = await boot('/phong')
+  try {
+    await openAndAsk(app, 'Xin chào')
+    await until(() => logText(app).includes('3.000.000'), 'reply')
+    const button = label => find(app.container, n => n.tagName === 'BUTTON' && n.textContent === label)[0]
+    dispatch(app.container, button('Phóng to'), 'click')
+    await until(() => panel(app).attributes.class.includes('chat-widget-panel--wide'), 'wide')
+    assert.ok(logText(app).includes('Xin chào') && logText(app).includes('3.000.000'))
+    dispatch(app.container, button('Thu nhỏ'), 'click')
+    await until(() => !panel(app).attributes.class.includes('chat-widget-panel--wide'), 'normal')
   } finally { await app.stop() }
 })
