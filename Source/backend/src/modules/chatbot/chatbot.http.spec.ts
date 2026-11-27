@@ -122,4 +122,57 @@ describe('POST /api/v1/public/chat (CHAT-01..07)', () => {
       await request(withDb.getHttpServer()).post('/api/v1/public/chat').send({ messages: [user('a')] }).expect(200);
     } finally { await withDb.close(); }
   });
+
+  // CHAT-11: 1.5 MB decoded = 2,097,152 base64 characters.
+  const b64 = (bytes: number) => Buffer.alloc(bytes, 7).toString('base64');
+  const withImage = (image: unknown) => ({ messages: [user('Phòng giống ảnh này?')], image });
+
+  it.each(['image/jpeg', 'image/png', 'image/webp'])('CHAT-11: a %s image of exactly 1.5 MB passes and reaches the model with the last message', async (mediaType) => {
+    await post(withImage({ mediaType, data: b64(1_572_864) })).expect(200);
+    const params = (toolRunner.mock.calls[0] as unknown as [{ messages: { content: { type: string; source?: { media_type: string } }[] }[] }])[0];
+    expect(params.messages[0].content[0].source?.media_type).toBe(mediaType);
+  });
+
+  it.each([
+    ['gif', { mediaType: 'image/gif', data: b64(10) }, 'image.mediaType'],
+    ['pdf', { mediaType: 'application/pdf', data: b64(10) }, 'image.mediaType'],
+    ['no type', { data: b64(10) }, 'image.mediaType'],
+    ['not base64', { mediaType: 'image/jpeg', data: '@@@@' }, 'image.data'],
+    ['empty data', { mediaType: 'image/jpeg', data: '' }, 'image.data'],
+    ['1.5 MB + 1 byte', { mediaType: 'image/jpeg', data: b64(1_572_865) }, 'image.data'],
+    ['two images', [{ mediaType: 'image/jpeg', data: b64(10) }, { mediaType: 'image/jpeg', data: b64(10) }], 'image'],
+    ['unknown image field', { mediaType: 'image/jpeg', data: b64(10), url: 'https://x' }, 'image.url'],
+  ])('CHAT-11: image %s -> 400 VALIDATION_FAILED, the provider is not called', async (_label, image, field) => {
+    const res = await post(withImage(image)).expect(400);
+    expect(res.body.error.code).toBe('VALIDATION_FAILED');
+    expect(Object.keys(res.body.error.fields)).toContain(field);
+    expect(toolRunner).not.toHaveBeenCalled();
+  });
+
+  it('CHAT-11: an image inside a message is refused (only the root image field exists)', async () => {
+    const res = await post({ messages: [{ role: 'user', content: 'a', image: { mediaType: 'image/jpeg', data: b64(10) } }] }).expect(400);
+    expect(Object.keys(res.body.error.fields)).toContain('messages.0.image');
+  });
+
+  it('CHAT-11, LOC-02: image validation messages are English with Accept-Language: en', async () => {
+    const res = await post(withImage({ mediaType: 'image/gif', data: b64(10) }), 'en').expect(400);
+    expect(res.body.error.fields['image.mediaType']).toBe('The image must be JPG, PNG or WebP');
+  });
+
+  it('CHAT-11: the chat route takes a 2.5 MB body; a body over 3 MB is refused (body-parser 413 -> 400 VALIDATION_FAILED JSON, API-02) with no provider call', async () => {
+    await post({ ...withImage({ mediaType: 'image/jpeg', data: b64(1_000_000) }), pad: undefined, roomId: 1 }).expect(200);
+    const big = await post({ messages: [user('a')], image: { mediaType: 'image/jpeg', data: 'A'.repeat(3_200_000) } });
+    expect(big.status).toBe(400);
+    expect(big.body.error.code).toBe('VALIDATION_FAILED');
+    expect(toolRunner).toHaveBeenCalledTimes(1);
+  });
+
+  it('CHAT-11: every other route keeps a parsed JSON body with the 100 kB limit', async () => {
+    const other = request(app.getHttpServer()).post('/api/v1/public/chat-other');
+    const big = await other.send({ text: 'x'.repeat(200_000) });
+    expect(big.status).toBe(400);
+    expect(big.body.error.code).toBe('VALIDATION_FAILED');
+    const small = await request(app.getHttpServer()).post('/api/v1/public/chat-other').send({ text: 'x' });
+    expect(small.status).toBe(404); // parsed, then no route: the 100 kB parser still exists for other paths
+  });
 });

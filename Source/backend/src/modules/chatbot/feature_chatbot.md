@@ -15,6 +15,10 @@ Owner decisions (26/11/2026): Claude Haiku 5.5, public visitors only, handoff = 
 | [x] | BE-CHAT-07 | controller + module, registered in `AppModule`, public services exported, `prisma.service.spec.ts` updated | full suite green |
 | [x] | BE-CHAT-08 | `chatbot.service.spec.ts` + `chatbot.http.spec.ts` | `npm run test` green |
 | [x] | BE-CHAT-09 | Manual: real key in `.env`, ask about rooms, off-topic, 21st request, no key | owner walk |
+| [x] | BE-CHAT-10 | Spec CHAT-01 image field, CHAT-09 icons, CHAT-11 image, CHAT-12 stop | `docs/spec/21-chatbot.md` |
+| [x] | BE-CHAT-11 | `ChatImageDto` (jpeg/png/webp, base64, ≤ 1.5 MB decoded) + `FIELDS_EN`; 3 MB JSON body for `/api/v1/public/chat` only (`app.setup.ts`, express declared) | http cases |
+| [x] | BE-CHAT-12 | Image on the last visitor message; prompt line; `clientAbortSignal` + `AbortSignal.any`, no warn on client abort | service cases |
+| [x] | BE-CHAT-13 | Tests: 3 service + 15 http cases | `npm run test` 2985/2985 |
 
 ## Issues log
 

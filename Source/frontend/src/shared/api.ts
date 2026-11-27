@@ -87,7 +87,7 @@ export function setAuthHandlers(next: AuthHandlers) {
   handlers = next
 }
 
-async function send<T>(path: string, method: Method, body: unknown, token: string | null, idempotencyKey?: string, revision = sessionRevision, ifMatch?: string): Promise<Envelope<T>> {
+async function send<T>(path: string, method: Method, body: unknown, token: string | null, idempotencyKey?: string, revision = sessionRevision, ifMatch?: string, signal?: AbortSignal): Promise<Envelope<T>> {
   const headers: Record<string, string> = { Accept: 'application/json', 'Accept-Language': forcedLanguage ?? language }
   if (body !== undefined) headers['Content-Type'] = 'application/json'
   if (token) headers.Authorization = `Bearer ${token}`
@@ -101,13 +101,17 @@ async function send<T>(path: string, method: Method, body: unknown, token: strin
       credentials: 'include',
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
+      signal,
     })
-  } catch {
+  } catch (error) {
+    // A caller-cancelled request (CHAT-12 Stop) is not a network failure: rethrow the AbortError as is.
+    if (signal?.aborted) throw error
     throw new ApiError({ code: 'NETWORK_ERROR', message: t('common.apiGeneric', undefined, messageLang(path)), status: 0 })
   }
 
   assertSession(revision, path)
   const json: unknown = await response.json().catch(() => null)
+  if (signal?.aborted) throw signal.reason
   assertSession(revision, path)
   const envelope: { data?: T; meta?: ListMeta; error?: { code: string; message: string; fields?: Record<string, string> } } =
     typeof json === 'object' && json !== null ? json : {}
@@ -151,11 +155,11 @@ export function refreshAccessToken(): Promise<string> {
   return refreshing
 }
 
-async function request<T>(path: string, options: { method?: Method; body?: unknown; idempotencyKey?: string; ifMatch?: string } = {}): Promise<Envelope<T>> {
+async function request<T>(path: string, options: { method?: Method; body?: unknown; idempotencyKey?: string; ifMatch?: string; signal?: AbortSignal } = {}): Promise<Envelope<T>> {
   const { method = 'GET', body, idempotencyKey } = options
   const sentToken = accessToken, revision = sessionRevision
   try {
-    return await send<T>(path, method, body, sentToken, idempotencyKey, revision, options.ifMatch)
+    return await send<T>(path, method, body, sentToken, idempotencyKey, revision, options.ifMatch, options.signal)
   } catch (error) {
     assertSession(revision, path)
     if (!isUnauthorized(error) || !sentToken || path === '/auth/login') throw error
@@ -168,7 +172,7 @@ async function request<T>(path: string, options: { method?: Method; body?: unkno
     }
     assertSession(revision, path)
     try {
-      return await send<T>(path, method, body, accessToken, idempotencyKey, revision, options.ifMatch)
+      return await send<T>(path, method, body, accessToken, idempotencyKey, revision, options.ifMatch, options.signal)
     } catch (retryError) {
       assertSession(revision, path)
       if (isUnauthorized(retryError)) signOutAndThrow(retryError)
@@ -177,7 +181,7 @@ async function request<T>(path: string, options: { method?: Method; body?: unkno
   }
 }
 
-export async function apiRequest<T>(path: string, options: { method?: Method; body?: unknown; idempotencyKey?: string; ifMatch?: string } = {}): Promise<T> {
+export async function apiRequest<T>(path: string, options: { method?: Method; body?: unknown; idempotencyKey?: string; ifMatch?: string; signal?: AbortSignal } = {}): Promise<T> {
   return (await request<T>(path, options)).data
 }
 

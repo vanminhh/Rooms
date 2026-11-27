@@ -1,6 +1,7 @@
 import { INestApplication, NotFoundException, ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import { tap } from 'rxjs';
+import { json } from 'express';
 import type { Express, NextFunction, Request, Response } from 'express';
 import { trustProxyHops } from './common/env.js';
 import { AllExceptionsFilter } from './common/errors/all-exceptions.filter.js';
@@ -20,6 +21,13 @@ export function configureApp(app: INestApplication): void {
     return req.path === '/api/v1' || req.path.startsWith('/api/v1/') ? next() : next(new NotFoundException());
   }
   );
+  // CHAT-11: only the chat route takes a 3 MB JSON body (one image); it runs before Nest's 100 kB parser,
+  // which then skips the already-parsed body. Every other route keeps 100 kB. The wrapper must not be named
+  // 'jsonParser': Nest skips registering its own JSON parser when a middleware of that name is mounted.
+  const chatJson = json({ limit: '3mb' });
+  app.use('/api/v1/public/chat', function chatJsonParser(req: Request, res: Response, next: NextFunction) {
+    chatJson(req, res, next);
+  });
   app.use(cookieParser());
   app.useGlobalPipes(
     new ValidationPipe({

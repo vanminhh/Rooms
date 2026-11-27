@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
 import test, { after } from 'node:test'
-import { byName, dispatch, draftFirst, fail, fakeFetch, fill, find, isDisabled, loadModule, mount, ok, until } from '../p2/public-dom.mjs'
+import { byName, dispatch, draftFirst, fail, fakeDocument, fakeFetch, fill, find, isDisabled, loadModule, mount, ok, until } from '../p2/public-dom.mjs'
 
 // CHAT-01..07 (FE-CHAT-01..05): the public chat bubble mounted through the real PublicLayout.
 // Only fetch (the API edge) and localStorage are faked; expected texts come from docs/spec/21-chatbot.md and A-29.
@@ -14,7 +14,7 @@ const { QueryClient, QueryClientProvider } = require('@tanstack/react-query')
 const mod = path => loadModule(draftFirst(`src/${path}`))
 const { PublicLayout } = mod('layouts/PublicLayout.tsx')
 const { AuthContext } = mod('app/auth-context.ts')
-const { roomIdOfPath, splitRoomLinks, chatErrorKey } = mod('features/public/chat.ts')
+const { roomIdOfPath, splitRoomLinks, chatErrorKey, pickImageError } = mod('features/public/chat.ts')
 
 const store = new Map()
 function storage(choice = '/') {
@@ -27,7 +27,8 @@ const BUSY = 'Trợ lý đang bận. Vui lòng gọi số điện thoại của 
 const toggle = app => find(app.container, n => n.tagName === 'BUTTON' && n.textContent === 'Hỏi trợ lý')[0]
 const panel = app => find(app.container, n => n.tagName === 'SECTION' && n.attributes['aria-label'] === 'Trợ lý tìm phòng')[0]
 const input = app => byName(app.container, 'chatQuestion')
-const sendButton = app => find(app.container, n => n.tagName === 'BUTTON' && n.textContent === 'Gửi')[0]
+const byLabel = (app, label) => find(app.container, n => n.tagName === 'BUTTON' && n.attributes['aria-label'] === label)[0]
+const sendButton = app => byLabel(app, 'Gửi')
 const logText = app => find(app.container, n => n.tagName === 'OL')[0]?.textContent ?? ''
 const alertText = app => find(app.container, n => n.attributes.role === 'alert').map(n => n.textContent).join(' ')
 const chatCalls = calls => calls.filter(c => String(c.url).startsWith('/api/v1/public/chat'))
@@ -273,11 +274,151 @@ test('CHAT-09: the expand button widens the floating panel and keeps the convers
   try {
     await openAndAsk(app, 'Xin chào')
     await until(() => logText(app).includes('3.000.000'), 'reply')
-    const button = label => find(app.container, n => n.tagName === 'BUTTON' && n.textContent === label)[0]
+    const button = label => byLabel(app, label)
     dispatch(app.container, button('Phóng to'), 'click')
     await until(() => panel(app).attributes.class.includes('chat-widget-panel--wide'), 'wide')
     assert.ok(logText(app).includes('Xin chào') && logText(app).includes('3.000.000'))
     dispatch(app.container, button('Thu nhỏ'), 'click')
     await until(() => !panel(app).attributes.class.includes('chat-widget-panel--wide'), 'normal')
   } finally { await app.stop() }
+})
+
+// ---------- CHAT-09 icons, CHAT-11 image, CHAT-12 stop ----------
+// The browser edges the image path needs (createImageBitmap, canvas) are faked; the widget, chat.ts and api.ts are real.
+function fakeCanvas() {
+  const drawn = []
+  const original = fakeDocument.createElement
+  globalThis.createImageBitmap = async () => ({ width: 3136, height: 1000, close() {} })
+  fakeDocument.createElement = tag => tag === 'canvas'
+    ? { width: 0, height: 0, getContext: () => ({ drawImage: (_b, _x, _y, w, h) => drawn.push([w, h]) }), toDataURL: (type, quality) => { drawn.push([type, quality]); return 'data:image/jpeg;base64,SU1H' } }
+    : original.call(fakeDocument, tag)
+  return { drawn, restore() { fakeDocument.createElement = original; delete globalThis.createImageBitmap } }
+}
+const fileInput = app => find(app.container, n => n.tagName === 'INPUT' && (n.attributes.type === 'file' || n.type === 'file'))[0]
+function pick(app, file) {
+  const el = fileInput(app)
+  el.files = [file]
+  dispatch(app.container, el, 'change', { target: el })
+}
+const photo = (type = 'image/png', size = 3_000_000) => ({ name: 'p', type, size })
+const hangingChat = real => (url, init = {}) => String(url).startsWith('/api/v1/public/chat')
+  ? new Promise((_resolve, reject) => init.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError'))))
+  : real(url, init)
+
+test('CHAT-11: pickImageError accepts JPG/PNG/WebP up to exactly 5 MB', () => {
+  assert.equal(pickImageError(photo('image/jpeg', 5 * 1024 * 1024)), null)
+  assert.equal(pickImageError(photo('image/webp', 1)), null)
+  assert.equal(pickImageError(photo('image/jpeg', 5 * 1024 * 1024 + 1)), 'chat.imageTooBig')
+  assert.equal(pickImageError(photo('image/gif', 10)), 'chat.imageType')
+  assert.equal(pickImageError(photo('application/pdf', 10)), 'chat.imageType')
+})
+
+test('CHAT-09: the head has icon buttons named Phóng to / Thu nhỏ and Đóng trợ lý, with no visible text', async () => {
+  storage()
+  const app = await boot('/phong')
+  try {
+    dispatch(app.container, toggle(app), 'click')
+    await until(() => byLabel(app, 'Phóng to'), 'open')
+    assert.equal(byLabel(app, 'Phóng to').textContent, '')
+    assert.equal(byLabel(app, 'Đóng trợ lý').textContent, '')
+    dispatch(app.container, byLabel(app, 'Phóng to'), 'click')
+    await until(() => byLabel(app, 'Thu nhỏ'), 'restore icon')
+    dispatch(app.container, byLabel(app, 'Đóng trợ lý'), 'click')
+    await until(() => panel(app) === undefined, 'closed')
+  } finally { await app.stop() }
+})
+
+test('CHAT-11: a picked image is shrunk to 1568 px JPEG, previewed, sent once with the question, then the next question carries text only', async () => {
+  storage()
+  const canvas = fakeCanvas()
+  let n = 0
+  const app = await boot('/phong', () => ok({ reply: `Trả lời ${++n}` }))
+  try {
+    dispatch(app.container, toggle(app), 'click')
+    await until(() => fileInput(app), 'open')
+    pick(app, photo())
+    await until(() => byLabel(app, 'Bỏ ảnh'), 'preview shown')
+    assert.deepEqual(canvas.drawn, [[1568, 500], ['image/jpeg', 0.85]])
+    fill(app.container, input(app), 'Phòng giống ảnh này?')
+    dispatch(app.container, formOf(input(app)), 'submit')
+    await until(() => logText(app).includes('Trả lời 1'), 'first reply')
+    assert.deepEqual(JSON.parse(chatCalls(app.calls)[0].body), {
+      messages: [{ role: 'user', content: 'Phòng giống ảnh này?' }], image: { mediaType: 'image/jpeg', data: 'SU1H' },
+    })
+    assert.equal(byLabel(app, 'Bỏ ảnh'), undefined, 'the preview is cleared after sending')
+    assert.equal(find(app.container, el => el.tagName === 'IMG' && el.attributes.src === 'data:image/jpeg;base64,SU1H').length, 1, 'the image shows in the history')
+    await openAndAsk(app, 'Còn phòng khác?')
+    await until(() => logText(app).includes('Trả lời 2'), 'second reply')
+    const second = JSON.parse(chatCalls(app.calls)[1].body)
+    assert.equal(second.image, undefined)
+    assert.deepEqual(second.messages[0], { role: 'user', content: 'Phòng giống ảnh này?' })
+  } finally { await app.stop(); canvas.restore() }
+})
+
+test('CHAT-11: a wrong type or a file over 5 MB shows a message and attaches nothing; the remove button drops the image', async () => {
+  storage()
+  const canvas = fakeCanvas()
+  const app = await boot('/phong')
+  try {
+    dispatch(app.container, toggle(app), 'click')
+    await until(() => fileInput(app), 'open')
+    pick(app, photo('image/gif', 10))
+    await until(() => alertText(app).includes('Chỉ nhận ảnh JPG, PNG hoặc WebP.'), 'type message')
+    pick(app, photo('image/jpeg', 5 * 1024 * 1024 + 1))
+    await until(() => alertText(app).includes('Ảnh phải nhỏ hơn 5 MB.'), 'size message')
+    assert.equal(byLabel(app, 'Bỏ ảnh'), undefined)
+    pick(app, photo())
+    await until(() => byLabel(app, 'Bỏ ảnh'), 'attached')
+    assert.equal(alertText(app), '')
+    dispatch(app.container, byLabel(app, 'Bỏ ảnh'), 'click')
+    await until(() => byLabel(app, 'Bỏ ảnh') === undefined, 'removed')
+    await openAndAsk(app, 'Chỉ chữ')
+    await until(() => chatCalls(app.calls).length === 1, 'sent')
+    assert.equal(JSON.parse(chatCalls(app.calls)[0].body).image, undefined)
+  } finally { await app.stop(); canvas.restore() }
+})
+
+test('CHAT-12: while waiting the round button is Stop; stopping cancels the request, keeps question and image, adds no history and shows no error', async () => {
+  storage()
+  const canvas = fakeCanvas()
+  const app = await boot('/phong')
+  const real = globalThis.fetch
+  globalThis.fetch = hangingChat(real)
+  try {
+    dispatch(app.container, toggle(app), 'click')
+    await until(() => fileInput(app), 'open')
+    pick(app, photo())
+    await until(() => byLabel(app, 'Bỏ ảnh'), 'attached')
+    fill(app.container, input(app), 'Hỏi rồi dừng')
+    dispatch(app.container, formOf(input(app)), 'submit')
+    await until(() => byLabel(app, 'Dừng trả lời'), 'stop button')
+    assert.equal(sendButton(app), undefined)
+    assert.ok(isDisabled(byLabel(app, 'Đính kèm ảnh')))
+    dispatch(app.container, byLabel(app, 'Dừng trả lời'), 'click')
+    await until(() => sendButton(app), 'send button back')
+    assert.equal(input(app).value, 'Hỏi rồi dừng')
+    assert.ok(byLabel(app, 'Bỏ ảnh'), 'the image stays attached')
+    assert.equal(find(app.container, el => el.tagName === 'LI' && String(el.attributes.class).includes('chat-widget-msg--user')).length, 0)
+    assert.equal(alertText(app), '')
+    globalThis.fetch = real
+    dispatch(app.container, formOf(input(app)), 'submit')
+    await until(() => logText(app).includes('3.000.000'), 'sent again')
+    assert.equal(JSON.parse(chatCalls(app.calls).at(-1).body).image.data, 'SU1H')
+  } finally { globalThis.fetch = real; await app.stop(); canvas.restore() }
+})
+
+test('CHAT-12: stopping a tapped suggestion puts it into the empty box', async () => {
+  storage()
+  const app = await boot('/phong')
+  const real = globalThis.fetch
+  globalThis.fetch = hangingChat(real)
+  try {
+    dispatch(app.container, toggle(app), 'click')
+    await until(() => input(app), 'open')
+    dispatch(app.container, find(app.container, el => el.tagName === 'BUTTON' && el.textContent === 'Phòng dưới 3 triệu?')[0], 'click')
+    await until(() => byLabel(app, 'Dừng trả lời'), 'stop')
+    dispatch(app.container, byLabel(app, 'Dừng trả lời'), 'click')
+    await until(() => input(app).value === 'Phòng dưới 3 triệu?', 'suggestion back in the box')
+    assert.equal(alertText(app), '')
+  } finally { globalThis.fetch = real; await app.stop() }
 })

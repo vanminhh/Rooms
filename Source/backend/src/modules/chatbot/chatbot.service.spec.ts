@@ -212,3 +212,54 @@ describe('chatTools (CHAT-02, PUB-01..04)', () => {
     expect(building).toMatchObject({ contact: { phone: '0912345678' }, rooms: [{ id: 101, link: '/phong/101' }] });
   });
 });
+
+describe('ChatbotService image and stop (CHAT-11, CHAT-12)', () => {
+  afterEach(() => { vi.restoreAllMocks(); });
+  const image = { mediaType: 'image/jpeg' as const, data: 'AAAA' };
+  const callArgs = (toolRunner: ReturnType<typeof vi.fn>) => toolRunner.mock.calls[0] as unknown as [{ messages: { role: string; content: unknown }[] }, { signal: AbortSignal }];
+
+  it('CHAT-11: the image goes before the text of the last visitor message only; earlier turns stay text', async () => {
+    const { r, b } = stubs();
+    const { toolRunner, client } = fakeClient(message());
+    const dto: ChatRequestDto = {
+      messages: [{ role: 'user', content: 'Câu 1' }, { role: 'assistant', content: 'Đáp 1' }, { role: 'user', content: 'Phòng giống ảnh này?' }],
+      image,
+    };
+    await new ChatbotService(client, r, b).reply(dto, '1.1.1.1', 'vi');
+    const [params] = callArgs(toolRunner);
+    expect(params.messages[0]).toEqual({ role: 'user', content: 'Câu 1' });
+    expect(params.messages[1]).toEqual({ role: 'assistant', content: 'Đáp 1' });
+    expect(params.messages[2]).toEqual({
+      role: 'user',
+      content: [
+        { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: 'AAAA' } },
+        { type: 'text', text: 'Phòng giống ảnh này?' },
+      ],
+    });
+  });
+
+  it('CHAT-12: a visitor disconnect aborts the model call signal; the stop is not logged as a provider failure', async () => {
+    const { r, b } = stubs();
+    const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+    const stop = new AbortController();
+    const toolRunner = vi.fn((_params: unknown, { signal }: { signal: AbortSignal }) => new Promise((_resolve, reject) => {
+      signal.addEventListener('abort', () => reject(Object.assign(new Error('aborted'), { name: 'APIUserAbortError' })));
+    }));
+    const client = { beta: { messages: { toolRunner } } } as unknown as Anthropic;
+    const pending = new ChatbotService(client, r, b).reply(ask(), '1.1.1.2', 'vi', stop.signal);
+    stop.abort();
+    await expectError(pending, 503, ErrorCode.CHAT_UNAVAILABLE);
+    expect(callArgs(toolRunner)[1].signal.aborted).toBe(true);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('CHAT-12, CHAT-06: without a disconnect the call still has the timeout signal and a provider failure is logged by name only', async () => {
+    const { r, b } = stubs();
+    const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+    const { toolRunner, client } = fakeClient(Object.assign(new Error('secret text'), { name: 'APIConnectionTimeoutError' }));
+    await expectError(new ChatbotService(client, r, b).reply(Object.assign(ask(), { image }), '1.1.1.3', 'vi', new AbortController().signal), 503, ErrorCode.CHAT_UNAVAILABLE);
+    expect(callArgs(toolRunner)[1].signal.aborted).toBe(false);
+    expect(warn).toHaveBeenCalledWith('chat provider failed: APIConnectionTimeoutError');
+    expect(JSON.stringify(warn.mock.calls)).not.toContain('AAAA');
+  });
+});

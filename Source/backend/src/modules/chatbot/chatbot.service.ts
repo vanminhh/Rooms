@@ -11,6 +11,7 @@ import { ANTHROPIC_CLIENT } from './anthropic.provider.js';
 import { chatSystem } from './chat-prompt.js';
 import { chatTools } from './chat-tools.js';
 import type { ChatRequestDto } from './dto/chat.dto.js';
+import type { BetaMessageParam } from '@anthropic-ai/sdk/resources/beta/messages/messages.js';
 
 export const CHAT_MODEL = 'claude-haiku-5-5'; // D-49, CHAT-02
 export const CHAT_RATE_MAX = 20; // A-29, CHAT-03
@@ -21,6 +22,20 @@ export const CHAT_TIMEOUT_MS = 15_000;
 const CHAT_MAX_TOKENS = 2048;
 
 const unavailable = () => new ServiceUnavailableException(ErrorCode.CHAT_UNAVAILABLE);
+
+// CHAT-11: the image goes with the last visitor message only; earlier turns stay text.
+function modelMessages(dto: ChatRequestDto): BetaMessageParam[] {
+  const last = dto.messages.length - 1;
+  return dto.messages.map((m, i) => (i === last && dto.image
+    ? {
+        role: m.role,
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: dto.image.mediaType, data: dto.image.data } },
+          { type: 'text', text: m.content },
+        ],
+      }
+    : { role: m.role, content: m.content }));
+}
 
 function replyText(message: BetaMessage): string {
   // refusal = the model declined; tool_use = the 4-call budget ran out mid-answer (CHAT-06).
@@ -41,7 +56,7 @@ export class ChatbotService {
   ) {}
 
   // CHAT-07: nothing is stored and message text is never logged.
-  async reply(dto: ChatRequestDto, ip: string, lang: Lang): Promise<{ reply: string }> {
+  async reply(dto: ChatRequestDto, ip: string, lang: Lang, clientSignal?: AbortSignal): Promise<{ reply: string }> {
     // isBlocked + record run without an await in between, so parallel requests cannot both pass the 20th slot.
     if (this.limiter.isBlocked(ip)) throw new HttpException(ErrorCode.TOO_MANY_REQUESTS, HttpStatus.TOO_MANY_REQUESTS);
     this.limiter.record(ip);
@@ -56,12 +71,14 @@ export class ChatbotService {
           output_config: { effort: 'low' },
           system: chatSystem(formatDateVn(todayHanoi()), dto.roomId),
           tools: chatTools(this.rooms, this.buildings, lang),
-          messages: dto.messages.map((m) => ({ role: m.role, content: m.content })),
+          messages: modelMessages(dto),
           max_iterations: CHAT_MAX_ITERATIONS,
         },
-        { signal: AbortSignal.timeout(CHAT_TIMEOUT_MS) },
+        { signal: clientSignal ? AbortSignal.any([AbortSignal.timeout(CHAT_TIMEOUT_MS), clientSignal]) : AbortSignal.timeout(CHAT_TIMEOUT_MS) },
       );
     } catch (error) {
+      // CHAT-12: the visitor stopped or left; nobody reads this answer, so it is not logged as a failure.
+      if (clientSignal?.aborted) throw unavailable();
       this.logger.warn(`chat provider failed: ${error instanceof Error ? error.name : 'unknown'}`);
       throw unavailable();
     }
