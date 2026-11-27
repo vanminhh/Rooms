@@ -11,6 +11,33 @@
   max-width: calc(100vw - 32px);
 }
 
+.chat-widget-toggle .rooms-button {
+  gap: 10px;
+  padding: 6px 18px 6px 6px;
+}
+
+@media (max-width: 680px) {
+  .chat-widget-toggle .rooms-button {
+    gap: 0;
+    padding: 6px;
+    font-size: 0;
+  }
+}
+
+.chat-widget-toggle .rooms-button::before {
+  content: '';
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--rooms-paper) url('/images/chat-assistant.png') center / contain no-repeat;
+  transition: transform .16s ease;
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .chat-widget-toggle .rooms-button:hover::before { transform: scale(1.06); }
+}
+
 .chat-widget-panel {
   width: min(380px, calc(100vw - 32px));
   max-height: min(70vh, 560px);
@@ -34,7 +61,11 @@
 
 .chat-widget-head h2 {
   margin: 0;
-  font-size: 1.1rem;
+  flex: none;
+  width: 64px;
+  height: 64px;
+  font-size: 0;
+  background: url('/images/chat-assistant.png') center / contain no-repeat;
 }
 
 .chat-widget-body {
@@ -116,6 +147,10 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 6px;
+}
+
+.chat-widget-panel--wide .chat-widget-suggest {
+  margin-top: auto;
 }
 
 .chat-widget-suggest .chat-widget-chip {

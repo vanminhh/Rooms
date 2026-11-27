@@ -45,3 +45,20 @@
 - Greeting, history, suggestions and cards now scroll together, so the greeting is no longer cut off by the suggestions.
 - Checks (`Source/frontend`): `npm run lint` pass; `npm run build` pass; `tests/p6/chat-widget.test.mjs` 16/16; `npm run test:components` 1068/1068.
 - Browser with the real key, `/phong`, 1280 px: tapped "Phòng cho nuôi thú cưng?" → real answer with rooms 101 and 204, two cards (dev rooms have no photos, so "Chưa có ảnh"); expanded panel stays below the site header; 375 px: panel 16 px gutters, no horizontal overflow, cards readable.
+
+## 27/11/2026 · Chatbot avatar and hover (FE-CHAT-03, CHAT-01)
+
+- Added the owner's selected transparent concierge image to the existing chat toggle; the label and chat behavior remain unchanged. On a fine pointer, the avatar scales slightly on hover unless reduced motion is requested.
+- Checks (`Source/frontend`): `npm run lint` pass; `npm run build` pass (existing Vite large-chunk warning); `npm run test:components` 1068/1068 pass. Viewed the avatar on the owner's existing local Rooms page; hover and mobile were not manually exercised.
+- The original PNG is 845,593 bytes; optimize it after the owner confirms the design if needed. The concurrently created `plans/CHAT-11/` belongs to the separate chat work.
+
+## 27/11/2026 · Chat panel header avatar (FE-CHAT-03, CHAT-01)
+
+- Reused the selected chatbot image in the panel header instead of visible title text; the heading and panel name remain available to assistive technology.
+- Checks (`Source/frontend`): `npm run lint` pass; `npm run build` pass (Vite large-chunk warning); `npm run test:components` 1068/1068 pass. Viewed the open panel on the owner's local Rooms page; the avatar and both controls were visible. Mobile and screen-reader output were not manually tested.
+
+## 27/11/2026 · Chat layout on small screens and expanded panel (FE-CHAT-03, CHAT-08/09)
+
+- On screens up to 680 px the chat toggle shows only its avatar; the accessible button text stays. Enlarged the panel avatar and placed suggestions at the bottom of the expanded chat body, directly above the input.
+- Browser: checked the expanded panel on desktop and at a 360 × 780 CSS-pixel viewport; at 360 px the toggle was 54 px wide, retained its accessible name and the suggestions ended 12 px above the form, without horizontal overflow. A real phone and screen reader were not tested.
+- Checks (`Source/frontend`): lint and build pass (Vite large-chunk warning). The default component suite had 1067/1068 pass; `ex4-entry-screen` failed with `Array buffer allocation failed` under load, then passed 12/12 alone. Chat tests passed 16/16 alone. Re-running the same full suite with `node --test --test-concurrency=2` passed 1068/1068.
