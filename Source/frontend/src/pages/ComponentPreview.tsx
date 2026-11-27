@@ -6,7 +6,7 @@ import { formatMoney } from '../shared/formatters'
 
 const exterior = '/images/rooms-hanoi-exterior.webp'
 const interior = '/images/rooms-hanoi-room.webp'
-const logo = '/images/rooms-logo.webp'
+const logo = '/images/rooms-folder-back.svg'
 const sections = [
   ['foundation', 'Nền tảng'], ['shared', 'Dùng chung'], ['search', 'Tìm phòng'], ['rooms', 'Thẻ phòng'],
   ['journey', 'Ảnh chiều sâu'], ['features', 'Tiện ích'], ['plan', 'Mặt bằng'],

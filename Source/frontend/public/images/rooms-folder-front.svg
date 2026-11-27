@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 76">
+  <defs><linearGradient id="cover" x2="0" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#28584e"/><stop offset="1" stop-color="#153d36"/></linearGradient></defs>
+  <path fill="url(#cover)" d="M0 17a7 7 0 0 1 7-7h31l2-3q2-3 6-3h47a7 7 0 0 1 7 7v56a7 7 0 0 1-7 7H7a7 7 0 0 1-7-7Z"/>
+</svg>

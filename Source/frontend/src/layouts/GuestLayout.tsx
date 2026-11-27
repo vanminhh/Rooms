@@ -16,7 +16,7 @@ export function GuestLayout() {
   return <div className="rooms-theme" onClick={event => handleInternalLinkClick(event, navigate)}>
     <RoomsHeader
       homeHref="/toi"
-      logoSrc="/images/rooms-logo.webp"
+      logoSrc="/images/rooms-folder-back.svg"
       links={[
         { label: t('nav.appointments'), href: '/toi' },
         { label: t('nav.account'), href: '/toi/tai-khoan' },

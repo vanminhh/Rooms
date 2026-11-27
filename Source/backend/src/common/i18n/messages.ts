@@ -43,6 +43,7 @@ export const FIELDS_EN: Record<string, string> = {
   // CHAT-01
   'Vai trò tin nhắn không hợp lệ': 'Invalid message role',
   'Tin nhắn phải có từ 1 đến 500 ký tự': 'A message must have 1 to 500 characters',
+  'Câu trả lời trong lịch sử phải có từ 1 đến 2000 ký tự': 'A reply in the history must have 1 to 2000 characters',
   'Hội thoại phải có từ 1 đến 20 tin nhắn': 'A conversation must have 1 to 20 messages',
   'Hội thoại phải xen kẽ khách và trợ lý, bắt đầu và kết thúc bằng tin của khách': 'A conversation must alternate visitor and assistant, starting and ending with a visitor message',
   'Mã người ở không hợp lệ': 'Invalid occupant ID',

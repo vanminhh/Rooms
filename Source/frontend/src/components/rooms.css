@@ -73,8 +73,25 @@
 .rooms-brand small { display: block; font: 400 9px/1.5 'Manrope', sans-serif; letter-spacing: .08em; margin-top: 9px; }
 .rooms-brand:has(.rooms-brand-mark) { display: inline-flex; align-items: center; gap: 14px; }
 /* Shows only the arched window and key of the square logo (source crop x 336–950, y 214–716 of 1275 × 1233). */
-.rooms-brand-mark { position: relative; flex-shrink: 0; width: 58px; aspect-ratio: 614 / 502; overflow: hidden; }
-.rooms-brand-mark img { position: absolute; left: -54.72%; top: -42.63%; width: 207.65%; max-width: none; height: auto; }
+.rooms-brand-mark { position: relative; flex-shrink: 0; width: 58px; aspect-ratio: 100 / 76; }
+.rooms-brand-mark img { display: block; width: 100%; height: auto; }
+.rooms-brand-mark:has(img[src$="/rooms-folder-back.svg"])::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("/images/rooms-folder-front.svg") center / contain no-repeat;
+  transform-origin: center 97%;
+  transition: transform 240ms ease;
+}
+@media (hover: hover) {
+  .rooms-brand:hover .rooms-brand-mark::after, .rooms-brand-mark:hover::after {
+    transform: perspective(12em) rotateX(-43deg);
+  }
+}
+.rooms-brand:focus-visible .rooms-brand-mark::after { transform: perspective(12em) rotateX(-43deg); }
+@media (prefers-reduced-motion: reduce) {
+  .rooms-brand-mark:has(img)::after { transition: none; }
+}
 .rooms-nav { display: flex; gap: 27px; font-size: 13px; }
 .rooms-nav a { padding: 10px 0; border-bottom: 1px solid transparent; }
 .rooms-header-action { flex-shrink: 0; }
@@ -200,7 +217,6 @@
 .rooms-preloader-sun { width: 70px; height: 70px; fill: none; stroke: #bba478; stroke-width: 1; margin-bottom: 30px; }
 /* Logo on the dark screen: invert lightness but keep hue, so gold stays gold and the dark green lines turn light */
 .rooms-preloader .rooms-brand-mark { width: 96px; margin-bottom: 30px; }
-.rooms-preloader .rooms-brand-mark img { filter: brightness(0) invert(1); }
 .rooms-preloader p { font: 300 60px/1 'Taviraj', Georgia, serif; letter-spacing: .2em; padding-left: .2em; }
 .rooms-preloader > span { margin-top: 15px; font-size: 10px; letter-spacing: .15em; }
 .rooms-preloader-track { width: 170px; height: 1px; background: #ffffff30; margin-top: 45px; }

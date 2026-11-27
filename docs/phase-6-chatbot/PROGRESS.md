@@ -70,3 +70,11 @@
 - Checks: backend `npm run lint` 0 errors (4 old warnings), `npm run test` 150 files / 2985 tests pass (tsc: 1 old error in `i18n.spec.ts:109`, present before); frontend `npm run lint` pass, `npm run build` pass, `tests/p6` 22/22, `npm run test:components` 1073/1074 in three runs, each time a different old timing test (fe05-07 ID photo expiry, fe10 rate plan boundary, rooms pagination) that passes alone.
 - Browser with the real key: picked a 2400×1600 PNG → preview, sent with a question → the bot read the text in the image and answered with a real room; Stop on a new question → red stop button, question back in the box, no history entry, no error; 375 px: no overflow.
 - Found (old, from CP-1): a bot reply over 500 characters (here 667) makes every follow-up question fail, because the BE applies the 500-character limit to the bot's own messages in the history. Waiting for the owner's choice.
+- Owner kept the Uiverse folder (reviewer's CHẶN on it overruled by the owner's request) and asked for a shorter icon: now 20×16 px, the dark front covers more and opens less on hover, so only a sliver of paper shows. `npm run build` pass; checked at 1280 px, normal and hover.
+
+## 27/11/2026 · Long bot replies no longer block follow-ups (A-29, BE-CHAT-14); folder icon
+
+- Owner chose (a): visitor messages stay 1–500 characters; bot replies sent back as history may be 1–2000 (`CHAT_MAX_REPLY_CHARS`). Spec CHAT-01 and A-29 updated; new FIELDS_EN text.
+- Folder icon: the dark front now covers the whole folder (paper only shows when it opens on hover).
+- Checks: backend `npm run lint` 0 errors (4 old warnings), `npm run test` 2986/2986; frontend `npm run build` pass, `tests/p6` 22/22. Browser with the real key: a 1,035-character reply, then "Phòng nào trong số đó rẻ nhất?" → answered (room 101, card shown), no error.
+- Not covered: a bot reply over 2000 characters would still block follow-ups (the prompt asks for ≤ 120 words, so unlikely).

@@ -94,6 +94,16 @@ describe('POST /api/v1/public/chat (CHAT-01..07)', () => {
     expect(toolRunner).not.toHaveBeenCalled();
   });
 
+  it('A-29: a bot reply of 2000 characters in the history passes; 2001 is refused, and the visitor limit stays 500', async () => {
+    await post({ messages: [user('a'), assistant('x'.repeat(2000)), user('b')] }).expect(200);
+    const long = await post({ messages: [user('a'), assistant('x'.repeat(2001)), user('b')] }).expect(400);
+    expect(long.body.error.fields['messages.1.content']).toBe('Câu trả lời trong lịch sử phải có từ 1 đến 2000 ký tự');
+    const visitor = await post({ messages: [user('a'), assistant('ok'), user('y'.repeat(501))] }).expect(400);
+    expect(visitor.body.error.fields['messages.2.content']).toBe('Tin nhắn phải có từ 1 đến 500 ký tự');
+    const empty = await post({ messages: [user('a'), assistant('   '), user('b')] }).expect(400);
+    expect(Object.keys(empty.body.error.fields)).toContain('messages.1.content');
+  });
+
   it('LOC-02: chat validation messages are English with Accept-Language: en', async () => {
     const res = await post({ messages: [user('a'.repeat(501))] }, 'en').expect(400);
     expect(res.body.error.fields['messages.0.content']).toBe('A message must have 1 to 500 characters');

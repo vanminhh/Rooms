@@ -52,13 +52,7 @@ const ICON_STOP = <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="t
  * Rewritten from Tailwind to chat-widget.css, scaled to a button and recoloured with kit tokens.
  */
 function AttachFolder() {
-  return <span className="chat-folder" aria-hidden="true">
-    <span className="chat-folder-back" />
-    <span className="chat-folder-paper chat-folder-paper--1" />
-    <span className="chat-folder-paper chat-folder-paper--2" />
-    <span className="chat-folder-paper chat-folder-paper--3" />
-    <span className="chat-folder-front" />
-  </span>
+  return <span className="chat-folder" aria-hidden="true" />
 }
 
 // CHAT-01..12: public room-advice bubble. Nothing is fetched until the visitor sends a question,

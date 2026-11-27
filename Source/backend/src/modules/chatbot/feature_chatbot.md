@@ -19,6 +19,7 @@ Owner decisions (26/11/2026): Claude Haiku 5.5, public visitors only, handoff = 
 | [x] | BE-CHAT-11 | `ChatImageDto` (jpeg/png/webp, base64, ≤ 1.5 MB decoded) + `FIELDS_EN`; 3 MB JSON body for `/api/v1/public/chat` only (`app.setup.ts`, express declared) | http cases |
 | [x] | BE-CHAT-12 | Image on the last visitor message; prompt line; `clientAbortSignal` + `AbortSignal.any`, no warn on client abort | service cases |
 | [x] | BE-CHAT-13 | Tests: 3 service + 15 http cases | `npm run test` 2985/2985 |
+| [x] | BE-CHAT-14 | A-29 fix: visitor message 1–500, bot reply in history 1–2000 (owner choice a) | http case; `npm run test` 2986/2986 |
 
 ## Issues log
 

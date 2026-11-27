@@ -735,7 +735,7 @@ test('FE-LOGIN-10, FE-P3-01, Q2-A: TenantLayout menu includes "Hợp đồng" al
   assert.equal(find(app.container, n => n.tagName === 'FOOTER').length, 0)
   assert.equal(find(app.container, n => n.tagName === 'SELECT').length, 0)
   assert.ok(hasTheme(app))
-  assert.ok(find(app.container, n => n.tagName === 'IMG').some(n => n.attributes.src === '/images/rooms-logo.webp'), 'KIT-10 logo')
+  assert.ok(find(app.container, n => n.tagName === 'IMG').some(n => n.attributes.src === '/images/rooms-folder-back.svg'), 'KIT-10 logo')
   await app.stop()
 })
 

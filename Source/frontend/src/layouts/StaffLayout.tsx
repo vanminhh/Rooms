@@ -44,7 +44,7 @@ export function StaffLayout() {
   return <div className="rooms-theme layout-staff" lang="vi" onClick={event => handleInternalLinkClick(event, navigate)}>
     <RoomsHeader
       homeHref="/ql"
-      logoSrc="/images/rooms-logo.webp"
+      logoSrc="/images/rooms-folder-back.svg"
       links={links}
       action={<><NotificationBell /><RoomsButton variant="outline" type="button" disabled={signingOut} onClick={() => void signOut()}>Đăng xuất</RoomsButton></>}
     />

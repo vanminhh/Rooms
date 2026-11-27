@@ -54,7 +54,7 @@ export function EntryScreen({ onChoose, videoSrc }: { onChoose(choice: EntryChoi
       style={{ visibility: videoReady ? 'visible' : 'hidden' }}
       onPlaying={() => setVideoReady(true)} onError={() => setVideoFailed(true)} />}
     <div className="public-entry-welcome">
-      <span className="rooms-brand-mark public-entry-mark" aria-hidden="true"><img src="/images/rooms-logo.webp" alt="" /></span>
+      <span className="rooms-brand-mark public-entry-mark" aria-hidden="true"><img src="/images/rooms-folder-back.svg" alt="" /></span>
       <strong>ROOMS</strong>
       <small>APARTMENTS HANOI</small>
       <p>{lang === 'vi' ? 'Chào mừng đến với' : 'Welcome to'} <em>ROOMS</em></p>

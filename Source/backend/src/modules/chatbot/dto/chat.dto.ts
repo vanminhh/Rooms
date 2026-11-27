@@ -1,15 +1,18 @@
 import { Transform, Type } from 'class-transformer';
 import {
-  ArrayMaxSize, ArrayMinSize, IsArray, IsIn, IsInt, IsObject, IsOptional, IsString, Max, MaxLength, Min, MinLength,
-  Validate, ValidateNested, ValidatorConstraint, type ValidatorConstraintInterface,
+  ArrayMaxSize, ArrayMinSize, IsArray, IsIn, IsInt, IsObject, IsOptional, Max, Min,
+  Validate, ValidateNested, ValidatorConstraint, type ValidationArguments, type ValidatorConstraintInterface,
 } from 'class-validator';
 
-// A-29: at most 20 messages per conversation, at most 500 characters per message (after trim).
+// A-29: at most 20 messages per conversation, at most 500 characters per visitor message (after trim).
 export const CHAT_MAX_MESSAGES = 20;
 export const CHAT_MAX_CHARS = 500;
+// Owner 27/11/2026: bot replies sent back as history may be longer than 500, so follow-up questions still work.
+export const CHAT_MAX_REPLY_CHARS = 2000;
 
 const ROLE_MSG = 'Vai trò tin nhắn không hợp lệ';
 const CONTENT_MSG = 'Tin nhắn phải có từ 1 đến 500 ký tự';
+const REPLY_MSG = 'Câu trả lời trong lịch sử phải có từ 1 đến 2000 ký tự';
 const COUNT_MSG = 'Hội thoại phải có từ 1 đến 20 tin nhắn';
 const TURNS_MSG = 'Hội thoại phải xen kẽ khách và trợ lý, bắt đầu và kết thúc bằng tin của khách';
 const ROOM_MSG = 'Mã phòng không hợp lệ';
@@ -43,14 +46,24 @@ class ChatTurns implements ValidatorConstraintInterface {
   }
 }
 
+// A-29: a visitor message is at most 500 characters, a bot reply in the history at most 2000.
+@ValidatorConstraint({ name: 'chatContentLength' })
+class ChatContentLength implements ValidatorConstraintInterface {
+  validate(content: unknown, args: ValidationArguments): boolean {
+    if (typeof content !== 'string' || content.length === 0) return false;
+    return content.length <= ((args.object as { role?: unknown }).role === 'assistant' ? CHAT_MAX_REPLY_CHARS : CHAT_MAX_CHARS);
+  }
+  defaultMessage(args: ValidationArguments): string {
+    return (args.object as { role?: unknown }).role === 'assistant' ? REPLY_MSG : CONTENT_MSG;
+  }
+}
+
 export class ChatMessageDto {
   @IsIn(['user', 'assistant'], { message: ROLE_MSG })
   role!: 'user' | 'assistant';
 
   @Transform(trim)
-  @IsString({ message: CONTENT_MSG })
-  @MinLength(1, { message: CONTENT_MSG })
-  @MaxLength(CHAT_MAX_CHARS, { message: CONTENT_MSG })
+  @Validate(ChatContentLength)
   content!: string;
 }
 
